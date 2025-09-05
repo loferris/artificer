@@ -19,12 +19,16 @@ export const Chat: React.FC = () => {
     lastFailedMessage,
     input,
     sidebarOpen,
+    isDemoMode,
+    demoMessages,
     setCurrentConversation,
     setLoading,
     setCreatingConversation,
     setError,
     setInput,
     setSidebarOpen,
+    setDemoMode,
+    addDemoMessage,
     clearError,
     startMessageSend,
     finishMessageSend,
@@ -63,7 +67,7 @@ export const Chat: React.FC = () => {
   } = trpc.messages.getByConversation.useQuery(
     { conversationId: currentConversationId || '' },
     { 
-      enabled: !!currentConversationId,
+      enabled: !!currentConversationId && !isDemoMode,
       retry: 1,
       retryDelay: 1000,
       onError: (error) => {
@@ -72,6 +76,9 @@ export const Chat: React.FC = () => {
       }
     },
   );
+
+  // Use demo messages when in demo mode
+  const displayMessages = isDemoMode ? demoMessages : messages;
   
   // Error logging for production monitoring
   React.useEffect(() => {
@@ -132,10 +139,39 @@ export const Chat: React.FC = () => {
       // Fallback for demo mode when API fails
       if (error?.data?.code === 'INTERNAL_SERVER_ERROR' || 
           error?.message?.includes('JSON.parse') ||
-          error?.message?.includes('405')) {
+          error?.message?.includes('405') ||
+          error?.message?.includes('Database connection issue')) {
         console.log('Using fallback message handling for demo mode');
-        // Simulate a successful response for demo mode
+        
+        // Enable demo mode
+        setDemoMode(true);
+        
+        // Get the current input message for demo response
+        const currentInput = get().input;
+        
+        // Add user message to demo messages
+        const userMessage: Message = {
+          id: `demo-user-${Date.now()}`,
+          role: 'user',
+          content: currentInput,
+          timestamp: new Date(),
+          model: 'demo',
+          cost: 0,
+        };
+        addDemoMessage(userMessage);
+        
+        // Add demo assistant response
         setTimeout(() => {
+          const assistantMessage: Message = {
+            id: `demo-assistant-${Date.now()}`,
+            role: 'assistant',
+            content: `Thanks for your message: "${currentInput}". This is a demo response showing how the chat interface works! In the full version, this would connect to real AI models for actual conversations.`,
+            timestamp: new Date(),
+            model: 'demo-assistant-v1',
+            cost: 0.001,
+          };
+          addDemoMessage(assistantMessage);
+          
           startTransition(() => {
             finishMessageSend();
           });
@@ -441,15 +477,15 @@ export const Chat: React.FC = () => {
               <p className='text-xl font-medium text-red-700'>Failed to load messages</p>
               <p className='mt-2 text-red-500'>Please try refreshing the page</p>
             </div>
-          ) : Array.isArray(messages) && messages.length === 0 ? (
+          ) : Array.isArray(displayMessages) && displayMessages.length === 0 ? (
             <div className='text-center text-gray-500 py-12'>
               <div className='text-6xl mb-4'>🌈</div>
               <p className='text-xl font-medium text-gray-700'>Welcome to your colorful chat!</p>
               <p className='mt-2 text-gray-500'>Start a conversation by typing a message below</p>
             </div>
-          ) : Array.isArray(messages) && messages.length > 0 ? (
+          ) : Array.isArray(displayMessages) && displayMessages.length > 0 ? (
             <>
-              {messages.map((message) => (
+              {displayMessages.map((message) => (
                 <div
                   key={`${message.id}-${message.timestamp}`}
                   className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-2`}

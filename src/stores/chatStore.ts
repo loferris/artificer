@@ -21,6 +21,10 @@ export interface ChatState {
   input: string;
   sidebarOpen: boolean;
   
+  // Demo mode state
+  isDemoMode: boolean;
+  demoMessages: Message[];
+  
   // Actions
   setCurrentConversation: (id: string | null) => void;
   setLoading: (loading: boolean) => void;
@@ -30,6 +34,8 @@ export interface ChatState {
   setLastFailedMessage: (message: string) => void;
   setInput: (input: string) => void;
   setSidebarOpen: (open: boolean) => void;
+  setDemoMode: (isDemo: boolean) => void;
+  addDemoMessage: (message: Message) => void;
   
   // Combined actions
   clearError: () => void;
@@ -51,6 +57,8 @@ export const useChatStore = create<ChatState>()(
       lastFailedMessage: '',
       input: '',
       sidebarOpen: true,
+      isDemoMode: false,
+      demoMessages: [],
       
       // Basic setters
       setCurrentConversation: (id) => set({ currentConversationId: id }, false, 'setCurrentConversation'),
@@ -61,6 +69,10 @@ export const useChatStore = create<ChatState>()(
       setLastFailedMessage: (message) => set({ lastFailedMessage: message }, false, 'setLastFailedMessage'),
       setInput: (input) => set({ input }, false, 'setInput'),
       setSidebarOpen: (open) => set({ sidebarOpen: open }, false, 'setSidebarOpen'),
+      setDemoMode: (isDemo) => set({ isDemoMode: isDemo }, false, 'setDemoMode'),
+      addDemoMessage: (message) => set((state) => ({ 
+        demoMessages: [...state.demoMessages, message] 
+      }), false, 'addDemoMessage'),
       
       // Combined actions
       clearError: () => set({ error: null }, false, 'clearError'),
