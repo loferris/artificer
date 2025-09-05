@@ -1,0 +1,33 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "installCommand": "npm install",
+  "devCommand": "npm run dev",
+  "env": {
+    "DEMO_MODE": "true",
+    "NODE_ENV": "production",
+    "DATABASE_URL": "file:./prisma/dev.db",
+    "NEXT_PUBLIC_DEMO_MODE": "true",
+    "SITE_NAME": "chat-app-demo",
+    "LOG_LEVEL": "info"
+  },
+  "build": {
+    "env": {
+      "DEMO_MODE": "true",
+      "NODE_ENV": "production",
+      "NEXT_PUBLIC_DEMO_MODE": "true"
+    }
+  },
+  "functions": {
+    "src/pages/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    }
+  ]
+}

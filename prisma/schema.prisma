@@ -1,0 +1,43 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  title     String?
+  model     String   // claude-3-5-sonnet, deepseek-coder, etc.
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages Message[]
+
+  // Conversation settings
+  systemPrompt String?
+  temperature  Float?
+  maxTokens    Int?
+
+  @@map("conversations")
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  role      String   // "user", "assistant", "system"
+  content   String
+  tokens    Int?     // token count for cost tracking
+  createdAt DateTime @default(now())
+
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  // Future: message branching support
+  parentId String?
+  parent   Message? @relation("MessageTree", fields: [parentId], references: [id])
+  children Message[] @relation("MessageTree")
+
+  @@map("messages")
+}

@@ -3,18 +3,8 @@ export interface Message {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-  model?: string;
-  cost?: number;
-}
-
-export interface Conversation {
-  id: string;
-  title: string;
-  messages: Message[];
-  tags: string[];
-  createdAt: Date;
-  updatedAt: Date;
-  model?: string;
+  model?: string; // Optional: track which model generated the response
+  cost?: number; // Optional: track cost of the response
 }
 
 export interface AssistantResponse {
@@ -28,7 +18,4 @@ export interface AssistantService {
     userMessage: string,
     conversationHistory?: Message[],
   ): Promise<string | AssistantResponse>;
-  getModelUsageStats?: () => Array<{ model: string; count: number; percentage: number }>;
 }
-
-export type ModelType = 'claude' | 'deepseek' | 'qwen' | 'mock';
