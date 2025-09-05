@@ -95,7 +95,7 @@ cp .env.example .env.local
 
 # Set up database
 npx prisma generate
-npx prisma db push
+npx prisma migrate dev --name init
 
 # Start developing
 npm run dev
