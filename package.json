@@ -9,7 +9,6 @@
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write .",
-    "prepare": "husky install",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",

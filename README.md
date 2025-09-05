@@ -89,6 +89,9 @@ git clone https://github.com/yourusername/ai-chat-app
 cd ai-chat-app
 npm install
 
+# Set up development tools (Git hooks for code quality)
+npx husky install
+
 # Configure environment
 cp .env.example .env.local
 # Add your OPENROUTER_API_KEY
@@ -204,9 +207,10 @@ Built something cool? Found a bug? Contributions welcome!
 # Set up development environment
 git clone [your-fork]
 npm install
-npm run dev
+npx husky install  # Set up Git hooks for code quality
 
 # Make changes, add tests
+npm run dev
 npm test
 npm run lint
 
