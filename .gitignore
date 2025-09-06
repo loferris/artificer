@@ -51,3 +51,9 @@ temp/
 
 # Exported conversations (contains personal data)
 exports/
+
+# Internal docs (for now)
+/docs/agent-architecture-plan.md
+/docs/architecture-summary.md
+/docs/DEPLOYMENT.md
+/docs/README.md
