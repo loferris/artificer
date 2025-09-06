@@ -1,28 +1,38 @@
 // Static demo data and utilities for UI demonstration
 import type { Message } from '../types';
 
+// Mock conversation data matching API response structure
 export const DEMO_CONVERSATIONS = [
   {
     id: 'demo-1',
     title: 'Simple Demo Chat',
-    messages: [
-      {
-        id: 'msg-1',
-        role: 'user' as const,
-        content: 'Hello, world!',
-        timestamp: new Date(Date.now() - 30000),
-        model: undefined,
-        cost: 0,
-      },
-      {
-        id: 'msg-2',
-        role: 'assistant' as const,
-        content: 'Goodnight moon! 🌙\n\nThis is a static demo of TeddyBox Chat - an AI orchestration and knowledge management system. The real version connects to AI models via OpenRouter for dynamic conversations.',
-        timestamp: new Date(Date.now() - 10000),
-        model: 'demo-assistant-v1',
-        cost: 0.001,
-      }
-    ]
+    model: 'demo-assistant-v1',
+    systemPrompt: 'You are a helpful AI assistant.',
+    temperature: 0.7,
+    maxTokens: 1000,
+    createdAt: new Date(Date.now() - 60000),
+    updatedAt: new Date(Date.now() - 10000),
+    messages: [], // Empty in conversation list, populated separately
+  }
+];
+
+// Mock messages data matching API response structure  
+export const DEMO_MESSAGES = [
+  {
+    id: 'msg-1',
+    role: 'user' as const,
+    content: 'Hello, world!',
+    timestamp: new Date(Date.now() - 30000), // API maps createdAt to timestamp
+    model: undefined, // API returns undefined for messages
+    cost: undefined,  // API returns undefined for messages
+  },
+  {
+    id: 'msg-2', 
+    role: 'assistant' as const,
+    content: 'Goodnight moon! 🌙\n\nThis is a static demo of TeddyBox Chat - an AI orchestration and knowledge management system. The real version connects to AI models via OpenRouter for dynamic conversations.',
+    timestamp: new Date(Date.now() - 10000),
+    model: undefined,
+    cost: undefined,
   }
 ];
 
@@ -39,17 +49,10 @@ export const initializeStaticDemo = () => {
 };
 
 export const getStaticDemoData = () => {
-  if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem('static-demo-conversations');
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch {
-        return DEMO_CONVERSATIONS;
-      }
-    }
-  }
-  return DEMO_CONVERSATIONS;
+  return {
+    conversations: DEMO_CONVERSATIONS,
+    messages: DEMO_MESSAGES
+  };
 };
 
 export const generateDemoResponse = (userMessage: string): Message => {

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useChatStore } from '../stores/chatStore';
-import { DEMO_CONVERSATIONS, isStaticDemo, generateDemoResponse } from '../utils/staticDemo';
+import { DEMO_CONVERSATIONS, DEMO_MESSAGES, isStaticDemo, generateDemoResponse } from '../utils/staticDemo';
 
 export const useStaticDemo = () => {
   const {
@@ -17,16 +17,16 @@ export const useStaticDemo = () => {
     if (isStaticDemo()) {
       setDemoMode(true);
       
-      // Initialize demo conversations
+      // Initialize demo conversations (matching API structure)
       DEMO_CONVERSATIONS.forEach(conv => {
         createDemoConversation(conv.id, conv.title);
-        
-        // Add messages to the demo conversation
-        conv.messages.forEach(message => {
-          addDemoMessage({
-            ...message,
-            conversationId: conv.id,
-          });
+      });
+      
+      // Add demo messages
+      DEMO_MESSAGES.forEach(message => {
+        addDemoMessage({
+          ...message,
+          conversationId: 'demo-1', // Link to first demo conversation
         });
       });
       
@@ -106,11 +106,8 @@ export const useStaticDemo = () => {
     getMessages: async (conversationId: string) => {
       if (!isDemoMode) return [];
       
-      const conv = DEMO_CONVERSATIONS.find(c => c.id === conversationId);
-      return conv ? conv.messages.map(msg => ({
-        ...msg,
-        conversationId,
-      })) : [];
+      // Return demo messages for the demo conversation
+      return conversationId === 'demo-1' ? DEMO_MESSAGES : [];
     }
   };
 
