@@ -24,6 +24,7 @@ export interface ChatState {
   // Demo mode state
   isDemoMode: boolean;
   demoMessages: Message[];
+  demoConversations: Map<string, { id: string; title: string; messages: Message[] }>;
   
   // Actions
   setCurrentConversation: (id: string | null) => void;
@@ -36,6 +37,9 @@ export interface ChatState {
   setSidebarOpen: (open: boolean) => void;
   setDemoMode: (isDemo: boolean) => void;
   addDemoMessage: (message: Message) => void;
+  createDemoConversation: (id: string, title?: string) => void;
+  getDemoConversation: (id: string) => { id: string; title: string; messages: Message[] } | undefined;
+  clearDemoData: () => void;
   
   // Combined actions
   clearError: () => void;
@@ -59,6 +63,7 @@ export const useChatStore = create<ChatState>()(
       sidebarOpen: true,
       isDemoMode: false,
       demoMessages: [],
+      demoConversations: new Map(),
       
       // Basic setters
       setCurrentConversation: (id) => set({ currentConversationId: id }, false, 'setCurrentConversation'),
@@ -70,9 +75,48 @@ export const useChatStore = create<ChatState>()(
       setInput: (input) => set({ input }, false, 'setInput'),
       setSidebarOpen: (open) => set({ sidebarOpen: open }, false, 'setSidebarOpen'),
       setDemoMode: (isDemo) => set({ isDemoMode: isDemo }, false, 'setDemoMode'),
-      addDemoMessage: (message) => set((state) => ({ 
-        demoMessages: [...state.demoMessages, message] 
-      }), false, 'addDemoMessage'),
+      addDemoMessage: (message) => set((state) => {
+        // Also add to current demo conversation if it exists
+        const currentId = state.currentConversationId;
+        if (currentId && state.demoConversations.has(currentId)) {
+          const conv = state.demoConversations.get(currentId)!;
+          const updatedConv = {
+            ...conv,
+            messages: [...conv.messages, message]
+          };
+          const updatedConversations = new Map(state.demoConversations);
+          updatedConversations.set(currentId, updatedConv);
+          return {
+            demoMessages: [...state.demoMessages, message],
+            demoConversations: updatedConversations
+          };
+        }
+        return { demoMessages: [...state.demoMessages, message] };
+      }, false, 'addDemoMessage'),
+      
+      createDemoConversation: (id, title) => set((state) => {
+        const newConversation = {
+          id,
+          title: title || `Demo Conversation ${Date.now()}`,
+          messages: []
+        };
+        const updatedConversations = new Map(state.demoConversations);
+        updatedConversations.set(id, newConversation);
+        return {
+          demoConversations: updatedConversations,
+          currentConversationId: id
+        };
+      }, false, 'createDemoConversation'),
+      
+      getDemoConversation: (id) => {
+        return get().demoConversations.get(id);
+      },
+      
+      clearDemoData: () => set({
+        demoMessages: [],
+        demoConversations: new Map(),
+        isDemoMode: false
+      }, false, 'clearDemoData'),
       
       // Combined actions
       clearError: () => set({ error: null }, false, 'clearError'),

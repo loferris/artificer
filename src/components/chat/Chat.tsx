@@ -140,11 +140,20 @@ export const Chat: React.FC = () => {
       if (error?.data?.code === 'INTERNAL_SERVER_ERROR' || 
           error?.message?.includes('JSON.parse') ||
           error?.message?.includes('405') ||
-          error?.message?.includes('Database connection issue')) {
-        console.log('Using fallback message handling for demo mode');
+          error?.message?.includes('Database connection issue') ||
+          error?.message?.includes('database') ||
+          error?.message?.includes('Connection')) {
+        console.log('Auto-switching to demo mode due to API failure');
         
         // Enable demo mode
         setDemoMode(true);
+        
+        // Create demo conversation if needed
+        if (!currentConversationId) {
+          const fallbackId = `demo-fallback-${Date.now()}`;
+          setCurrentConversation(fallbackId);
+          createDemoConversation(fallbackId, 'Demo Conversation (Auto-Fallback)');
+        }
         
         // Get the current input message for demo response
         const currentInput = get().input;

@@ -3,6 +3,9 @@ import { z } from 'zod';
 import { router, publicProcedure } from '../../server/trpc';
 import { TRPCError } from '@trpc/server';
 
+// In-memory store for demo messages (survives function lifetime)
+const demoMessageStore = new Map<string, any[]>();
+
 export const messagesRouter = router({
   create: publicProcedure
     .input(
@@ -17,9 +20,10 @@ export const messagesRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        // In demo mode, return a mock message without database
-        if (process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
-          return {
+        const isDemoMode = process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+        
+        if (isDemoMode) {
+          const message = {
             id: `msg-${Date.now()}`,
             conversationId: input.conversationId,
             role: input.role,
@@ -28,6 +32,14 @@ export const messagesRouter = router({
             createdAt: new Date(),
             parentId: null,
           };
+          
+          // Store in demo store
+          if (!demoMessageStore.has(input.conversationId)) {
+            demoMessageStore.set(input.conversationId, []);
+          }
+          demoMessageStore.get(input.conversationId)!.push(message);
+          
+          return message;
         }
 
         // Validate conversation exists
@@ -69,9 +81,11 @@ export const messagesRouter = router({
     .input(z.object({ conversationId: z.string().min(1, 'Conversation ID is required') }))
     .query(async ({ ctx, input }) => {
       try {
-        // In demo mode, return mock messages
-        if (process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
-          return [
+        const isDemoMode = process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+        
+        if (isDemoMode) {
+          // Return messages from demo store or default welcome message
+          const messages = demoMessageStore.get(input.conversationId) || [
             {
               id: 'demo-msg-1',
               role: 'assistant' as const,
@@ -81,6 +95,16 @@ export const messagesRouter = router({
               cost: 0.001,
             }
           ];
+          
+          // Convert to expected format
+          return messages.map(msg => ({
+            id: msg.id,
+            role: msg.role,
+            content: msg.content,
+            timestamp: msg.createdAt || msg.timestamp,
+            model: msg.model || 'demo-assistant-v1',
+            cost: msg.cost || 0.001,
+          }));
         }
 
         // Validate conversation exists

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { router, publicProcedure } from '../../server/trpc';
 import { TRPCError } from '@trpc/server';
+import { isServerSideDemo } from '../../utils/demo';
 
 // Helper function to generate conversation title from first message
 function generateTitle(firstMessage: string): string {
@@ -16,81 +17,97 @@ function generateTitle(firstMessage: string): string {
   return cleaned.substring(0, 47) + '...';
 }
 
+// In-memory store for demo conversations (survives function lifetime)
+const demoConversationStore = new Map<string, any>();
+
+// Initialize with sample conversations
+const initializeDemoStore = () => {
+  if (demoConversationStore.size === 0) {
+    demoConversationStore.set('demo-1', {
+      id: 'demo-1',
+      title: 'Welcome to the Chat App Demo!',
+      model: 'demo-assistant-v1',
+      systemPrompt: 'You are a helpful AI assistant.',
+      temperature: 0.7,
+      maxTokens: 1000,
+      createdAt: new Date(Date.now() - 3600000),
+      updatedAt: new Date(Date.now() - 3600000),
+    });
+  }
+};
+
 export const conversationsRouter = router({
   list: publicProcedure.query(async ({ ctx }) => {
+    // Use centralized demo mode detection
+    
+    if (isServerSideDemo()) {
+      initializeDemoStore();
+      // Return conversations from memory store
+      return Array.from(demoConversationStore.values()).map(conv => ({
+        ...conv,
+        messages: [] // We'll fetch messages separately
+      }));
+    }
+    
     try {
-      // In demo mode, return mock conversations
-      if (process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
-        return [
-          {
-            id: 'demo-1',
-            title: 'Welcome to the Chat App Demo!',
-            model: 'demo-assistant-v1',
-            systemPrompt: 'You are a helpful AI assistant.',
-            temperature: 0.7,
-            maxTokens: 1000,
-            createdAt: new Date(Date.now() - 3600000),
-            updatedAt: new Date(Date.now() - 3600000),
-            messages: [
-              {
-                id: 'msg-1',
-                role: 'assistant',
-                content: 'Welcome to this AI chat application! This is a showcase demo featuring real-time AI conversations, conversation management, export functionality, and more!',
-                tokens: 25,
-                createdAt: new Date(Date.now() - 3600000),
-                conversationId: 'demo-1',
-                parentId: null,
-              }
-            ]
-          }
-        ];
-      }
-
-      return await ctx.db.conversation.findMany({
+      const conversations = await ctx.db.conversation.findMany({
         orderBy: { updatedAt: 'desc' },
         include: {
           messages: {
-            orderBy: { createdAt: 'desc' },
-            take: 1,
+            orderBy: { createdAt: 'asc' },
+            take: 1, // Only get the first message for preview
           },
         },
       });
+
+      return conversations.map((conv) => ({
+        id: conv.id,
+        title: conv.title || generateTitle(conv.messages[0]?.content || 'New Conversation'),
+        model: conv.model,
+        systemPrompt: conv.systemPrompt,
+        temperature: conv.temperature,
+        maxTokens: conv.maxTokens,
+        createdAt: conv.createdAt,
+        updatedAt: conv.updatedAt,
+        messages: [], // Don't include messages in list view for performance
+      }));
     } catch (error) {
-      console.error('Error fetching conversations:', error);
+      console.error('Database error in conversations.list:', error);
       
-      // Fallback to mock conversations if database fails
-      return [
-        {
-          id: 'fallback-1',
-          title: 'Demo Conversation',
-          model: 'demo-assistant-v1',
-          systemPrompt: 'You are a helpful AI assistant.',
-          temperature: 0.7,
-          maxTokens: 1000,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          messages: []
-        }
-      ];
+      // Auto-switch to demo mode if database fails
+      initializeDemoStore();
+      return Array.from(demoConversationStore.values()).map(conv => ({
+        ...conv,
+        title: `${conv.title} (Demo Mode)`,
+        messages: []
+      }));
     }
   }),
 
   create: publicProcedure.mutation(async ({ ctx }) => {
-    try {
-      // In demo mode, return a mock conversation without database
-      if (process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
-        return {
-          id: `demo-${Date.now()}`,
-          title: null,
-          model: 'demo-assistant-v1',
-          systemPrompt: 'You are a helpful AI assistant.',
-          temperature: 0.7,
-          maxTokens: 1000,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        };
-      }
+    // Use centralized demo mode detection
+    
+    if (isServerSideDemo()) {
+      const id = `demo-${Date.now()}`;
+      const newConversation = {
+        id,
+        title: null,
+        model: 'demo-assistant-v1',
+        systemPrompt: 'You are a helpful AI assistant.',
+        temperature: 0.7,
+        maxTokens: 1000,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      
+      // Store in memory for demo mode
+      initializeDemoStore();
+      demoConversationStore.set(id, newConversation);
+      
+      return newConversation;
+    }
 
+    try {
       return await ctx.db.conversation.create({
         data: {
           title: null, // Will be auto-generated from first message
@@ -103,9 +120,10 @@ export const conversationsRouter = router({
     } catch (error) {
       console.error('Error creating conversation:', error);
       
-      // Fallback to mock conversation if database fails
-      return {
-        id: `fallback-${Date.now()}`,
+      // Auto-fallback to demo mode if database fails
+      const id = `demo-fallback-${Date.now()}`;
+      const fallbackConversation = {
+        id,
         title: null,
         model: 'demo-assistant-v1',
         systemPrompt: 'You are a helpful AI assistant.',
@@ -114,6 +132,12 @@ export const conversationsRouter = router({
         createdAt: new Date(),
         updatedAt: new Date(),
       };
+      
+      // Store in demo store for persistence
+      initializeDemoStore();
+      demoConversationStore.set(id, fallbackConversation);
+      
+      return fallbackConversation;
     }
   }),
 
