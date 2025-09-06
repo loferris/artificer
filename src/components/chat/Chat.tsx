@@ -3,11 +3,15 @@ import { format } from 'date-fns';
 import { trpc } from '../../lib/trpc/client';
 import { useChatStore, useIsConversationReady, useCanSendMessage, useShouldShowRetry } from '../../stores/chatStore';
 import { ExportButton } from '../ExportButton';
+import { useStaticDemo } from '../../hooks/useStaticDemo';
 
 export const Chat: React.FC = () => {
   // Refs
   const inputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Static demo hook
+  const { isDemoMode: isStaticDemo, demoAPI } = useStaticDemo();
 
   // Zustand store
   const {
@@ -50,6 +54,7 @@ export const Chat: React.FC = () => {
     isLoading: conversationsLoading,
     error: conversationsError 
   } = trpc.conversations.list.useQuery(undefined, {
+    enabled: !isStaticDemo, // Disable when in static demo mode
     retry: 1, // Only retry once
     retryDelay: 1000,
     onError: (error) => {
@@ -67,7 +72,7 @@ export const Chat: React.FC = () => {
   } = trpc.messages.getByConversation.useQuery(
     { conversationId: currentConversationId || '' },
     { 
-      enabled: !!currentConversationId && !isDemoMode,
+      enabled: !!currentConversationId && !isDemoMode && !isStaticDemo,
       retry: 1,
       retryDelay: 1000,
       onError: (error) => {
@@ -79,6 +84,16 @@ export const Chat: React.FC = () => {
 
   // Use demo messages when in demo mode
   const displayMessages = isDemoMode ? demoMessages : messages;
+  
+  // Use static demo conversations when in static demo mode
+  const [staticDemoConversations, setStaticDemoConversations] = React.useState<any[]>([]);
+  React.useEffect(() => {
+    if (isStaticDemo) {
+      demoAPI.getConversations().then(setStaticDemoConversations);
+    }
+  }, [isStaticDemo, demoAPI]);
+  
+  const displayConversations = isStaticDemo ? staticDemoConversations : conversations;
   
   // Error logging for production monitoring
   React.useEffect(() => {
@@ -223,8 +238,8 @@ export const Chat: React.FC = () => {
     onSuccess: () => {
       clearError();
       utils.conversations.list.invalidate();
-      if (currentConversationId === conversations[0]?.id) {
-        const nextConversation = conversations.find((c) => c.id !== currentConversationId);
+      if (currentConversationId === displayConversations[0]?.id) {
+        const nextConversation = displayConversations.find((c) => c.id !== currentConversationId);
         setCurrentConversation(nextConversation?.id || null);
       }
     },
@@ -241,7 +256,7 @@ export const Chat: React.FC = () => {
     if (
       !currentConversationId &&
       !isCreatingConversation &&
-      conversations.length === 0 &&
+      displayConversations.length === 0 &&
       !createConversationMutation.isPending
     ) {
       console.log('Attempting to create conversation');
@@ -251,14 +266,14 @@ export const Chat: React.FC = () => {
     else if (
       !currentConversationId &&
       !isCreatingConversation &&
-      conversations.length > 0 &&
+      displayConversations.length > 0 &&
       !createConversationMutation.isPending
     ) {
       console.log('Setting current conversation to first conversation');
-      setCurrentConversation(conversations[0].id);
+      setCurrentConversation(displayConversations[0].id);
     }
   }, [
-    conversations,
+    displayConversations,
     currentConversationId,
     isCreatingConversation,
     createConversationMutation.isPending,
@@ -284,6 +299,18 @@ export const Chat: React.FC = () => {
 
     const messageContent = input.trim();
     if (!messageContent) return;
+
+    // Use static demo API if in demo mode
+    if (isStaticDemo) {
+      startMessageSend(messageContent);
+      try {
+        await demoAPI.sendMessage(messageContent, currentConversationId);
+        finishMessageSend();
+      } catch (error) {
+        handleMessageError('Demo mode error. Please try again.');
+      }
+      return;
+    }
 
     // Update state and send message
     startMessageSend(messageContent);
@@ -316,9 +343,23 @@ export const Chat: React.FC = () => {
   };
 
   // Create new conversation
-  const handleNewConversation = () => {
+  const handleNewConversation = async () => {
     setInput('');
     clearError();
+    
+    // Use static demo API if in demo mode
+    if (isStaticDemo) {
+      try {
+        setCreatingConversation(true);
+        await demoAPI.createConversation();
+        setCreatingConversation(false);
+      } catch (error) {
+        setCreatingConversation(false);
+        setError('Failed to create demo conversation.');
+      }
+      return;
+    }
+    
     createConversationMutation.mutate();
   };
 
@@ -350,7 +391,12 @@ export const Chat: React.FC = () => {
 
   return (
     <>
-    <div className='flex h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50'>
+    {isStaticDemo && (
+      <div className='bg-gradient-to-r from-purple-600 to-pink-600 text-white text-center py-2 px-4 text-sm'>
+        🐻 <strong>TeddyBox Chat Demo</strong> - This is a static demo showcasing the UI. Real version connects to AI models via OpenRouter.
+      </div>
+    )}
+    <div className={`flex ${isStaticDemo ? 'h-[calc(100vh-40px)]' : 'h-screen'} bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50`}>
       {/* Sidebar */}
       <div className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 bg-white/80 backdrop-blur-sm border-r border-pink-200 overflow-hidden flex flex-col`}>
         <div className='p-4 border-b border-pink-100'>
@@ -375,14 +421,14 @@ export const Chat: React.FC = () => {
                 Try again
               </button>
             </div>
-          ) : conversations.length === 0 ? (
+          ) : displayConversations.length === 0 ? (
             <div className='text-center text-gray-500 py-8'>
               <div className='text-4xl mb-2'>💬</div>
               <p>No conversations yet</p>
               <p className='text-sm mt-1'>Start chatting to create one!</p>
             </div>
           ) : (
-            conversations.map((conversation) => (
+            displayConversations.map((conversation) => (
               <div
                 key={conversation.id}
                 className={`p-3 rounded-xl cursor-pointer transition-all duration-200 group relative ${

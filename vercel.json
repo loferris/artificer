@@ -1,26 +1,16 @@
 {
-  "buildCommand": "npx prisma generate && npm run build",
-  "outputDirectory": ".next",
   "framework": "nextjs",
-  "installCommand": "npm install --include=dev",
-  "devCommand": "npm run dev",
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "installCommand": "npm install",
   "env": {
-    "DEMO_MODE": "true",
-    "NODE_ENV": "production",
     "NEXT_PUBLIC_DEMO_MODE": "true",
-    "SITE_NAME": "TeddyBox Chat Demo",
-    "LOG_LEVEL": "info"
+    "SITE_NAME": "TeddyBox Chat Demo"
   },
   "build": {
     "env": {
-      "DEMO_MODE": "true",
-      "NODE_ENV": "production",
-      "NEXT_PUBLIC_DEMO_MODE": "true"
-    }
-  },
-  "functions": {
-    "src/pages/api/**/*.ts": {
-      "maxDuration": 30
+      "NEXT_PUBLIC_DEMO_MODE": "true",
+      "NODE_ENV": "production"
     }
   }
 }
