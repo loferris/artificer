@@ -20,7 +20,7 @@ export const conversationsRouter = router({
   list: publicProcedure.query(async ({ ctx }) => {
     try {
       // In demo mode, return mock conversations
-      if (process.env.DEMO_MODE === 'true' || process.env.NODE_ENV === 'production') {
+      if (process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
         return [
           {
             id: 'demo-1',
@@ -78,7 +78,7 @@ export const conversationsRouter = router({
   create: publicProcedure.mutation(async ({ ctx }) => {
     try {
       // In demo mode, return a mock conversation without database
-      if (process.env.DEMO_MODE === 'true' || process.env.NODE_ENV === 'production') {
+      if (process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
         return {
           id: `demo-${Date.now()}`,
           title: null,

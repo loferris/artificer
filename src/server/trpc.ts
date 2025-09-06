@@ -7,15 +7,37 @@ import { createRateLimitMiddleware, RATE_LIMITS } from './middleware/rateLimiter
 import { logger } from './utils/logger';
 
 // Create context function
-export const createContext = (opts: CreateNextContextOptions) => {
-  const user = getUserFromRequest(opts.req);
-  
-  return {
-    req: opts.req,
-    res: opts.res,
-    db: prisma,
-    user,
-  };
+export const createContext = async (opts: CreateNextContextOptions) => {
+  try {
+    const user = getUserFromRequest(opts.req);
+    
+    // Test database connection in production
+    if (process.env.NODE_ENV === 'production') {
+      try {
+        await prisma.$queryRaw`SELECT 1`;
+      } catch (dbError) {
+        logger.error('Database connection failed in context creation', dbError as Error);
+        // Don't throw here, let individual routes handle DB issues
+      }
+    }
+    
+    return {
+      req: opts.req,
+      res: opts.res,
+      db: prisma,
+      user,
+    };
+  } catch (error) {
+    logger.error('Context creation failed', error as Error);
+    
+    // Return a minimal context to prevent complete failure
+    return {
+      req: opts.req,
+      res: opts.res,
+      db: prisma, // Still provide it, routes can handle DB errors
+      user: null,
+    };
+  }
 };
 
 // Initialize tRPC

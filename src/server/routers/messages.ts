@@ -18,7 +18,7 @@ export const messagesRouter = router({
     .mutation(async ({ ctx, input }) => {
       try {
         // In demo mode, return a mock message without database
-        if (process.env.DEMO_MODE === 'true' || process.env.NODE_ENV === 'production') {
+        if (process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
           return {
             id: `msg-${Date.now()}`,
             conversationId: input.conversationId,
@@ -70,7 +70,7 @@ export const messagesRouter = router({
     .query(async ({ ctx, input }) => {
       try {
         // In demo mode, return mock messages
-        if (process.env.DEMO_MODE === 'true' || process.env.NODE_ENV === 'production') {
+        if (process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
           return [
             {
               id: 'demo-msg-1',
