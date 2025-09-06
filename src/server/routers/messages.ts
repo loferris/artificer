@@ -42,7 +42,11 @@ export const messagesRouter = router({
           return message;
         }
 
-        // Validate conversation exists
+        // In non-demo mode, validate conversation exists
+        if (!ctx.db) {
+          throw new Error('Database not available');
+        }
+        
         const conversation = await ctx.db.conversation.findUnique({
           where: { id: input.conversationId },
         });
@@ -107,7 +111,11 @@ export const messagesRouter = router({
           }));
         }
 
-        // Validate conversation exists
+        // In non-demo mode, validate conversation exists
+        if (!ctx.db) {
+          throw new Error('Database not available');
+        }
+        
         const conversation = await ctx.db.conversation.findUnique({
           where: { id: input.conversationId },
         });

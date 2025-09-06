@@ -50,6 +50,9 @@ export const conversationsRouter = router({
     }
     
     try {
+      if (!ctx.db) {
+        throw new Error('Database not available');
+      }
       const conversations = await ctx.db.conversation.findMany({
         orderBy: { updatedAt: 'desc' },
         include: {
@@ -108,6 +111,9 @@ export const conversationsRouter = router({
     }
 
     try {
+      if (!ctx.db) {
+        throw new Error('Database not available');
+      }
       return await ctx.db.conversation.create({
         data: {
           title: null, // Will be auto-generated from first message
@@ -152,6 +158,20 @@ export const conversationsRouter = router({
       try {
         const title = generateTitle(input.firstMessage);
         
+        // In demo mode, just return success
+        if (isServerSideDemo() || !ctx.db) {
+          return {
+            id: input.conversationId,
+            title,
+            model: 'demo-assistant-v1',
+            systemPrompt: 'You are a helpful AI assistant.',
+            temperature: 0.7,
+            maxTokens: 1000,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+        }
+        
         return await ctx.db.conversation.update({
           where: { id: input.conversationId },
           data: { title },
@@ -168,6 +188,11 @@ export const conversationsRouter = router({
 
   delete: publicProcedure.input(z.string().min(1, 'Conversation ID is required')).mutation(async ({ ctx, input: conversationId }) => {
     try {
+      // In demo mode, just return success
+      if (isServerSideDemo() || !ctx.db) {
+        return { success: true };
+      }
+      
       // Check if conversation exists
       const conversation = await ctx.db.conversation.findUnique({
         where: { id: conversationId },

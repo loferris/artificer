@@ -11,8 +11,10 @@ export const createContext = async (opts: CreateNextContextOptions) => {
   try {
     const user = getUserFromRequest(opts.req);
     
-    // Test database connection in production
-    if (process.env.NODE_ENV === 'production') {
+    // In demo mode, skip database testing entirely
+    const isDemoMode = process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+    
+    if (!isDemoMode && process.env.NODE_ENV === 'production') {
       try {
         await prisma.$queryRaw`SELECT 1`;
       } catch (dbError) {
@@ -24,17 +26,18 @@ export const createContext = async (opts: CreateNextContextOptions) => {
     return {
       req: opts.req,
       res: opts.res,
-      db: prisma,
+      db: isDemoMode ? null : prisma, // Don't provide prisma in demo mode
       user,
     };
   } catch (error) {
     logger.error('Context creation failed', error as Error);
     
     // Return a minimal context to prevent complete failure
+    const isDemoMode = process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
     return {
       req: opts.req,
       res: opts.res,
-      db: prisma, // Still provide it, routes can handle DB errors
+      db: isDemoMode ? null : prisma, // Don't provide prisma in demo mode
       user: null,
     };
   }
