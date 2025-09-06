@@ -25,6 +25,7 @@ export const Chat: React.FC = () => {
     sidebarOpen,
     isDemoMode,
     demoMessages,
+    demoConversations,
     setCurrentConversation,
     setLoading,
     setCreatingConversation,
@@ -85,15 +86,10 @@ export const Chat: React.FC = () => {
   // Use demo messages when in demo mode
   const displayMessages = isDemoMode ? demoMessages : messages;
   
-  // Use static demo conversations when in static demo mode
-  const [staticDemoConversations, setStaticDemoConversations] = React.useState<any[]>([]);
-  React.useEffect(() => {
-    if (isStaticDemo) {
-      demoAPI.getConversations().then(setStaticDemoConversations);
-    }
-  }, [isStaticDemo, demoAPI]);
-  
-  const displayConversations = isStaticDemo ? staticDemoConversations : conversations;
+  // Use demo conversations from store when in static demo mode
+  const displayConversations = isStaticDemo 
+    ? Array.from(demoConversations.values()) 
+    : conversations;
   
   // Error logging for production monitoring
   React.useEffect(() => {
