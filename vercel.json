@@ -7,9 +7,8 @@
   "env": {
     "DEMO_MODE": "true",
     "NODE_ENV": "production",
-    "DATABASE_URL": "file:./prisma/dev.db",
     "NEXT_PUBLIC_DEMO_MODE": "true",
-    "SITE_NAME": "chat-app-demo",
+    "SITE_NAME": "TeddyBox Chat Demo",
     "LOG_LEVEL": "info"
   },
   "build": {
