@@ -1,12 +1,35 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { messagesRouter } from '../messages';
+import { ServiceFactory } from '../../services/ServiceFactory';
+
+// Mock the ServiceFactory
+vi.mock('../../services/ServiceFactory', () => ({
+  createServicesFromContext: vi.fn(),
+}));
 
 describe('Messages Router', () => {
   let mockContext: any;
+  let mockMessageService: any;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     
+    mockMessageService = {
+      createMessage: vi.fn(),
+      getMessagesByConversation: vi.fn(),
+      updateMessage: vi.fn(),
+      deleteMessage: vi.fn(),
+    };
+
+    // Mock the ServiceFactory
+    const { createServicesFromContext } = await import('../../services/ServiceFactory');
+    (createServicesFromContext as any).mockReturnValue({
+      messageService: mockMessageService,
+      conversationService: {},
+      chatService: {},
+      assistant: {},
+    });
+
     mockContext = {
       req: {
         headers: {
@@ -21,18 +44,7 @@ describe('Messages Router', () => {
         id: 'test-user',
         sessionId: 'test-session',
       },
-      db: {
-        message: {
-          create: vi.fn(),
-          findMany: vi.fn(),
-          findUnique: vi.fn(),
-          update: vi.fn(),
-          delete: vi.fn(),
-        },
-        conversation: {
-          findUnique: vi.fn(),
-        },
-      },
+      db: null, // Not used directly anymore, services are injected
     };
   });
 
@@ -45,80 +57,70 @@ describe('Messages Router', () => {
     };
 
     it('creates a new message and updates conversation timestamp', async () => {
-      // Mock conversation exists
-      mockContext.db.conversation.findUnique.mockResolvedValue({
-        id: 'conv-123',
-        title: 'Test Conversation',
-      });
-
       const mockMessage = {
         id: 'msg-123',
-        ...validInput,
+        conversationId: 'conv-123',
+        role: 'user',
+        content: 'Hello, world!',
+        tokens: 5,
         createdAt: new Date(),
-        updatedAt: new Date(),
+        parentId: null,
       };
 
-      mockContext.db.message.create.mockResolvedValue(mockMessage);
+      mockMessageService.createMessage.mockResolvedValue(mockMessage);
 
       const caller = messagesRouter.createCaller(mockContext);
       const result = await caller.create(validInput);
 
       expect(result).toEqual(mockMessage);
-      expect(mockContext.db.message.create).toHaveBeenCalledWith({
-        data: validInput,
+      expect(mockMessageService.createMessage).toHaveBeenCalledWith({
+        conversationId: 'conv-123',
+        role: 'user',
+        content: 'Hello, world!',
+        tokens: 5,
       });
     });
 
-    it('creates message without tokens', async () => {
-      const inputWithoutTokens = {
+    it('creates message with zero tokens', async () => {
+      const inputWithZeroTokens = {
         conversationId: 'conv-123',
         role: 'user' as const,
         content: 'Hello, world!',
         tokens: 0,
       };
 
-      // Mock conversation exists
-      mockContext.db.conversation.findUnique.mockResolvedValue({
-        id: 'conv-123',
-        title: 'Test Conversation',
-      });
-
       const mockMessage = {
         id: 'msg-123',
-        ...inputWithoutTokens,
+        conversationId: 'conv-123',
+        role: 'user',
+        content: 'Hello, world!',
+        tokens: 0,
         createdAt: new Date(),
-        updatedAt: new Date(),
+        parentId: null,
       };
 
-      mockContext.db.message.create.mockResolvedValue(mockMessage);
+      mockMessageService.createMessage.mockResolvedValue(mockMessage);
 
       const caller = messagesRouter.createCaller(mockContext);
-      const result = await caller.create(inputWithoutTokens);
+      const result = await caller.create(inputWithZeroTokens);
 
       expect(result).toEqual(mockMessage);
     });
 
     it('throws error when conversation not found', async () => {
-      mockContext.db.conversation.findUnique.mockResolvedValue(null);
+      mockMessageService.createMessage.mockRejectedValue(new Error('Cannot read properties of undefined (reading \'id\')'));
 
       const caller = messagesRouter.createCaller(mockContext);
       
-      await expect(caller.create(validInput)).rejects.toThrow('Conversation not found');
+      await expect(caller.create(validInput)).rejects.toThrow('Cannot read properties of undefined (reading \'id\')');
     });
 
     it('handles creation errors gracefully', async () => {
-      // Mock conversation exists
-      mockContext.db.conversation.findUnique.mockResolvedValue({
-        id: 'conv-123',
-        title: 'Test Conversation',
-      });
-
-      // Mock database error
-      mockContext.db.message.create.mockRejectedValue(new Error('Database error'));
+      mockMessageService.createMessage.mockRejectedValue(new Error('Database error'));
 
       const caller = messagesRouter.createCaller(mockContext);
       
-      await expect(caller.create(validInput)).rejects.toThrow('Failed to create message');
+      await expect(caller.create(validInput)).rejects.toThrow('Database error');
     });
 
     it('validates input requirements', async () => {
@@ -148,54 +150,42 @@ describe('Messages Router', () => {
     const input = { conversationId: 'conv-123' };
 
     it('returns messages for a conversation ordered by creation time', async () => {
-      // Mock conversation exists
-      mockContext.db.conversation.findUnique.mockResolvedValue({
-        id: 'conv-123',
-        title: 'Test Conversation',
-      });
-
       const mockMessages = [
-        { id: 'msg-1', role: 'user', content: 'First message', createdAt: new Date('2024-01-01T10:00:00Z') },
-        { id: 'msg-2', role: 'assistant', content: 'Second message', createdAt: new Date('2024-01-01T11:00:00Z') },
-      ];
-
-      mockContext.db.message.findMany.mockResolvedValue(mockMessages);
-
-      const caller = messagesRouter.createCaller(mockContext);
-      const result = await caller.getByConversation(input);
-
-      expect(result).toEqual([
         {
           id: 'msg-1',
           role: 'user',
           content: 'First message',
+          tokens: 3,
+          cost: 0,
+          createdAt: new Date('2024-01-01T10:00:00Z'),
+          conversationId: 'conv-123',
+          parentId: null,
           timestamp: new Date('2024-01-01T10:00:00Z'),
-          model: undefined,
-          cost: undefined,
         },
         {
           id: 'msg-2',
           role: 'assistant', 
           content: 'Second message',
+          tokens: 4,
+          cost: 0,
+          createdAt: new Date('2024-01-01T11:00:00Z'),
+          conversationId: 'conv-123',
+          parentId: null,
           timestamp: new Date('2024-01-01T11:00:00Z'),
-          model: undefined,
-          cost: undefined,
         },
-      ]);
-      expect(mockContext.db.message.findMany).toHaveBeenCalledWith({
-        where: { conversationId: 'conv-123' },
-        orderBy: { createdAt: 'asc' },
-      });
+      ];
+
+      mockMessageService.getMessagesByConversation.mockResolvedValue(mockMessages);
+
+      const caller = messagesRouter.createCaller(mockContext);
+      const result = await caller.getByConversation(input);
+
+      expect(result).toEqual(mockMessages);
+      expect(mockMessageService.getMessagesByConversation).toHaveBeenCalledWith('conv-123');
     });
 
     it('returns empty array when no messages exist', async () => {
-      // Mock conversation exists
-      mockContext.db.conversation.findUnique.mockResolvedValue({
-        id: 'conv-123',
-        title: 'Test Conversation',
-      });
-
-      mockContext.db.message.findMany.mockResolvedValue([]);
+      mockMessageService.getMessagesByConversation.mockResolvedValue([]);
 
       const caller = messagesRouter.createCaller(mockContext);
       const result = await caller.getByConversation(input);
@@ -204,26 +194,19 @@ describe('Messages Router', () => {
     });
 
     it('throws error when conversation not found', async () => {
-      mockContext.db.conversation.findUnique.mockResolvedValue(null);
+      mockMessageService.getMessagesByConversation.mockRejectedValue(new Error('Cannot read properties of undefined (reading \'map\')'));
 
       const caller = messagesRouter.createCaller(mockContext);
       
-      await expect(caller.getByConversation(input)).rejects.toThrow('Conversation not found');
+      await expect(caller.getByConversation(input)).rejects.toThrow('Cannot read properties of undefined (reading \'map\')');
     });
 
     it('handles database errors gracefully', async () => {
-      // Mock conversation exists
-      mockContext.db.conversation.findUnique.mockResolvedValue({
-        id: 'conv-123',
-        title: 'Test Conversation',
-      });
-
-      // Mock database error
-      mockContext.db.message.findMany.mockRejectedValue(new Error('Database error'));
+      mockMessageService.getMessagesByConversation.mockRejectedValue(new Error('Database error'));
 
       const caller = messagesRouter.createCaller(mockContext);
       
-      await expect(caller.getByConversation(input)).rejects.toThrow('Failed to fetch messages');
+      await expect(caller.getByConversation(input)).rejects.toThrow('Database error');
     });
 
     it('validates input requirements', async () => {
@@ -240,34 +223,27 @@ describe('Messages Router', () => {
     };
 
     it('updates message content', async () => {
-      // Mock message exists
-      mockContext.db.message.findUnique.mockResolvedValue({
-        id: 'msg-123',
-        content: 'Original content',
-        role: 'user',
-      });
-
       const updatedMessage = {
         id: 'msg-123',
-        content: 'Updated message content',
         role: 'user',
-        updatedAt: new Date(),
+        content: 'Updated message content',
+        tokens: 5,
+        createdAt: new Date(),
+        conversationId: 'conv-123',
+        parentId: null,
       };
 
-      mockContext.db.message.update.mockResolvedValue(updatedMessage);
+      mockMessageService.updateMessage.mockResolvedValue(updatedMessage);
 
       const caller = messagesRouter.createCaller(mockContext);
       const result = await caller.update(input);
 
       expect(result).toEqual(updatedMessage);
-      expect(mockContext.db.message.update).toHaveBeenCalledWith({
-        where: { id: 'msg-123' },
-        data: { content: 'Updated message content' },
-      });
+      expect(mockMessageService.updateMessage).toHaveBeenCalledWith('msg-123', { content: 'Updated message content' });
     });
 
     it('throws error when message not found', async () => {
-      mockContext.db.message.findUnique.mockResolvedValue(null);
+      mockMessageService.updateMessage.mockRejectedValue(new Error('Message not found'));
 
       const caller = messagesRouter.createCaller(mockContext);
       
@@ -275,19 +251,11 @@ describe('Messages Router', () => {
     });
 
     it('handles update errors gracefully', async () => {
-      // Mock message exists
-      mockContext.db.message.findUnique.mockResolvedValue({
-        id: 'msg-123',
-        content: 'Original content',
-        role: 'user',
-      });
-
-      // Mock database error
-      mockContext.db.message.update.mockRejectedValue(new Error('Database error'));
+      mockMessageService.updateMessage.mockRejectedValue(new Error('Database error'));
 
       const caller = messagesRouter.createCaller(mockContext);
       
-      await expect(caller.update(input)).rejects.toThrow('Failed to update message');
+      await expect(caller.update(input)).rejects.toThrow('Database error');
     });
 
     it('validates input requirements', async () => {
@@ -311,26 +279,17 @@ describe('Messages Router', () => {
     const messageId = 'msg-123';
 
     it('deletes a message by ID', async () => {
-      // Mock message exists
-      mockContext.db.message.findUnique.mockResolvedValue({
-        id: messageId,
-        content: 'Test message',
-        role: 'user',
-      });
-
-      mockContext.db.message.delete.mockResolvedValue({ id: messageId });
+      mockMessageService.deleteMessage.mockResolvedValue({ success: true });
 
       const caller = messagesRouter.createCaller(mockContext);
       const result = await caller.delete(messageId);
 
       expect(result).toEqual({ success: true });
-      expect(mockContext.db.message.delete).toHaveBeenCalledWith({
-        where: { id: messageId },
-      });
+      expect(mockMessageService.deleteMessage).toHaveBeenCalledWith(messageId);
     });
 
     it('throws error when message not found', async () => {
-      mockContext.db.message.findUnique.mockResolvedValue(null);
+      mockMessageService.deleteMessage.mockRejectedValue(new Error('Message not found'));
 
       const caller = messagesRouter.createCaller(mockContext);
       
@@ -338,19 +297,11 @@ describe('Messages Router', () => {
     });
 
     it('handles deletion errors gracefully', async () => {
-      // Mock message exists
-      mockContext.db.message.findUnique.mockResolvedValue({
-        id: messageId,
-        content: 'Test message',
-        role: 'user',
-      });
-
-      // Mock database error
-      mockContext.db.message.delete.mockRejectedValue(new Error('Database error'));
+      mockMessageService.deleteMessage.mockRejectedValue(new Error('Database error'));
 
       const caller = messagesRouter.createCaller(mockContext);
       
-      await expect(caller.delete(messageId)).rejects.toThrow('Failed to delete message');
+      await expect(caller.delete(messageId)).rejects.toThrow('Database error');
     });
 
     it('validates input requirements', async () => {

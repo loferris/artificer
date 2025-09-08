@@ -258,6 +258,25 @@ export class DatabaseConversationService implements ConversationService {
     });
   }
 
+  // Wrapper methods for router compatibility
+  async createConversation(input?: CreateConversationInput): Promise<ConversationWithMessages> {
+    return this.create(input);
+  }
+
+  async listConversations(): Promise<ConversationListItem[]> {
+    return this.list();
+  }
+
+  async updateConversationTitle(conversationId: string, firstMessage: string): Promise<ConversationWithMessages> {
+    const title = this.generateTitle(firstMessage);
+    return this.updateTitle(conversationId, title);
+  }
+
+  async deleteConversation(conversationId: string): Promise<{ success: boolean }> {
+    await this.delete(conversationId);
+    return { success: true };
+  }
+
   private transformConversation(conversation: any): ConversationWithMessages {
     return {
       id: conversation.id,
@@ -398,5 +417,24 @@ export class DemoConversationService implements ConversationService {
       conversation.updatedAt = new Date();
       this.conversations.set(conversationId, conversation);
     }
+  }
+
+  // Wrapper methods for router compatibility
+  async createConversation(input?: CreateConversationInput): Promise<ConversationWithMessages> {
+    return this.create(input);
+  }
+
+  async listConversations(): Promise<ConversationListItem[]> {
+    return this.list();
+  }
+
+  async updateConversationTitle(conversationId: string, firstMessage: string): Promise<ConversationWithMessages> {
+    const title = this.generateTitle(firstMessage);
+    return this.updateTitle(conversationId, title);
+  }
+
+  async deleteConversation(conversationId: string): Promise<{ success: boolean }> {
+    await this.delete(conversationId);
+    return { success: true };
   }
 }

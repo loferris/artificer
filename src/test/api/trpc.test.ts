@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMocks } from 'node-mocks-http';
-import handler from '../trpc/[trpc]';
+import handler from '../../pages/api/trpc/[trpc]';
 
 // Mock the tRPC modules
-vi.mock('../../../server/root', () => ({
+vi.mock('../../server/root', () => ({
   appRouter: {
     createCaller: vi.fn(),
   },
 }));
 
-vi.mock('../../../server/trpc', () => ({
+vi.mock('../../server/trpc', () => ({
   createContext: vi.fn(),
 }));
 
@@ -35,11 +35,14 @@ describe('/api/trpc/[trpc]', () => {
   });
 
   it('exports config correctly', async () => {
-    const { config } = await import('../trpc/[trpc]');
+    const { config } = await import('../../pages/api/trpc/[trpc]');
     
     expect(config).toEqual({
       api: {
-        bodyParser: false,
+        bodyParser: {
+          sizeLimit: '1mb',
+        },
+        responseLimit: false,
       },
     });
   });

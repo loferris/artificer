@@ -2,14 +2,14 @@
 export const DEMO_CONFIG = {
   // Force mock assistant in demo mode
   FORCE_MOCK_ASSISTANT: process.env.DEMO_MODE === 'true',
-  
+
   // Demo rate limits (more generous for showcase)
   DEMO_RATE_LIMITS: {
     CHAT: { maxRequests: 100, windowMs: 60 * 1000 }, // 100 messages per minute
     API: { maxRequests: 300, windowMs: 60 * 1000 }, // 300 API calls per minute
     EXPORT: { maxRequests: 20, windowMs: 60 * 1000 }, // 20 exports per minute
   },
-  
+
   // Demo sample conversations
   SAMPLE_CONVERSATIONS: [
     {
@@ -26,7 +26,7 @@ export const DEMO_CONFIG = {
           content: `Welcome to this AI chat application! 🎉 This is a showcase demo featuring:
 
 • **Real-time AI conversations** - Chat with various AI models
-• **Conversation management** - Create, organize, and delete chats  
+• **Conversation management** - Create, organize, and delete chats
 • **Export functionality** - Download your conversations as Markdown or JSON
 • **Beautiful UI** - Modern, responsive design with Tailwind CSS
 • **Session persistence** - Your conversations are saved locally
@@ -36,11 +36,11 @@ This demo uses a mock AI assistant to showcase the interface and functionality. 
 
 Try asking me anything or explore the export feature! 🚀`,
           timestamp: new Date(Date.now() - 3599000),
-        }
-      ]
+        },
+      ],
     },
     {
-      id: 'demo-2', 
+      id: 'demo-2',
       title: 'Technical Features Demo',
       messages: [
         {
@@ -60,7 +60,7 @@ Try asking me anything or explore the export feature! 🚀`,
 
 **Backend:**
 • Node.js server with tRPC
-• Prisma ORM with SQLite database
+• Prisma ORM with PostgreSQL database
 • Rate limiting and security middleware
 • Structured logging system
 
@@ -79,11 +79,11 @@ Try asking me anything or explore the export feature! 🚀`,
 
 The architecture is designed to be scalable, secure, and maintainable! 💪`,
           timestamp: new Date(Date.now() - 1799000),
-        }
-      ]
-    }
+        },
+      ],
+    },
   ],
-  
+
   // Demo environment detection
   IS_DEMO: process.env.VERCEL_ENV === 'preview' || process.env.DEMO_MODE === 'true',
 } as const;
