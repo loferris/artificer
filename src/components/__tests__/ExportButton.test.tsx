@@ -64,19 +64,19 @@ describe('ExportButton', () => {
   describe('Basic Rendering', () => {
     it('renders export button correctly', () => {
       render(<ExportButton />);
-      
+
       expect(screen.getByText('📤 Export All')).toBeInTheDocument();
     });
 
     it('renders with custom className', () => {
-      const { container } = render(<ExportButton className="custom-class" />);
-      
+      const { container } = render(<ExportButton className='custom-class' />);
+
       expect(container.firstChild).toHaveClass('custom-class');
     });
 
     it('shows conversation-specific title when conversationId is provided', () => {
-      render(<ExportButton conversationId="test-conversation" />);
-      
+      render(<ExportButton conversationId='test-conversation' />);
+
       // The button text is always "📤 Export All", but the dropdown title changes
       expect(screen.getByText('📤 Export All')).toBeInTheDocument();
     });
@@ -85,7 +85,7 @@ describe('ExportButton', () => {
   describe('Component Structure', () => {
     it('renders button with correct attributes', () => {
       render(<ExportButton />);
-      
+
       const button = screen.getByRole('button');
       expect(button).toBeInTheDocument();
       expect(button).toHaveClass('w-full', 'bg-gradient-to-r', 'from-pink-500', 'to-purple-600');
@@ -93,7 +93,7 @@ describe('ExportButton', () => {
 
     it('renders with proper accessibility attributes', () => {
       render(<ExportButton />);
-      
+
       const button = screen.getByRole('button');
       expect(button).not.toHaveAttribute('disabled');
     });

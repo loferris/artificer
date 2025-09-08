@@ -13,7 +13,7 @@ describe('Messages Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     mockMessageService = {
       createMessage: vi.fn(),
       getMessagesByConversation: vi.fn(),
@@ -108,18 +108,22 @@ describe('Messages Router', () => {
     });
 
     it('throws error when conversation not found', async () => {
-      mockMessageService.createMessage.mockRejectedValue(new Error('Cannot read properties of undefined (reading \'id\')'));
+      mockMessageService.createMessage.mockRejectedValue(
+        new Error("Cannot read properties of undefined (reading 'id')"),
+      );
 
       const caller = messagesRouter.createCaller(mockContext);
-      
-      await expect(caller.create(validInput)).rejects.toThrow('Cannot read properties of undefined (reading \'id\')');
+
+      await expect(caller.create(validInput)).rejects.toThrow(
+        "Cannot read properties of undefined (reading 'id')",
+      );
     });
 
     it('handles creation errors gracefully', async () => {
       mockMessageService.createMessage.mockRejectedValue(new Error('Database error'));
 
       const caller = messagesRouter.createCaller(mockContext);
-      
+
       await expect(caller.create(validInput)).rejects.toThrow('Database error');
     });
 
@@ -127,22 +131,28 @@ describe('Messages Router', () => {
       const caller = messagesRouter.createCaller(mockContext);
 
       // Test empty conversation ID
-      await expect(caller.create({
-        ...validInput,
-        conversationId: '',
-      })).rejects.toThrow('Conversation ID is required');
+      await expect(
+        caller.create({
+          ...validInput,
+          conversationId: '',
+        }),
+      ).rejects.toThrow('Conversation ID is required');
 
       // Test empty content
-      await expect(caller.create({
-        ...validInput,
-        content: '',
-      })).rejects.toThrow('Message content cannot be empty');
+      await expect(
+        caller.create({
+          ...validInput,
+          content: '',
+        }),
+      ).rejects.toThrow('Message content cannot be empty');
 
       // Test negative tokens
-      await expect(caller.create({
-        ...validInput,
-        tokens: -1,
-      })).rejects.toThrow('Token count must be non-negative');
+      await expect(
+        caller.create({
+          ...validInput,
+          tokens: -1,
+        }),
+      ).rejects.toThrow('Token count must be non-negative');
     });
   });
 
@@ -164,7 +174,7 @@ describe('Messages Router', () => {
         },
         {
           id: 'msg-2',
-          role: 'assistant', 
+          role: 'assistant',
           content: 'Second message',
           tokens: 4,
           cost: 0,
@@ -194,25 +204,31 @@ describe('Messages Router', () => {
     });
 
     it('throws error when conversation not found', async () => {
-      mockMessageService.getMessagesByConversation.mockRejectedValue(new Error('Cannot read properties of undefined (reading \'map\')'));
+      mockMessageService.getMessagesByConversation.mockRejectedValue(
+        new Error("Cannot read properties of undefined (reading 'map')"),
+      );
 
       const caller = messagesRouter.createCaller(mockContext);
-      
-      await expect(caller.getByConversation(input)).rejects.toThrow('Cannot read properties of undefined (reading \'map\')');
+
+      await expect(caller.getByConversation(input)).rejects.toThrow(
+        "Cannot read properties of undefined (reading 'map')",
+      );
     });
 
     it('handles database errors gracefully', async () => {
       mockMessageService.getMessagesByConversation.mockRejectedValue(new Error('Database error'));
 
       const caller = messagesRouter.createCaller(mockContext);
-      
+
       await expect(caller.getByConversation(input)).rejects.toThrow('Database error');
     });
 
     it('validates input requirements', async () => {
       const caller = messagesRouter.createCaller(mockContext);
 
-      await expect(caller.getByConversation({ conversationId: '' })).rejects.toThrow('Conversation ID is required');
+      await expect(caller.getByConversation({ conversationId: '' })).rejects.toThrow(
+        'Conversation ID is required',
+      );
     });
   });
 
@@ -239,14 +255,16 @@ describe('Messages Router', () => {
       const result = await caller.update(input);
 
       expect(result).toEqual(updatedMessage);
-      expect(mockMessageService.updateMessage).toHaveBeenCalledWith('msg-123', { content: 'Updated message content' });
+      expect(mockMessageService.updateMessage).toHaveBeenCalledWith('msg-123', {
+        content: 'Updated message content',
+      });
     });
 
     it('throws error when message not found', async () => {
       mockMessageService.updateMessage.mockRejectedValue(new Error('Message not found'));
 
       const caller = messagesRouter.createCaller(mockContext);
-      
+
       await expect(caller.update(input)).rejects.toThrow('Message not found');
     });
 
@@ -254,7 +272,7 @@ describe('Messages Router', () => {
       mockMessageService.updateMessage.mockRejectedValue(new Error('Database error'));
 
       const caller = messagesRouter.createCaller(mockContext);
-      
+
       await expect(caller.update(input)).rejects.toThrow('Database error');
     });
 
@@ -262,16 +280,20 @@ describe('Messages Router', () => {
       const caller = messagesRouter.createCaller(mockContext);
 
       // Test empty message ID
-      await expect(caller.update({
-        id: '',
-        content: 'Updated content',
-      })).rejects.toThrow('Message ID is required');
+      await expect(
+        caller.update({
+          id: '',
+          content: 'Updated content',
+        }),
+      ).rejects.toThrow('Message ID is required');
 
       // Test empty content
-      await expect(caller.update({
-        id: 'msg-123',
-        content: '',
-      })).rejects.toThrow('Message content cannot be empty');
+      await expect(
+        caller.update({
+          id: 'msg-123',
+          content: '',
+        }),
+      ).rejects.toThrow('Message content cannot be empty');
     });
   });
 
@@ -292,7 +314,7 @@ describe('Messages Router', () => {
       mockMessageService.deleteMessage.mockRejectedValue(new Error('Message not found'));
 
       const caller = messagesRouter.createCaller(mockContext);
-      
+
       await expect(caller.delete(messageId)).rejects.toThrow('Message not found');
     });
 
@@ -300,7 +322,7 @@ describe('Messages Router', () => {
       mockMessageService.deleteMessage.mockRejectedValue(new Error('Database error'));
 
       const caller = messagesRouter.createCaller(mockContext);
-      
+
       await expect(caller.delete(messageId)).rejects.toThrow('Database error');
     });
 

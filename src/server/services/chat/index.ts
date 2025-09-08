@@ -4,5 +4,5 @@ export {
   DemoChatService,
   type ChatMessage,
   type SendMessageInput,
-  type SendMessageResult
+  type SendMessageResult,
 } from './ChatService';

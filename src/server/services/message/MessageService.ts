@@ -107,7 +107,7 @@ export class DatabaseMessageService implements MessageService {
       orderBy: { createdAt: 'asc' },
     });
 
-    return messages.map(msg => {
+    return messages.map((msg) => {
       const baseMessage = this.transformMessage(msg);
       return {
         ...baseMessage,
@@ -161,7 +161,9 @@ export class DatabaseMessageService implements MessageService {
     });
   }
 
-  async getConversationHistory(conversationId: string): Promise<Array<{ role: string; content: string }>> {
+  async getConversationHistory(
+    conversationId: string,
+  ): Promise<Array<{ role: string; content: string }>> {
     const messages = await this.db.message.findMany({
       where: { conversationId },
       orderBy: { createdAt: 'asc' },
@@ -171,7 +173,7 @@ export class DatabaseMessageService implements MessageService {
       },
     });
 
-    return messages.map(msg => ({
+    return messages.map((msg) => ({
       role: msg.role,
       content: msg.content,
     }));
@@ -194,13 +196,13 @@ export class DatabaseMessageService implements MessageService {
       'deepseek-chat': 0.0000002,
     };
 
-    const rate = model ? (costPerToken[model] || 0.000001) : 0.000002; // Default rate
+    const rate = model ? costPerToken[model] || 0.000001 : 0.000002; // Default rate
     return tokens * rate;
   }
 
   async createBatch(messages: CreateMessageInput[]): Promise<Message[]> {
     const createdMessages = await this.db.$transaction(
-      messages.map(input =>
+      messages.map((input) =>
         this.db.message.create({
           data: {
             conversationId: input.conversationId,
@@ -209,11 +211,11 @@ export class DatabaseMessageService implements MessageService {
             tokens: this.estimateTokens(input.content),
             parentId: input.parentId || null,
           },
-        })
-      )
+        }),
+      ),
     );
 
-    return createdMessages.map(msg => this.transformMessage(msg));
+    return createdMessages.map((msg) => this.transformMessage(msg));
   }
 
   // Wrapper methods for router compatibility
@@ -259,7 +261,8 @@ export class DemoMessageService implements MessageService {
     const sampleMessage: Message = {
       id: 'demo-msg-1',
       role: 'assistant',
-      content: 'Welcome to this AI chat application! This is a showcase demo featuring real-time AI conversations, conversation management, export functionality, and more!',
+      content:
+        'Welcome to this AI chat application! This is a showcase demo featuring real-time AI conversations, conversation management, export functionality, and more!',
       tokens: 25,
       createdAt: new Date(Date.now() - 3600000),
       conversationId: 'demo-1',
@@ -299,11 +302,11 @@ export class DemoMessageService implements MessageService {
   async getByConversation(conversationId: string): Promise<MessageWithCost[]> {
     const messageIds = this.conversationMessages.get(conversationId) || [];
     const messages = messageIds
-      .map(id => this.messages.get(id))
+      .map((id) => this.messages.get(id))
       .filter((msg): msg is Message => msg !== undefined)
       .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
 
-    return messages.map(msg => ({
+    return messages.map((msg) => ({
       ...msg,
       cost: this.calculateCost(msg.tokens || 0),
       model: 'demo-assistant-v1',
@@ -342,13 +345,15 @@ export class DemoMessageService implements MessageService {
 
     // Remove from conversation message list
     const conversationMsgIds = this.conversationMessages.get(message.conversationId) || [];
-    const filteredIds = conversationMsgIds.filter(id => id !== messageId);
+    const filteredIds = conversationMsgIds.filter((id) => id !== messageId);
     this.conversationMessages.set(message.conversationId, filteredIds);
   }
 
-  async getConversationHistory(conversationId: string): Promise<Array<{ role: string; content: string }>> {
+  async getConversationHistory(
+    conversationId: string,
+  ): Promise<Array<{ role: string; content: string }>> {
     const messages = await this.getByConversation(conversationId);
-    return messages.map(msg => ({
+    return messages.map((msg) => ({
       role: msg.role,
       content: msg.content,
     }));

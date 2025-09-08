@@ -35,10 +35,10 @@ describe('Database Initialization', () => {
       (prisma.$connect as vi.Mock).mockRejectedValue(connectionError);
 
       await expect(initDatabase()).rejects.toThrow('Connection failed');
-      
+
       expect(mockConsoleError).toHaveBeenCalledWith(
         '❌ Database connection failed:',
-        connectionError
+        connectionError,
       );
     });
 
@@ -48,11 +48,8 @@ describe('Database Initialization', () => {
       (prisma.$connect as vi.Mock).mockRejectedValue(stringError);
 
       await expect(initDatabase()).rejects.toBe(stringError);
-      
-      expect(mockConsoleError).toHaveBeenCalledWith(
-        '❌ Database connection failed:',
-        stringError
-      );
+
+      expect(mockConsoleError).toHaveBeenCalledWith('❌ Database connection failed:', stringError);
     });
   });
 

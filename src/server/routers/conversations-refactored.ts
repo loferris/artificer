@@ -21,13 +21,15 @@ export const conversationsRouterRefactored = router({
 
   create: publicProcedure
     .input(
-      z.object({
-        title: z.string().optional(),
-        model: z.string().optional(),
-        systemPrompt: z.string().optional(),
-        temperature: z.number().min(0).max(2).optional(),
-        maxTokens: z.number().min(1).max(4000).optional(),
-      }).optional()
+      z
+        .object({
+          title: z.string().optional(),
+          model: z.string().optional(),
+          systemPrompt: z.string().optional(),
+          temperature: z.number().min(0).max(2).optional(),
+          maxTokens: z.number().min(1).max(4000).optional(),
+        })
+        .optional(),
     )
     .mutation(async ({ ctx, input }) => {
       try {
@@ -61,7 +63,7 @@ export const conversationsRouterRefactored = router({
         // Validate access and get conversation
         const conversation = await conversationService.validateAccess(
           conversationId,
-          ctx.user.sessionId
+          ctx.user.sessionId,
         );
 
         return conversation;
@@ -79,7 +81,7 @@ export const conversationsRouterRefactored = router({
         systemPrompt: z.string().optional(),
         temperature: z.number().min(0).max(2).optional(),
         maxTokens: z.number().min(1).max(4000).optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       try {
@@ -113,7 +115,7 @@ export const conversationsRouterRefactored = router({
       z.object({
         conversationId: z.string().min(1, 'Conversation ID is required'),
         firstMessage: z.string().min(1, 'First message is required'),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       try {
@@ -124,10 +126,7 @@ export const conversationsRouterRefactored = router({
         const title = conversationService.generateTitle(input.firstMessage);
 
         // Update title
-        const conversation = await conversationService.updateTitle(
-          input.conversationId,
-          title
-        );
+        const conversation = await conversationService.updateTitle(input.conversationId, title);
 
         return conversation;
       } catch (error) {

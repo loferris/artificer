@@ -6,10 +6,12 @@ export interface SessionUser {
   sessionId: string;
 }
 
-export function getUserFromRequest(req: { headers: Record<string, string | string[] | undefined> }): SessionUser | null {
+export function getUserFromRequest(req: {
+  headers: Record<string, string | string[] | undefined>;
+}): SessionUser | null {
   // Get session ID from headers or generate one
   const sessionId = req.headers['x-session-id'] || req.headers['user-agent'] || 'anonymous';
-  
+
   if (!sessionId) {
     return null;
   }
@@ -17,7 +19,7 @@ export function getUserFromRequest(req: { headers: Record<string, string | strin
   // Create a simple hash-based user ID from session info
   // In production, this should be replaced with proper JWT/session management
   const userId = `user_${Buffer.from(sessionId).toString('base64').slice(0, 16)}`;
-  
+
   return {
     id: userId,
     sessionId: sessionId.toString(),

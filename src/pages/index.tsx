@@ -7,7 +7,6 @@ export default function HomePage() {
     <ErrorBoundary
       onError={(error, errorInfo) => {
         console.error('Page-level error:', error, errorInfo);
-        
       }}
     >
       <Chat />

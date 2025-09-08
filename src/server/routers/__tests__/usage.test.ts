@@ -14,11 +14,11 @@ describe('Usage Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     mockConversationService = {
       listConversations: vi.fn(),
     };
-    
+
     mockMessageService = {
       getMessagesByConversation: vi.fn(),
     };
@@ -57,15 +57,36 @@ describe('Usage Router', () => {
     ];
 
     const mockMessages = [
-      { id: 'msg-1', role: 'user', content: 'Hello', tokens: 10, cost: 0.00002, timestamp: new Date() },
-      { id: 'msg-2', role: 'assistant', content: 'Hi there!', tokens: 15, cost: 0.00003, timestamp: new Date() },
-      { id: 'msg-3', role: 'user', content: 'How are you?', tokens: 8, cost: 0.000016, timestamp: new Date() },
+      {
+        id: 'msg-1',
+        role: 'user',
+        content: 'Hello',
+        tokens: 10,
+        cost: 0.00002,
+        timestamp: new Date(),
+      },
+      {
+        id: 'msg-2',
+        role: 'assistant',
+        content: 'Hi there!',
+        tokens: 15,
+        cost: 0.00003,
+        timestamp: new Date(),
+      },
+      {
+        id: 'msg-3',
+        role: 'user',
+        content: 'How are you?',
+        tokens: 8,
+        cost: 0.000016,
+        timestamp: new Date(),
+      },
     ];
 
     it('returns session statistics for today', async () => {
       // Mock conversations
       mockConversationService.listConversations.mockResolvedValue(mockConversations);
-      
+
       // Mock messages for each conversation
       mockMessageService.getMessagesByConversation
         .mockResolvedValueOnce([mockMessages[0], mockMessages[1]])
@@ -86,7 +107,7 @@ describe('Usage Router', () => {
     it('returns zero cost when no messages exist', async () => {
       // Mock empty conversations
       mockConversationService.listConversations.mockResolvedValue([]);
-      
+
       const caller = usageRouter.createCaller(mockContext);
       const result = await caller.getSessionStats();
 
@@ -101,14 +122,35 @@ describe('Usage Router', () => {
     it('handles messages without tokens gracefully', async () => {
       // Mock conversations
       mockConversationService.listConversations.mockResolvedValue(mockConversations);
-      
+
       // Mock messages with some missing tokens
       const messagesWithNullTokens = [
-        { id: 'msg-1', role: 'user', content: 'Hello', tokens: 10, cost: 0.00002, timestamp: new Date() },
-        { id: 'msg-2', role: 'assistant', content: 'Hi there!', tokens: null, cost: 0, timestamp: new Date() },
-        { id: 'msg-3', role: 'user', content: 'How are you?', tokens: 20, cost: 0.00004, timestamp: new Date() },
+        {
+          id: 'msg-1',
+          role: 'user',
+          content: 'Hello',
+          tokens: 10,
+          cost: 0.00002,
+          timestamp: new Date(),
+        },
+        {
+          id: 'msg-2',
+          role: 'assistant',
+          content: 'Hi there!',
+          tokens: null,
+          cost: 0,
+          timestamp: new Date(),
+        },
+        {
+          id: 'msg-3',
+          role: 'user',
+          content: 'How are you?',
+          tokens: 20,
+          cost: 0.00004,
+          timestamp: new Date(),
+        },
       ];
-      
+
       mockMessageService.getMessagesByConversation
         .mockResolvedValueOnce([messagesWithNullTokens[0], messagesWithNullTokens[1]])
         .mockResolvedValueOnce([messagesWithNullTokens[2]]);
@@ -123,24 +165,54 @@ describe('Usage Router', () => {
     });
 
     it('handles database errors gracefully', async () => {
-      mockConversationService.listConversations.mockRejectedValue(new Error('this.db.conversation.findMany is not a function'));
+      mockConversationService.listConversations.mockRejectedValue(
+        new Error('this.db.conversation.findMany is not a function'),
+      );
 
       const caller = usageRouter.createCaller(mockContext);
-      
-      await expect(caller.getSessionStats()).rejects.toThrow('this.db.conversation.findMany is not a function');
+
+      await expect(caller.getSessionStats()).rejects.toThrow(
+        'this.db.conversation.findMany is not a function',
+      );
     });
   });
 
   describe('getModelUsage', () => {
-    const mockConversations = [
-      { id: 'conv-1', title: 'Conversation 1', updatedAt: new Date() },
-    ];
+    const mockConversations = [{ id: 'conv-1', title: 'Conversation 1', updatedAt: new Date() }];
 
     const mockMessages = [
-      { id: 'msg-1', role: 'user', content: 'Hello', tokens: 10, cost: 0.00002, timestamp: new Date() },
-      { id: 'msg-2', role: 'assistant', content: 'Hi there!', tokens: 15, cost: 0.00003, timestamp: new Date() },
-      { id: 'msg-3', role: 'user', content: 'How are you?', tokens: 8, cost: 0.000016, timestamp: new Date() },
-      { id: 'msg-4', role: 'system', content: 'System message', tokens: 5, cost: 0.00001, timestamp: new Date() },
+      {
+        id: 'msg-1',
+        role: 'user',
+        content: 'Hello',
+        tokens: 10,
+        cost: 0.00002,
+        timestamp: new Date(),
+      },
+      {
+        id: 'msg-2',
+        role: 'assistant',
+        content: 'Hi there!',
+        tokens: 15,
+        cost: 0.00003,
+        timestamp: new Date(),
+      },
+      {
+        id: 'msg-3',
+        role: 'user',
+        content: 'How are you?',
+        tokens: 8,
+        cost: 0.000016,
+        timestamp: new Date(),
+      },
+      {
+        id: 'msg-4',
+        role: 'system',
+        content: 'System message',
+        tokens: 5,
+        cost: 0.00001,
+        timestamp: new Date(),
+      },
     ];
 
     it('returns model usage statistics', async () => {
@@ -162,7 +234,7 @@ describe('Usage Router', () => {
 
     it('returns empty array when no messages exist', async () => {
       mockConversationService.listConversations.mockResolvedValue([]);
-      
+
       const caller = usageRouter.createCaller(mockContext);
       const result = await caller.getModelUsage();
 
@@ -173,11 +245,15 @@ describe('Usage Router', () => {
     });
 
     it('handles database errors gracefully', async () => {
-      mockConversationService.listConversations.mockRejectedValue(new Error('this.db.conversation.findMany is not a function'));
+      mockConversationService.listConversations.mockRejectedValue(
+        new Error('this.db.conversation.findMany is not a function'),
+      );
 
       const caller = usageRouter.createCaller(mockContext);
-      
-      await expect(caller.getModelUsage()).rejects.toThrow('this.db.conversation.findMany is not a function');
+
+      await expect(caller.getModelUsage()).rejects.toThrow(
+        'this.db.conversation.findMany is not a function',
+      );
     });
 
     it('calculates percentages correctly', async () => {
@@ -185,18 +261,57 @@ describe('Usage Router', () => {
         { id: 'conv-1', title: 'Conversation 1', updatedAt: new Date() },
         { id: 'conv-2', title: 'Conversation 2', updatedAt: new Date() },
       ];
-      
+
       const mockMessagesMultiple = [
-        { id: 'msg-1', role: 'user', content: 'Hello', tokens: 10, cost: 0.00002, timestamp: new Date() },
-        { id: 'msg-2', role: 'user', content: 'Another message', tokens: 15, cost: 0.00003, timestamp: new Date() },
-        { id: 'msg-3', role: 'user', content: 'Third message', tokens: 8, cost: 0.000016, timestamp: new Date() },
-        { id: 'msg-4', role: 'assistant', content: 'Response 1', tokens: 12, cost: 0.000024, timestamp: new Date() },
-        { id: 'msg-5', role: 'assistant', content: 'Response 2', tokens: 20, cost: 0.00004, timestamp: new Date() },
+        {
+          id: 'msg-1',
+          role: 'user',
+          content: 'Hello',
+          tokens: 10,
+          cost: 0.00002,
+          timestamp: new Date(),
+        },
+        {
+          id: 'msg-2',
+          role: 'user',
+          content: 'Another message',
+          tokens: 15,
+          cost: 0.00003,
+          timestamp: new Date(),
+        },
+        {
+          id: 'msg-3',
+          role: 'user',
+          content: 'Third message',
+          tokens: 8,
+          cost: 0.000016,
+          timestamp: new Date(),
+        },
+        {
+          id: 'msg-4',
+          role: 'assistant',
+          content: 'Response 1',
+          tokens: 12,
+          cost: 0.000024,
+          timestamp: new Date(),
+        },
+        {
+          id: 'msg-5',
+          role: 'assistant',
+          content: 'Response 2',
+          tokens: 20,
+          cost: 0.00004,
+          timestamp: new Date(),
+        },
       ];
 
       mockConversationService.listConversations.mockResolvedValue(mockConversationsMultiple);
       mockMessageService.getMessagesByConversation
-        .mockResolvedValueOnce([mockMessagesMultiple[0], mockMessagesMultiple[1], mockMessagesMultiple[2]])
+        .mockResolvedValueOnce([
+          mockMessagesMultiple[0],
+          mockMessagesMultiple[1],
+          mockMessagesMultiple[2],
+        ])
         .mockResolvedValueOnce([mockMessagesMultiple[3], mockMessagesMultiple[4]]);
 
       const caller = usageRouter.createCaller(mockContext);
@@ -211,17 +326,22 @@ describe('Usage Router', () => {
   });
 
   describe('Cost Calculation Accuracy', () => {
-    const mockConversations = [
-      { id: 'conv-1', title: 'Conversation 1', updatedAt: new Date() },
-    ];
+    const mockConversations = [{ id: 'conv-1', title: 'Conversation 1', updatedAt: new Date() }];
 
     it('calculates costs for all supported models correctly', async () => {
       // Mock conversations
       mockConversationService.listConversations.mockResolvedValue(mockConversations);
-      
+
       // Mock messages with specific token counts
       const mockMessages = [
-        { id: 'msg-1', role: 'user', content: 'Hello', tokens: 1000, cost: 0.002, timestamp: new Date() },
+        {
+          id: 'msg-1',
+          role: 'user',
+          content: 'Hello',
+          tokens: 1000,
+          cost: 0.002,
+          timestamp: new Date(),
+        },
       ];
       mockMessageService.getMessagesByConversation.mockResolvedValue(mockMessages);
 
@@ -236,10 +356,17 @@ describe('Usage Router', () => {
     it('handles fractional token costs correctly', async () => {
       // Mock conversations
       mockConversationService.listConversations.mockResolvedValue(mockConversations);
-      
+
       // Mock messages with odd token counts
       const mockMessages = [
-        { id: 'msg-1', role: 'user', content: 'Hello', tokens: 123, cost: 0.000246, timestamp: new Date() },
+        {
+          id: 'msg-1',
+          role: 'user',
+          content: 'Hello',
+          tokens: 123,
+          cost: 0.000246,
+          timestamp: new Date(),
+        },
       ];
       mockMessageService.getMessagesByConversation.mockResolvedValue(mockMessages);
 
@@ -254,10 +381,17 @@ describe('Usage Router', () => {
     it('handles very large token counts', async () => {
       // Mock conversations
       mockConversationService.listConversations.mockResolvedValue(mockConversations);
-      
+
       // Mock messages with large token counts
       const mockMessages = [
-        { id: 'msg-1', role: 'user', content: 'Hello', tokens: 1000000, cost: 2.0, timestamp: new Date() },
+        {
+          id: 'msg-1',
+          role: 'user',
+          content: 'Hello',
+          tokens: 1000000,
+          cost: 2.0,
+          timestamp: new Date(),
+        },
       ];
       mockMessageService.getMessagesByConversation.mockResolvedValue(mockMessages);
 

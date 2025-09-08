@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { TRPCError } from '@trpc/server';
 import type { PrismaClient } from '@prisma/client';
-import { 
-  DatabaseMessageService, 
+import {
+  DatabaseMessageService,
   DemoMessageService,
   type CreateMessageInput,
-  type UpdateMessageInput
+  type UpdateMessageInput,
 } from '../MessageService';
 
 // Mock Prisma Client
@@ -23,8 +23,8 @@ const mockPrismaClient = {
 describe('MessageService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (mockPrismaClient.$transaction as any).mockImplementation((queries: any) => 
-      Promise.all(queries.map((query: any) => query))
+    (mockPrismaClient.$transaction as any).mockImplementation((queries: any) =>
+      Promise.all(queries.map((query: any) => query)),
     );
   });
 
@@ -329,8 +329,7 @@ describe('MessageService', () => {
       });
 
       it('should throw error for nonexistent message', async () => {
-        await expect(service.update('nonexistent', { content: 'test' }))
-          .rejects.toThrow(TRPCError);
+        await expect(service.update('nonexistent', { content: 'test' })).rejects.toThrow(TRPCError);
       });
     });
 
@@ -346,12 +345,11 @@ describe('MessageService', () => {
 
         // Should not be in conversation anymore
         const messages = await service.getByConversation('demo-conv');
-        expect(messages.find(m => m.id === message.id)).toBeUndefined();
+        expect(messages.find((m) => m.id === message.id)).toBeUndefined();
       });
 
       it('should throw error for nonexistent message', async () => {
-        await expect(service.delete('nonexistent'))
-          .rejects.toThrow(TRPCError);
+        await expect(service.delete('nonexistent')).rejects.toThrow(TRPCError);
       });
     });
 
@@ -379,7 +377,7 @@ describe('MessageService', () => {
 
         // Test getMessagesByConversation
         const messages = await service.getMessagesByConversation('demo-conv');
-        expect(messages.find(m => m.id === message.id)).toBeDefined();
+        expect(messages.find((m) => m.id === message.id)).toBeDefined();
 
         // Test updateMessage
         const updated = await service.updateMessage(message.id, {

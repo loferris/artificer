@@ -1,15 +1,30 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { TRPCError } from '@trpc/server';
 import { PrismaClient } from '@prisma/client';
-import { mockDeep, mockReset } from 'vitest-mock-extended';
 
 import { DatabaseChatService, DemoChatService } from '../../chat/ChatService';
-import { DatabaseConversationService, DemoConversationService } from '../../conversation/ConversationService';
+import {
+  DatabaseConversationService,
+  DemoConversationService,
+} from '../../conversation/ConversationService';
 import { DatabaseMessageService, DemoMessageService } from '../../message/MessageService';
 import { createServiceContainer } from '../../ServiceFactory';
 
 // Mock Prisma client
-const mockDb = mockDeep<PrismaClient>();
+const mockDb = {
+  conversation: {
+    findFirst: vi.fn(),
+    findUnique: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
+  message: {
+    findMany: vi.fn(),
+    create: vi.fn(),
+    count: vi.fn(),
+  },
+} as unknown as PrismaClient;
 
 // Mock Assistant
 const mockAssistant = {
@@ -19,8 +34,9 @@ const mockAssistant = {
 
 describe('ChatService Integration Tests', () => {
   beforeEach(() => {
-    mockReset(mockDb);
+    // Reset all mocks before each test
     vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   describe('DatabaseChatService', () => {
@@ -148,14 +164,14 @@ describe('ChatService Integration Tests', () => {
           chatService.sendMessage({
             content: '',
             conversationId: 'conv-1',
-          })
+          }),
         ).rejects.toThrow('Message content cannot be empty');
 
         await expect(
           chatService.sendMessage({
             content: 'x'.repeat(10001),
             conversationId: 'conv-1',
-          })
+          }),
         ).rejects.toThrow('Message content too long');
       });
 
@@ -166,7 +182,7 @@ describe('ChatService Integration Tests', () => {
           chatService.sendMessage({
             content: 'Hello',
             conversationId: 'nonexistent',
-          })
+          }),
         ).rejects.toThrow('Conversation not found');
       });
 
@@ -177,7 +193,7 @@ describe('ChatService Integration Tests', () => {
           chatService.sendMessage({
             content: 'Hello',
             conversationId: 'conv-1',
-          })
+          }),
         ).rejects.toThrow('Something went wrong');
       });
 
@@ -192,7 +208,7 @@ describe('ChatService Integration Tests', () => {
           chatService.sendMessage({
             content: 'Hello',
             conversationId: 'conv-1',
-          })
+          }),
         ).rejects.toThrow('Assistant response is empty');
       });
 
@@ -200,7 +216,7 @@ describe('ChatService Integration Tests', () => {
         // Test timeout error
         mockAssistant.getResponse.mockRejectedValue(new Error('timeout'));
         await expect(
-          chatService.sendMessage({ content: 'Hello', conversationId: 'conv-1' })
+          chatService.sendMessage({ content: 'Hello', conversationId: 'conv-1' }),
         ).rejects.toMatchObject({
           code: 'GATEWAY_TIMEOUT',
           message: expect.stringContaining('taking too long'),
@@ -209,7 +225,7 @@ describe('ChatService Integration Tests', () => {
         // Test rate limit error
         mockAssistant.getResponse.mockRejectedValue(new Error('rate limit'));
         await expect(
-          chatService.sendMessage({ content: 'Hello', conversationId: 'conv-1' })
+          chatService.sendMessage({ content: 'Hello', conversationId: 'conv-1' }),
         ).rejects.toMatchObject({
           code: 'TOO_MANY_REQUESTS',
         });
@@ -217,7 +233,7 @@ describe('ChatService Integration Tests', () => {
         // Test API key error
         mockAssistant.getResponse.mockRejectedValue(new Error('api key'));
         await expect(
-          chatService.sendMessage({ content: 'Hello', conversationId: 'conv-1' })
+          chatService.sendMessage({ content: 'Hello', conversationId: 'conv-1' }),
         ).rejects.toMatchObject({
           code: 'UNAUTHORIZED',
         });
@@ -283,9 +299,9 @@ describe('ChatService Integration Tests', () => {
       it('should validate conversation access before retrieving messages', async () => {
         mockDb.conversation.findUnique.mockResolvedValue(null);
 
-        await expect(
-          chatService.getChatMessages('nonexistent')
-        ).rejects.toThrow('Conversation not found');
+        await expect(chatService.getChatMessages('nonexistent')).rejects.toThrow(
+          'Conversation not found',
+        );
       });
     });
   });
@@ -399,7 +415,7 @@ describe('ChatService Integration Tests', () => {
         services.chatService.sendMessage({
           content: 'Test message',
           conversationId: 'conv-1',
-        })
+        }),
       ).rejects.toThrow('Database connection issue');
     });
 
@@ -416,7 +432,7 @@ describe('ChatService Integration Tests', () => {
         chatService.sendMessage({
           content: 'Test',
           conversationId: 'demo-1',
-        })
+        }),
       ).rejects.toThrow();
     });
   });

@@ -58,5 +58,6 @@ docker-compose.override.yml
 # Exported conversations (contains personal data)
 exports/
 
-# Internal docs (for now)CLAUDE.md
+# Internal docs (for now)
+CLAUDE.md
 docs/

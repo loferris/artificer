@@ -10,10 +10,25 @@ import { logger } from './utils/logger';
 export const createContext = async (opts: CreateNextContextOptions) => {
   try {
     const user = getUserFromRequest(opts.req);
-    
+
+    // Create AbortController for request cancellation
+    const controller = new AbortController();
+
+    // Listen for request close/abort events
+    opts.req.on('close', () => {
+      if (!opts.req.complete) {
+        controller.abort();
+      }
+    });
+
+    opts.req.on('aborted', () => {
+      controller.abort();
+    });
+
     // In demo mode, skip database testing entirely
-    const isDemoMode = process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
-    
+    const isDemoMode =
+      process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+
     if (!isDemoMode && process.env.NODE_ENV === 'production') {
       try {
         await prisma.$queryRaw`SELECT 1`;
@@ -22,23 +37,28 @@ export const createContext = async (opts: CreateNextContextOptions) => {
         // Don't throw here, let individual routes handle DB issues
       }
     }
-    
+
     return {
       req: opts.req,
       res: opts.res,
       db: isDemoMode ? null : prisma, // Don't provide prisma in demo mode
       user,
+      signal: controller.signal,
     };
   } catch (error) {
     logger.error('Context creation failed', error as Error);
-    
+
     // Return a minimal context to prevent complete failure
-    const isDemoMode = process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+    const isDemoMode =
+      process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+    const controller = new AbortController();
+
     return {
       req: opts.req,
       res: opts.res,
       db: isDemoMode ? null : prisma, // Don't provide prisma in demo mode
       user: null,
+      signal: controller.signal,
     };
   }
 };

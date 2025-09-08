@@ -16,7 +16,7 @@ interface DemoStatusResponse {
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<DemoStatusResponse>
+  res: NextApiResponse<DemoStatusResponse>,
 ) {
   try {
     const status: DemoStatusResponse = {

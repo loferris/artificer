@@ -90,7 +90,7 @@ describe('tRPC Integration Tests', () => {
       // This test verifies that the integration between routers maintains
       // proper type safety - essentially verifying the tRPC setup
       const caller = appRouter.createCaller(mockContext);
-      
+
       // If this compiles without type errors, the integration is working
       expect(caller).toBeDefined();
     });
@@ -102,7 +102,7 @@ describe('tRPC Integration Tests', () => {
 
       // Verify that all routers follow the same error handling pattern
       // This is testing the integration of error handling mechanisms
-      
+
       // All routers should handle errors
       expect(caller.conversations.list).toBeTypeOf('function');
       expect(caller.messages.getByConversation).toBeTypeOf('function');
@@ -115,7 +115,7 @@ describe('tRPC Integration Tests', () => {
     it('applies middleware consistently across all procedures', () => {
       // Verify that middleware is properly integrated across all routers
       const caller = appRouter.createCaller(mockContext);
-      
+
       // This verifies that the tRPC middleware integration is working
       expect(caller).toBeDefined();
     });

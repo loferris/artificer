@@ -12,8 +12,16 @@ export interface AssistantConfig {
   siteName?: string;
 }
 
+export interface AssistantOptions {
+  signal?: AbortSignal;
+}
+
 export interface Assistant {
-  getResponse(userMessage: string, conversationHistory?: Array<{ role: string; content: string }>): Promise<AssistantResponse>;
+  getResponse(
+    userMessage: string,
+    conversationHistory?: Array<{ role: string; content: string }>,
+    options?: AssistantOptions,
+  ): Promise<AssistantResponse>;
   getModelUsageStats(): Array<{ model: string; count: number; percentage: number }>;
 }
 
@@ -29,7 +37,8 @@ export class OpenRouterAssistant implements Assistant {
 
   async getResponse(
     userMessage: string,
-    conversationHistory: Array<{ role: string; content: string }> = []
+    conversationHistory: Array<{ role: string; content: string }> = [],
+    options?: AssistantOptions,
   ): Promise<AssistantResponse> {
     try {
       if (!userMessage || userMessage.trim() === '') {
@@ -38,9 +47,9 @@ export class OpenRouterAssistant implements Assistant {
 
       const messages = this.buildMessagesArray(userMessage, conversationHistory);
       const model = this.selectModel();
-      
-      const response = await this.fetchResponse(messages, model);
-      
+
+      const response = await this.fetchResponse(messages, model, options?.signal);
+
       if (!response || response.trim() === '') {
         throw new Error('Assistant response is empty');
       }
@@ -55,15 +64,16 @@ export class OpenRouterAssistant implements Assistant {
       };
     } catch (error) {
       console.error('Error in OpenRouterAssistant.getResponse:', error);
-      
+
       // Provide more specific error messages based on error type
       let errorMessage = 'Sorry, I encountered an error. Please try again.';
-      
+
       if (error instanceof Error) {
         const errorMsg = error.message.toLowerCase();
-        
+
         if (errorMsg.includes('timeout') || errorMsg.includes('abort')) {
-          errorMessage = 'The AI service is taking too long to respond. Please try again in a moment.';
+          errorMessage =
+            'The AI service is taking too long to respond. Please try again in a moment.';
         } else if (errorMsg.includes('rate limit') || errorMsg.includes('too many requests')) {
           errorMessage = 'Too many requests. Please wait a moment before trying again.';
         } else if (errorMsg.includes('unauthorized') || errorMsg.includes('api key')) {
@@ -71,15 +81,17 @@ export class OpenRouterAssistant implements Assistant {
         } else if (errorMsg.includes('quota') || errorMsg.includes('billing')) {
           errorMessage = 'AI service quota exceeded. Please check your account or try again later.';
         } else if (errorMsg.includes('network') || errorMsg.includes('fetch')) {
-          errorMessage = 'Network connection issue. Please check your internet connection and try again.';
+          errorMessage =
+            'Network connection issue. Please check your internet connection and try again.';
         }
       }
-      
+
       // For demo mode, provide a more helpful message
       if (DEMO_CONFIG.FORCE_MOCK_ASSISTANT || DEMO_CONFIG.IS_DEMO) {
-        errorMessage = 'Demo mode error. This is a showcase - in production, this would connect to real AI models.';
+        errorMessage =
+          'Demo mode error. This is a showcase - in production, this would connect to real AI models.';
       }
-      
+
       // Return a fallback response instead of throwing
       return {
         response: errorMessage,
@@ -91,8 +103,11 @@ export class OpenRouterAssistant implements Assistant {
 
   getModelUsageStats(): Array<{ model: string; count: number; percentage: number }> {
     try {
-      const totalUsage = Array.from(this.modelUsage.values()).reduce((sum, count) => sum + count, 0);
-      
+      const totalUsage = Array.from(this.modelUsage.values()).reduce(
+        (sum, count) => sum + count,
+        0,
+      );
+
       if (totalUsage === 0) {
         return [];
       }
@@ -110,7 +125,7 @@ export class OpenRouterAssistant implements Assistant {
 
   private buildMessagesArray(
     userMessage: string,
-    conversationHistory: Array<{ role: string; content: string }>
+    conversationHistory: Array<{ role: string; content: string }>,
   ): Array<{ role: 'user' | 'assistant'; content: string }> {
     try {
       return [
@@ -133,15 +148,15 @@ export class OpenRouterAssistant implements Assistant {
       if (envModel) {
         return envModel;
       }
-      
+
       // Valid OpenRouter models (fast and cost-effective)
       const validModels = [
         'anthropic/claude-3-haiku',
         'anthropic/claude-3-sonnet',
         'meta-llama/llama-3.1-8b-instruct',
-        'openai/gpt-4o-mini'
+        'openai/gpt-4o-mini',
       ];
-      
+
       // Default to Claude Haiku (fastest and cheapest)
       return validModels[0];
     } catch (error) {
@@ -153,19 +168,33 @@ export class OpenRouterAssistant implements Assistant {
   private async fetchResponse(
     messages: Array<{ role: 'user' | 'assistant'; content: string }>,
     model: string,
-    retryCount = 0
+    signal?: AbortSignal,
+    retryCount = 0,
   ): Promise<string> {
     const startTime = Date.now();
-    
+
     try {
       if (typeof window !== 'undefined') {
         // Client-side fallback
         return 'This is a client-side fallback response. Please use the server-side API.';
       }
 
-      // Create AbortController for timeout (increased for Claude models)
+      // Create combined abort controller for timeout and external cancellation
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second timeout for real AI
+
+      // If external signal is provided, also listen for it
+      if (signal) {
+        signal.addEventListener('abort', () => {
+          controller.abort();
+        });
+
+        // Check if already aborted
+        if (signal.aborted) {
+          clearTimeout(timeoutId);
+          throw new Error('Request was cancelled');
+        }
+      }
 
       try {
         const requestBody = {
@@ -194,9 +223,9 @@ export class OpenRouterAssistant implements Assistant {
           console.error('OpenRouter API error:', {
             status: response.status,
             statusText: response.statusText,
-            body: errorText
+            body: errorText,
           });
-          
+
           // Provide specific error messages based on status
           if (response.status === 401) {
             throw new Error('Invalid API key. Please check your OpenRouter API key configuration.');
@@ -205,54 +234,74 @@ export class OpenRouterAssistant implements Assistant {
           } else if (response.status === 429) {
             throw new Error('Rate limit exceeded. Please wait a moment before trying again.');
           } else if (response.status >= 500) {
-            throw new Error('OpenRouter service is temporarily unavailable. Please try again in a moment.');
+            throw new Error(
+              'OpenRouter service is temporarily unavailable. Please try again in a moment.',
+            );
           } else {
             throw new Error(`OpenRouter API error: ${response.status} - ${errorText}`);
           }
         }
 
         const data = await response.json();
-        
+
         if (!data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
           console.error('Invalid OpenRouter response format:', data);
           throw new Error('Invalid response format from OpenRouter API');
         }
 
         const content = data.choices[0].message.content;
+
+        // Final check for abortion before returning
+        if (signal?.aborted) {
+          throw new Error('Request was cancelled');
+        }
+
         return content;
       } catch (error) {
         clearTimeout(timeoutId);
-        
-        if (error instanceof Error && error.name === 'AbortError') {
-          throw new Error('Request timeout: The AI response took too long. Please try again.');
+
+        if (
+          error instanceof Error &&
+          (error.name === 'AbortError' || error.message.includes('cancelled'))
+        ) {
+          throw new Error('Request was cancelled');
         }
-        
+
         throw error;
       }
     } catch (error) {
       const duration = Date.now() - startTime;
-      logger.assistantRequest(model, 0, 0, duration, error instanceof Error ? error : new Error(String(error)));
-      
+      logger.assistantRequest(
+        model,
+        0,
+        0,
+        duration,
+        error instanceof Error ? error : new Error(String(error)),
+      );
+
       // Retry logic for transient errors
       const maxRetries = 2;
       if (retryCount < maxRetries && error instanceof Error) {
         const errorMsg = error.message.toLowerCase();
-        const isRetryable = errorMsg.includes('rate limit') || 
-                           errorMsg.includes('timeout') || 
-                           errorMsg.includes('network') ||
-                           errorMsg.includes('500') ||
-                           errorMsg.includes('502') ||
-                           errorMsg.includes('503');
-        
+        const isRetryable =
+          errorMsg.includes('rate limit') ||
+          errorMsg.includes('timeout') ||
+          errorMsg.includes('network') ||
+          errorMsg.includes('500') ||
+          errorMsg.includes('502') ||
+          errorMsg.includes('503');
+
         if (isRetryable) {
           const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff: 1s, 2s, 4s
-          console.log(`Retrying OpenRouter request in ${delay}ms (attempt ${retryCount + 1}/${maxRetries})`);
-          
-          await new Promise(resolve => setTimeout(resolve, delay));
-          return this.fetchResponse(messages, model, retryCount + 1);
+          console.log(
+            `Retrying OpenRouter request in ${delay}ms (attempt ${retryCount + 1}/${maxRetries})`,
+          );
+
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          return this.fetchResponse(messages, model, signal, retryCount + 1);
         }
       }
-      
+
       throw error;
     }
   }
@@ -311,9 +360,9 @@ export function createAssistant(config: AssistantConfig): Assistant {
         console.error('Invalid API key format provided');
         return new MockAssistant();
       }
-      return new OpenRouterAssistant({ 
-        apiKey: config.apiKey, 
-        siteName: config.siteName || 'chat-app' 
+      return new OpenRouterAssistant({
+        apiKey: config.apiKey,
+        siteName: config.siteName || 'chat-app',
       });
     }
 
@@ -334,9 +383,9 @@ export function createAssistant(config: AssistantConfig): Assistant {
       return new MockAssistant();
     }
 
-    return new OpenRouterAssistant({ 
-      apiKey: envKey, 
-      siteName: config.siteName || 'chat-app' 
+    return new OpenRouterAssistant({
+      apiKey: envKey,
+      siteName: config.siteName || 'chat-app',
     });
   } catch (error) {
     // Don't log the full error object which might contain sensitive data
@@ -349,20 +398,20 @@ export function createAssistant(config: AssistantConfig): Assistant {
 class MockAssistant implements Assistant {
   private getSmartMockResponse(userMessage: string): string {
     const message = userMessage.toLowerCase();
-    
+
     // Demo-specific responses
     if (message.includes('demo') || message.includes('showcase')) {
-      return `🎉 Welcome to the chat app demo! This is a fully functional chat interface with mock AI responses. 
+      return `🎉 Welcome to the chat app demo! This is a fully functional chat interface with mock AI responses.
 
 Key features you can try:
 • Send messages and get intelligent responses
-• Create and manage multiple conversations  
+• Create and manage multiple conversations
 • Export your chats to Markdown or JSON
 • Experience the beautiful, responsive UI
 
 This demo uses a smart mock assistant that provides contextual responses. In the full version, you'd connect your OpenRouter API key to chat with real AI models like Claude, GPT-4, and more!`;
     }
-    
+
     if (message.includes('export') || message.includes('download')) {
       return `📄 The export feature lets you download your conversations in multiple formats:
 
@@ -372,40 +421,65 @@ This demo uses a smart mock assistant that provides contextual responses. In the
 
 Try clicking the export button to see it in action! Your conversations will be formatted beautifully with timestamps, metadata, and proper structure.`;
     }
-    
+
     if (message.includes('hello') || message.includes('hi') || message.includes('hey')) {
       return `👋 Hello! I'm the demo assistant for this chat application. I can help you explore the features and capabilities of this platform.
 
 Feel free to ask me about the app's functionality, technical details, or just have a casual conversation! What would you like to know? 😊`;
     }
-    
+
     // Default intelligent response
     const responses = [
       `That's an interesting question! 🤔 In a real deployment, this would be answered by advanced AI models like Claude or GPT-4. This demo shows how seamlessly the chat interface works with any AI backend.`,
-      
+
       `Great point! 💡 This mock assistant demonstrates the responsive chat interface. With a real API key, you'd get sophisticated AI responses from models like Anthropic's Claude, OpenAI's GPT-4, or other providers through OpenRouter.`,
-      
+
       `I appreciate your message! 😊 This demo showcases the chat app's clean interface and smooth user experience. The real version connects to powerful AI models for genuinely helpful conversations.`,
     ];
-    
+
     return responses[Math.floor(Math.random() * responses.length)];
   }
 
-  async getResponse(userMessage: string, conversationHistory?: Array<{ role: string; content: string }>): Promise<AssistantResponse> {
-    // Simulate realistic response time
-    await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
-    
+  async getResponse(
+    userMessage: string,
+    conversationHistory?: Array<{ role: string; content: string }>,
+    options?: AssistantOptions,
+  ): Promise<AssistantResponse> {
+    // Check if cancelled before starting
+    if (options?.signal?.aborted) {
+      throw new Error('Request was cancelled');
+    }
+
+    // Simulate realistic response time with cancellation support
+    await new Promise<void>((resolve, reject) => {
+      const delay = 500 + Math.random() * 1000;
+      const timeoutId = setTimeout(() => resolve(), delay);
+
+      if (options?.signal) {
+        options.signal.addEventListener('abort', () => {
+          clearTimeout(timeoutId);
+          reject(new Error('Request was cancelled'));
+        });
+
+        if (options.signal.aborted) {
+          clearTimeout(timeoutId);
+          reject(new Error('Request was cancelled'));
+          return;
+        }
+      }
+    });
+
     // Create a response that clearly references the current message
     const responses = [
       `I understand you're asking about "${userMessage}". This is a demo response - in production, I'd provide a helpful answer!`,
       `Thanks for your message: "${userMessage}". This mock assistant shows the chat interface working properly.`,
       `You wrote: "${userMessage}" - I'm responding to show the chat flow is working correctly in demo mode.`,
       `Got it! You said "${userMessage}". This is a placeholder response from the demo assistant.`,
-      `I see your message: "${userMessage}". The real version would connect to AI models for actual help!`
+      `I see your message: "${userMessage}". The real version would connect to AI models for actual help!`,
     ];
-    
+
     const response = responses[Math.floor(Math.random() * responses.length)];
-    
+
     return {
       response,
       model: 'demo-assistant-v1',
@@ -414,8 +488,6 @@ Feel free to ask me about the app's functionality, technical details, or just ha
   }
 
   getModelUsageStats(): Array<{ model: string; count: number; percentage: number }> {
-    return [
-      { model: 'mock', count: 1, percentage: 100 },
-    ];
+    return [{ model: 'mock', count: 1, percentage: 100 }];
   }
 }

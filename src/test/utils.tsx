@@ -11,17 +11,11 @@ const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
     },
   });
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
-  );
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 };
 
-const customRender = (
-  ui: React.ReactElement,
-  options?: Omit<RenderOptions, 'wrapper'>
-) => render(ui, { wrapper: AllTheProviders, ...options });
+const customRender = (ui: React.ReactElement, options?: Omit<RenderOptions, 'wrapper'>) =>
+  render(ui, { wrapper: AllTheProviders, ...options });
 
 // Export everything
 export * from '@testing-library/react';

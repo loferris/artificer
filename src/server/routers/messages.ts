@@ -8,7 +8,8 @@ export const messagesRouter = router({
       z.object({
         conversationId: z.string().min(1, 'Conversation ID is required'),
         role: z.enum(['user', 'assistant']),
-        content: z.string()
+        content: z
+          .string()
           .min(1, 'Message content cannot be empty')
           .max(10000, 'Message content too long (max 10,000 characters)'),
         tokens: z.number().min(0, 'Token count must be non-negative'),
@@ -35,7 +36,8 @@ export const messagesRouter = router({
     .input(
       z.object({
         id: z.string().min(1, 'Message ID is required'),
-        content: z.string()
+        content: z
+          .string()
           .min(1, 'Message content cannot be empty')
           .max(10000, 'Message content too long (max 10,000 characters)'),
       }),

@@ -7,7 +7,8 @@ export const chatRouterRefactored = router({
   sendMessage: publicProcedure
     .input(
       z.object({
-        content: z.string()
+        content: z
+          .string()
           .min(1, 'Message content cannot be empty')
           .max(10000, 'Message content too long (max 10,000 characters)'),
         conversationId: z.string().min(1, 'Conversation ID is required'),
@@ -32,7 +33,7 @@ export const chatRouterRefactored = router({
             content: input.content,
             conversationId: input.conversationId,
           },
-          ctx.user.sessionId
+          ctx.user.sessionId,
         );
 
         // Return the assistant message with metadata
@@ -75,7 +76,7 @@ export const chatRouterRefactored = router({
         // Get chat messages
         const messages = await chatService.getChatMessages(
           input.conversationId,
-          ctx.user.sessionId
+          ctx.user.sessionId,
         );
 
         return messages;

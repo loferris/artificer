@@ -1,6 +1,14 @@
 import { PrismaClient } from '@prisma/client';
-import { ConversationService, DatabaseConversationService, DemoConversationService } from './conversation/ConversationService';
-import { MessageService, DatabaseMessageService, DemoMessageService } from './message/MessageService';
+import {
+  ConversationService,
+  DatabaseConversationService,
+  DemoConversationService,
+} from './conversation/ConversationService';
+import {
+  MessageService,
+  DatabaseMessageService,
+  DemoMessageService,
+} from './message/MessageService';
 import { ChatService, DatabaseChatService, DemoChatService } from './chat/ChatService';
 import { createAssistant, Assistant } from './assistant';
 import { isServerSideDemo } from '../../utils/demo';
@@ -106,7 +114,9 @@ export function createServiceContainer(options: ServiceFactoryOptions = {}): Ser
 /**
  * Convenience functions for getting individual services
  */
-export function createConversationService(options: ServiceFactoryOptions = {}): ConversationService {
+export function createConversationService(
+  options: ServiceFactoryOptions = {},
+): ConversationService {
   const services = createServiceContainer(options);
   return services.conversationService;
 }
@@ -150,14 +160,17 @@ export type ServiceInjection<T extends keyof ServiceContainer> = ServiceContaine
  */
 export function withServices<T extends keyof ServiceContainer>(
   serviceNames: T[],
-  handler: (services: Pick<ServiceContainer, T>) => Promise<any>
+  handler: (services: Pick<ServiceContainer, T>) => Promise<any>,
 ) {
   return async (ctx: { db: PrismaClient | null; user?: any }) => {
     const allServices = createServicesFromContext(ctx);
-    const selectedServices = serviceNames.reduce((acc, name) => {
-      acc[name] = allServices[name];
-      return acc;
-    }, {} as Pick<ServiceContainer, T>);
+    const selectedServices = serviceNames.reduce(
+      (acc, name) => {
+        acc[name] = allServices[name];
+        return acc;
+      },
+      {} as Pick<ServiceContainer, T>,
+    );
 
     return handler(selectedServices);
   };

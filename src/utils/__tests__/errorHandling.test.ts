@@ -47,7 +47,7 @@ describe('ErrorHandler', () => {
     it('returns the same instance', () => {
       const instance1 = ErrorHandler.getInstance();
       const instance2 = ErrorHandler.getInstance();
-      
+
       expect(instance1).toBe(instance2);
     });
   });
@@ -108,7 +108,7 @@ describe('ErrorHandler', () => {
         expect.objectContaining({
           error: expect.any(Error),
           timestamp: expect.any(Date),
-        })
+        }),
       );
     });
 
@@ -129,7 +129,7 @@ describe('ErrorHandler', () => {
 
       expect(mockConsoleLog).not.toHaveBeenCalledWith(
         'Would show user message:',
-        expect.any(String)
+        expect.any(String),
       );
     });
   });
@@ -181,7 +181,8 @@ describe('ErrorHandler', () => {
     });
 
     it('retries on failure and succeeds on second attempt', async () => {
-      const operation = vi.fn()
+      const operation = vi
+        .fn()
         .mockRejectedValueOnce(new Error('First attempt failed'))
         .mockResolvedValue('success');
       const context = { operation: 'test' };
@@ -202,7 +203,7 @@ describe('ErrorHandler', () => {
       const endTime = Date.now();
       expect(result).toBeNull();
       expect(operation).toHaveBeenCalledTimes(3);
-      
+
       // Should have waited for exponential backoff delays
       // 100ms + 200ms = 300ms minimum
       expect(endTime - startTime).toBeGreaterThanOrEqual(290);
@@ -216,7 +217,7 @@ describe('ErrorHandler', () => {
 
       expect(result).toBeNull();
       expect(operation).toHaveBeenCalledTimes(2);
-      
+
       const stats = errorHandler.getErrorStats();
       expect(stats.totalErrors).toBe(1);
     });
@@ -235,7 +236,7 @@ describe('ErrorHandler', () => {
       const result = errorHandler.validateInput('', validator, 'Invalid input');
 
       expect(result).toBe(false);
-      
+
       const stats = errorHandler.getErrorStats();
       expect(stats.totalErrors).toBe(1);
     });
@@ -247,7 +248,7 @@ describe('ErrorHandler', () => {
       const result = errorHandler.validateInput('test', validator, 'Invalid input');
 
       expect(result).toBe(false);
-      
+
       const stats = errorHandler.getErrorStats();
       expect(stats.totalErrors).toBe(1);
     });
@@ -435,7 +436,7 @@ describe('Error Log Management', () => {
 
     const stats = errorHandler.getErrorStats();
     const recentErrors = stats.recentErrors;
-    
+
     // Should have the last 10 errors (most recent first: 149-140)
     // The slice(-10) takes the last 10 elements, so the first element should be Error 140
     expect(recentErrors[0].error.message).toBe('Error 140');

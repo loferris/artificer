@@ -115,7 +115,7 @@ export const mockMessages = [
     id: 'msg-2',
     conversationId: 'conv-1',
     role: 'assistant',
-    content: 'I\'m doing well, thank you! How can I help you today?',
+    content: "I'm doing well, thank you! How can I help you today?",
     tokens: 12,
     createdAt: new Date('2024-01-01T10:01:00Z'),
   },
@@ -226,7 +226,7 @@ export const simulateApiDelay = (delay: number = 100) => {
 // Helper function to simulate API errors
 export const simulateApiError = (endpoint: string, errorMessage: string = 'API Error') => {
   const { trpc } = require('../../lib/trpc/client');
-  
+
   switch (endpoint) {
     case 'conversations.list':
       trpc.conversations.list.useQuery.mockReturnValue({
@@ -258,7 +258,7 @@ export const simulateApiError = (endpoint: string, errorMessage: string = 'API E
 // Helper function to update mock data for specific endpoints
 export const updateMockData = (endpoint: string, data: any) => {
   const { trpc } = require('../../lib/trpc/client');
-  
+
   switch (endpoint) {
     case 'conversations.list':
       trpc.conversations.list.useQuery.mockReturnValue({
@@ -290,7 +290,7 @@ export const updateMockData = (endpoint: string, data: any) => {
 // Helper function to simulate loading states
 export const simulateLoading = (endpoint: string) => {
   const { trpc } = require('../../lib/trpc/client');
-  
+
   switch (endpoint) {
     case 'conversations.list':
       trpc.conversations.list.useQuery.mockReturnValue({
@@ -322,7 +322,7 @@ export const simulateLoading = (endpoint: string) => {
 // Helper function to simulate mutation states
 export const simulateMutationState = (mutation: string, state: 'pending' | 'success' | 'error') => {
   const { trpc } = require('../../lib/trpc/client');
-  
+
   const baseState = {
     mutate: vi.fn(),
     mutateAsync: vi.fn(),

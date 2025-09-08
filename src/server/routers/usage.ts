@@ -4,12 +4,12 @@ import { createServicesFromContext } from '../services/ServiceFactory';
 export const usageRouter = router({
   getSessionStats: publicProcedure.query(async ({ ctx }) => {
     const { conversationService, messageService } = createServicesFromContext(ctx);
-    
+
     const conversations = await conversationService.listConversations();
-    
+
     // Get all messages from all conversations
     const allMessages = await Promise.all(
-      conversations.map(conv => messageService.getMessagesByConversation(conv.id))
+      conversations.map((conv) => messageService.getMessagesByConversation(conv.id)),
     );
     const messages = allMessages.flat();
 
@@ -26,19 +26,22 @@ export const usageRouter = router({
 
   getModelUsage: publicProcedure.query(async ({ ctx }) => {
     const { conversationService, messageService } = createServicesFromContext(ctx);
-    
+
     const conversations = await conversationService.listConversations();
-    
+
     // Get all messages from all conversations
     const allMessages = await Promise.all(
-      conversations.map(conv => messageService.getMessagesByConversation(conv.id))
+      conversations.map((conv) => messageService.getMessagesByConversation(conv.id)),
     );
     const messages = allMessages.flat();
-    
-    const roleStats = messages.reduce((acc, msg) => {
-      acc[msg.role] = (acc[msg.role] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+
+    const roleStats = messages.reduce(
+      (acc, msg) => {
+        acc[msg.role] = (acc[msg.role] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     const totalMessages = messages.length;
 

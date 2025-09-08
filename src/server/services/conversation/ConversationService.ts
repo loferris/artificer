@@ -146,7 +146,7 @@ export class DatabaseConversationService implements ConversationService {
       },
     });
 
-    return conversations.map(conv => ({
+    return conversations.map((conv) => ({
       id: conv.id,
       title: conv.title || this.generateTitle(conv.messages[0]?.content || 'New Conversation'),
       model: conv.model,
@@ -160,7 +160,10 @@ export class DatabaseConversationService implements ConversationService {
     }));
   }
 
-  async update(conversationId: string, input: UpdateConversationInput): Promise<ConversationWithMessages> {
+  async update(
+    conversationId: string,
+    input: UpdateConversationInput,
+  ): Promise<ConversationWithMessages> {
     const conversation = await this.db.conversation.update({
       where: { id: conversationId },
       data: input,
@@ -267,7 +270,10 @@ export class DatabaseConversationService implements ConversationService {
     return this.list();
   }
 
-  async updateConversationTitle(conversationId: string, firstMessage: string): Promise<ConversationWithMessages> {
+  async updateConversationTitle(
+    conversationId: string,
+    firstMessage: string,
+  ): Promise<ConversationWithMessages> {
     const title = this.generateTitle(firstMessage);
     return this.updateTitle(conversationId, title);
   }
@@ -344,7 +350,7 @@ export class DemoConversationService implements ConversationService {
   }
 
   async list(): Promise<ConversationListItem[]> {
-    return Array.from(this.conversations.values()).map(conv => ({
+    return Array.from(this.conversations.values()).map((conv) => ({
       id: conv.id,
       title: conv.title || this.generateTitle(conv.messages[0]?.content || 'New Conversation'),
       model: conv.model,
@@ -358,7 +364,10 @@ export class DemoConversationService implements ConversationService {
     }));
   }
 
-  async update(conversationId: string, input: UpdateConversationInput): Promise<ConversationWithMessages> {
+  async update(
+    conversationId: string,
+    input: UpdateConversationInput,
+  ): Promise<ConversationWithMessages> {
     const conversation = this.conversations.get(conversationId);
     if (!conversation) {
       throw new TRPCError({
@@ -428,7 +437,10 @@ export class DemoConversationService implements ConversationService {
     return this.list();
   }
 
-  async updateConversationTitle(conversationId: string, firstMessage: string): Promise<ConversationWithMessages> {
+  async updateConversationTitle(
+    conversationId: string,
+    firstMessage: string,
+  ): Promise<ConversationWithMessages> {
     const title = this.generateTitle(firstMessage);
     return this.updateTitle(conversationId, title);
   }

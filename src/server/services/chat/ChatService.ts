@@ -16,6 +16,7 @@ export interface ChatMessage {
 export interface SendMessageInput {
   content: string;
   conversationId: string;
+  signal?: AbortSignal;
 }
 
 export interface SendMessageResult {
@@ -52,13 +53,18 @@ export class DatabaseChatService implements ChatService {
   constructor(
     private conversationService: ConversationService,
     private messageService: MessageService,
-    private assistant: Assistant
+    private assistant: Assistant,
   ) {}
 
   async sendMessage(input: SendMessageInput, userId?: string): Promise<SendMessageResult> {
-    const { content, conversationId } = input;
+    const { content, conversationId, signal } = input;
 
     try {
+      // Check if cancelled before starting
+      if (signal?.aborted) {
+        throw new Error('Request was cancelled');
+      }
+
       // Validate message content
       this.validateMessage(content);
 
@@ -68,11 +74,21 @@ export class DatabaseChatService implements ChatService {
       // Get conversation history for AI context
       const conversationHistory = await this.messageService.getConversationHistory(conversationId);
 
-      // Get AI response
-      const aiResponse = await this.assistant.getResponse(content, conversationHistory);
+      // Check if cancelled before AI call
+      if (signal?.aborted) {
+        throw new Error('Request was cancelled');
+      }
+
+      // Get AI response with abort signal
+      const aiResponse = await this.assistant.getResponse(content, conversationHistory, { signal });
       const response = typeof aiResponse === 'string' ? aiResponse : aiResponse.response;
       const model = typeof aiResponse === 'string' ? 'unknown' : aiResponse.model;
       const cost = typeof aiResponse === 'string' ? 0 : aiResponse.cost;
+
+      // Check if cancelled after getting response
+      if (signal?.aborted) {
+        throw new Error('Request was cancelled');
+      }
 
       if (!response || response.trim() === '') {
         throw new TRPCError({
@@ -88,7 +104,7 @@ export class DatabaseChatService implements ChatService {
         response,
         model,
         cost,
-        conversationHistory.length === 0 // Is this the first user message?
+        conversationHistory.length === 0, // Is this the first user message?
       );
 
       return result;
@@ -113,7 +129,7 @@ export class DatabaseChatService implements ChatService {
       const messages = await this.messageService.getByConversation(conversationId);
 
       // Transform to chat format
-      return messages.map(msg => ({
+      return messages.map((msg) => ({
         id: msg.id,
         role: msg.role as 'user' | 'assistant',
         content: msg.content,
@@ -163,7 +179,7 @@ export class DatabaseChatService implements ChatService {
     assistantContent: string,
     model: string,
     cost: number,
-    isFirstMessage: boolean
+    isFirstMessage: boolean,
   ): Promise<SendMessageResult> {
     // Create user message
     const userMessage = await this.messageService.create({
@@ -283,11 +299,16 @@ export class DemoChatService implements ChatService {
   constructor(
     private conversationService: ConversationService,
     private messageService: MessageService,
-    private assistant: Assistant
+    private assistant: Assistant,
   ) {}
 
   async sendMessage(input: SendMessageInput, userId?: string): Promise<SendMessageResult> {
-    const { content, conversationId } = input;
+    const { content, conversationId, signal } = input;
+
+    // Check if cancelled before starting
+    if (signal?.aborted) {
+      throw new Error('Request was cancelled');
+    }
 
     // Validate message content
     this.validateMessage(content);
@@ -298,11 +319,21 @@ export class DemoChatService implements ChatService {
     // Get conversation history
     const conversationHistory = await this.messageService.getConversationHistory(conversationId);
 
-    // Get AI response (will be demo response)
-    const aiResponse = await this.assistant.getResponse(content, conversationHistory);
+    // Check if cancelled before AI call
+    if (signal?.aborted) {
+      throw new Error('Request was cancelled');
+    }
+
+    // Get AI response (will be demo response) with abort signal
+    const aiResponse = await this.assistant.getResponse(content, conversationHistory, { signal });
     const response = typeof aiResponse === 'string' ? aiResponse : aiResponse.response;
     const model = typeof aiResponse === 'string' ? 'demo-assistant-v1' : aiResponse.model;
     const cost = typeof aiResponse === 'string' ? 0.001 : aiResponse.cost;
+
+    // Check if cancelled after getting response
+    if (signal?.aborted) {
+      throw new Error('Request was cancelled');
+    }
 
     // Create user message
     const userMessage = await this.messageService.create({
@@ -355,7 +386,7 @@ export class DemoChatService implements ChatService {
     // Get messages
     const messages = await this.messageService.getByConversation(conversationId);
 
-    return messages.map(msg => ({
+    return messages.map((msg) => ({
       id: msg.id,
       role: msg.role as 'user' | 'assistant',
       content: msg.content,

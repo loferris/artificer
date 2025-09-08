@@ -30,9 +30,13 @@ export default async function debug(req: NextApiRequest, res: NextApiResponse<De
       },
       database: {
         url: process.env.DATABASE_URL ? 'SET' : 'NOT_SET',
-        provider: process.env.DATABASE_URL?.includes('postgresql') ? 'postgresql' : 
-                 process.env.DATABASE_URL?.includes('mysql') ? 'mysql' : 
-                 process.env.DATABASE_URL?.includes('file:') ? 'sqlite' : 'unknown',
+        provider: process.env.DATABASE_URL?.includes('postgresql')
+          ? 'postgresql'
+          : process.env.DATABASE_URL?.includes('mysql')
+            ? 'mysql'
+            : process.env.DATABASE_URL?.includes('file:')
+              ? 'sqlite'
+              : 'unknown',
       },
       demo: {
         mode: process.env.DEMO_MODE,
@@ -57,7 +61,6 @@ export default async function debug(req: NextApiRequest, res: NextApiResponse<De
 
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.status(200).json(response);
-    
   } catch (error) {
     console.error('Debug endpoint failed:', error);
     res.status(500).json({

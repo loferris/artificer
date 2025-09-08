@@ -43,10 +43,10 @@ export class ExportService {
    */
   static async exportToMarkdown(
     conversations: ConversationExport[],
-    options: ExportOptions = { format: 'markdown' }
+    options: ExportOptions = { format: 'markdown' },
   ): Promise<string> {
     let content = '';
-    
+
     if (options.includeMetadata) {
       content += `# Chat Export\n\n`;
       content += `**Export Date:** ${new Date().toISOString()}\n`;
@@ -55,7 +55,7 @@ export class ExportService {
 
     for (const conv of conversations) {
       content += `## ${conv.title || 'Untitled Conversation'}\n\n`;
-      
+
       if (options.includeMetadata) {
         content += `**Model:** ${conv.model}\n`;
         content += `**Created:** ${conv.createdAt.toISOString()}\n`;
@@ -65,18 +65,16 @@ export class ExportService {
       }
 
       for (const message of conv.messages) {
-        const timestamp = options.includeTimestamps 
-          ? ` *(${message.createdAt.toISOString()})*` 
+        const timestamp = options.includeTimestamps
+          ? ` *(${message.createdAt.toISOString()})*`
           : '';
-        
-        const cost = options.includeCosts && message.cost 
-          ? ` *[$${message.cost.toFixed(6)}]*` 
-          : '';
+
+        const cost = options.includeCosts && message.cost ? ` *[$${message.cost.toFixed(6)}]*` : '';
 
         content += `### ${message.role === 'user' ? '👤 User' : '🤖 Assistant'}${timestamp}${cost}\n\n`;
         content += `${message.content}\n\n`;
       }
-      
+
       content += '---\n\n';
     }
 
@@ -88,20 +86,20 @@ export class ExportService {
    */
   static async exportToObsidian(
     conversations: ConversationExport[],
-    options: ExportOptions = { format: 'obsidian' }
+    options: ExportOptions = { format: 'obsidian' },
   ): Promise<{ [filename: string]: string }> {
     const files: { [filename: string]: string } = {};
-    
+
     // Create index file
     let indexContent = `# Chat Conversations\n\n`;
     indexContent += `**Export Date:** ${new Date().toISOString()}\n\n`;
-    
+
     for (const conv of conversations) {
       const filename = this.sanitizeFilename(conv.title || `conversation-${conv.id}`);
       const link = `[[${filename}]]`;
-      
+
       indexContent += `- ${link} - ${conv.model} (${conv.metadata.totalMessages} messages)\n`;
-      
+
       // Create individual conversation file
       let convContent = `# ${conv.title || 'Untitled Conversation'}\n\n`;
       convContent += `**Model:** ${conv.model}\n`;
@@ -109,25 +107,25 @@ export class ExportService {
       convContent += `**Messages:** ${conv.metadata.totalMessages}\n`;
       convContent += `**Tokens:** ${conv.metadata.totalTokens}\n`;
       convContent += `**Cost:** $${conv.metadata.totalCost.toFixed(6)}\n\n`;
-      
+
       if (conv.metadata.systemPrompt) {
         convContent += `## System Prompt\n\n${conv.metadata.systemPrompt}\n\n`;
       }
-      
+
       convContent += `## Messages\n\n`;
-      
+
       for (const message of conv.messages) {
-        const timestamp = options.includeTimestamps 
-          ? ` *(${message.createdAt.toISOString()})*` 
+        const timestamp = options.includeTimestamps
+          ? ` *(${message.createdAt.toISOString()})*`
           : '';
-        
+
         convContent += `### ${message.role === 'user' ? '👤 User' : '🤖 Assistant'}${timestamp}\n\n`;
         convContent += `${message.content}\n\n`;
       }
-      
+
       files[`${filename}.md`] = convContent;
     }
-    
+
     files['Chat Conversations.md'] = indexContent;
     return files;
   }
@@ -137,10 +135,10 @@ export class ExportService {
    */
   static async exportToNotion(
     conversations: ConversationExport[],
-    options: ExportOptions = { format: 'notion' }
+    options: ExportOptions = { format: 'notion' },
   ): Promise<any[]> {
     const notionPages = [];
-    
+
     for (const conv of conversations) {
       const page = {
         parent: { database_id: 'YOUR_DATABASE_ID' }, // To be configured
@@ -149,40 +147,40 @@ export class ExportService {
             title: [
               {
                 text: {
-                  content: conv.title || 'Untitled Conversation'
-                }
-              }
-            ]
+                  content: conv.title || 'Untitled Conversation',
+                },
+              },
+            ],
           },
           model: {
             select: {
-              name: conv.model
-            }
+              name: conv.model,
+            },
           },
           created: {
             date: {
-              start: conv.createdAt.toISOString()
-            }
+              start: conv.createdAt.toISOString(),
+            },
           },
           messages: {
-            number: conv.metadata.totalMessages
+            number: conv.metadata.totalMessages,
           },
           tokens: {
-            number: conv.metadata.totalTokens
+            number: conv.metadata.totalTokens,
           },
           cost: {
-            number: conv.metadata.totalCost
-          }
+            number: conv.metadata.totalCost,
+          },
         },
         children: [
           {
             object: 'block',
             type: 'heading_2',
             heading_2: {
-              rich_text: [{ type: 'text', text: { content: 'Messages' } }]
-            }
-          }
-        ]
+              rich_text: [{ type: 'text', text: { content: 'Messages' } }],
+            },
+          },
+        ],
       };
 
       // Add messages as blocks
@@ -192,30 +190,28 @@ export class ExportService {
           type: 'heading_3',
           heading_3: {
             rich_text: [
-              { 
-                type: 'text', 
-                text: { 
-                  content: `${message.role === 'user' ? '👤 User' : '🤖 Assistant'}` 
-                } 
-              }
-            ]
-          }
+              {
+                type: 'text',
+                text: {
+                  content: `${message.role === 'user' ? '👤 User' : '🤖 Assistant'}`,
+                },
+              },
+            ],
+          },
         });
-        
+
         page.children.push({
           object: 'block',
           type: 'paragraph',
           paragraph: {
-            rich_text: [
-              { type: 'text', text: { content: message.content } }
-            ]
-          }
+            rich_text: [{ type: 'text', text: { content: message.content } }],
+          },
         });
       }
-      
+
       notionPages.push(page);
     }
-    
+
     return notionPages;
   }
 
@@ -224,7 +220,7 @@ export class ExportService {
    */
   static async exportToGoogleDocs(
     conversations: ConversationExport[],
-    options: ExportOptions = { format: 'google-docs' }
+    options: ExportOptions = { format: 'google-docs' },
   ): Promise<string> {
     let html = `
       <!DOCTYPE html>
@@ -260,10 +256,10 @@ export class ExportService {
       `;
 
       for (const message of conv.messages) {
-        const timestamp = options.includeTimestamps 
-          ? ` <em>(${message.createdAt.toISOString()})</em>` 
+        const timestamp = options.includeTimestamps
+          ? ` <em>(${message.createdAt.toISOString()})</em>`
           : '';
-        
+
         html += `
           <div class="message ${message.role}">
             <h3>${message.role === 'user' ? '👤 User' : '🤖 Assistant'}${timestamp}</h3>
@@ -271,7 +267,7 @@ export class ExportService {
           </div>
         `;
       }
-      
+
       html += `</div>`;
     }
 
@@ -284,20 +280,20 @@ export class ExportService {
    */
   static async exportToJSON(
     conversations: ConversationExport[],
-    options: ExportOptions = { format: 'json' }
+    options: ExportOptions = { format: 'json' },
   ): Promise<string> {
     const exportData = {
       exportDate: new Date().toISOString(),
       version: '1.0',
-      conversations: conversations.map(conv => ({
+      conversations: conversations.map((conv) => ({
         ...conv,
         createdAt: conv.createdAt.toISOString(),
         updatedAt: conv.updatedAt.toISOString(),
-        messages: conv.messages.map(msg => ({
+        messages: conv.messages.map((msg) => ({
           ...msg,
-          createdAt: msg.createdAt.toISOString()
-        }))
-      }))
+          createdAt: msg.createdAt.toISOString(),
+        })),
+      })),
     };
 
     return JSON.stringify(exportData, null, 2);

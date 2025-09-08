@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { TRPCError } from '@trpc/server';
 import type { PrismaClient } from '@prisma/client';
-import { 
-  DatabaseConversationService, 
+import {
+  DatabaseConversationService,
   DemoConversationService,
-  type CreateConversationInput
+  type CreateConversationInput,
 } from '../ConversationService';
 
 // Mock Prisma Client
@@ -25,7 +25,9 @@ const mockPrismaClient = {
 describe('ConversationService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (mockPrismaClient.$transaction as any).mockImplementation((callback: any) => callback(mockPrismaClient));
+    (mockPrismaClient.$transaction as any).mockImplementation((callback: any) =>
+      callback(mockPrismaClient),
+    );
   });
 
   afterEach(() => {
@@ -138,9 +140,7 @@ describe('ConversationService', () => {
             maxTokens: 1000,
             createdAt: new Date('2023-01-01'),
             updatedAt: new Date('2023-01-02'),
-            messages: [
-              { content: 'Hello world' },
-            ],
+            messages: [{ content: 'Hello world' }],
             _count: { messages: 2 },
           },
           {
@@ -186,7 +186,8 @@ describe('ConversationService', () => {
       });
 
       it('should truncate long messages', () => {
-        const longMessage = 'This is a very long message that exceeds the fifty character limit and should be truncated';
+        const longMessage =
+          'This is a very long message that exceeds the fifty character limit and should be truncated';
         const result = service.generateTitle(longMessage);
         expect(result).toBe('This is a very long message that exceeds the fi...');
         expect(result).toHaveLength(50);
@@ -277,14 +278,14 @@ describe('ConversationService', () => {
         const result = await service.list();
 
         expect(result).toHaveLength(2); // Default + created
-        expect(result.find(c => c.title === 'Test Chat')).toBeDefined();
+        expect(result.find((c) => c.title === 'Test Chat')).toBeDefined();
       });
     });
 
     describe('updateTitle', () => {
       it('should update demo conversation title', async () => {
         const conversation = await service.create();
-        
+
         const result = await service.updateTitle(conversation.id, 'New Title');
 
         expect(result.title).toBe('New Title');
@@ -292,25 +293,23 @@ describe('ConversationService', () => {
       });
 
       it('should throw error for nonexistent conversation', async () => {
-        await expect(service.updateTitle('nonexistent', 'title'))
-          .rejects.toThrow(TRPCError);
+        await expect(service.updateTitle('nonexistent', 'title')).rejects.toThrow(TRPCError);
       });
     });
 
     describe('delete', () => {
       it('should delete demo conversation', async () => {
         const conversation = await service.create();
-        
+
         await service.delete(conversation.id);
 
-        // Should not be in list anymore  
+        // Should not be in list anymore
         const conversations = await service.list();
-        expect(conversations.find(c => c.id === conversation.id)).toBeUndefined();
+        expect(conversations.find((c) => c.id === conversation.id)).toBeUndefined();
       });
 
       it('should throw error for nonexistent conversation', async () => {
-        await expect(service.delete('nonexistent'))
-          .rejects.toThrow(TRPCError);
+        await expect(service.delete('nonexistent')).rejects.toThrow(TRPCError);
       });
     });
 

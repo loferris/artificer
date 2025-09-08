@@ -12,9 +12,12 @@ interface HealthCheckResponse {
   error?: string;
 }
 
-export default async function health(req: NextApiRequest, res: NextApiResponse<HealthCheckResponse>) {
+export default async function health(
+  req: NextApiRequest,
+  res: NextApiResponse<HealthCheckResponse>,
+) {
   const startTime = Date.now();
-  
+
   try {
     // Basic health check response
     const response: HealthCheckResponse = {
@@ -34,27 +37,29 @@ export default async function health(req: NextApiRequest, res: NextApiResponse<H
       response.database = 'error';
       response.status = 'unhealthy';
       response.error = 'Database connection failed';
-      logger.error('Health check: Database connection failed', dbError instanceof Error ? dbError : new Error(String(dbError)));
+      logger.error(
+        'Health check: Database connection failed',
+        dbError instanceof Error ? dbError : new Error(String(dbError)),
+      );
     }
 
     // Log health check request
     const duration = Date.now() - startTime;
-    logger.debug('Health check completed', { 
-      status: response.status, 
-      database: response.database, 
-      duration 
+    logger.debug('Health check completed', {
+      status: response.status,
+      database: response.database,
+      duration,
     });
 
     // Set appropriate HTTP status
     const httpStatus = response.status === 'healthy' ? 200 : 503;
-    
+
     // Cache control headers
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
-    
+
     res.status(httpStatus).json(response);
-    
   } catch (error) {
     let uptime = 0;
     try {
@@ -63,10 +68,12 @@ export default async function health(req: NextApiRequest, res: NextApiResponse<H
       // If we can't get uptime, use 0 as default
       console.error('Failed to get process uptime:', uptimeError);
     }
-    
+
     const duration = Date.now() - startTime;
-    logger.error('Health check failed', error instanceof Error ? error : new Error(String(error)), { duration });
-    
+    logger.error('Health check failed', error instanceof Error ? error : new Error(String(error)), {
+      duration,
+    });
+
     res.status(503).json({
       status: 'unhealthy',
       timestamp: new Date().toISOString(),

@@ -20,7 +20,7 @@ describe('Chat Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     mockAssistant = {
       getResponse: vi.fn(),
     };
@@ -79,9 +79,7 @@ describe('Chat Router', () => {
           id: 'msg-2',
           content: 'Hello! How can I help you?',
           role: 'assistant',
-          createdAt: new Date(),
-        },
-        metadata: {
+          timestamp: new Date(),
           model: 'anthropic/claude-3-haiku',
           cost: 0.0001,
         },
@@ -100,9 +98,12 @@ describe('Chat Router', () => {
       });
 
       expect(mockChatService.sendMessage).toHaveBeenCalledWith(
-        validInput.content,
-        validInput.conversationId,
-        'test-session'
+        {
+          content: validInput.content,
+          conversationId: validInput.conversationId,
+          signal: undefined,
+        },
+        'test-session',
       );
     });
 
@@ -110,37 +111,45 @@ describe('Chat Router', () => {
       const caller = chatRouter.createCaller(mockContext);
 
       // Test empty content
-      await expect(caller.sendMessage({
-        content: '',
-        conversationId: 'conv-123',
-      })).rejects.toThrow('Message content cannot be empty');
+      await expect(
+        caller.sendMessage({
+          content: '',
+          conversationId: 'conv-123',
+        }),
+      ).rejects.toThrow('Message content cannot be empty');
 
       // Test missing conversation ID
-      await expect(caller.sendMessage({
-        content: 'Hello',
-        conversationId: '',
-      })).rejects.toThrow('Conversation ID is required');
+      await expect(
+        caller.sendMessage({
+          content: 'Hello',
+          conversationId: '',
+        }),
+      ).rejects.toThrow('Conversation ID is required');
     });
 
     it('throws error when conversation not found', async () => {
-      mockChatService.sendMessage.mockRejectedValue(new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'Conversation not found',
-      }));
+      mockChatService.sendMessage.mockRejectedValue(
+        new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Conversation not found',
+        }),
+      );
 
       const caller = chatRouter.createCaller(mockContext);
-      
+
       await expect(caller.sendMessage(validInput)).rejects.toThrow('Conversation not found');
     });
 
     it('throws error when assistant response is empty', async () => {
-      mockChatService.sendMessage.mockRejectedValue(new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Assistant response is empty',
-      }));
+      mockChatService.sendMessage.mockRejectedValue(
+        new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Assistant response is empty',
+        }),
+      );
 
       const caller = chatRouter.createCaller(mockContext);
-      
+
       await expect(caller.sendMessage(validInput)).rejects.toThrow('Assistant response is empty');
     });
 
@@ -148,7 +157,7 @@ describe('Chat Router', () => {
       mockChatService.sendMessage.mockRejectedValue(new Error('Assistant service unavailable'));
 
       const caller = chatRouter.createCaller(mockContext);
-      
+
       await expect(caller.sendMessage(validInput)).rejects.toThrow('Assistant service unavailable');
     });
 
@@ -156,7 +165,7 @@ describe('Chat Router', () => {
       mockChatService.sendMessage.mockRejectedValue(new Error('Database error'));
 
       const caller = chatRouter.createCaller(mockContext);
-      
+
       await expect(caller.sendMessage(validInput)).rejects.toThrow('Database error');
     });
 
@@ -173,10 +182,8 @@ describe('Chat Router', () => {
           id: 'msg-2',
           content: 'Hello! How can I help you?',
           role: 'assistant',
-          createdAt: new Date(),
+          timestamp: new Date(),
           tokens: 8,
-        },
-        metadata: {
           model: 'deepseek-chat',
           cost: 0.0001,
         },
@@ -207,9 +214,7 @@ describe('Chat Router', () => {
           id: 'msg-2',
           content: 'Hello! How can I help you?',
           role: 'assistant',
-          createdAt: new Date(),
-        },
-        metadata: {
+          timestamp: new Date(),
           model: 'deepseek-chat',
           cost: 0.0001,
         },
@@ -219,9 +224,12 @@ describe('Chat Router', () => {
       await caller.sendMessage(validInput);
 
       expect(mockChatService.sendMessage).toHaveBeenCalledWith(
-        validInput.content,
-        validInput.conversationId,
-        'test-session'
+        {
+          content: validInput.content,
+          conversationId: validInput.conversationId,
+          signal: undefined,
+        },
+        'test-session',
       );
     });
 
@@ -237,9 +245,10 @@ describe('Chat Router', () => {
           id: 'msg-2',
           content: 'Hello! How can I help you?',
           role: 'assistant',
-          createdAt: new Date(),
+          timestamp: new Date(),
+          model: undefined,
+          cost: undefined,
         },
-        metadata: null, // No metadata
       });
 
       const caller = chatRouter.createCaller(mockContext);
@@ -264,7 +273,7 @@ describe('Chat Router', () => {
       mockChatService.sendMessage.mockRejectedValue(trpcError);
 
       const caller = chatRouter.createCaller(mockContext);
-      
+
       // Should re-throw TRPC errors
       await expect(caller.sendMessage(validInput)).rejects.toThrow('Invalid API key');
     });
