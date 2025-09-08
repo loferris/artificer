@@ -17,12 +17,14 @@ build/
 .env.test.local
 .env.production.local
 .env.backup
+.env.production
 
 # IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
+.claude/
 
 # OS files
 .DS_Store
@@ -59,3 +61,4 @@ exports/
 /docs/DEPLOYMENT.md
 /docs/README.md
 CLAUDE.md
+docs/
