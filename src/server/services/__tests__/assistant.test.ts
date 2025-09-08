@@ -95,16 +95,16 @@ describe('Assistant Service', () => {
           assistant.getResponse(userMessage),
         ]);
 
-        const models = results.map(r => r.model);
+        const models = results.map((r) => r.model);
         const validModels = [
           'anthropic/claude-3-haiku',
-          'anthropic/claude-3-sonnet', 
+          'anthropic/claude-3-sonnet',
           'meta-llama/llama-3.1-8b-instruct',
-          'openai/gpt-4o-mini'
+          'openai/gpt-4o-mini',
         ];
 
         // All models should be from the valid list
-        models.forEach(model => {
+        models.forEach((model) => {
           expect(validModels).toContain(model);
         });
       });
@@ -152,7 +152,7 @@ describe('Assistant Service', () => {
 
       it('retries on transient errors', async () => {
         const userMessage = 'Test message';
-        
+
         // First call fails with rate limit
         (fetch as any).mockResolvedValueOnce({
           ok: false,
@@ -163,9 +163,10 @@ describe('Assistant Service', () => {
         // Second call succeeds
         (fetch as any).mockResolvedValueOnce({
           ok: true,
-          json: () => Promise.resolve({
-            choices: [{ message: { content: 'Success after retry' } }],
-          }),
+          json: () =>
+            Promise.resolve({
+              choices: [{ message: { content: 'Success after retry' } }],
+            }),
         });
 
         const result = await assistant.getResponse(userMessage);
@@ -211,9 +212,10 @@ describe('Assistant Service', () => {
         // Mock successful responses to simulate usage
         (fetch as any).mockResolvedValue({
           ok: true,
-          json: () => Promise.resolve({
-            choices: [{ message: { content: 'Response' } }],
-          }),
+          json: () =>
+            Promise.resolve({
+              choices: [{ message: { content: 'Response' } }],
+            }),
         });
 
         // Simulate some usage
@@ -228,7 +230,7 @@ describe('Assistant Service', () => {
         expect(totalUsage).toBe(3);
 
         // Check percentage calculations
-        stats.forEach(stat => {
+        stats.forEach((stat) => {
           expect(stat.percentage).toBeGreaterThanOrEqual(0);
           expect(stat.percentage).toBeLessThanOrEqual(100);
         });

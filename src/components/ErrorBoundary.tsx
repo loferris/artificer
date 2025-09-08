@@ -24,7 +24,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
+
     // Call the onError callback if provided
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
@@ -47,47 +47,43 @@ export class ErrorBoundary extends Component<Props, State> {
 
       // Default error UI
       return (
-        <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-50 flex items-center justify-center p-4">
-          <div className="max-w-md w-full bg-white rounded-xl shadow-lg border border-red-200 p-6 text-center">
-            <div className="text-6xl mb-4">⚠️</div>
-            <h1 className="text-xl font-bold text-red-800 mb-2">
-              Something went wrong
-            </h1>
-            <p className="text-red-600 mb-4">
+        <div className='min-h-screen bg-gradient-to-br from-red-50 to-pink-50 flex items-center justify-center p-4'>
+          <div className='max-w-md w-full bg-white rounded-xl shadow-lg border border-red-200 p-6 text-center'>
+            <div className='text-6xl mb-4'>⚠️</div>
+            <h1 className='text-xl font-bold text-red-800 mb-2'>Something went wrong</h1>
+            <p className='text-red-600 mb-4'>
               We encountered an unexpected error. Please try refreshing the page.
             </p>
-            
+
             {this.state.error && (
-              <details className="text-left text-sm text-gray-600 mb-4">
-                <summary className="cursor-pointer hover:text-gray-800 mb-2">
-                  Error Details
-                </summary>
-                <div className="bg-gray-50 p-3 rounded border font-mono text-xs overflow-auto">
-                  <div className="mb-2">
+              <details className='text-left text-sm text-gray-600 mb-4'>
+                <summary className='cursor-pointer hover:text-gray-800 mb-2'>Error Details</summary>
+                <div className='bg-gray-50 p-3 rounded border font-mono text-xs overflow-auto'>
+                  <div className='mb-2'>
                     <strong>Message:</strong> {this.state.error.message}
                   </div>
                   {this.state.error.stack && (
                     <div>
                       <strong>Stack:</strong>
-                      <pre className="whitespace-pre-wrap mt-1">
-                        {this.state.error.stack}
-                      </pre>
+                      <pre className='whitespace-pre-wrap mt-1'>{this.state.error.stack}</pre>
                     </div>
                   )}
                 </div>
               </details>
             )}
 
-            <div className="flex gap-3 justify-center">
+            <div className='flex gap-3 justify-center'>
               <button
                 onClick={() => window.location.reload()}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                className='px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors'
               >
                 Refresh Page
               </button>
               <button
-                onClick={() => this.setState({ hasError: false, error: undefined, errorInfo: undefined })}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                onClick={() =>
+                  this.setState({ hasError: false, error: undefined, errorInfo: undefined })
+                }
+                className='px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors'
               >
                 Try Again
               </button>
@@ -105,10 +101,10 @@ export class ErrorBoundary extends Component<Props, State> {
 export function useErrorHandler() {
   return (error: Error, errorInfo?: ErrorInfo) => {
     console.error('Error caught by useErrorHandler:', error, errorInfo);
-    
+
     // You can add additional error handling logic here
     // For example, sending to an error reporting service
-    
+
     // Log to console for debugging
     console.error('Error details:', {
       message: error.message,
@@ -122,7 +118,7 @@ export function useErrorHandler() {
 export function withErrorBoundary<P extends object>(
   Component: React.ComponentType<P>,
   fallback?: ReactNode,
-  onError?: (error: Error, errorInfo: ErrorInfo) => void
+  onError?: (error: Error, errorInfo: ErrorInfo) => void,
 ) {
   return function WithErrorBoundary(props: P) {
     return (

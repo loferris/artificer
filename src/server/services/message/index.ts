@@ -5,5 +5,5 @@ export {
   type Message,
   type CreateMessageInput,
   type UpdateMessageInput,
-  type MessageWithCost
+  type MessageWithCost,
 } from './MessageService';

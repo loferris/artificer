@@ -16,11 +16,11 @@ export const exportRouter = router({
         includeTimestamps: z.boolean().default(true),
         includeCosts: z.boolean().default(true),
         groupByConversation: z.boolean().default(true),
-      })
+      }),
     )
     .query(async ({ ctx, input }) => {
       const { conversationService, messageService } = createServicesFromContext(ctx);
-      
+
       const conversations = await conversationService.listConversations();
       const conversationsWithMessages = await Promise.all(
         conversations.map(async (conv) => {
@@ -31,7 +31,7 @@ export const exportRouter = router({
             model: conv.model,
             createdAt: conv.createdAt,
             updatedAt: conv.updatedAt,
-            messages: messages.map(msg => ({
+            messages: messages.map((msg) => ({
               id: msg.id,
               role: msg.role,
               content: msg.content,
@@ -49,7 +49,7 @@ export const exportRouter = router({
               maxTokens: conv.maxTokens,
             },
           };
-        })
+        }),
       );
 
       const options: ExportOptions = {
@@ -89,9 +89,18 @@ export const exportRouter = router({
         data: result,
         metadata: {
           totalConversations: conversations.length,
-          totalMessages: conversationsWithMessages.reduce((sum, conv) => sum + conv.metadata.totalMessages, 0),
-          totalTokens: conversationsWithMessages.reduce((sum, conv) => sum + conv.metadata.totalTokens, 0),
-          totalCost: conversationsWithMessages.reduce((sum, conv) => sum + conv.metadata.totalCost, 0),
+          totalMessages: conversationsWithMessages.reduce(
+            (sum, conv) => sum + conv.metadata.totalMessages,
+            0,
+          ),
+          totalTokens: conversationsWithMessages.reduce(
+            (sum, conv) => sum + conv.metadata.totalTokens,
+            0,
+          ),
+          totalCost: conversationsWithMessages.reduce(
+            (sum, conv) => sum + conv.metadata.totalCost,
+            0,
+          ),
           exportDate: new Date().toISOString(),
         },
       };
@@ -108,14 +117,14 @@ export const exportRouter = router({
         includeMetadata: z.boolean().default(true),
         includeTimestamps: z.boolean().default(true),
         includeCosts: z.boolean().default(true),
-      })
+      }),
     )
     .query(async ({ ctx, input }) => {
       const { conversationService, messageService } = createServicesFromContext(ctx);
-      
+
       const conversations = await conversationService.listConversations();
-      const conversation = conversations.find(c => c.id === input.conversationId);
-      
+      const conversation = conversations.find((c) => c.id === input.conversationId);
+
       if (!conversation) {
         throw new TRPCError({
           code: 'NOT_FOUND',
@@ -130,7 +139,7 @@ export const exportRouter = router({
         model: conversation.model,
         createdAt: conversation.createdAt,
         updatedAt: conversation.updatedAt,
-        messages: messages.map(msg => ({
+        messages: messages.map((msg) => ({
           id: msg.id,
           role: msg.role,
           content: msg.content,

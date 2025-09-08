@@ -3,19 +3,21 @@ import { logger } from '../utils/logger';
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
-export const prisma = globalForPrisma.prisma || new PrismaClient({
-  log: [
-    { emit: 'event', level: 'query' },
-    { emit: 'event', level: 'error' },
-    { emit: 'event', level: 'warn' },
-  ],
-  errorFormat: 'pretty',
-  datasources: {
-    db: {
-      url: process.env.DATABASE_URL,
+export const prisma =
+  globalForPrisma.prisma ||
+  new PrismaClient({
+    log: [
+      { emit: 'event', level: 'query' },
+      { emit: 'event', level: 'error' },
+      { emit: 'event', level: 'warn' },
+    ],
+    errorFormat: 'pretty',
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL,
+      },
     },
-  },
-});
+  });
 
 // Ensure proper connection handling
 if (process.env.NODE_ENV !== 'production') {

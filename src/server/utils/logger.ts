@@ -21,7 +21,7 @@ interface LogEntry {
 
 class Logger {
   private logLevel: LogLevel;
-  
+
   constructor() {
     const envLevel = process.env.LOG_LEVEL?.toLowerCase();
     switch (envLevel) {
@@ -41,7 +41,12 @@ class Logger {
     }
   }
 
-  private formatLog(level: string, message: string, meta?: Record<string, unknown>, error?: Error): LogEntry {
+  private formatLog(
+    level: string,
+    message: string,
+    meta?: Record<string, unknown>,
+    error?: Error,
+  ): LogEntry {
     const logEntry: LogEntry = {
       timestamp: new Date().toISOString(),
       level,
@@ -63,11 +68,17 @@ class Logger {
     return logEntry;
   }
 
-  private log(level: LogLevel, levelName: string, message: string, meta?: Record<string, unknown>, error?: Error) {
+  private log(
+    level: LogLevel,
+    levelName: string,
+    message: string,
+    meta?: Record<string, unknown>,
+    error?: Error,
+  ) {
     if (level > this.logLevel) return;
 
     const logEntry = this.formatLog(levelName, message, meta, error);
-    
+
     // In production, you might want to send to external service
     // For solo deployment, console logging is sufficient
     if (level === LogLevel.ERROR) {
@@ -116,7 +127,10 @@ class Logger {
 
   dbQuery(query: string, duration: number, error?: Error) {
     if (error) {
-      this.error('Database query failed', error, { query: query.substring(0, 100) + '...', duration });
+      this.error('Database query failed', error, {
+        query: query.substring(0, 100) + '...',
+        duration,
+      });
     } else if (process.env.ENABLE_QUERY_LOGGING === 'true') {
       this.debug('Database query', { query: query.substring(0, 100) + '...', duration });
     }

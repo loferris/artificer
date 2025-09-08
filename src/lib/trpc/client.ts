@@ -20,7 +20,7 @@ export const trpc = createTRPCNext<AppRouter>({
             // Create a longer timeout for AI requests (2 minutes)
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 120000);
-            
+
             return fetch(url, {
               ...options,
               signal: controller.signal,
@@ -36,7 +36,7 @@ export const trpc = createTRPCNext<AppRouter>({
                 localStorage.setItem('session-id', sessionId);
               }
             }
-            
+
             return {
               'x-session-id': sessionId,
             };

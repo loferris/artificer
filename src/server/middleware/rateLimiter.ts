@@ -8,22 +8,29 @@ interface RateLimitEntry {
 
 class InMemoryRateLimiter {
   private limits = new Map<string, RateLimitEntry>();
-  
+
   // Clean up expired entries every 5 minutes
   private cleanupInterval: NodeJS.Timeout;
 
   constructor() {
-    this.cleanupInterval = setInterval(() => {
-      const now = Date.now();
-      for (const [key, entry] of this.limits.entries()) {
-        if (now > entry.resetTime) {
-          this.limits.delete(key);
+    this.cleanupInterval = setInterval(
+      () => {
+        const now = Date.now();
+        for (const [key, entry] of this.limits.entries()) {
+          if (now > entry.resetTime) {
+            this.limits.delete(key);
+          }
         }
-      }
-    }, 5 * 60 * 1000); // 5 minutes
+      },
+      5 * 60 * 1000,
+    ); // 5 minutes
   }
 
-  check(identifier: string, maxRequests: number, windowMs: number): { allowed: boolean; remaining: number; resetTime: number } {
+  check(
+    identifier: string,
+    maxRequests: number,
+    windowMs: number,
+  ): { allowed: boolean; remaining: number; resetTime: number } {
     const now = Date.now();
     const entry = this.limits.get(identifier);
 
@@ -59,10 +66,10 @@ export const rateLimiter = new InMemoryRateLimiter();
 export const RATE_LIMITS = {
   // Chat messages - most expensive operation
   CHAT: { maxRequests: 30, windowMs: 60 * 1000 }, // 30 requests per minute
-  
+
   // General API calls
   API: { maxRequests: 100, windowMs: 60 * 1000 }, // 100 requests per minute
-  
+
   // Export operations - resource intensive
   EXPORT: { maxRequests: 5, windowMs: 60 * 1000 }, // 5 exports per minute
 } as const;

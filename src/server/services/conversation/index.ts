@@ -5,5 +5,5 @@ export {
   type ConversationWithMessages,
   type CreateConversationInput,
   type UpdateConversationInput,
-  type ConversationListItem
+  type ConversationListItem,
 } from './ConversationService';

@@ -35,13 +35,9 @@ export class ErrorHandler {
   handleError(
     error: Error | string,
     context?: Record<string, any>,
-    options: ErrorHandlerOptions = {}
+    options: ErrorHandlerOptions = {},
   ): void {
-    const {
-      logToConsole = true,
-      logToService = false,
-      showUserMessage = true,
-    } = options;
+    const { logToConsole = true, logToService = false, showUserMessage = true } = options;
 
     const errorObj = typeof error === 'string' ? new Error(error) : error;
     const errorWithContext: ErrorWithContext = {
@@ -75,7 +71,7 @@ export class ErrorHandler {
   async withErrorHandling<T>(
     operation: () => Promise<T>,
     context?: Record<string, any>,
-    options: ErrorHandlerOptions = {}
+    options: ErrorHandlerOptions = {},
   ): Promise<T | null> {
     try {
       return await operation();
@@ -92,16 +88,16 @@ export class ErrorHandler {
     operation: () => Promise<T>,
     maxRetries: number = 3,
     baseDelay: number = 1000,
-    context?: Record<string, any>
+    context?: Record<string, any>,
   ): Promise<T | null> {
     let lastError: Error;
-    
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         return await operation();
       } catch (error) {
         lastError = error as Error;
-        
+
         if (attempt === maxRetries) {
           this.handleError(lastError, {
             ...context,
@@ -113,7 +109,7 @@ export class ErrorHandler {
 
         // Exponential backoff
         const delay = baseDelay * Math.pow(2, attempt - 1);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
 
@@ -127,7 +123,7 @@ export class ErrorHandler {
     value: T,
     validator: (value: T) => boolean,
     errorMessage: string,
-    context?: Record<string, any>
+    context?: Record<string, any>,
   ): boolean {
     try {
       if (!validator(value)) {
@@ -151,7 +147,7 @@ export class ErrorHandler {
     recentErrors: ErrorWithContext[];
   } {
     const errorsByType: Record<string, number> = {};
-    
+
     this.errorLog.forEach(({ error }) => {
       const type = error.constructor.name;
       errorsByType[type] = (errorsByType[type] || 0) + 1;
@@ -173,7 +169,7 @@ export class ErrorHandler {
 
   private addToLog(errorWithContext: ErrorWithContext): void {
     this.errorLog.push(errorWithContext);
-    
+
     // Keep log size manageable
     if (this.errorLog.length > this.maxLogSize) {
       this.errorLog = this.errorLog.slice(-this.maxLogSize);
@@ -182,7 +178,7 @@ export class ErrorHandler {
 
   private logToConsole(errorWithContext: ErrorWithContext): void {
     const { error, context, timestamp } = errorWithContext;
-    
+
     console.group(`🚨 Error at ${timestamp.toISOString()}`);
     console.error('Message:', error.message);
     console.error('Stack:', error.stack);
@@ -214,7 +210,7 @@ export const handleError = (error: Error | string, context?: Record<string, any>
 
 export const withErrorHandling = <T>(
   operation: () => Promise<T>,
-  context?: Record<string, any>
+  context?: Record<string, any>,
 ) => {
   return errorHandler.withErrorHandling(operation, context);
 };
@@ -223,28 +219,37 @@ export const withRetry = <T>(
   operation: () => Promise<T>,
   maxRetries?: number,
   baseDelay?: number,
-  context?: Record<string, any>
+  context?: Record<string, any>,
 ) => {
   return errorHandler.withRetry(operation, maxRetries, baseDelay, context);
 };
 
 // Common error types
 export class ValidationError extends Error {
-  constructor(message: string, public field?: string) {
+  constructor(
+    message: string,
+    public field?: string,
+  ) {
     super(message);
     this.name = 'ValidationError';
   }
 }
 
 export class NetworkError extends Error {
-  constructor(message: string, public statusCode?: number) {
+  constructor(
+    message: string,
+    public statusCode?: number,
+  ) {
     super(message);
     this.name = 'NetworkError';
   }
 }
 
 export class DatabaseError extends Error {
-  constructor(message: string, public operation?: string) {
+  constructor(
+    message: string,
+    public operation?: string,
+  ) {
     super(message);
     this.name = 'DatabaseError';
   }

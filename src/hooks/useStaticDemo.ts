@@ -1,35 +1,40 @@
 import { useEffect } from 'react';
 import { useChatStore } from '../stores/chatStore';
-import { DEMO_CONVERSATIONS, DEMO_MESSAGES, isStaticDemo, generateDemoResponse } from '../utils/staticDemo';
+import {
+  DEMO_CONVERSATIONS,
+  DEMO_MESSAGES,
+  isStaticDemo,
+  generateDemoResponse,
+} from '../utils/staticDemo';
 
 export const useStaticDemo = () => {
   const {
     setDemoMode,
-    createDemoConversation, 
+    createDemoConversation,
     addDemoMessage,
     setCurrentConversation,
     isDemoMode,
-    currentConversationId
+    currentConversationId,
   } = useChatStore();
 
   // Initialize demo mode on mount if in static demo environment
   useEffect(() => {
     if (isStaticDemo()) {
       setDemoMode(true);
-      
+
       // Initialize demo conversations (matching API structure)
-      DEMO_CONVERSATIONS.forEach(conv => {
+      DEMO_CONVERSATIONS.forEach((conv) => {
         createDemoConversation(conv.id, conv.title);
       });
-      
+
       // Add demo messages
-      DEMO_MESSAGES.forEach(message => {
+      DEMO_MESSAGES.forEach((message) => {
         addDemoMessage({
           ...message,
           conversationId: 'demo-1', // Link to first demo conversation
         });
       });
-      
+
       // Set the first conversation as current
       if (DEMO_CONVERSATIONS.length > 0) {
         setCurrentConversation(DEMO_CONVERSATIONS[0].id);
@@ -41,7 +46,7 @@ export const useStaticDemo = () => {
   const demoAPI = {
     sendMessage: async (message: string, conversationId: string) => {
       if (!isDemoMode) return null;
-      
+
       // Add user message
       const userMessage = {
         id: `user-${Date.now()}`,
@@ -52,29 +57,29 @@ export const useStaticDemo = () => {
         cost: 0,
         conversationId,
       };
-      
+
       addDemoMessage(userMessage);
-      
+
       // Simulate AI response delay
-      await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 2000));
+
       // Add AI response
       const aiResponse = generateDemoResponse(message);
       addDemoMessage({
         ...aiResponse,
         conversationId,
       });
-      
+
       return aiResponse;
     },
-    
+
     createConversation: async () => {
       if (!isDemoMode) return null;
-      
+
       const newId = `demo-${Date.now()}`;
       createDemoConversation(newId, 'New Demo Conversation');
       setCurrentConversation(newId);
-      
+
       return {
         id: newId,
         title: 'New Demo Conversation',
@@ -86,11 +91,11 @@ export const useStaticDemo = () => {
         updatedAt: new Date(),
       };
     },
-    
+
     getConversations: async () => {
       if (!isDemoMode) return [];
-      
-      return DEMO_CONVERSATIONS.map(conv => ({
+
+      return DEMO_CONVERSATIONS.map((conv) => ({
         id: conv.id,
         title: conv.title,
         model: 'demo-assistant-v1',
@@ -102,13 +107,13 @@ export const useStaticDemo = () => {
         messages: [],
       }));
     },
-    
+
     getMessages: async (conversationId: string) => {
       if (!isDemoMode) return [];
-      
+
       // Return demo messages for the demo conversation
       return conversationId === 'demo-1' ? DEMO_MESSAGES : [];
-    }
+    },
   };
 
   return {

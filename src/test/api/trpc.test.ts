@@ -36,7 +36,7 @@ describe('/api/trpc/[trpc]', () => {
 
   it('exports config correctly', async () => {
     const { config } = await import('../../pages/api/trpc/[trpc]');
-    
+
     expect(config).toEqual({
       api: {
         bodyParser: {

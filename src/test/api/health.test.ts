@@ -41,7 +41,7 @@ describe('/api/health', () => {
       await health(req, res);
 
       expect(res._getStatusCode()).toBe(200);
-      
+
       const responseData = JSON.parse(res._getData());
       expect(responseData).toEqual({
         status: 'healthy',
@@ -60,7 +60,7 @@ describe('/api/health', () => {
           status: 'healthy',
           database: 'connected',
           duration: expect.any(Number),
-        })
+        }),
       );
     });
 
@@ -77,7 +77,7 @@ describe('/api/health', () => {
       await health(req, res);
 
       expect(res._getStatusCode()).toBe(503);
-      
+
       const responseData = JSON.parse(res._getData());
       expect(responseData).toEqual({
         status: 'unhealthy',
@@ -92,7 +92,7 @@ describe('/api/health', () => {
       const { logger } = await import('../../server/utils/logger');
       expect(logger.error).toHaveBeenCalledWith(
         'Health check: Database connection failed',
-        dbError
+        dbError,
       );
     });
 
@@ -110,7 +110,7 @@ describe('/api/health', () => {
       await health(req, res);
 
       expect(res._getStatusCode()).toBe(503);
-      
+
       const responseData = JSON.parse(res._getData());
       expect(responseData).toEqual({
         status: 'unhealthy',
@@ -126,9 +126,9 @@ describe('/api/health', () => {
         expect.any(Error),
         expect.objectContaining({
           duration: expect.any(Number),
-        })
+        }),
       );
-      
+
       // Restore the spy
       uptimeSpy.mockRestore();
     });
@@ -146,8 +146,8 @@ describe('/api/health', () => {
 
       expect(res._getHeaders()).toMatchObject({
         'cache-control': 'no-cache, no-store, must-revalidate',
-        'pragma': 'no-cache',
-        'expires': '0',
+        pragma: 'no-cache',
+        expires: '0',
       });
     });
 
@@ -218,7 +218,7 @@ describe('/api/health', () => {
       await health(req, res);
 
       expect(res._getStatusCode()).toBe(503);
-      
+
       const responseData = JSON.parse(res._getData());
       expect(responseData.status).toBe('unhealthy');
       expect(responseData.database).toBe('error');
@@ -227,7 +227,7 @@ describe('/api/health', () => {
       const { logger } = await import('../../server/utils/logger');
       expect(logger.error).toHaveBeenCalledWith(
         'Health check: Database connection failed',
-        expect.any(Error)
+        expect.any(Error),
       );
     });
 
@@ -251,7 +251,7 @@ describe('/api/health', () => {
           status: 'healthy',
           database: 'connected',
           duration: expect.any(Number),
-        })
+        }),
       );
 
       // Verify duration is reasonable (should be very small for mocked call)
@@ -276,7 +276,7 @@ describe('/api/health', () => {
       await health(req, res);
 
       expect(res._getStatusCode()).toBe(503);
-      
+
       const responseData = JSON.parse(res._getData());
       expect(responseData.status).toBe('unhealthy');
       expect(responseData.error).toBe('Health check failed');
@@ -287,7 +287,7 @@ describe('/api/health', () => {
         expect.any(Error),
         expect.objectContaining({
           duration: expect.any(Number),
-        })
+        }),
       );
 
       // Restore the spy
@@ -308,7 +308,7 @@ describe('/api/health', () => {
       await health(req, res);
 
       expect(res._getStatusCode()).toBe(503);
-      
+
       const responseData = JSON.parse(res._getData());
       expect(responseData.status).toBe('unhealthy');
       expect(responseData.error).toBe('Health check failed');
@@ -319,7 +319,7 @@ describe('/api/health', () => {
         expect.any(Error),
         expect.objectContaining({
           duration: expect.any(Number),
-        })
+        }),
       );
 
       // Restore the spy
@@ -340,7 +340,7 @@ describe('/api/health', () => {
       await health(req, res);
 
       expect(res._getHeaders()['content-type']).toBe('application/json');
-      
+
       const responseData = JSON.parse(res._getData());
       expect(typeof responseData.status).toBe('string');
       expect(typeof responseData.timestamp).toBe('string');

@@ -2,9 +2,9 @@ import { NextApiRequest, NextApiResponse } from 'next';
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
-    return res.status(405).json({ 
-      message: 'Method not allowed', 
-      allowedMethods: ['GET'] 
+    return res.status(405).json({
+      message: 'Method not allowed',
+      allowedMethods: ['GET'],
     });
   }
 
@@ -16,19 +16,20 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
       {
         id: 'demo-msg-1',
         role: 'assistant' as const,
-        content: 'Welcome to this AI chat application! This is a showcase demo featuring real-time AI conversations, conversation management, export functionality, and more!',
+        content:
+          'Welcome to this AI chat application! This is a showcase demo featuring real-time AI conversations, conversation management, export functionality, and more!',
         timestamp: new Date(Date.now() - 3600000),
         model: 'demo-assistant-v1',
         cost: 0.001,
-      }
+      },
     ];
 
     res.status(200).json(messages);
   } catch (error) {
     console.error('Error fetching messages:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: 'Failed to fetch messages',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 }

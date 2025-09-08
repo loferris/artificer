@@ -11,18 +11,21 @@ This system treats AI conversations as **structured data** to be organized, comp
 ## Current Implementation
 
 **Foundation Layer**
+
 - AI conversation persistence with PostgreSQL database
 - OpenRouter API integration for multi-model access
 - Rate limiting and session management
 - Type-safe API layer with tRPC
 
 **Conversation Management**
+
 - Service layer handling conversation lifecycle
 - Message operations with token tracking and cost calculation
 - Database schema designed for conversation branching
 - Export to structured formats (Markdown, JSON)
 
 **Knowledge Capture**
+
 - Structured conversation data optimized for export
 - Service layer architecture for UI-agnostic business logic
 - Export system ready for PKM workflows
@@ -47,16 +50,19 @@ This is built **API-first** as a headless orchestration service with a clean ser
 ## Planned Features
 
 **Intelligent Model Routing**
+
 - Cost-aware switching between Claude, DeepSeek, and local models
 - Task complexity analysis to route queries appropriately
 - Dynamic fallback strategies
 
 **Advanced Conversation Management**
+
 - Conversation branching for exploring tangents without losing main thread
 - Cross-session context preservation
 - Multi-model conversation threading
 
 **Context Compression Agents**
+
 - Identify key insights and decisions from long research conversations
 - Generate structured summaries with proper context preservation
 - Extract actionable items and next steps automatically

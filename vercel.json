@@ -5,7 +5,7 @@
   "installCommand": "npm install",
   "env": {
     "NEXT_PUBLIC_DEMO_MODE": "true",
-    "SITE_NAME": "TeddyBox Chat Demo"
+    "SITE_NAME": "Chat App Demo"
   },
   "build": {
     "env": {

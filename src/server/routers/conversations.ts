@@ -24,13 +24,13 @@ export const conversationsRouter = router({
       z.object({
         conversationId: z.string().min(1, 'Conversation ID is required'),
         firstMessage: z.string().min(1, 'First message is required'),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const { conversationService } = createServicesFromContext(ctx);
       return await conversationService.updateConversationTitle(
         input.conversationId,
-        input.firstMessage
+        input.firstMessage,
       );
     }),
 

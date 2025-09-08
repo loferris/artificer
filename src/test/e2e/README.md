@@ -9,11 +9,13 @@ E2E tests simulate real user interactions and verify that all components work to
 ## Test Structure
 
 ### `setup.ts`
+
 - **MSW Server Setup**: Mock Service Worker configuration for API mocking
 - **Mock Data**: Test data for conversations, messages, and usage stats
 - **Helper Functions**: Utilities for simulating API delays, errors, and responses
 
 ### `Chat.e2e.test.tsx`
+
 - **Complete User Workflows**: Full conversation creation and management flows
 - **Error Handling & Recovery**: API failures, timeouts, and recovery scenarios
 - **Performance & Edge Cases**: Large data sets, rapid interactions, concurrent operations
@@ -23,16 +25,19 @@ E2E tests simulate real user interactions and verify that all components work to
 ## Running E2E Tests
 
 ### All E2E Tests
+
 ```bash
 npm run test:e2e
 ```
 
 ### Run Once (CI/CD)
+
 ```bash
 npm run test:e2e:run
 ```
 
 ### Interactive UI
+
 ```bash
 npm run test:e2e:ui
 ```
@@ -40,34 +45,44 @@ npm run test:e2e:ui
 ## Test Categories
 
 ### 1. Complete User Workflows
+
 Tests that verify entire user journeys from start to finish:
+
 - Creating new conversations
 - Sending messages
 - Viewing conversation history
 - Managing multiple conversations
 
 ### 2. Error Handling & Recovery
+
 Tests that ensure the app handles failures gracefully:
+
 - API failures and recovery
 - Partial failures with graceful degradation
 - Network timeouts and retries
 
 ### 3. Performance & Edge Cases
+
 Tests that verify the app handles challenging scenarios:
+
 - Large conversation lists (50+ conversations)
 - Rapid user interactions
 - Concurrent operations
 - State consistency under load
 
 ### 4. Data Synchronization
+
 Tests that verify data integrity:
+
 - Real-time updates
 - Data consistency across operations
 - Proper invalidation and refresh
 - Message and conversation synchronization
 
 ### 5. User Experience & Accessibility
+
 Tests that ensure good UX:
+
 - Loading and success feedback
 - Keyboard navigation
 - Screen reader support
@@ -104,17 +119,21 @@ export const mockMessages = [
 ## Helper Functions
 
 ### `setupDefaultMocks()`
+
 Sets up standard mock responses for all tRPC endpoints.
 
 ### `simulateApiDelay(delay)`
+
 Simulates network latency to test loading states and timeouts.
 
 ### `simulateApiError(endpoint)`
+
 Simulates API failures to test error handling and recovery.
 
 ## Adding New E2E Tests
 
 ### 1. Test Structure
+
 ```typescript
 describe('New Feature', () => {
   it('should work correctly', async () => {
@@ -126,7 +145,9 @@ describe('New Feature', () => {
 ```
 
 ### 2. Mock Data
+
 Add new mock data to `setup.ts` if needed:
+
 ```typescript
 export const newMockData = {
   // ... test data
@@ -134,7 +155,9 @@ export const newMockData = {
 ```
 
 ### 3. Helper Functions
+
 Create new helper functions in `setup.ts` for common operations:
+
 ```typescript
 export const simulateNewScenario = () => {
   // ... implementation
@@ -144,21 +167,25 @@ export const simulateNewScenario = () => {
 ## Best Practices
 
 ### 1. Realistic User Actions
+
 - Use `userEvent` for realistic interactions
 - Test complete workflows, not just individual actions
 - Include error scenarios and edge cases
 
 ### 2. Proper Assertions
+
 - Use `waitFor` for asynchronous operations
 - Verify both positive and negative outcomes
 - Check for proper error states and recovery
 
 ### 3. Test Isolation
+
 - Reset mocks between tests
 - Use `beforeEach` for common setup
 - Avoid test interdependencies
 
 ### 4. Performance Considerations
+
 - Test with realistic data volumes
 - Verify efficient handling of large datasets
 - Test concurrent operations and race conditions
@@ -184,6 +211,7 @@ export const simulateNewScenario = () => {
 ### Debug Mode
 
 Run tests with verbose output:
+
 ```bash
 npm run test:e2e -- --reporter=verbose
 ```
@@ -191,6 +219,7 @@ npm run test:e2e -- --reporter=verbose
 ## Integration with CI/CD
 
 E2E tests are designed to run in CI/CD environments:
+
 - Use `npm run test:e2e:run` for non-interactive execution
 - Tests have appropriate timeouts for CI environments
 - Mock data is consistent across different environments
@@ -198,6 +227,7 @@ E2E tests are designed to run in CI/CD environments:
 ## Future Enhancements
 
 Potential improvements for the E2E testing framework:
+
 - **Visual Regression Testing**: Screenshot comparison for UI changes
 - **Performance Testing**: Load testing and performance benchmarks
 - **Cross-Browser Testing**: Test in multiple browsers

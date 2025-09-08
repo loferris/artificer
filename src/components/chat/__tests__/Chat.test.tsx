@@ -64,7 +64,7 @@ vi.mock('../../../lib/trpc/client', () => ({
 
 // Mock ExportButton
 vi.mock('../../ExportButton', () => ({
-  ExportButton: () => <div data-testid="export-button">Export Button</div>,
+  ExportButton: () => <div data-testid='export-button'>Export Button</div>,
 }));
 
 describe('Chat Component', () => {
@@ -78,7 +78,7 @@ describe('Chat Component', () => {
     lastFailedMessage: '',
     input: '',
     sidebarOpen: true,
-    
+
     // Actions
     setCurrentConversation: vi.fn(),
     setLoading: vi.fn(),
@@ -126,13 +126,13 @@ describe('Chat Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Set up default mocks
     mockUseChatStore.mockReturnValue(defaultStoreState);
     mockUseIsConversationReady.mockReturnValue(false);
     mockUseCanSendMessage.mockReturnValue(false);
     mockUseShouldShowRetry.mockReturnValue(false);
-    
+
     mockConversationsQuery.mockReturnValue(defaultConversationsQuery);
     mockMessagesQuery.mockReturnValue(defaultMessagesQuery);
     mockCreateConversationMutation.mockReturnValue(defaultCreateMutation);
@@ -147,7 +147,7 @@ describe('Chat Component', () => {
   describe('Basic Rendering', () => {
     it('renders chat interface correctly', () => {
       render(<Chat />);
-      
+
       expect(screen.getByText('AI Chat')).toBeInTheDocument();
       expect(screen.getByText('Conversations')).toBeInTheDocument();
       expect(screen.getByText('+ New Chat')).toBeInTheDocument();
@@ -157,28 +157,30 @@ describe('Chat Component', () => {
 
     it('displays welcome message when no messages exist', () => {
       render(<Chat />);
-      
+
       expect(screen.getByText('Welcome to your colorful chat!')).toBeInTheDocument();
-      expect(screen.getByText('Start a conversation by typing a message below')).toBeInTheDocument();
+      expect(
+        screen.getByText('Start a conversation by typing a message below'),
+      ).toBeInTheDocument();
     });
 
     it('shows sidebar with new chat button', () => {
       render(<Chat />);
-      
+
       expect(screen.getByText('+ New Chat')).toBeInTheDocument();
       expect(screen.getByTestId('export-button')).toBeInTheDocument();
     });
 
     it('shows sidebar toggle button', () => {
       render(<Chat />);
-      
+
       const toggleButton = screen.getByTitle('Hide sidebar');
       expect(toggleButton).toBeInTheDocument();
     });
 
     it('shows empty state when no conversations exist', () => {
       render(<Chat />);
-      
+
       expect(screen.getByText('No conversations yet')).toBeInTheDocument();
       expect(screen.getByText('Start chatting to create one!')).toBeInTheDocument();
     });
@@ -189,14 +191,14 @@ describe('Chat Component', () => {
       mockUseIsConversationReady.mockReturnValue(true);
 
       render(<Chat />);
-      
+
       const input = screen.getByRole('textbox');
       expect(input).toHaveAttribute('id', 'chat-input');
     });
 
     it('has proper button roles', () => {
       render(<Chat />);
-      
+
       const sendButton = screen.getByRole('button', { name: /send/i });
       expect(sendButton).toBeInTheDocument();
     });
@@ -205,7 +207,7 @@ describe('Chat Component', () => {
       // Note: Message display tests are complex due to tRPC mocking requirements
       // ARIA attributes are tested implicitly through other functionality tests
       render(<Chat />);
-      
+
       // Basic accessibility test - check that the component renders without errors
       expect(screen.getByRole('textbox')).toBeInTheDocument();
     });
@@ -214,7 +216,7 @@ describe('Chat Component', () => {
   describe('Edge Cases', () => {
     it('handles empty message content', async () => {
       const user = userEvent.setup();
-      
+
       mockUseChatStore.mockReturnValue({
         ...defaultStoreState,
         currentConversationId: 'conv1',
@@ -226,7 +228,7 @@ describe('Chat Component', () => {
       mockUseCanSendMessage.mockReturnValue(false); // Should be false for whitespace
 
       render(<Chat />);
-      
+
       const sendButton = screen.getByRole('button', { name: /send/i });
       // The button should be disabled when canSendMessage is false
       expect(sendButton).toBeDisabled();
@@ -239,7 +241,7 @@ describe('Chat Component', () => {
       });
 
       render(<Chat />);
-      
+
       expect(screen.getByText('No conversations yet')).toBeInTheDocument();
     });
 
@@ -247,7 +249,7 @@ describe('Chat Component', () => {
       // Note: Malformed message data tests are complex due to tRPC mocking requirements
       // Error handling is tested implicitly through other functionality tests
       render(<Chat />);
-      
+
       // Basic test - check that the component renders without crashing
       expect(screen.getByRole('textbox')).toBeInTheDocument();
     });

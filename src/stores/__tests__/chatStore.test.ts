@@ -146,7 +146,7 @@ describe('Chat Store', () => {
       expect(result.current.retryCount).toBe(1);
       expect(result.current.error).toBe('First error');
 
-      // Second attempt  
+      // Second attempt
       act(() => {
         result.current.startMessageSend('Test message');
         result.current.handleMessageError('Second error');

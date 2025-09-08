@@ -17,7 +17,9 @@ vi.mock('../../services/export', () => ({
 
 // Mock the rate limiter
 vi.mock('../../middleware/rateLimiter', () => ({
-  createRateLimitMiddleware: vi.fn(() => vi.fn().mockReturnValue({ allowed: true, remaining: 10, resetTime: Date.now() + 60000 })),
+  createRateLimitMiddleware: vi.fn(() =>
+    vi.fn().mockReturnValue({ allowed: true, remaining: 10, resetTime: Date.now() + 60000 }),
+  ),
 }));
 
 // Mock the logger to prevent rate limit logging errors
@@ -169,11 +171,11 @@ describe('Export Router', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    
+
     mockConversationService = {
       listConversations: vi.fn(),
     };
-    
+
     mockMessageService = {
       getMessagesByConversation: vi.fn(),
     };
@@ -201,7 +203,7 @@ describe('Export Router', () => {
   describe('exportAll', () => {
     it('exports all conversations in markdown format', async () => {
       const mockMarkdown = '# Chat Export\n\n## Test Conversation 1\n\nHello\nHi there!';
-      
+
       mockConversationService.listConversations.mockResolvedValue(mockConversations);
       mockMessageService.getMessagesByConversation
         .mockResolvedValueOnce([mockMessages[0], mockMessages[1]]) // First conversation messages
@@ -252,13 +254,13 @@ describe('Export Router', () => {
           includeTimestamps: true,
           includeCosts: true,
           groupByConversation: true,
-        })
+        }),
       );
     });
 
     it('exports all conversations in JSON format', async () => {
       const mockJson = { conversations: [] };
-      
+
       mockConversationService.listConversations.mockResolvedValue(mockConversations);
       mockMessageService.getMessagesByConversation
         .mockResolvedValueOnce([mockMessages[0], mockMessages[1]]) // First conversation messages
@@ -284,13 +286,13 @@ describe('Export Router', () => {
           includeTimestamps: false,
           includeCosts: false,
           groupByConversation: false,
-        })
+        }),
       );
     });
 
     it('exports all conversations in Obsidian format', async () => {
       const mockObsidian = '# Obsidian Export\n\n[[Test Conversation 1]]';
-      
+
       mockConversationService.listConversations.mockResolvedValue(mockConversations);
       mockMessageService.getMessagesByConversation
         .mockResolvedValueOnce([mockMessages[0], mockMessages[1]]) // First conversation messages
@@ -309,7 +311,7 @@ describe('Export Router', () => {
 
     it('exports all conversations in Notion format', async () => {
       const mockNotion = { notion: 'export' };
-      
+
       mockConversationService.listConversations.mockResolvedValue(mockConversations);
       mockMessageService.getMessagesByConversation
         .mockResolvedValueOnce([mockMessages[0], mockMessages[1]]) // First conversation messages
@@ -328,7 +330,7 @@ describe('Export Router', () => {
 
     it('exports all conversations in Google Docs format', async () => {
       const mockGoogleDocs = '<html><body>Google Docs Export</body></html>';
-      
+
       mockConversationService.listConversations.mockResolvedValue(mockConversations);
       mockMessageService.getMessagesByConversation
         .mockResolvedValueOnce([mockMessages[0], mockMessages[1]]) // First conversation messages
@@ -351,17 +353,21 @@ describe('Export Router', () => {
 
       const caller = exportRouter.createCaller(mockContext);
 
-      await expect(caller.exportAll({
-        format: 'markdown',
-      })).rejects.toThrow('Database connection failed');
+      await expect(
+        caller.exportAll({
+          format: 'markdown',
+        }),
+      ).rejects.toThrow('Database connection failed');
     });
 
     it('handles unsupported format', async () => {
       const caller = exportRouter.createCaller(mockContext);
 
-      await expect(caller.exportAll({
-        format: 'unsupported' as any,
-      })).rejects.toThrow(TRPCError);
+      await expect(
+        caller.exportAll({
+          format: 'unsupported' as any,
+        }),
+      ).rejects.toThrow(TRPCError);
     });
 
     it('handles empty conversations list', async () => {
@@ -432,11 +438,11 @@ describe('Export Router', () => {
 
     it('exports single conversation in markdown format', async () => {
       const mockMarkdown = '# Test Conversation\n\nHello\nHi there!';
-      
+
       mockConversationService.listConversations.mockResolvedValue([mockConversation]);
       mockMessageService.getMessagesByConversation.mockResolvedValue([
         mockMessages[0],
-        mockMessages[1]
+        mockMessages[1],
       ]);
       (ExportService.exportToMarkdown as any).mockResolvedValue(mockMarkdown);
 
@@ -479,17 +485,17 @@ describe('Export Router', () => {
           includeMetadata: true,
           includeTimestamps: true,
           includeCosts: true,
-        })
+        }),
       );
     });
 
     it('exports single conversation in JSON format', async () => {
       const mockJson = { conversation: { id: 'conv-1' } };
-      
+
       mockConversationService.listConversations.mockResolvedValue([mockConversation]);
       mockMessageService.getMessagesByConversation.mockResolvedValue([
         mockMessages[0],
-        mockMessages[1]
+        mockMessages[1],
       ]);
       (ExportService.exportToJSON as any).mockResolvedValue(mockJson);
 
@@ -509,10 +515,12 @@ describe('Export Router', () => {
 
       const caller = exportRouter.createCaller(mockContext);
 
-      await expect(caller.exportConversation({
-        conversationId: 'nonexistent',
-        format: 'markdown',
-      })).rejects.toThrow('Conversation not found');
+      await expect(
+        caller.exportConversation({
+          conversationId: 'nonexistent',
+          format: 'markdown',
+        }),
+      ).rejects.toThrow('Conversation not found');
     });
 
     it('handles database errors gracefully', async () => {
@@ -521,19 +529,23 @@ describe('Export Router', () => {
 
       const caller = exportRouter.createCaller(mockContext);
 
-      await expect(caller.exportConversation({
-        conversationId: 'conv-1',
-        format: 'markdown',
-      })).rejects.toThrow('Database connection failed');
+      await expect(
+        caller.exportConversation({
+          conversationId: 'conv-1',
+          format: 'markdown',
+        }),
+      ).rejects.toThrow('Database connection failed');
     });
 
     it('handles unsupported format', async () => {
       const caller = exportRouter.createCaller(mockContext);
 
-      await expect(caller.exportConversation({
-        conversationId: 'conv-1',
-        format: 'unsupported' as any,
-      })).rejects.toThrow(TRPCError);
+      await expect(
+        caller.exportConversation({
+          conversationId: 'conv-1',
+          format: 'unsupported' as any,
+        }),
+      ).rejects.toThrow(TRPCError);
     });
 
     it('handles conversation with no messages', async () => {
@@ -542,7 +554,7 @@ describe('Export Router', () => {
         messageCount: 0,
         lastMessagePreview: undefined,
       };
-      
+
       mockConversationService.listConversations.mockResolvedValue([conversationWithoutMessages]);
       mockMessageService.getMessagesByConversation.mockResolvedValue([]);
       (ExportService.exportToMarkdown as any).mockResolvedValue('# Empty Conversation');
@@ -597,7 +609,7 @@ describe('Export Router', () => {
             description: 'Structured JSON data',
             extensions: ['.json'],
           }),
-        ])
+        ]),
       );
     });
   });
@@ -606,18 +618,22 @@ describe('Export Router', () => {
     it('validates required conversationId for exportConversation', async () => {
       const caller = exportRouter.createCaller(mockContext);
 
-      await expect(caller.exportConversation({
-        conversationId: '',
-        format: 'markdown',
-      })).rejects.toThrow('Conversation ID is required');
+      await expect(
+        caller.exportConversation({
+          conversationId: '',
+          format: 'markdown',
+        }),
+      ).rejects.toThrow('Conversation ID is required');
     });
 
     it('validates format enum values', async () => {
       const caller = exportRouter.createCaller(mockContext);
 
-      await expect(caller.exportAll({
-        format: 'invalid' as any,
-      })).rejects.toThrow();
+      await expect(
+        caller.exportAll({
+          format: 'invalid' as any,
+        }),
+      ).rejects.toThrow();
     });
 
     it('uses default values for optional parameters', async () => {
@@ -636,7 +652,7 @@ describe('Export Router', () => {
           includeTimestamps: true,
           includeCosts: true,
           groupByConversation: true,
-        })
+        }),
       );
     });
   });
@@ -651,7 +667,10 @@ describe('Export Router', () => {
       };
 
       mockConversationService.listConversations.mockResolvedValue([conversationWithMetadata]);
-      mockMessageService.getMessagesByConversation.mockResolvedValue([mockMessages[0], mockMessages[1]]);
+      mockMessageService.getMessagesByConversation.mockResolvedValue([
+        mockMessages[0],
+        mockMessages[1],
+      ]);
       (ExportService.exportToMarkdown as any).mockResolvedValue('');
 
       const caller = exportRouter.createCaller(mockContext);
@@ -695,7 +714,7 @@ describe('Export Router', () => {
             }),
           }),
         ]),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -706,7 +725,10 @@ describe('Export Router', () => {
       };
 
       mockConversationService.listConversations.mockResolvedValue([conversationWithNullTitle]);
-      mockMessageService.getMessagesByConversation.mockResolvedValue([mockMessages[0], mockMessages[1]]);
+      mockMessageService.getMessagesByConversation.mockResolvedValue([
+        mockMessages[0],
+        mockMessages[1],
+      ]);
       (ExportService.exportToMarkdown as any).mockResolvedValue('');
 
       const caller = exportRouter.createCaller(mockContext);
@@ -720,7 +742,7 @@ describe('Export Router', () => {
             title: 'Untitled Conversation',
           }),
         ]),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -757,7 +779,7 @@ describe('Export Router', () => {
             ]),
           }),
         ]),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
   });

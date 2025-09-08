@@ -23,13 +23,14 @@ export const realisticMockConversation = {
     {
       id: 'msg_cuid_example_789',
       role: 'assistant',
-      content: 'Hello! I\'m doing well, thank you for asking. I\'m here to help you with any questions or tasks you might have. How can I assist you today?',
+      content:
+        "Hello! I'm doing well, thank you for asking. I'm here to help you with any questions or tasks you might have. How can I assist you today?",
       tokens: 28,
       createdAt: new Date('2024-01-15T10:30:05Z'),
       conversationId: 'conv_cuid_example_123',
       parentId: null,
-    }
-  ]
+    },
+  ],
 };
 
 export const realisticMockMessages = [
@@ -45,12 +46,13 @@ export const realisticMockMessages = [
   {
     id: 'msg_cuid_example_789',
     role: 'assistant',
-    content: 'Hello! I\'m doing well, thank you for asking. I\'m here to help you with any questions or tasks you might have. How can I assist you today?',
+    content:
+      "Hello! I'm doing well, thank you for asking. I'm here to help you with any questions or tasks you might have. How can I assist you today?",
     tokens: 28,
     createdAt: new Date('2024-01-15T10:30:05Z'),
     conversationId: 'conv_cuid_example_123',
     parentId: null,
-  }
+  },
 ];
 
 export const realisticMockUsageStats = {
@@ -72,13 +74,14 @@ export const realisticMockModelUsage = {
       role: 'assistant',
       count: 4,
       percentage: 50.0,
-    }
-  ]
+    },
+  ],
 };
 
 export const realisticMockChatResponse = {
   id: 'msg_cuid_example_789',
-  content: 'Hello! I\'m doing well, thank you for asking. I\'m here to help you with any questions or tasks you might have. How can I assist you today?',
+  content:
+    "Hello! I'm doing well, thank you for asking. I'm here to help you with any questions or tasks you might have. How can I assist you today?",
   role: 'assistant' as const,
   timestamp: new Date('2024-01-15T10:30:05Z'),
   model: 'deepseek-chat',
@@ -99,16 +102,16 @@ export const mockDataScenarios = {
     modelUsage: {
       totalMessages: 0,
       byRole: [],
-    }
+    },
   },
-  
+
   withConversation: {
     conversations: [realisticMockConversation],
     messages: realisticMockMessages,
     usageStats: realisticMockUsageStats,
     modelUsage: realisticMockModelUsage,
   },
-  
+
   multipleConversations: {
     conversations: [
       realisticMockConversation,
@@ -117,8 +120,8 @@ export const mockDataScenarios = {
         id: 'conv_cuid_example_456',
         title: 'Another Conversation',
         updatedAt: new Date('2024-01-15T09:15:00Z'),
-        messages: []
-      }
+        messages: [],
+      },
     ],
     messages: realisticMockMessages,
     usageStats: {
@@ -126,5 +129,5 @@ export const mockDataScenarios = {
       conversationCount: 2,
     },
     modelUsage: realisticMockModelUsage,
-  }
+  },
 };

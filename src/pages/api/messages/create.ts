@@ -2,9 +2,9 @@ import { NextApiRequest, NextApiResponse } from 'next';
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ 
-      message: 'Method not allowed', 
-      allowedMethods: ['POST'] 
+    return res.status(405).json({
+      message: 'Method not allowed',
+      allowedMethods: ['POST'],
     });
   }
 
@@ -25,9 +25,9 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     res.status(200).json(message);
   } catch (error) {
     console.error('Error creating message:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: 'Failed to create message',
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
 }
