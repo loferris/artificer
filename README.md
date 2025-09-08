@@ -39,7 +39,7 @@ This system treats AI conversations as **structured data** to be organized, comp
 This is built **API-first** as a headless orchestration service. The current React interface is scaffolding - the real value is in the routing logic and export capabilities that can integrate with:
 
 - **CLI tools** for quick queries and automation
-- **Obsidian plugins** for seamless PKM integration  
+- **Obsidian plugins** for seamless PKM integration
 - **org-mode functions** for programmable knowledge management
 - **Shell scripts** for development workflow integration
 
@@ -77,13 +77,7 @@ npm run dev
 ## Development Status
 
 **Implemented**: Conversation persistence, OpenRouter integration, structured exports, rate limiting
-**In Development**: Advanced routing logic, conversation branching UI, cost optimization  
+**In Development**: Advanced routing logic, conversation branching UI, cost optimization
 **Next Phase**: Agent-based context compression, advanced PKM integrations
 
 This is a build-in-public project documenting the journey of creating better AI workflows for knowledge work. The development process itself is becoming content for [my DevRel blog](https://thehackerscreen.com) about AI-assisted development.
-
-## Links
-
-- **Demo**: [Live Demo](https://your-app-url.vercel.app) 
-- **Blog Series**: [Building an AI Orchestrator](https://your-blog.com/ai-orchestrator-series)
-- **Follow Progress**: [@yourusername](https://twitter.com/yourusername)
