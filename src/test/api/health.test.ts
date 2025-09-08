@@ -1,16 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createMocks } from 'node-mocks-http';
-import health from '../health';
+import health from '../../pages/api/health';
 
 // Mock the database client
-vi.mock('../../../server/db/client', () => ({
+vi.mock('../../server/db/client', () => ({
   prisma: {
     $queryRaw: vi.fn(),
   },
 }));
 
 // Mock the logger
-vi.mock('../../../server/utils/logger', () => ({
+vi.mock('../../server/utils/logger', () => ({
   logger: {
     error: vi.fn(),
     debug: vi.fn(),
@@ -30,7 +30,7 @@ describe('/api/health', () => {
 
   describe('GET /api/health', () => {
     it('returns healthy status when database is connected', async () => {
-      const { prisma } = await import('../../../server/db/client');
+      const { prisma } = await import('../../server/db/client');
       (prisma.$queryRaw as vi.Mock).mockResolvedValue([{ '1': 1 }]);
 
       const { req, res } = createMocks({
@@ -53,7 +53,7 @@ describe('/api/health', () => {
       });
 
       expect(prisma.$queryRaw).toHaveBeenCalledWith(expect.any(Array));
-      const { logger } = await import('../../../server/utils/logger');
+      const { logger } = await import('../../server/utils/logger');
       expect(logger.debug).toHaveBeenCalledWith(
         'Health check completed',
         expect.objectContaining({
@@ -65,7 +65,7 @@ describe('/api/health', () => {
     });
 
     it('returns unhealthy status when database connection fails', async () => {
-      const { prisma } = await import('../../../server/db/client');
+      const { prisma } = await import('../../server/db/client');
       const dbError = new Error('Database connection failed');
       (prisma.$queryRaw as vi.Mock).mockRejectedValue(dbError);
 
@@ -89,7 +89,7 @@ describe('/api/health', () => {
         environment: expect.any(String),
       });
 
-      const { logger } = await import('../../../server/utils/logger');
+      const { logger } = await import('../../server/utils/logger');
       expect(logger.error).toHaveBeenCalledWith(
         'Health check: Database connection failed',
         dbError
@@ -120,7 +120,7 @@ describe('/api/health', () => {
         error: 'Health check failed',
       });
 
-      const { logger } = await import('../../../server/utils/logger');
+      const { logger } = await import('../../server/utils/logger');
       expect(logger.error).toHaveBeenCalledWith(
         'Health check failed',
         expect.any(Error),
@@ -134,7 +134,7 @@ describe('/api/health', () => {
     });
 
     it('sets correct cache control headers', async () => {
-      const { prisma } = await import('../../../server/db/client');
+      const { prisma } = await import('../../server/db/client');
       (prisma.$queryRaw as vi.Mock).mockResolvedValue([{ '1': 1 }]);
 
       const { req, res } = createMocks({
@@ -160,7 +160,7 @@ describe('/api/health', () => {
         NODE_ENV: 'test',
       };
 
-      const { prisma } = await import('../../../server/db/client');
+      const { prisma } = await import('../../server/db/client');
       (prisma.$queryRaw as vi.Mock).mockResolvedValue([{ '1': 1 }]);
 
       const { req, res } = createMocks({
@@ -187,7 +187,7 @@ describe('/api/health', () => {
         NODE_ENV: undefined,
       };
 
-      const { prisma } = await import('../../../server/db/client');
+      const { prisma } = await import('../../server/db/client');
       (prisma.$queryRaw as vi.Mock).mockResolvedValue([{ '1': 1 }]);
 
       const { req, res } = createMocks({
@@ -206,7 +206,7 @@ describe('/api/health', () => {
     });
 
     it('handles database error that is not an Error instance', async () => {
-      const { prisma } = await import('../../../server/db/client');
+      const { prisma } = await import('../../server/db/client');
       const dbError = 'String error';
       (prisma.$queryRaw as vi.Mock).mockRejectedValue(dbError);
 
@@ -224,7 +224,7 @@ describe('/api/health', () => {
       expect(responseData.database).toBe('error');
       expect(responseData.error).toBe('Database connection failed');
 
-      const { logger } = await import('../../../server/utils/logger');
+      const { logger } = await import('../../server/utils/logger');
       expect(logger.error).toHaveBeenCalledWith(
         'Health check: Database connection failed',
         expect.any(Error)
@@ -232,7 +232,7 @@ describe('/api/health', () => {
     });
 
     it('logs health check completion with correct duration', async () => {
-      const { prisma } = await import('../../../server/db/client');
+      const { prisma } = await import('../../server/db/client');
       (prisma.$queryRaw as vi.Mock).mockResolvedValue([{ '1': 1 }]);
 
       const { req, res } = createMocks({
@@ -244,7 +244,7 @@ describe('/api/health', () => {
       await health(req, res);
       const endTime = Date.now();
 
-      const { logger } = await import('../../../server/utils/logger');
+      const { logger } = await import('../../server/utils/logger');
       expect(logger.debug).toHaveBeenCalledWith(
         'Health check completed',
         expect.objectContaining({
@@ -281,7 +281,7 @@ describe('/api/health', () => {
       expect(responseData.status).toBe('unhealthy');
       expect(responseData.error).toBe('Health check failed');
 
-      const { logger } = await import('../../../server/utils/logger');
+      const { logger } = await import('../../server/utils/logger');
       expect(logger.error).toHaveBeenCalledWith(
         'Health check failed',
         expect.any(Error),
@@ -313,7 +313,7 @@ describe('/api/health', () => {
       expect(responseData.status).toBe('unhealthy');
       expect(responseData.error).toBe('Health check failed');
 
-      const { logger } = await import('../../../server/utils/logger');
+      const { logger } = await import('../../server/utils/logger');
       expect(logger.error).toHaveBeenCalledWith(
         'Health check failed',
         expect.any(Error),
@@ -329,7 +329,7 @@ describe('/api/health', () => {
 
   describe('Response Format', () => {
     it('returns valid JSON response', async () => {
-      const { prisma } = await import('../../../server/db/client');
+      const { prisma } = await import('../../server/db/client');
       (prisma.$queryRaw as vi.Mock).mockResolvedValue([{ '1': 1 }]);
 
       const { req, res } = createMocks({
@@ -349,7 +349,7 @@ describe('/api/health', () => {
     });
 
     it('includes timestamp in ISO format', async () => {
-      const { prisma } = await import('../../../server/db/client');
+      const { prisma } = await import('../../server/db/client');
       (prisma.$queryRaw as vi.Mock).mockResolvedValue([{ '1': 1 }]);
 
       const { req, res } = createMocks({

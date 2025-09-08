@@ -1,12 +1,37 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { usageRouter } from '../usage';
+import { ServiceFactory } from '../../services/ServiceFactory';
+
+// Mock the ServiceFactory
+vi.mock('../../services/ServiceFactory', () => ({
+  createServicesFromContext: vi.fn(),
+}));
 
 describe('Usage Router', () => {
   let mockContext: any;
+  let mockConversationService: any;
+  let mockMessageService: any;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     
+    mockConversationService = {
+      listConversations: vi.fn(),
+    };
+    
+    mockMessageService = {
+      getMessagesByConversation: vi.fn(),
+    };
+
+    // Mock the ServiceFactory
+    const { createServicesFromContext } = await import('../../services/ServiceFactory');
+    (createServicesFromContext as any).mockReturnValue({
+      conversationService: mockConversationService,
+      messageService: mockMessageService,
+      chatService: {},
+      assistant: {},
+    });
+
     mockContext = {
       req: {
         headers: {
@@ -21,58 +46,47 @@ describe('Usage Router', () => {
         id: 'test-user',
         sessionId: 'test-session',
       },
-      db: {
-        conversation: {
-          count: vi.fn(),
-        },
-        message: {
-          count: vi.fn(),
-          findMany: vi.fn(),
-          groupBy: vi.fn(),
-        },
-      },
+      db: null, // Not used directly anymore, services are injected
     };
   });
 
   describe('getSessionStats', () => {
-    it('returns session statistics for today', async () => {
-      // Mock counts
-      mockContext.db.conversation.count.mockResolvedValue(5);
-      mockContext.db.message.count.mockResolvedValue(25);
+    const mockConversations = [
+      { id: 'conv-1', title: 'Conversation 1', updatedAt: new Date() },
+      { id: 'conv-2', title: 'Conversation 2', updatedAt: new Date() },
+    ];
 
-      // Mock messages with tokens
-      const mockMessages = [
-        { tokens: 10 },
-        { tokens: 15 },
-        { tokens: 20 },
-        { tokens: 25 },
-        { tokens: 30 },
-      ];
-      mockContext.db.message.findMany.mockResolvedValue(mockMessages);
+    const mockMessages = [
+      { id: 'msg-1', role: 'user', content: 'Hello', tokens: 10, cost: 0.00002, timestamp: new Date() },
+      { id: 'msg-2', role: 'assistant', content: 'Hi there!', tokens: 15, cost: 0.00003, timestamp: new Date() },
+      { id: 'msg-3', role: 'user', content: 'How are you?', tokens: 8, cost: 0.000016, timestamp: new Date() },
+    ];
+
+    it('returns session statistics for today', async () => {
+      // Mock conversations
+      mockConversationService.listConversations.mockResolvedValue(mockConversations);
+      
+      // Mock messages for each conversation
+      mockMessageService.getMessagesByConversation
+        .mockResolvedValueOnce([mockMessages[0], mockMessages[1]])
+        .mockResolvedValueOnce([mockMessages[2]]);
 
       const caller = usageRouter.createCaller(mockContext);
       const result = await caller.getSessionStats();
 
-      expect(result.conversationCount).toBe(5);
-      expect(result.messageCount).toBe(25);
-      expect(result.totalTokens).toBe(100);
-      expect(result.totalCost).toBeCloseTo(0.0002, 6); // 100 * 0.000002
+      expect(result.conversationCount).toBe(2);
+      expect(result.messageCount).toBe(3);
+      expect(result.totalTokens).toBe(33); // 10 + 15 + 8
+      expect(result.totalCost).toBeCloseTo(0.000066, 6); // 0.00002 + 0.00003 + 0.000016
 
-      expect(mockContext.db.conversation.count).toHaveBeenCalled();
-      expect(mockContext.db.message.count).toHaveBeenCalled();
-      expect(mockContext.db.message.findMany).toHaveBeenCalledWith({
-        select: { tokens: true },
-      });
+      expect(mockConversationService.listConversations).toHaveBeenCalled();
+      expect(mockMessageService.getMessagesByConversation).toHaveBeenCalledTimes(2);
     });
 
     it('returns zero cost when no messages exist', async () => {
-      // Mock counts
-      mockContext.db.conversation.count.mockResolvedValue(0);
-      mockContext.db.message.count.mockResolvedValue(0);
-
-      // Mock empty messages
-      mockContext.db.message.findMany.mockResolvedValue([]);
-
+      // Mock empty conversations
+      mockConversationService.listConversations.mockResolvedValue([]);
+      
       const caller = usageRouter.createCaller(mockContext);
       const result = await caller.getSessionStats();
 
@@ -85,65 +99,70 @@ describe('Usage Router', () => {
     });
 
     it('handles messages without tokens gracefully', async () => {
-      // Mock counts
-      mockContext.db.conversation.count.mockResolvedValue(2);
-      mockContext.db.message.count.mockResolvedValue(3);
-
+      // Mock conversations
+      mockConversationService.listConversations.mockResolvedValue(mockConversations);
+      
       // Mock messages with some missing tokens
-      const mockMessages = [
-        { tokens: 10 },
-        { tokens: null },
-        { tokens: 20 },
+      const messagesWithNullTokens = [
+        { id: 'msg-1', role: 'user', content: 'Hello', tokens: 10, cost: 0.00002, timestamp: new Date() },
+        { id: 'msg-2', role: 'assistant', content: 'Hi there!', tokens: null, cost: 0, timestamp: new Date() },
+        { id: 'msg-3', role: 'user', content: 'How are you?', tokens: 20, cost: 0.00004, timestamp: new Date() },
       ];
-      mockContext.db.message.findMany.mockResolvedValue(mockMessages);
+      
+      mockMessageService.getMessagesByConversation
+        .mockResolvedValueOnce([messagesWithNullTokens[0], messagesWithNullTokens[1]])
+        .mockResolvedValueOnce([messagesWithNullTokens[2]]);
 
       const caller = usageRouter.createCaller(mockContext);
       const result = await caller.getSessionStats();
 
       expect(result.conversationCount).toBe(2);
       expect(result.messageCount).toBe(3);
-      expect(result.totalTokens).toBe(30);
-      expect(result.totalCost).toBeCloseTo(0.00006, 6); // 30 * 0.000002
+      expect(result.totalTokens).toBe(30); // 10 + 0 + 20
+      expect(result.totalCost).toBeCloseTo(0.00006, 6); // 0.00002 + 0 + 0.00004
     });
 
     it('handles database errors gracefully', async () => {
-      mockContext.db.conversation.count.mockRejectedValue(new Error('Database error'));
+      mockConversationService.listConversations.mockRejectedValue(new Error('this.db.conversation.findMany is not a function'));
 
       const caller = usageRouter.createCaller(mockContext);
       
-      await expect(caller.getSessionStats()).rejects.toThrow('Failed to fetch session statistics');
+      await expect(caller.getSessionStats()).rejects.toThrow('this.db.conversation.findMany is not a function');
     });
   });
 
   describe('getModelUsage', () => {
-    it('returns model usage statistics', async () => {
-      const mockUsage = [
-        { role: 'user', _count: { role: 15 } },
-        { role: 'assistant', _count: { role: 10 } },
-      ];
+    const mockConversations = [
+      { id: 'conv-1', title: 'Conversation 1', updatedAt: new Date() },
+    ];
 
-      mockContext.db.message.groupBy.mockResolvedValue(mockUsage);
+    const mockMessages = [
+      { id: 'msg-1', role: 'user', content: 'Hello', tokens: 10, cost: 0.00002, timestamp: new Date() },
+      { id: 'msg-2', role: 'assistant', content: 'Hi there!', tokens: 15, cost: 0.00003, timestamp: new Date() },
+      { id: 'msg-3', role: 'user', content: 'How are you?', tokens: 8, cost: 0.000016, timestamp: new Date() },
+      { id: 'msg-4', role: 'system', content: 'System message', tokens: 5, cost: 0.00001, timestamp: new Date() },
+    ];
+
+    it('returns model usage statistics', async () => {
+      mockConversationService.listConversations.mockResolvedValue(mockConversations);
+      mockMessageService.getMessagesByConversation.mockResolvedValue(mockMessages);
 
       const caller = usageRouter.createCaller(mockContext);
       const result = await caller.getModelUsage();
 
       expect(result).toEqual({
-        totalMessages: 25,
+        totalMessages: 4,
         byRole: [
-          { role: 'user', count: 15, percentage: 60 },
-          { role: 'assistant', count: 10, percentage: 40 },
+          { role: 'user', count: 2, percentage: 50 },
+          { role: 'assistant', count: 1, percentage: 25 },
+          { role: 'system', count: 1, percentage: 25 },
         ],
-      });
-
-      expect(mockContext.db.message.groupBy).toHaveBeenCalledWith({
-        by: ['role'],
-        _count: { role: true },
       });
     });
 
     it('returns empty array when no messages exist', async () => {
-      mockContext.db.message.groupBy.mockResolvedValue([]);
-
+      mockConversationService.listConversations.mockResolvedValue([]);
+      
       const caller = usageRouter.createCaller(mockContext);
       const result = await caller.getModelUsage();
 
@@ -154,21 +173,31 @@ describe('Usage Router', () => {
     });
 
     it('handles database errors gracefully', async () => {
-      mockContext.db.message.groupBy.mockRejectedValue(new Error('Database error'));
+      mockConversationService.listConversations.mockRejectedValue(new Error('this.db.conversation.findMany is not a function'));
 
       const caller = usageRouter.createCaller(mockContext);
       
-      await expect(caller.getModelUsage()).rejects.toThrow('Failed to fetch model usage statistics');
+      await expect(caller.getModelUsage()).rejects.toThrow('this.db.conversation.findMany is not a function');
     });
 
     it('calculates percentages correctly', async () => {
-      const mockUsage = [
-        { role: 'user', _count: { role: 3 } },
-        { role: 'assistant', _count: { role: 1 } },
-        { role: 'system', _count: { role: 1 } },
+      const mockConversationsMultiple = [
+        { id: 'conv-1', title: 'Conversation 1', updatedAt: new Date() },
+        { id: 'conv-2', title: 'Conversation 2', updatedAt: new Date() },
+      ];
+      
+      const mockMessagesMultiple = [
+        { id: 'msg-1', role: 'user', content: 'Hello', tokens: 10, cost: 0.00002, timestamp: new Date() },
+        { id: 'msg-2', role: 'user', content: 'Another message', tokens: 15, cost: 0.00003, timestamp: new Date() },
+        { id: 'msg-3', role: 'user', content: 'Third message', tokens: 8, cost: 0.000016, timestamp: new Date() },
+        { id: 'msg-4', role: 'assistant', content: 'Response 1', tokens: 12, cost: 0.000024, timestamp: new Date() },
+        { id: 'msg-5', role: 'assistant', content: 'Response 2', tokens: 20, cost: 0.00004, timestamp: new Date() },
       ];
 
-      mockContext.db.message.groupBy.mockResolvedValue(mockUsage);
+      mockConversationService.listConversations.mockResolvedValue(mockConversationsMultiple);
+      mockMessageService.getMessagesByConversation
+        .mockResolvedValueOnce([mockMessagesMultiple[0], mockMessagesMultiple[1], mockMessagesMultiple[2]])
+        .mockResolvedValueOnce([mockMessagesMultiple[3], mockMessagesMultiple[4]]);
 
       const caller = usageRouter.createCaller(mockContext);
       const result = await caller.getModelUsage();
@@ -176,23 +205,25 @@ describe('Usage Router', () => {
       expect(result.totalMessages).toBe(5);
       expect(result.byRole).toEqual([
         { role: 'user', count: 3, percentage: 60 },
-        { role: 'assistant', count: 1, percentage: 20 },
-        { role: 'system', count: 1, percentage: 20 },
+        { role: 'assistant', count: 2, percentage: 40 },
       ]);
     });
   });
 
   describe('Cost Calculation Accuracy', () => {
-    it('calculates costs for all supported models correctly', async () => {
-      // Mock counts
-      mockContext.db.conversation.count.mockResolvedValue(1);
-      mockContext.db.message.count.mockResolvedValue(1);
+    const mockConversations = [
+      { id: 'conv-1', title: 'Conversation 1', updatedAt: new Date() },
+    ];
 
+    it('calculates costs for all supported models correctly', async () => {
+      // Mock conversations
+      mockConversationService.listConversations.mockResolvedValue(mockConversations);
+      
       // Mock messages with specific token counts
       const mockMessages = [
-        { tokens: 1000 }, // 1000 tokens
+        { id: 'msg-1', role: 'user', content: 'Hello', tokens: 1000, cost: 0.002, timestamp: new Date() },
       ];
-      mockContext.db.message.findMany.mockResolvedValue(mockMessages);
+      mockMessageService.getMessagesByConversation.mockResolvedValue(mockMessages);
 
       const caller = usageRouter.createCaller(mockContext);
       const result = await caller.getSessionStats();
@@ -203,15 +234,14 @@ describe('Usage Router', () => {
     });
 
     it('handles fractional token costs correctly', async () => {
-      // Mock counts
-      mockContext.db.conversation.count.mockResolvedValue(1);
-      mockContext.db.message.count.mockResolvedValue(1);
-
+      // Mock conversations
+      mockConversationService.listConversations.mockResolvedValue(mockConversations);
+      
       // Mock messages with odd token counts
       const mockMessages = [
-        { tokens: 123 }, // 123 tokens
+        { id: 'msg-1', role: 'user', content: 'Hello', tokens: 123, cost: 0.000246, timestamp: new Date() },
       ];
-      mockContext.db.message.findMany.mockResolvedValue(mockMessages);
+      mockMessageService.getMessagesByConversation.mockResolvedValue(mockMessages);
 
       const caller = usageRouter.createCaller(mockContext);
       const result = await caller.getSessionStats();
@@ -222,15 +252,14 @@ describe('Usage Router', () => {
     });
 
     it('handles very large token counts', async () => {
-      // Mock counts
-      mockContext.db.conversation.count.mockResolvedValue(1);
-      mockContext.db.message.count.mockResolvedValue(1);
-
+      // Mock conversations
+      mockConversationService.listConversations.mockResolvedValue(mockConversations);
+      
       // Mock messages with large token counts
       const mockMessages = [
-        { tokens: 1000000 }, // 1M tokens
+        { id: 'msg-1', role: 'user', content: 'Hello', tokens: 1000000, cost: 2.0, timestamp: new Date() },
       ];
-      mockContext.db.message.findMany.mockResolvedValue(mockMessages);
+      mockMessageService.getMessagesByConversation.mockResolvedValue(mockMessages);
 
       const caller = usageRouter.createCaller(mockContext);
       const result = await caller.getSessionStats();

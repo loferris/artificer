@@ -216,6 +216,24 @@ export class DatabaseMessageService implements MessageService {
     return createdMessages.map(msg => this.transformMessage(msg));
   }
 
+  // Wrapper methods for router compatibility
+  async createMessage(input: CreateMessageInput & { tokens?: number }): Promise<Message> {
+    return this.create(input);
+  }
+
+  async getMessagesByConversation(conversationId: string): Promise<MessageWithCost[]> {
+    return this.getByConversation(conversationId);
+  }
+
+  async updateMessage(messageId: string, input: UpdateMessageInput): Promise<Message> {
+    return this.update(messageId, input);
+  }
+
+  async deleteMessage(messageId: string): Promise<{ success: boolean }> {
+    await this.delete(messageId);
+    return { success: true };
+  }
+
   private transformMessage(message: any): Message {
     return {
       id: message.id,
@@ -352,5 +370,23 @@ export class DemoMessageService implements MessageService {
       results.push(message);
     }
     return results;
+  }
+
+  // Wrapper methods for router compatibility
+  async createMessage(input: CreateMessageInput & { tokens?: number }): Promise<Message> {
+    return this.create(input);
+  }
+
+  async getMessagesByConversation(conversationId: string): Promise<MessageWithCost[]> {
+    return this.getByConversation(conversationId);
+  }
+
+  async updateMessage(messageId: string, input: UpdateMessageInput): Promise<Message> {
+    return this.update(messageId, input);
+  }
+
+  async deleteMessage(messageId: string): Promise<{ success: boolean }> {
+    await this.delete(messageId);
+    return { success: true };
   }
 }

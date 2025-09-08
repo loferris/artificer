@@ -52,13 +52,11 @@ temp/
 *.db-journal
 /src/generated/prisma
 
+# Docker
+docker-compose.override.yml
+
 # Exported conversations (contains personal data)
 exports/
 
-# Internal docs (for now)
-/docs/agent-architecture-plan.md
-/docs/architecture-summary.md
-/docs/DEPLOYMENT.md
-/docs/README.md
-CLAUDE.md
+# Internal docs (for now)CLAUDE.md
 docs/
