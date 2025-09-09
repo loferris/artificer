@@ -1,8 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import * as hooks from '../hooks';
 
 describe('TRPC Hooks', () => {
-  it('should export useChat hook', () => {
+  it('should export useChat hook', async () => {
+    const hooks = await import('../hooks');
+    expect(hooks.useChat).toBeDefined();
+    expect(typeof hooks.useChat).toBe('function');
+  });
+
+  it('should have proper hook structure', async () => {
+    const hooks = await import('../hooks');
+    
+    // Since we can't easily test the hook's internal logic without complex mocking,
+    // we'll just verify it exports correctly
     expect(hooks.useChat).toBeDefined();
     expect(typeof hooks.useChat).toBe('function');
   });
