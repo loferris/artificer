@@ -1,62 +1,35 @@
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { screen, waitFor, act } from '@testing-library/react';
+import { screen, waitFor, act, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { render, mockWindowFunctions } from '../../../test/utils';
 import { Chat } from '../Chat';
 
-// Mock the Zustand store
-const mockUseChatStore = vi.fn();
-const mockUseIsConversationReady = vi.fn();
-const mockUseCanSendMessage = vi.fn();
-const mockUseShouldShowRetry = vi.fn();
+// Mock the new custom hooks
+const mockUseChatState = vi.fn();
+const mockUseChatOperations = vi.fn();
+const mockUseConversationManager = vi.fn();
 
-vi.mock('../../../stores/chatStore', () => ({
-  useChatStore: () => mockUseChatStore(),
-  useIsConversationReady: () => mockUseIsConversationReady(),
-  useCanSendMessage: () => mockUseCanSendMessage(),
-  useShouldShowRetry: () => mockUseShouldShowRetry(),
+vi.mock('../../../hooks/chat', () => ({
+  useChatState: () => mockUseChatState(),
+  useChatOperations: () => mockUseChatOperations(),
+  useConversationManager: () => mockUseConversationManager(),
 }));
 
-// Mock tRPC
-const mockTrpcUtils = {
-  conversations: {
-    list: { invalidate: vi.fn() },
-  },
-  messages: {
-    getByConversation: { invalidate: vi.fn() },
-    invalidate: vi.fn(),
-  },
-};
+// Mock the static demo hook
+const mockUseStaticDemo = vi.fn();
+vi.mock('../../../hooks/useStaticDemo', () => ({
+  useStaticDemo: () => mockUseStaticDemo(),
+}));
 
-const mockConversationsQuery = vi.fn();
+// Mock tRPC - simplified since most logic is now in hooks
 const mockMessagesQuery = vi.fn();
-const mockCreateConversationMutation = vi.fn();
-const mockSendMessageMutation = vi.fn();
-const mockDeleteConversationMutation = vi.fn();
 
 vi.mock('../../../lib/trpc/client', () => ({
   trpc: {
-    useUtils: () => mockTrpcUtils,
-    conversations: {
-      list: {
-        useQuery: () => mockConversationsQuery(),
-      },
-      create: {
-        useMutation: () => mockCreateConversationMutation(),
-      },
-      delete: {
-        useMutation: () => mockDeleteConversationMutation(),
-      },
-    },
     messages: {
       getByConversation: {
         useQuery: () => mockMessagesQuery(),
-      },
-    },
-    chat: {
-      sendMessage: {
-        useMutation: () => mockSendMessageMutation(),
       },
     },
   },
@@ -68,8 +41,8 @@ vi.mock('../../ExportButton', () => ({
 }));
 
 describe('Chat Component', () => {
-  const defaultStoreState = {
-    // State
+  const defaultChatState = {
+    // Basic state
     currentConversationId: null,
     isLoading: false,
     isCreatingConversation: false,
@@ -78,48 +51,87 @@ describe('Chat Component', () => {
     lastFailedMessage: '',
     input: '',
     sidebarOpen: true,
-
+    
+    // Demo mode state
+    isDemoMode: false,
+    demoMessages: [],
+    demoConversations: new Map(),
+    
+    // Computed state
+    isConversationReady: false,
+    canSendMessage: false,
+    shouldShowRetry: false,
+    
+    // UI helpers
+    hasError: false,
+    displayError: '',
+    
     // Actions
     setCurrentConversation: vi.fn(),
     setLoading: vi.fn(),
     setCreatingConversation: vi.fn(),
     setError: vi.fn(),
-    setInput: vi.fn(),
+    updateInput: vi.fn(),
+    clearInput: vi.fn(),
+    toggleSidebar: vi.fn(),
     setSidebarOpen: vi.fn(),
+    
+    // Demo mode actions
+    setDemoMode: vi.fn(),
+    addDemoMessage: vi.fn(),
+    createDemoConversation: vi.fn(),
+    getDemoConversation: vi.fn(),
+    clearDemoData: vi.fn(),
+    
+    // Combined actions
     clearError: vi.fn(),
+    resetRetry: vi.fn(),
     startMessageSend: vi.fn(),
     finishMessageSend: vi.fn(),
     handleMessageError: vi.fn(),
-    resetRetry: vi.fn(),
   };
 
-  const defaultConversationsQuery = {
-    data: [],
+  const defaultChatOperations = {
+    handleSendMessage: vi.fn(),
+    handleRetry: vi.fn(),
+    cancelCurrentRequest: vi.fn(),
     isLoading: false,
-    error: null,
+    isMutating: false,
+  };
+
+  const defaultConversationManager = {
+    // Data
+    conversations: [],
+    currentConversationId: null,
+    
+    // Loading states
+    conversationsLoading: false,
+    isCreatingConversation: false,
+    
+    // Errors
+    conversationsError: null,
+    
+    // Actions
+    handleNewConversation: vi.fn(),
+    handleSelectConversation: vi.fn(),
+    handleDeleteConversation: vi.fn(),
+    refreshConversations: vi.fn(),
+    
+    // Mutation states
+    isCreating: false,
+    isDeleting: false,
+  };
+
+  const defaultStaticDemo = {
+    isDemoMode: false,
+    demoAPI: {
+      sendMessage: vi.fn(),
+      createConversation: vi.fn(),
+    },
   };
 
   const defaultMessagesQuery = {
     data: [],
-    isLoading: false,
-    error: null,
-    refetch: vi.fn(),
-  };
-
-  const defaultCreateMutation = {
-    mutate: vi.fn(),
-    isLoading: false,
-    error: null,
-  };
-
-  const defaultSendMutation = {
-    mutate: vi.fn(),
-    isLoading: false,
-    error: null,
-  };
-
-  const defaultDeleteMutation = {
-    mutate: vi.fn(),
     isLoading: false,
     error: null,
   };
@@ -128,16 +140,11 @@ describe('Chat Component', () => {
     vi.clearAllMocks();
 
     // Set up default mocks
-    mockUseChatStore.mockReturnValue(defaultStoreState);
-    mockUseIsConversationReady.mockReturnValue(false);
-    mockUseCanSendMessage.mockReturnValue(false);
-    mockUseShouldShowRetry.mockReturnValue(false);
-
-    mockConversationsQuery.mockReturnValue(defaultConversationsQuery);
+    mockUseChatState.mockReturnValue(defaultChatState);
+    mockUseChatOperations.mockReturnValue(defaultChatOperations);
+    mockUseConversationManager.mockReturnValue(defaultConversationManager);
+    mockUseStaticDemo.mockReturnValue(defaultStaticDemo);
     mockMessagesQuery.mockReturnValue(defaultMessagesQuery);
-    mockCreateConversationMutation.mockReturnValue(defaultCreateMutation);
-    mockSendMessageMutation.mockReturnValue(defaultSendMutation);
-    mockDeleteConversationMutation.mockReturnValue(defaultDeleteMutation);
   });
 
   afterEach(() => {
@@ -188,7 +195,10 @@ describe('Chat Component', () => {
 
   describe('Accessibility', () => {
     it('has proper input id for accessibility', () => {
-      mockUseIsConversationReady.mockReturnValue(true);
+      mockUseChatState.mockReturnValue({
+        ...defaultChatState,
+        isConversationReady: true,
+      });
 
       render(<Chat />);
 
@@ -213,31 +223,103 @@ describe('Chat Component', () => {
     });
   });
 
-  describe('Edge Cases', () => {
-    it('handles empty message content', async () => {
+  describe('Interaction Handling', () => {
+    it('calls handleSendMessage when send button is clicked', async () => {
       const user = userEvent.setup();
-
-      mockUseChatStore.mockReturnValue({
-        ...defaultStoreState,
-        currentConversationId: 'conv1',
-        input: '   ', // Only whitespace
-        startMessageSend: vi.fn(),
+      const mockHandleSendMessage = vi.fn();
+      
+      mockUseChatState.mockReturnValue({
+        ...defaultChatState,
+        canSendMessage: true,
+        isConversationReady: true,
       });
-
-      mockUseIsConversationReady.mockReturnValue(true);
-      mockUseCanSendMessage.mockReturnValue(false); // Should be false for whitespace
+      
+      mockUseChatOperations.mockReturnValue({
+        ...defaultChatOperations,
+        handleSendMessage: mockHandleSendMessage,
+      });
 
       render(<Chat />);
 
       const sendButton = screen.getByRole('button', { name: /send/i });
-      // The button should be disabled when canSendMessage is false
+      await user.click(sendButton);
+
+      expect(mockHandleSendMessage).toHaveBeenCalled();
+    });
+
+    it('calls toggleSidebar when sidebar toggle is clicked', async () => {
+      const user = userEvent.setup();
+      const mockToggleSidebar = vi.fn();
+      
+      mockUseChatState.mockReturnValue({
+        ...defaultChatState,
+        toggleSidebar: mockToggleSidebar,
+      });
+
+      render(<Chat />);
+
+      const toggleButton = screen.getByTitle('Hide sidebar');
+      await user.click(toggleButton);
+
+      expect(mockToggleSidebar).toHaveBeenCalled();
+    });
+
+    it('calls handleNewConversation when new chat button is clicked', async () => {
+      const user = userEvent.setup();
+      const mockHandleNewConversation = vi.fn();
+      
+      mockUseConversationManager.mockReturnValue({
+        ...defaultConversationManager,
+        handleNewConversation: mockHandleNewConversation,
+      });
+
+      render(<Chat />);
+
+      const newChatButton = screen.getByText('+ New Chat');
+      await user.click(newChatButton);
+
+      expect(mockHandleNewConversation).toHaveBeenCalled();
+    });
+
+    it('calls updateInput when input value changes', () => {
+      const mockUpdateInput = vi.fn();
+      
+      mockUseChatState.mockReturnValue({
+        ...defaultChatState,
+        updateInput: mockUpdateInput,
+        isConversationReady: true,
+      });
+
+      render(<Chat />);
+
+      const input = screen.getByRole('textbox');
+      // Use fireEvent for direct testing of onChange handler
+      fireEvent.change(input, { target: { value: 'test message' } });
+
+      expect(mockUpdateInput).toHaveBeenCalledWith('test message');
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it('handles empty message content by disabling send button', async () => {
+      mockUseChatState.mockReturnValue({
+        ...defaultChatState,
+        currentConversationId: 'conv1',
+        input: '   ', // Only whitespace
+        isConversationReady: true,
+        canSendMessage: false, // Should be false for whitespace
+      });
+
+      render(<Chat />);
+
+      const sendButton = screen.getByRole('button', { name: /send/i });
       expect(sendButton).toBeDisabled();
     });
 
     it('handles missing conversation data gracefully', () => {
-      mockConversationsQuery.mockReturnValue({
-        ...defaultConversationsQuery,
-        data: undefined,
+      mockUseConversationManager.mockReturnValue({
+        ...defaultConversationManager,
+        conversations: [], // Empty conversations
       });
 
       render(<Chat />);
@@ -245,16 +327,85 @@ describe('Chat Component', () => {
       expect(screen.getByText('No conversations yet')).toBeInTheDocument();
     });
 
-    it('handles malformed message data', () => {
-      // Note: Malformed message data tests are complex due to tRPC mocking requirements
-      // Error handling is tested implicitly through other functionality tests
+    it('displays error when error state exists', () => {
+      const errorMessage = 'Something went wrong';
+      mockUseChatState.mockReturnValue({
+        ...defaultChatState,
+        error: errorMessage,
+        shouldShowRetry: true,
+      });
+
       render(<Chat />);
 
-      // Basic test - check that the component renders without crashing
-      expect(screen.getByRole('textbox')).toBeInTheDocument();
+      expect(screen.getByText('Error')).toBeInTheDocument();
+      expect(screen.getByText(errorMessage)).toBeInTheDocument();
+      expect(screen.getByText('Retry')).toBeInTheDocument();
+    });
+
+    it('shows loading state when creating conversation', () => {
+      mockUseChatState.mockReturnValue({
+        ...defaultChatState,
+        isCreatingConversation: true,
+      });
+
+      mockUseConversationManager.mockReturnValue({
+        ...defaultConversationManager,
+        isCreatingConversation: true,
+      });
+
+      render(<Chat />);
+
+      expect(screen.getByText('Creating your conversation...')).toBeInTheDocument();
+    });
+
+    it('shows loading state when messages are loading', () => {
+      mockMessagesQuery.mockReturnValue({
+        data: [],
+        isLoading: true,
+        error: null,
+      });
+
+      render(<Chat />);
+
+      expect(screen.getByText('Loading messages...')).toBeInTheDocument();
+    });
+
+    it('shows messages error state', () => {
+      mockMessagesQuery.mockReturnValue({
+        data: [],
+        isLoading: false,
+        error: new Error('Failed to load'),
+      });
+
+      render(<Chat />);
+
+      expect(screen.getByText('Failed to load messages')).toBeInTheDocument();
     });
   });
 
-  // Note: Loading and error state tests are complex due to tRPC mocking requirements
-  // These states are tested implicitly through other functionality tests
+  describe('Static Demo Mode', () => {
+    it('shows demo banner when in static demo mode', () => {
+      mockUseStaticDemo.mockReturnValue({
+        ...defaultStaticDemo,
+        isDemoMode: true,
+      });
+
+      render(<Chat />);
+
+      expect(screen.getByText(/Chat App Demo/)).toBeInTheDocument();
+      expect(screen.getByText(/This is a static demo showcasing the UI/)).toBeInTheDocument();
+    });
+
+    it('adjusts layout height when demo banner is shown', () => {
+      mockUseStaticDemo.mockReturnValue({
+        ...defaultStaticDemo,
+        isDemoMode: true,
+      });
+
+      render(<Chat />);
+
+      const mainContainer = screen.getByText('AI Chat').closest('div[class*="h-[calc(100vh-40px)]"]');
+      expect(mainContainer).toBeInTheDocument();
+    });
+  });
 });

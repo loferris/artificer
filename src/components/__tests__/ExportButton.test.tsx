@@ -7,48 +7,24 @@ import { ExportButton } from '../ExportButton';
 // Mock the trpc module
 vi.mock('../../lib/trpc/client', () => ({
   trpc: {
-    export: {
-      exportConversation: {
-        useMutation: vi.fn(() => ({
-          mutate: vi.fn(),
-          mutateAsync: vi.fn(),
-          isPending: false,
-          isSuccess: false,
-          error: null,
-        })),
-      },
-      exportAll: {
-        useMutation: vi.fn(() => ({
-          mutate: vi.fn(),
-          mutateAsync: vi.fn(),
-          isPending: false,
-          isSuccess: false,
-          error: null,
-        })),
-      },
-    },
-    useUtils: vi.fn(() => ({
+    useUtils: () => ({
       export: {
         exportConversation: {
-          useMutation: vi.fn(() => ({
-            mutate: vi.fn(),
-            mutateAsync: vi.fn(),
-            isPending: false,
-            isSuccess: false,
-            error: null,
-          })),
+          fetch: vi.fn(),
         },
         exportAll: {
-          useMutation: vi.fn(() => ({
-            mutate: vi.fn(),
-            mutateAsync: vi.fn(),
-            isPending: false,
-            isSuccess: false,
-            error: null,
-          })),
+          fetch: vi.fn(),
         },
       },
-    })),
+    }),
+    export: {
+      exportConversation: {
+        fetch: vi.fn(),
+      },
+      exportAll: {
+        fetch: vi.fn(),
+      },
+    },
   },
 }));
 
