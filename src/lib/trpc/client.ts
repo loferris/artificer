@@ -1,4 +1,4 @@
-import { httpBatchLink } from '@trpc/client';
+import { httpBatchLink, wsLink, splitLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import type { AppRouter } from '../../server/root';
 import superjson from 'superjson';
@@ -9,38 +9,62 @@ function getBaseUrl() {
   return 'http://localhost:3000';
 }
 
+function getWsUrl() {
+  if (typeof window !== 'undefined') {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.host}/api/trpc-ws`;
+  }
+  return 'ws://localhost:3000/api/trpc-ws';
+}
+
+function getSessionId() {
+  if (typeof window === 'undefined') return '';
+  
+  let sessionId = localStorage.getItem('session-id') || '';
+  if (!sessionId) {
+    sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    localStorage.setItem('session-id', sessionId);
+  }
+  return sessionId;
+}
+
 export const trpc = createTRPCNext<AppRouter>({
   config() {
     return {
       links: [
-        httpBatchLink({
-          url: `${getBaseUrl()}/api/trpc`,
-          transformer: superjson,
-          fetch(url, options) {
-            // Create a longer timeout for AI requests (2 minutes)
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 120000);
-
-            return fetch(url, {
-              ...options,
-              signal: controller.signal,
-            }).finally(() => clearTimeout(timeoutId));
+        splitLink({
+          condition(op) {
+            // Use WebSocket for subscriptions, HTTP for queries/mutations
+            return op.type === 'subscription';
           },
-          headers() {
-            // Generate or get session ID from localStorage
-            let sessionId = '';
-            if (typeof window !== 'undefined') {
-              sessionId = localStorage.getItem('session-id') || '';
-              if (!sessionId) {
-                sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-                localStorage.setItem('session-id', sessionId);
-              }
-            }
+          true: wsLink({
+            url: getWsUrl(),
+            transformer: superjson,
+            connectionParams() {
+              return {
+                sessionId: getSessionId(),
+              };
+            },
+          }),
+          false: httpBatchLink({
+            url: `${getBaseUrl()}/api/trpc`,
+            transformer: superjson,
+            fetch(url, options) {
+              // Create a longer timeout for AI requests (2 minutes)
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), 120000);
 
-            return {
-              'x-session-id': sessionId,
-            };
-          },
+              return fetch(url, {
+                ...options,
+                signal: controller.signal,
+              }).finally(() => clearTimeout(timeoutId));
+            },
+            headers() {
+              return {
+                'x-session-id': getSessionId(),
+              };
+            },
+          }),
         }),
       ],
     };
