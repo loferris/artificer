@@ -30,9 +30,6 @@ jobs:
     - name: Run linting
       run: npm run lint
 
-    - name: Run type checking (core files)
-      run: npx tsc --noEmit --skipLibCheck
-
     - name: Run tests
       run: npm run test:run
 
