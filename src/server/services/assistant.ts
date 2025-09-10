@@ -63,7 +63,7 @@ export class OpenRouterAssistant implements Assistant {
         cost,
       };
     } catch (error) {
-      console.error('Error in OpenRouterAssistant.getResponse:', error);
+      logger.error('Error in OpenRouterAssistant.getResponse:', error);
 
       // Provide more specific error messages based on error type
       let errorMessage = 'Sorry, I encountered an error. Please try again.';
@@ -118,7 +118,7 @@ export class OpenRouterAssistant implements Assistant {
         percentage: (count / totalUsage) * 100,
       }));
     } catch (error) {
-      console.error('Error getting model usage stats:', error);
+      logger.error('Error getting model usage stats:', error);
       return [];
     }
   }
@@ -136,7 +136,7 @@ export class OpenRouterAssistant implements Assistant {
         { role: 'user' as const, content: userMessage },
       ];
     } catch (error) {
-      console.error('Error building messages array:', error);
+      logger.error('Error building messages array:', error);
       return [{ role: 'user' as const, content: userMessage }];
     }
   }
@@ -160,7 +160,7 @@ export class OpenRouterAssistant implements Assistant {
       // Default to Claude Haiku (fastest and cheapest)
       return validModels[0];
     } catch (error) {
-      console.error('Error selecting model:', error);
+      logger.error('Error selecting model:', error);
       return 'anthropic/claude-3-haiku'; // Safe fallback
     }
   }
@@ -220,7 +220,7 @@ export class OpenRouterAssistant implements Assistant {
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('OpenRouter API error:', {
+          logger.error('OpenRouter API error:', undefined, {
             status: response.status,
             statusText: response.statusText,
             body: errorText,
@@ -245,7 +245,7 @@ export class OpenRouterAssistant implements Assistant {
         const data = await response.json();
 
         if (!data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
-          console.error('Invalid OpenRouter response format:', data);
+          logger.error('Invalid OpenRouter response format:', undefined, { data });
           throw new Error('Invalid response format from OpenRouter API');
         }
 
@@ -319,7 +319,7 @@ export class OpenRouterAssistant implements Assistant {
 
       return tokens * (costPerToken[model] || 0.000001);
     } catch (error) {
-      console.error('Error estimating cost:', error);
+      logger.error('Error estimating cost:', error);
       return 0;
     }
   }
@@ -329,7 +329,7 @@ export class OpenRouterAssistant implements Assistant {
       const currentCount = this.modelUsage.get(model) || 0;
       this.modelUsage.set(model, currentCount + 1);
     } catch (error) {
-      console.error('Error recording model usage:', error);
+      logger.error('Error recording model usage:', error);
     }
   }
 
@@ -340,7 +340,7 @@ export class OpenRouterAssistant implements Assistant {
       }
       return 'localhost';
     } catch (error) {
-      console.error('Error getting default site name:', error);
+      logger.error('Error getting default site name:', error);
       return 'localhost';
     }
   }
@@ -357,7 +357,7 @@ export function createAssistant(config: AssistantConfig): Assistant {
     if (config.apiKey) {
       // Validate API key format (basic check)
       if (!config.apiKey.startsWith('sk-or-v1-')) {
-        console.error('Invalid API key format provided');
+        logger.error('Invalid API key format provided');
         return new MockAssistant();
       }
       return new OpenRouterAssistant({
@@ -379,7 +379,7 @@ export function createAssistant(config: AssistantConfig): Assistant {
 
     // Validate environment API key format
     if (!envKey.startsWith('sk-or-v1-')) {
-      console.error('Invalid API key format in environment variable');
+      logger.error('Invalid API key format in environment variable');
       return new MockAssistant();
     }
 
@@ -389,7 +389,7 @@ export function createAssistant(config: AssistantConfig): Assistant {
     });
   } catch (error) {
     // Don't log the full error object which might contain sensitive data
-    console.error('Error creating assistant service');
+    logger.error('Error creating assistant service');
     return new MockAssistant();
   }
 }

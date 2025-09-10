@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { DemoBanner } from '../DemoBanner';
 
@@ -17,15 +17,15 @@ describe('DemoBanner', () => {
   });
 
   it('renders null when not in production and demo mode is not enabled', () => {
-    process.env.NODE_ENV = 'development';
-    process.env.NEXT_PUBLIC_DEMO_MODE = undefined;
+    vi.stubEnv('NODE_ENV', 'development');
+    vi.stubEnv('NEXT_PUBLIC_DEMO_MODE', undefined);
 
     const { container } = render(<DemoBanner />);
     expect(container.firstChild).toBeNull();
   });
 
   it('renders the banner when in production', () => {
-    process.env.NODE_ENV = 'production';
+    vi.stubEnv('NODE_ENV', 'production');
 
     render(<DemoBanner />);
 
@@ -36,8 +36,8 @@ describe('DemoBanner', () => {
   });
 
   it('renders the banner when demo mode is explicitly enabled', () => {
-    process.env.NODE_ENV = 'development';
-    process.env.NEXT_PUBLIC_DEMO_MODE = 'true';
+    vi.stubEnv('NODE_ENV', 'development');
+    vi.stubEnv('NEXT_PUBLIC_DEMO_MODE', 'true');
 
     render(<DemoBanner />);
 
@@ -46,7 +46,7 @@ describe('DemoBanner', () => {
   });
 
   it('displays the full message with feature hints', () => {
-    process.env.NODE_ENV = 'production';
+    vi.stubEnv('NODE_ENV', 'production');
 
     render(<DemoBanner />);
 

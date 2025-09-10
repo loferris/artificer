@@ -29,10 +29,7 @@ export const useStaticDemo = () => {
 
       // Add demo messages
       DEMO_MESSAGES.forEach((message) => {
-        addDemoMessage({
-          ...message,
-          conversationId: 'demo-1', // Link to first demo conversation
-        });
+        addDemoMessage(message);
       });
 
       // Set the first conversation as current
@@ -65,10 +62,7 @@ export const useStaticDemo = () => {
 
       // Add AI response
       const aiResponse = generateDemoResponse(message);
-      addDemoMessage({
-        ...aiResponse,
-        conversationId,
-      });
+      addDemoMessage(aiResponse);
 
       return aiResponse;
     },

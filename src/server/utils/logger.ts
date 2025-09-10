@@ -1,151 +1,93 @@
-// Production-ready logging utility for solo deployment
+import pino from 'pino';
 
-export enum LogLevel {
-  ERROR = 0,
-  WARN = 1,
-  INFO = 2,
-  DEBUG = 3,
-}
+/**
+ * A wrapper class around the pino logger to provide a consistent API
+ * across the application and allow for easy dependency injection in tests.
+ */
+export class Logger {
+  private logger: pino.Logger;
 
-interface LogEntry {
-  timestamp: string;
-  level: string;
-  message: string;
-  meta?: Record<string, unknown>;
-  error?: {
-    name: string;
-    message: string;
-    stack?: string;
-  };
-}
-
-class Logger {
-  private logLevel: LogLevel;
-
-  constructor() {
-    const envLevel = process.env.LOG_LEVEL?.toLowerCase();
-    switch (envLevel) {
-      case 'debug':
-        this.logLevel = LogLevel.DEBUG;
-        break;
-      case 'info':
-        this.logLevel = LogLevel.INFO;
-        break;
-      case 'warn':
-        this.logLevel = LogLevel.WARN;
-        break;
-      case 'error':
-      default:
-        this.logLevel = LogLevel.ERROR;
-        break;
-    }
-  }
-
-  private formatLog(
-    level: string,
-    message: string,
-    meta?: Record<string, unknown>,
-    error?: Error,
-  ): LogEntry {
-    const logEntry: LogEntry = {
-      timestamp: new Date().toISOString(),
-      level,
-      message,
-    };
-
-    if (meta && Object.keys(meta).length > 0) {
-      logEntry.meta = meta;
-    }
-
-    if (error) {
-      logEntry.error = {
-        name: error.name,
-        message: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
-      };
-    }
-
-    return logEntry;
-  }
-
-  private log(
-    level: LogLevel,
-    levelName: string,
-    message: string,
-    meta?: Record<string, unknown>,
-    error?: Error,
-  ) {
-    if (level > this.logLevel) return;
-
-    const logEntry = this.formatLog(levelName, message, meta, error);
-
-    // In production, you might want to send to external service
-    // For solo deployment, console logging is sufficient
-    if (level === LogLevel.ERROR) {
-      console.error(JSON.stringify(logEntry));
-    } else if (level === LogLevel.WARN) {
-      console.warn(JSON.stringify(logEntry));
-    } else {
-      console.log(JSON.stringify(logEntry));
-    }
+  constructor(pinoInstance: pino.Logger) {
+    this.logger = pinoInstance;
   }
 
   error(message: string, error?: Error, meta?: Record<string, unknown>) {
-    this.log(LogLevel.ERROR, 'ERROR', message, meta, error);
+    if (error) {
+      this.logger.error({ err: error, ...meta }, message);
+    } else {
+      this.logger.error(meta, message);
+    }
   }
 
   warn(message: string, meta?: Record<string, unknown>) {
-    this.log(LogLevel.WARN, 'WARN', message, meta);
+    this.logger.warn(meta, message);
   }
 
   info(message: string, meta?: Record<string, unknown>) {
-    this.log(LogLevel.INFO, 'INFO', message, meta);
+    this.logger.info(meta, message);
   }
 
   debug(message: string, meta?: Record<string, unknown>) {
-    this.log(LogLevel.DEBUG, 'DEBUG', message, meta);
+    this.logger.debug(meta, message);
   }
 
-  // Specific logging methods for common scenarios
   apiRequest(method: string, path: string, duration: number, status: number, userId?: string) {
     this.info('API Request', {
-      method,
-      path,
-      duration,
-      status,
-      userId,
+      request: { method, path, userId },
+      response: { status, duration },
     });
   }
 
   rateLimitHit(identifier: string, endpoint: string, resetTime: number) {
     this.warn('Rate limit exceeded', {
-      identifier: identifier.substring(0, 20) + '...', // Truncate for privacy
-      endpoint,
-      resetTime: new Date(resetTime).toISOString(),
+      ratelimit: {
+        identifier: identifier.substring(0, 20) + '...',
+        endpoint,
+        resetTime: new Date(resetTime).toISOString(),
+      },
     });
   }
 
   dbQuery(query: string, duration: number, error?: Error) {
+    const queryMeta = {
+      db: { query: query.substring(0, 100) + '...', duration },
+    };
     if (error) {
-      this.error('Database query failed', error, {
-        query: query.substring(0, 100) + '...',
-        duration,
-      });
+      this.error('Database query failed', error, queryMeta);
     } else if (process.env.ENABLE_QUERY_LOGGING === 'true') {
-      this.debug('Database query', { query: query.substring(0, 100) + '...', duration });
+      this.debug('Database query', queryMeta);
     }
   }
 
   assistantRequest(model: string, tokens: number, cost: number, duration: number, error?: Error) {
+    const assistantMeta = { model, tokens, cost, duration };
     if (error) {
-      this.error('Assistant request failed', error, { model, tokens, cost, duration });
+      this.error('Assistant request failed', error, assistantMeta);
     } else {
-      this.info('Assistant request', { model, tokens, cost, duration });
+      this.info('Assistant request', assistantMeta);
     }
   }
 }
 
-export const logger = new Logger();
+// Create the default pino instance for the application to use
+const pinoInstance = pino({
+  level: process.env.LOG_LEVEL || 'info',
+  transport:
+    process.env.NODE_ENV === 'development'
+      ? {
+          target: 'pino-pretty',
+          options: {
+            colorize: true,
+            translateTime: 'SYS:HH:MM:ss',
+            ignore: 'pid,hostname',
+          },
+        }
+      : undefined,
+  serializers: {
+    err: pino.stdSerializers.err,
+  },
+});
 
-// Export for use in other modules
+// Export a pre-configured instance for the app to use as a singleton
+export const logger = new Logger(pinoInstance);
 export default logger;

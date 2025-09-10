@@ -72,6 +72,11 @@ export interface MessageService {
    * Create multiple messages in a transaction
    */
   createBatch(messages: CreateMessageInput[]): Promise<Message[]>;
+
+  /**
+   * Count messages in a conversation
+   */
+  countByConversation(conversationId: string): Promise<number>;
 }
 
 export class DatabaseMessageService implements MessageService {
@@ -216,6 +221,12 @@ export class DatabaseMessageService implements MessageService {
     );
 
     return createdMessages.map((msg) => this.transformMessage(msg));
+  }
+
+  async countByConversation(conversationId: string): Promise<number> {
+    return this.db.message.count({
+      where: { conversationId },
+    });
   }
 
   // Wrapper methods for router compatibility
@@ -375,6 +386,10 @@ export class DemoMessageService implements MessageService {
       results.push(message);
     }
     return results;
+  }
+
+  async countByConversation(conversationId: string): Promise<number> {
+    return (this.conversationMessages.get(conversationId) || []).length;
   }
 
   // Wrapper methods for router compatibility

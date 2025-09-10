@@ -17,6 +17,23 @@ const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
 const customRender = (ui: React.ReactElement, options?: Omit<RenderOptions, 'wrapper'>) =>
   render(ui, { wrapper: AllTheProviders, ...options });
 
+// Mock helper functions
+export const mockWindowFunctions = () => {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => {},
+    }),
+  });
+};
+
 // Export everything
 export * from '@testing-library/react';
 export { customRender as render };

@@ -1,25 +1,19 @@
 import { createNextApiHandler } from '@trpc/server/adapters/next';
 import { appRouter } from '../../../server/root';
 import { createContext } from '../../../server/trpc';
+import { logger } from '../../../server/utils/logger';
 
 const handler = createNextApiHandler({
   router: appRouter,
   createContext,
   onError: ({ error, req, type, path, input }) => {
-    console.error('tRPC API Error:', {
+    logger.error('tRPC API Error:', error, {
       type,
       path,
       input,
       url: req.url,
       method: req.method,
       headers: req.headers,
-      error: {
-        name: error.name,
-        message: error.message,
-        code: error.code,
-        cause: error.cause,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
-      },
       timestamp: new Date().toISOString(),
     });
 

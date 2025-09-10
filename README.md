@@ -18,13 +18,14 @@ This system treats AI conversations as **structured data** to be organized, comp
 - OpenRouter API integration for multi-model access
 - Rate limiting and session management
 - Type-safe API layer with tRPC
+- **Real-time streaming**: WebSocket subscriptions + SSE endpoints
 
 **Conversation Management**
 
 - Service layer handling conversation lifecycle
 - Message operations with token tracking and cost calculation
 - Database schema designed for conversation branching
-- Export to structured formats (Markdown, JSON)
+- Export to structured formats (Markdown, JSON, with basic Notion/Obsidian/HTML support)
 
 **Knowledge Capture**
 
@@ -35,7 +36,8 @@ This system treats AI conversations as **structured data** to be organized, comp
 
 ## Technical Implementation
 
-- **Backend**: Next.js + tRPC for type-safe APIs
+- **Backend**: Next.js + Custom Server + tRPC for type-safe APIs  
+- **Real-time**: WebSocket subscriptions for frontend + SSE streaming for CLI tools
 - **Database**: PostgreSQL with Prisma ORM
 - **AI Integration**: OpenRouter API for multi-model access
 - **Export System**: Structured data optimized for knowledge management tools
@@ -49,26 +51,25 @@ This is built **API-first** as a headless orchestration service with a clean ser
 - **org-mode functions** for programmable knowledge management
 - **Shell scripts** for development workflow integration
 
-## Planned Features
+## Development Status & Planned Features
 
-**Intelligent Model Routing**
+**Currently Implemented**
+- ✅ Real-time streaming (WebSocket + SSE)
+- ✅ Multi-model API access via OpenRouter
+- ✅ Conversation persistence with PostgreSQL
+- ✅ Export to Markdown and JSON formats
+- ✅ Rate limiting and session management
+- ✅ Type-safe API layer with tRPC
 
-- Cost-aware switching between Claude, DeepSeek, and local models
-- Task complexity analysis to route queries appropriately
-- Dynamic fallback strategies
+**Schema-Ready (Backend Complete, UI Pending)**
+- 🔄 **Conversation branching**: Database schema and service layer support message trees with `parentId` relationships, but UI implementation needed
+- 🔄 **Advanced message threading**: Backend infrastructure ready for conversation branching workflows
 
-**Advanced Conversation Management**
-
-- Conversation branching for exploring tangents without losing main thread
-- Cross-session context preservation
-- Multi-model conversation threading
-
-**Context Compression Agents**
-
-- Identify key insights and decisions from long research conversations
-- Generate structured summaries with proper context preservation
-- Extract actionable items and next steps automatically
-- Format exports based on conversation type (research, planning, brainstorming)
+**Planned Features**
+- 📋 **Intelligent Model Routing**: Cost-aware switching between models based on task complexity
+- 📋 **Context Compression Agents**: AI-powered conversation summarization and insight extraction
+- 📋 **Enhanced Export Formats**: Full Notion, Obsidian, and Google Docs integration (basic implementations exist)
+- 📋 **Cross-session context preservation**: Advanced conversation state management
 
 ## Getting Started
 
@@ -85,7 +86,7 @@ npm run db:up
 # Run database migrations
 npm run db:migrate
 
-# Start development server
+# Start development server (with WebSocket support)
 npm run dev
 
 # Optional: Open database GUI
@@ -109,8 +110,18 @@ npm run db:studio      # Open Prisma Studio GUI
 
 ## Development Status
 
-**Implemented**: Conversation persistence, OpenRouter integration, structured exports, rate limiting, service layer architecture
-**In Development**: Advanced routing logic, conversation branching UI, cost optimization
-**Next Phase**: Agent-based context compression, advanced PKM integrations
+**Implemented**: Conversation persistence, OpenRouter integration, structured exports, rate limiting, service layer architecture, **real-time streaming (WebSocket + SSE)**
+**In Development**: Conversation branching UI, enhanced export formats
+**Next Phase**: Intelligent model routing, context compression agents, advanced PKM integrations
+
+## Streaming Integration
+
+The system now supports real-time streaming for both interactive frontends and CLI automation:
+
+- **WebSocket Subscriptions**: Real-time streaming for React frontends via `trpc.subscriptions.chatStream.useSubscription()`
+- **SSE Endpoints**: HTTP streaming for CLI tools and third-party integrations via `POST /api/stream/chat`
+- **Unified Backend**: Both approaches use the same ChatService streaming infrastructure
+
+See `docs/SSE_STREAMING.md` for CLI usage examples and `docs/API.md` for complete API documentation.
 
 This is a build-in-public project documenting the journey of creating better AI workflows for knowledge work. The development process itself is becoming content for [my DevRel blog](https://the-hacker-screen.ghost.io) about AI-assisted development.

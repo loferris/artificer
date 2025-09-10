@@ -9,6 +9,8 @@ dist/
 build/
 *.tsbuildinfo
 .next/
+prisma/migrations/
+
 
 # Environment variables
 .env
@@ -58,6 +60,6 @@ docker-compose.override.yml
 # Exported conversations (contains personal data)
 exports/
 
-# Internal docs (for now)
-CLAUDE.md
-docs/
+# Internal docs and development notes
+docs/internal/
+.claude/

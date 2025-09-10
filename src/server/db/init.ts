@@ -1,4 +1,5 @@
 import { prisma } from './client';
+import { logger } from '../utils/logger';
 
 export async function initDatabase() {
   try {
@@ -9,11 +10,15 @@ export async function initDatabase() {
     // Optional: Run migrations or seed data here
     // await prisma.$executeRaw`PRAGMA foreign_keys = ON`;
   } catch (error) {
-    console.error('❌ Database connection failed:', error);
+    logger.error('❌ Database connection failed:', error);
     throw error;
   }
 }
 
 export async function closeDatabase() {
-  await prisma.$disconnect();
+  try {
+    await prisma.$disconnect();
+  } catch (error) {
+    logger.error('Error closing database connection:', error);
+  }
 }
