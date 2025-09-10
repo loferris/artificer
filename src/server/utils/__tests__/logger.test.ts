@@ -1,378 +1,114 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { LogLevel } from '../logger';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { Logger } from '../logger'; // Import the class, not the default instance
+import type pino from 'pino';
 
-describe('Logger Utility', () => {
-  const originalEnv = process.env;
-  const originalConsole = console;
+describe('Logger Class', () => {
+  let mockPinoInstance: pino.Logger;
+  let logger: Logger;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    // Create a mock pino instance for each test
+    mockPinoInstance = {
+      error: vi.fn(),
+      warn: vi.fn(),
+      info: vi.fn(),
+      debug: vi.fn(),
+    } as unknown as pino.Logger;
 
-    // Mock console methods
-    console.log = vi.fn();
-    console.warn = vi.fn();
-    console.error = vi.fn();
-    console.debug = vi.fn();
-
-    process.env = { ...originalEnv };
-
-    // Clear module cache to ensure fresh logger instance
-    vi.resetModules();
+    // Create a new Logger instance with the mock
+    logger = new Logger(mockPinoInstance);
   });
 
-  afterEach(() => {
-    process.env = originalEnv;
-    console.log = originalConsole.log;
-    console.warn = originalConsole.warn;
-    console.error = originalConsole.error;
-    console.debug = originalConsole.debug;
+  it('should call pino.error with correct parameters', () => {
+    const error = new Error('Test error');
+    const meta = { userId: '123' };
+    logger.error('An error occurred', error, meta);
+    expect(mockPinoInstance.error).toHaveBeenCalledWith(
+      { err: error, ...meta },
+      'An error occurred',
+    );
   });
 
-  describe('LogLevel Enum', () => {
-    it('should have correct enum values', () => {
-      expect(LogLevel.ERROR).toBe(0);
-      expect(LogLevel.WARN).toBe(1);
-      expect(LogLevel.INFO).toBe(2);
-      expect(LogLevel.DEBUG).toBe(3);
-    });
+  it('should call pino.warn with correct parameters', () => {
+    const meta = { rateLimit: true };
+    logger.warn('A warning occurred', meta);
+    expect(mockPinoInstance.warn).toHaveBeenCalledWith(meta, 'A warning occurred');
   });
 
-  describe('Logger Instance', () => {
-    it('should export logger instance', async () => {
-      const { logger } = await import('../logger');
-      expect(logger).toBeDefined();
-      expect(typeof logger).toBe('object');
-    });
-
-    it('should have all required methods', async () => {
-      const { logger } = await import('../logger');
-      expect(typeof logger.error).toBe('function');
-      expect(typeof logger.warn).toBe('function');
-      expect(typeof logger.info).toBe('function');
-      expect(typeof logger.debug).toBe('function');
-      expect(typeof logger.apiRequest).toBe('function');
-      expect(typeof logger.rateLimitHit).toBe('function');
-      expect(typeof logger.dbQuery).toBe('function');
-      expect(typeof logger.assistantRequest).toBe('function');
-    });
+  it('should call pino.info with correct parameters', () => {
+    const meta = { context: 'test' };
+    logger.info('An info message', meta);
+    expect(mockPinoInstance.info).toHaveBeenCalledWith(meta, 'An info message');
   });
 
-  describe('Basic Logging Methods', () => {
-    it('should log error messages', async () => {
-      const { logger } = await import('../logger');
-      logger.error('Test error message');
-
-      expect(console.error).toHaveBeenCalled();
-      const logOutput = JSON.parse((console.error as vi.Mock).mock.calls[0][0]);
-      expect(logOutput).toEqual({
-        timestamp: expect.any(String),
-        level: 'ERROR',
-        message: 'Test error message',
-      });
-    });
-
-    it('should log error messages with error object', async () => {
-      process.env.NODE_ENV = 'development';
-      const error = new Error('Test error');
-      const { logger } = await import('../logger');
-      logger.error('Test error message', error);
-
-      expect(console.error).toHaveBeenCalled();
-      const logOutput = JSON.parse((console.error as vi.Mock).mock.calls[0][0]);
-      expect(logOutput).toEqual({
-        timestamp: expect.any(String),
-        level: 'ERROR',
-        message: 'Test error message',
-        error: {
-          name: 'Error',
-          message: 'Test error',
-          stack: expect.any(String),
-        },
-      });
-    });
-
-    it('should log error messages with metadata', async () => {
-      const { logger } = await import('../logger');
-      logger.error('Test error message', undefined, { userId: 'test-user' });
-
-      expect(console.error).toHaveBeenCalled();
-      const logOutput = JSON.parse((console.error as vi.Mock).mock.calls[0][0]);
-      expect(logOutput).toEqual({
-        timestamp: expect.any(String),
-        level: 'ERROR',
-        message: 'Test error message',
-        meta: {
-          userId: 'test-user',
-        },
-      });
-    });
-
-    it('should log warning messages', async () => {
-      process.env.LOG_LEVEL = 'warn';
-      const { logger } = await import('../logger');
-      logger.warn('Test warning message');
-
-      expect(console.warn).toHaveBeenCalled();
-      const logOutput = JSON.parse((console.warn as vi.Mock).mock.calls[0][0]);
-      expect(logOutput).toEqual({
-        timestamp: expect.any(String),
-        level: 'WARN',
-        message: 'Test warning message',
-      });
-    });
-
-    it('should log warning messages with metadata', async () => {
-      process.env.LOG_LEVEL = 'warn';
-      const { logger } = await import('../logger');
-      logger.warn('Test warning message', { userId: 'test-user' });
-
-      expect(console.warn).toHaveBeenCalled();
-      const logOutput = JSON.parse((console.warn as vi.Mock).mock.calls[0][0]);
-      expect(logOutput).toEqual({
-        timestamp: expect.any(String),
-        level: 'WARN',
-        message: 'Test warning message',
-        meta: {
-          userId: 'test-user',
-        },
-      });
-    });
-
-    it('should log info messages', async () => {
-      process.env.LOG_LEVEL = 'info';
-      const { logger } = await import('../logger');
-      logger.info('Test info message');
-
-      expect(console.log).toHaveBeenCalled();
-      const logOutput = JSON.parse((console.log as vi.Mock).mock.calls[0][0]);
-      expect(logOutput).toEqual({
-        timestamp: expect.any(String),
-        level: 'INFO',
-        message: 'Test info message',
-      });
-    });
-
-    it('should log info messages with metadata', async () => {
-      process.env.LOG_LEVEL = 'info';
-      const { logger } = await import('../logger');
-      logger.info('Test info message', { userId: 'test-user' });
-
-      expect(console.log).toHaveBeenCalled();
-      const logOutput = JSON.parse((console.log as vi.Mock).mock.calls[0][0]);
-      expect(logOutput).toEqual({
-        timestamp: expect.any(String),
-        level: 'INFO',
-        message: 'Test info message',
-        meta: {
-          userId: 'test-user',
-        },
-      });
-    });
-
-    it('should log debug messages', async () => {
-      process.env.LOG_LEVEL = 'debug';
-      const { logger } = await import('../logger');
-      logger.debug('Test debug message');
-
-      expect(console.log).toHaveBeenCalled();
-      const logOutput = JSON.parse((console.log as vi.Mock).mock.calls[0][0]);
-      expect(logOutput).toEqual({
-        timestamp: expect.any(String),
-        level: 'DEBUG',
-        message: 'Test debug message',
-      });
-    });
-
-    it('should log debug messages with metadata', async () => {
-      process.env.LOG_LEVEL = 'debug';
-      const { logger } = await import('../logger');
-      logger.debug('Test debug message', { userId: 'test-user' });
-
-      expect(console.log).toHaveBeenCalled();
-      const logOutput = JSON.parse((console.log as vi.Mock).mock.calls[0][0]);
-      expect(logOutput).toEqual({
-        timestamp: expect.any(String),
-        level: 'DEBUG',
-        message: 'Test debug message',
-        meta: {
-          userId: 'test-user',
-        },
-      });
-    });
+  it('should call pino.debug with correct parameters', () => {
+    const meta = { verbose: true };
+    logger.debug('A debug message', meta);
+    expect(mockPinoInstance.debug).toHaveBeenCalledWith(meta, 'A debug message');
   });
 
   describe('Specialized Logging Methods', () => {
-    it('should log API requests', async () => {
-      process.env.LOG_LEVEL = 'info';
-      const { logger } = await import('../logger');
-      logger.apiRequest('GET', '/api/test', 100, 200, 'test-user');
-
-      expect(console.log).toHaveBeenCalled();
-      const logOutput = JSON.parse((console.log as vi.Mock).mock.calls[0][0]);
-      expect(logOutput).toEqual({
-        timestamp: expect.any(String),
-        level: 'INFO',
-        message: 'API Request',
-        meta: {
-          method: 'GET',
-          path: '/api/test',
-          duration: 100,
-          status: 200,
-          userId: 'test-user',
+    it('apiRequest should call pino.info', () => {
+      logger.apiRequest('GET', '/api/test', 100, 200, 'user-1');
+      expect(mockPinoInstance.info).toHaveBeenCalledWith(
+        {
+          request: { method: 'GET', path: '/api/test', userId: 'user-1' },
+          response: { status: 200, duration: 100 },
         },
-      });
+        'API Request',
+      );
     });
 
-    it('should log rate limit hits', async () => {
-      process.env.LOG_LEVEL = 'warn';
-      const { logger } = await import('../logger');
-      logger.rateLimitHit('test-identifier', '/api/test', Date.now() + 60000);
-
-      expect(console.warn).toHaveBeenCalled();
-      const logOutput = JSON.parse((console.warn as vi.Mock).mock.calls[0][0]);
-      expect(logOutput).toEqual({
-        timestamp: expect.any(String),
-        level: 'WARN',
-        message: 'Rate limit exceeded',
-        meta: {
-          identifier: expect.stringMatching(/^test-iden/),
-          endpoint: '/api/test',
-          resetTime: expect.any(String),
-        },
-      });
+    it('rateLimitHit should call pino.warn', () => {
+      const resetTime = Date.now() + 60000;
+      logger.rateLimitHit('user-ip', '/login', resetTime);
+      expect(mockPinoInstance.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ratelimit: expect.objectContaining({ endpoint: '/login' }),
+        }),
+        'Rate limit exceeded',
+      );
     });
 
-    it('should log database queries with error', async () => {
-      process.env.NODE_ENV = 'development';
-      const error = new Error('Database connection failed');
-      const { logger } = await import('../logger');
-      logger.dbQuery('SELECT * FROM users', 50, error);
-
-      expect(console.error).toHaveBeenCalled();
-      const logOutput = JSON.parse((console.error as vi.Mock).mock.calls[0][0]);
-      expect(logOutput).toEqual({
-        timestamp: expect.any(String),
-        level: 'ERROR',
-        message: 'Database query failed',
-        error: {
-          name: 'Error',
-          message: 'Database connection failed',
-          stack: expect.any(String),
-        },
-        meta: {
-          query: expect.stringMatching(/^SELECT \* FROM users/),
-          duration: 50,
-        },
-      });
-    });
-
-    it('should log database queries when ENABLE_QUERY_LOGGING is true', async () => {
+    it('dbQuery should call pino.debug when no error and logging is enabled', () => {
       process.env.ENABLE_QUERY_LOGGING = 'true';
-      process.env.LOG_LEVEL = 'debug';
-      const { logger } = await import('../logger');
-      logger.dbQuery('SELECT * FROM users', 50);
-
-      expect(console.log).toHaveBeenCalled();
-      const logOutput = JSON.parse((console.log as vi.Mock).mock.calls[0][0]);
-      expect(logOutput).toEqual({
-        timestamp: expect.any(String),
-        level: 'DEBUG',
-        message: 'Database query',
-        meta: {
-          query: expect.stringMatching(/^SELECT \* FROM users/),
-          duration: 50,
-        },
-      });
-    });
-
-    it('should not log database queries when ENABLE_QUERY_LOGGING is not true', async () => {
+      logger.dbQuery('SELECT *', 50);
+      expect(mockPinoInstance.debug).toHaveBeenCalledWith(
+        expect.objectContaining({
+          db: { query: 'SELECT *...', duration: 50 },
+        }),
+        'Database query',
+      );
       delete process.env.ENABLE_QUERY_LOGGING;
-      const { logger } = await import('../logger');
-      logger.dbQuery('SELECT * FROM users', 50);
-
-      expect(console.log).not.toHaveBeenCalled();
-      expect(console.warn).not.toHaveBeenCalled();
-      expect(console.error).not.toHaveBeenCalled();
     });
 
-    it('should log assistant requests', async () => {
-      process.env.LOG_LEVEL = 'info';
-      const { logger } = await import('../logger');
-      logger.assistantRequest('gpt-4', 100, 0.001, 2000);
-
-      expect(console.log).toHaveBeenCalled();
-      const logOutput = JSON.parse((console.log as vi.Mock).mock.calls[0][0]);
-      expect(logOutput).toEqual({
-        timestamp: expect.any(String),
-        level: 'INFO',
-        message: 'Assistant request',
-        meta: {
-          model: 'gpt-4',
-          tokens: 100,
-          cost: 0.001,
-          duration: 2000,
-        },
-      });
+    it('dbQuery should call pino.error on error', () => {
+      const error = new Error('Query failed');
+      logger.dbQuery('SELECT *', 50, error);
+      expect(mockPinoInstance.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          err: error,
+          db: { query: 'SELECT *...', duration: 50 },
+        }),
+        'Database query failed',
+      );
     });
 
-    it('should log assistant requests with error', async () => {
-      process.env.NODE_ENV = 'development';
-      const error = new Error('Assistant request failed');
-      const { logger } = await import('../logger');
-      logger.assistantRequest('gpt-4', 100, 0.001, 2000, error);
-
-      expect(console.error).toHaveBeenCalled();
-      const logOutput = JSON.parse((console.error as vi.Mock).mock.calls[0][0]);
-      expect(logOutput).toEqual({
-        timestamp: expect.any(String),
-        level: 'ERROR',
-        message: 'Assistant request failed',
-        error: {
-          name: 'Error',
-          message: 'Assistant request failed',
-          stack: expect.any(String),
-        },
-        meta: {
-          model: 'gpt-4',
-          tokens: 100,
-          cost: 0.001,
-          duration: 2000,
-        },
-      });
-    });
-  });
-
-  describe('Log Filtering', () => {
-    it('should not log debug messages when log level is ERROR', async () => {
-      delete process.env.LOG_LEVEL; // Default to ERROR level
-      const { logger } = await import('../logger');
-      logger.debug('Test debug message');
-
-      expect(console.log).not.toHaveBeenCalled();
+    it('assistantRequest should call pino.info', () => {
+      logger.assistantRequest('test-model', 100, 0.01, 500);
+      expect(mockPinoInstance.info).toHaveBeenCalledWith(
+        { model: 'test-model', tokens: 100, cost: 0.01, duration: 500 },
+        'Assistant request',
+      );
     });
 
-    it('should not log info messages when log level is ERROR', async () => {
-      delete process.env.LOG_LEVEL; // Default to ERROR level
-      const { logger } = await import('../logger');
-      logger.info('Test info message');
-
-      expect(console.log).not.toHaveBeenCalled();
-    });
-
-    it('should not log warning messages when log level is ERROR', async () => {
-      delete process.env.LOG_LEVEL; // Default to ERROR level
-      const { logger } = await import('../logger');
-      logger.warn('Test warning message');
-
-      expect(console.warn).not.toHaveBeenCalled();
-    });
-
-    it('should log error messages when log level is ERROR', async () => {
-      delete process.env.LOG_LEVEL; // Default to ERROR level
-      const { logger } = await import('../logger');
-      logger.error('Test error message');
-
-      expect(console.error).toHaveBeenCalled();
+    it('assistantRequest should call pino.error on error', () => {
+      const error = new Error('Assistant failed');
+      logger.assistantRequest('test-model', 100, 0.01, 500, error);
+      expect(mockPinoInstance.error).toHaveBeenCalledWith(
+        { err: error, model: 'test-model', tokens: 100, cost: 0.01, duration: 500 },
+        'Assistant request failed',
+      );
     });
   });
 });

@@ -94,7 +94,7 @@ export interface ConversationService {
   /**
    * Update conversation's last activity timestamp
    */
-  touchActivity(conversationId: string): Promise<void>;
+  updateActivity(conversationId: string): Promise<void>;
 }
 
 export class DatabaseConversationService implements ConversationService {
@@ -254,7 +254,7 @@ export class DatabaseConversationService implements ConversationService {
     return conversation;
   }
 
-  async touchActivity(conversationId: string): Promise<void> {
+  async updateActivity(conversationId: string): Promise<void> {
     await this.db.conversation.update({
       where: { id: conversationId },
       data: { updatedAt: new Date() },
@@ -420,7 +420,7 @@ export class DemoConversationService implements ConversationService {
     return conversation;
   }
 
-  async touchActivity(conversationId: string): Promise<void> {
+  async updateActivity(conversationId: string): Promise<void> {
     const conversation = this.conversations.get(conversationId);
     if (conversation) {
       conversation.updatedAt = new Date();

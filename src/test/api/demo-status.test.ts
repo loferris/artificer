@@ -84,7 +84,8 @@ describe('/api/demo-status', () => {
   });
 
   it('handles error gracefully', async () => {
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { logger } = await import('../../server/utils/logger');
+    const loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
 
     const { isDemoMode } = await import('../../utils/demo');
     (isDemoMode as vi.Mock).mockImplementation(() => {
@@ -116,8 +117,11 @@ describe('/api/demo-status', () => {
       timestamp: expect.any(String),
     });
 
-    expect(consoleError).toHaveBeenCalledWith('Error in demo-status endpoint:', expect.any(Error));
+    expect(loggerErrorSpy).toHaveBeenCalledWith(
+      'Error in demo-status endpoint:',
+      expect.any(Error),
+    );
 
-    consoleError.mockRestore();
+    loggerErrorSpy.mockRestore();
   });
 });

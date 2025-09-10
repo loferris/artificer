@@ -45,7 +45,8 @@
     "tailwindcss": "^3.4.0",
     "typescript": "^5.7.2",
     "zod": "^3.22.0",
-    "zustand": "^5.0.8"
+    "zustand": "^5.0.8",
+    "pino": "^9.2.0"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",
@@ -77,6 +78,7 @@
     "typescript": "^5.9.2",
     "vite": "^5.2.0",
     "vitest": "^3.2.4",
-    "vitest-mock-extended": "^3.1.0"
+    "vitest-mock-extended": "^3.1.0",
+    "pino-pretty": "^11.2.1"
   }
 }

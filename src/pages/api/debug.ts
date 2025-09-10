@@ -1,4 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
+import { logger } from '../../server/utils/logger';
 
 interface DebugResponse {
   environment: string;
@@ -62,7 +63,7 @@ export default async function debug(req: NextApiRequest, res: NextApiResponse<De
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.status(200).json(response);
   } catch (error) {
-    console.error('Debug endpoint failed:', error);
+    logger.error('Debug endpoint failed:', error);
     res.status(500).json({
       environment: 'error',
       vercel: {},

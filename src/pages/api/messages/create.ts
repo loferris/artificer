@@ -1,4 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
+import { logger } from '../../../server/utils/logger';
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -24,7 +25,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
     res.status(200).json(message);
   } catch (error) {
-    console.error('Error creating message:', error);
+    logger.error('Error creating message:', error);
     res.status(500).json({
       message: 'Failed to create message',
       error: error instanceof Error ? error.message : 'Unknown error',

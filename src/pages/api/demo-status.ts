@@ -1,6 +1,7 @@
 // Debug endpoint to check demo mode status
 import { NextApiRequest, NextApiResponse } from 'next';
 import { isDemoMode, isServerSideDemo } from '../../utils/demo';
+import { logger } from '../../server/utils/logger';
 
 interface DemoStatusResponse {
   isDemoMode: boolean;
@@ -33,7 +34,7 @@ export default async function handler(
 
     res.status(200).json(status);
   } catch (error) {
-    console.error('Error in demo-status endpoint:', error);
+    logger.error('Error in demo-status endpoint:', error);
     res.status(500).json({
       isDemoMode: false,
       isServerSideDemo: false,

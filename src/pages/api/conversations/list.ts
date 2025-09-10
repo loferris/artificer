@@ -1,4 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
+import { logger } from '../../../server/utils/logger';
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -37,7 +38,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
     res.status(200).json(conversations);
   } catch (error) {
-    console.error('Error fetching conversations:', error);
+    logger.error('Error fetching conversations:', error);
     res.status(500).json({
       message: 'Failed to fetch conversations',
       error: error instanceof Error ? error.message : 'Unknown error',

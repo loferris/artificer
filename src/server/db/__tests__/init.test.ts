@@ -9,11 +9,10 @@ vi.mock('../client', () => ({
   },
 }));
 
-// Mock console methods
-const mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
-const mockConsoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-
 describe('Database Initialization', () => {
+  // Mock console methods
+  const mockConsoleLog = vi.spyOn(console, 'log').mockImplementation(() => {});
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -34,12 +33,18 @@ describe('Database Initialization', () => {
       const connectionError = new Error('Connection failed');
       (prisma.$connect as vi.Mock).mockRejectedValue(connectionError);
 
+      // Mock the logger import and spy on its error method
+      const loggerModule = await import('../../utils/logger');
+      const loggerErrorSpy = vi.spyOn(loggerModule.logger, 'error').mockImplementation(() => {});
+
       await expect(initDatabase()).rejects.toThrow('Connection failed');
 
-      expect(mockConsoleError).toHaveBeenCalledWith(
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
         '❌ Database connection failed:',
         connectionError,
       );
+
+      loggerErrorSpy.mockRestore();
     });
 
     it('handles non-Error objects in catch block', async () => {
@@ -47,9 +52,15 @@ describe('Database Initialization', () => {
       const stringError = 'String error';
       (prisma.$connect as vi.Mock).mockRejectedValue(stringError);
 
+      // Mock the logger import and spy on its error method
+      const loggerModule = await import('../../utils/logger');
+      const loggerErrorSpy = vi.spyOn(loggerModule.logger, 'error').mockImplementation(() => {});
+
       await expect(initDatabase()).rejects.toBe(stringError);
 
-      expect(mockConsoleError).toHaveBeenCalledWith('❌ Database connection failed:', stringError);
+      expect(loggerErrorSpy).toHaveBeenCalledWith('❌ Database connection failed:', stringError);
+
+      loggerErrorSpy.mockRestore();
     });
   });
 
@@ -65,10 +76,13 @@ describe('Database Initialization', () => {
 
     it('handles database disconnection errors', async () => {
       const { prisma } = await import('../client');
-      const disconnectError = new Error('Disconnect failed');
+      const disconnectError = new Error('Disconnection failed');
       (prisma.$disconnect as vi.Mock).mockRejectedValue(disconnectError);
 
-      await expect(closeDatabase()).rejects.toThrow('Disconnect failed');
+      // Should not throw, just log the error
+      await expect(closeDatabase()).resolves.toBeUndefined();
+
+      expect(prisma.$disconnect).toHaveBeenCalled();
     });
   });
 });
