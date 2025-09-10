@@ -1,4 +1,4 @@
-import { httpBatchLink, wsLink, splitLink } from '@trpc/client';
+import { httpBatchLink, wsLink, splitLink, createWSClient } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import type { AppRouter } from '../../server/root';
 import superjson from 'superjson';
@@ -38,13 +38,10 @@ export const trpc = createTRPCNext<AppRouter>({
             return op.type === 'subscription';
           },
           true: wsLink({
-            url: getWsUrl(),
+            client: createWSClient({
+              url: getWsUrl(),
+            }),
             transformer: superjson,
-            connectionParams() {
-              return {
-                sessionId: getSessionId(),
-              };
-            },
           }),
           false: httpBatchLink({
             url: `${getBaseUrl()}/api/trpc`,

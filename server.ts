@@ -58,6 +58,15 @@ app.prepare().then(() => {
       return createContext({
         req: mockReq,
         res: mockRes,
+        info: {
+          accept: 'application/jsonl' as const,
+          type: 'query' as const,
+          connectionParams: {},
+          signal: new AbortController().signal,
+          url: new URL('ws://localhost:3000/api/trpc-ws'),
+          isBatchCall: false,
+          calls: [],
+        },
       });
     },
     onError: ({ error, path, type, input }) => {

@@ -39,6 +39,11 @@ export interface Assistant {
     conversationHistory?: Array<{ role: string; content: string }>,
     options?: AssistantOptions,
   ): AsyncIterable<AssistantStreamChunk>;
+
+  /**
+   * Get model usage statistics
+   */
+  getModelUsageStats(): Array<{ model: string; count: number; percentage: number }>;
 }
 
 // Mock Assistant (for testing) - supports both streaming and non-streaming
@@ -133,6 +138,12 @@ export class MockAssistant implements Assistant {
       cost: 0.001,
       tokenCount: words.length,
     };
+  }
+
+  getModelUsageStats(): Array<{ model: string; count: number; percentage: number }> {
+    return [
+      { model: 'mock-assistant', count: 100, percentage: 100 }
+    ];
   }
 }
 
@@ -311,6 +322,13 @@ export class OpenRouterAssistant implements Assistant {
       default:
         return new Error(`OpenRouter API error: ${response.status}`);
     }
+  }
+
+  getModelUsageStats(): Array<{ model: string; count: number; percentage: number }> {
+    // In a real implementation, this would track actual usage
+    return [
+      { model: this.model, count: 1, percentage: 100 }
+    ];
   }
 }
 
