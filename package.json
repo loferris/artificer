@@ -1,6 +1,5 @@
 {
-  "name": "chat-app",
-  "private": true,
+  "name": "ai-workflow-engine",
   "version": "0.0.0",
   "type": "module",
   "scripts": {
@@ -77,11 +76,7 @@
     "tailwindcss": "^3.4.3",
     "typescript": "^5.9.2",
     "vite": "^5.2.0",
-<<<<<<< HEAD
-    "vitest": "^1.6.1"
-=======
     "vitest": "^3.2.4",
     "vitest-mock-extended": "^3.1.0"
->>>>>>> d9c4e81 (updating dev dependencies)
   }
 }
