@@ -56,7 +56,7 @@ describe('/api/conversations', () => {
       await createConversation(req, res);
 
       expect(res._getStatusCode()).toBe(405);
-      
+
       const responseData = JSON.parse(res._getData());
       expect(responseData).toEqual({
         message: 'Method not allowed',
@@ -83,7 +83,7 @@ describe('/api/conversations', () => {
       const responseData = JSON.parse(res._getData());
       expect(Array.isArray(responseData)).toBe(true);
       expect(responseData.length).toBe(1);
-      
+
       const conversation = responseData[0];
       expect(conversation).toEqual({
         id: 'demo-1',
@@ -126,7 +126,7 @@ describe('/api/conversations', () => {
       await listConversations(req, res);
 
       expect(res._getStatusCode()).toBe(405);
-      
+
       const responseData = JSON.parse(res._getData());
       expect(responseData).toEqual({
         message: 'Method not allowed',

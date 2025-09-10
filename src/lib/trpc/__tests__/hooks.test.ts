@@ -9,7 +9,7 @@ describe('TRPC Hooks', () => {
 
   it('should have proper hook structure', async () => {
     const hooks = await import('../hooks');
-    
+
     // Since we can't easily test the hook's internal logic without complex mocking,
     // we'll just verify it exports correctly
     expect(hooks.useChat).toBeDefined();

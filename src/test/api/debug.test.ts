@@ -18,7 +18,7 @@ describe('/api/debug', () => {
     process.env.NODE_ENV = 'development';
     process.env.DATABASE_URL = undefined; // Clear database URL for test
     process.env.DEBUG_SECRET = undefined; // Clear debug secret for test
-    
+
     const { req, res } = createMocks({
       method: 'GET',
       url: '/api/debug',
@@ -60,7 +60,7 @@ describe('/api/debug', () => {
     process.env.NODE_ENV = 'production';
     process.env.DEBUG_SECRET = 'real-secret'; // Set a real secret
     process.env.DATABASE_URL = undefined; // Clear database URL for test
-    
+
     const { req, res } = createMocks({
       method: 'GET',
       url: '/api/debug',
@@ -72,7 +72,7 @@ describe('/api/debug', () => {
     await debug(req, res);
 
     expect(res._getStatusCode()).toBe(401); // Now it should return 401
-    
+
     const responseData = JSON.parse(res._getData());
     expect(responseData).toEqual({
       environment: 'production',
@@ -88,7 +88,7 @@ describe('/api/debug', () => {
     process.env.NODE_ENV = 'production';
     process.env.DEBUG_SECRET = 'test-secret';
     process.env.DATABASE_URL = undefined; // Clear database URL for test
-    
+
     const { req, res } = createMocks({
       method: 'GET',
       url: '/api/debug?secret=test-secret',
@@ -100,7 +100,7 @@ describe('/api/debug', () => {
     await debug(req, res);
 
     expect(res._getStatusCode()).toBe(200);
-    
+
     const responseData = JSON.parse(res._getData());
     expect(responseData.environment).toBe('production');
     expect(responseData.headers).toEqual({
@@ -112,25 +112,25 @@ describe('/api/debug', () => {
     process.env.NODE_ENV = 'production';
     process.env.DEBUG_SECRET = 'test-secret';
     process.env.DATABASE_URL = undefined; // Clear database URL for test
-    
+
     const { req, res } = createMocks({
       method: 'GET',
       url: '/api/debug',
       headers: {
         'content-type': 'application/json',
-        'authorization': 'Bearer test-secret',
+        authorization: 'Bearer test-secret',
       },
     });
 
     await debug(req, res);
 
     expect(res._getStatusCode()).toBe(200);
-    
+
     const responseData = JSON.parse(res._getData());
     expect(responseData.environment).toBe('production');
     expect(responseData.headers).toEqual({
       'content-type': 'application/json',
-      'authorization': 'Bearer test-secret',
+      authorization: 'Bearer test-secret',
     });
   });
 
@@ -138,7 +138,7 @@ describe('/api/debug', () => {
     process.env.NODE_ENV = 'development';
     process.env.DATABASE_URL = 'postgresql://user:pass@localhost:5432/db';
     process.env.DEBUG_SECRET = undefined; // Clear debug secret for test
-    
+
     const { req, res } = createMocks({
       method: 'GET',
       url: '/api/debug',

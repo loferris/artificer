@@ -33,7 +33,7 @@ export const useChatState = () => {
   const setError = useChatStore((state) => state.setError);
   const setInput = useChatStore((state) => state.setInput);
   const setSidebarOpen = useChatStore((state) => state.setSidebarOpen);
-  
+
   // Demo mode actions
   const setDemoMode = useChatStore((state) => state.setDemoMode);
   const addDemoMessage = useChatStore((state) => state.addDemoMessage);

@@ -32,42 +32,46 @@ describe('TRPC Client', () => {
   describe('getBaseUrl', () => {
     it('should return empty string when running in browser', async () => {
       // Simulate browser environment
-      const windowSpy = vi.spyOn(globalThis, 'window', 'get').mockImplementation(() => ({} as any));
-      
+      const windowSpy = vi.spyOn(globalThis, 'window', 'get').mockImplementation(() => ({}) as any);
+
       const client = await import('../client');
       // Since getBaseUrl is not exported, we can't test it directly
       // But we can test that the client works correctly
       expect(client.trpc).toBeDefined();
-      
+
       windowSpy.mockRestore();
     });
 
     it('should return Vercel URL when VERCEL_URL is set', async () => {
       // Simulate server environment
-      const windowSpy = vi.spyOn(globalThis, 'window', 'get').mockImplementation(() => undefined as any);
+      const windowSpy = vi
+        .spyOn(globalThis, 'window', 'get')
+        .mockImplementation(() => undefined as any);
       const originalVercelUrl = process.env.VERCEL_URL;
       process.env.VERCEL_URL = 'chat-app.vercel.app';
-      
+
       const client = await import('../client');
       // Since getBaseUrl is not exported, we can't test it directly
       // But we can test that the client works correctly
       expect(client.trpc).toBeDefined();
-      
+
       windowSpy.mockRestore();
       process.env.VERCEL_URL = originalVercelUrl;
     });
 
     it('should return localhost when running locally', async () => {
       // Simulate server environment
-      const windowSpy = vi.spyOn(globalThis, 'window', 'get').mockImplementation(() => undefined as any);
+      const windowSpy = vi
+        .spyOn(globalThis, 'window', 'get')
+        .mockImplementation(() => undefined as any);
       const originalVercelUrl = process.env.VERCEL_URL;
       process.env.VERCEL_URL = undefined;
-      
+
       const client = await import('../client');
       // Since getBaseUrl is not exported, we can't test it directly
       // But we can test that the client works correctly
       expect(client.trpc).toBeDefined();
-      
+
       windowSpy.mockRestore();
       process.env.VERCEL_URL = originalVercelUrl;
     });

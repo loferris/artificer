@@ -18,7 +18,7 @@ describe('Static Demo Utilities', () => {
   describe('isStaticDemo', () => {
     it('should return true when NEXT_PUBLIC_DEMO_MODE is set to true', () => {
       process.env.NEXT_PUBLIC_DEMO_MODE = 'true';
-      
+
       expect(staticDemo.isStaticDemo()).toBe(true);
     });
 
@@ -30,7 +30,7 @@ describe('Static Demo Utilities', () => {
         },
       } as any;
       process.env.NEXT_PUBLIC_DEMO_MODE = 'false';
-      
+
       expect(staticDemo.isStaticDemo()).toBe(true);
     });
 
@@ -42,7 +42,7 @@ describe('Static Demo Utilities', () => {
       // Simulate server-side environment
       global.window = undefined as any;
       process.env.NEXT_PUBLIC_DEMO_MODE = 'false';
-      
+
       expect(staticDemo.isStaticDemo()).toBe(false);
     });
   });
@@ -54,16 +54,16 @@ describe('Static Demo Utilities', () => {
       global.localStorage = {
         setItem: mockSetItem,
       } as any;
-      
+
       // Mock window and demo mode
       global.window = {} as any;
       process.env.NEXT_PUBLIC_DEMO_MODE = 'true';
-      
+
       staticDemo.initializeStaticDemo();
-      
+
       expect(mockSetItem).toHaveBeenCalledWith(
         'static-demo-conversations',
-        JSON.stringify(staticDemo.DEMO_CONVERSATIONS)
+        JSON.stringify(staticDemo.DEMO_CONVERSATIONS),
       );
     });
 
@@ -73,7 +73,7 @@ describe('Static Demo Utilities', () => {
       global.localStorage = {
         setItem: mockSetItem,
       } as any;
-      
+
       // Mock window but not in demo mode
       global.window = {
         location: {
@@ -81,9 +81,9 @@ describe('Static Demo Utilities', () => {
         },
       } as any;
       process.env.NEXT_PUBLIC_DEMO_MODE = 'false';
-      
+
       staticDemo.initializeStaticDemo();
-      
+
       expect(mockSetItem).not.toHaveBeenCalled();
     });
 
@@ -91,9 +91,9 @@ describe('Static Demo Utilities', () => {
       // Simulate server-side environment
       global.window = undefined as any;
       process.env.NEXT_PUBLIC_DEMO_MODE = 'true';
-      
+
       staticDemo.initializeStaticDemo();
-      
+
       // No localStorage access on server-side
     });
   });
@@ -101,12 +101,12 @@ describe('Static Demo Utilities', () => {
   describe('getStaticDemoData', () => {
     it('should return demo conversations and messages', () => {
       const demoData = staticDemo.getStaticDemoData();
-      
+
       expect(demoData).toHaveProperty('conversations');
       expect(demoData).toHaveProperty('messages');
       expect(Array.isArray(demoData.conversations)).toBe(true);
       expect(Array.isArray(demoData.messages)).toBe(true);
-      
+
       // Verify conversations structure
       expect(demoData.conversations[0]).toEqual({
         id: 'demo-1',
@@ -119,7 +119,7 @@ describe('Static Demo Utilities', () => {
         updatedAt: expect.any(Date),
         messages: [],
       });
-      
+
       // Verify messages structure
       expect(demoData.messages[0]).toEqual({
         id: 'msg-1',
@@ -129,11 +129,12 @@ describe('Static Demo Utilities', () => {
         model: undefined,
         cost: undefined,
       });
-      
+
       expect(demoData.messages[1]).toEqual({
         id: 'msg-2',
         role: 'assistant',
-        content: 'Goodnight moon! 🌙\n\nThis is a static demo of an AI orchestration and knowledge management system. The real version connects to AI models via OpenRouter for dynamic conversations.',
+        content:
+          'Goodnight moon! 🌙\n\nThis is a static demo of an AI orchestration and knowledge management system. The real version connects to AI models via OpenRouter for dynamic conversations.',
         timestamp: expect.any(Date),
         model: undefined,
         cost: undefined,
@@ -145,7 +146,7 @@ describe('Static Demo Utilities', () => {
     it('should generate a valid demo response message', () => {
       const userMessage = 'Hello!';
       const response = staticDemo.generateDemoResponse(userMessage);
-      
+
       expect(response).toEqual({
         id: expect.stringMatching(/^demo-response-\d+$/),
         role: 'assistant',
@@ -154,7 +155,7 @@ describe('Static Demo Utilities', () => {
         model: 'demo-assistant-v1',
         cost: 0.001,
       });
-      
+
       // Verify content is one of the predefined responses
       const predefinedResponses = [
         "That's a great question! In this demo mode, I'm showing you the UI capabilities of this chat application.",
@@ -163,20 +164,20 @@ describe('Static Demo Utilities', () => {
         'In the full version, this would be a real AI response. This demo showcases the chat interface and message handling.',
         'Great point! The production app includes features like conversation export, usage tracking, and model switching.',
       ];
-      
+
       expect(predefinedResponses).toContain(response.content);
     });
 
     it('should generate different responses randomly', () => {
       const userMessage = 'Hello!';
       const responses = new Set();
-      
+
       // Generate multiple responses and collect unique content
       for (let i = 0; i < 10; i++) {
         const response = staticDemo.generateDemoResponse(userMessage);
         responses.add(response.content);
       }
-      
+
       // Should have at least some variation (not guaranteed to be all different due to randomness)
       expect(responses.size).toBeGreaterThanOrEqual(1);
     });
@@ -186,7 +187,7 @@ describe('Static Demo Utilities', () => {
     it('should have the correct structure', () => {
       expect(Array.isArray(staticDemo.DEMO_CONVERSATIONS)).toBe(true);
       expect(staticDemo.DEMO_CONVERSATIONS.length).toBeGreaterThan(0);
-      
+
       const conversation = staticDemo.DEMO_CONVERSATIONS[0];
       expect(conversation).toEqual({
         id: 'demo-1',
@@ -206,7 +207,7 @@ describe('Static Demo Utilities', () => {
     it('should have the correct structure', () => {
       expect(Array.isArray(staticDemo.DEMO_MESSAGES)).toBe(true);
       expect(staticDemo.DEMO_MESSAGES.length).toBeGreaterThan(0);
-      
+
       const message = staticDemo.DEMO_MESSAGES[0];
       expect(message).toEqual({
         id: 'msg-1',
@@ -216,12 +217,13 @@ describe('Static Demo Utilities', () => {
         model: undefined,
         cost: undefined,
       });
-      
+
       const assistantMessage = staticDemo.DEMO_MESSAGES[1];
       expect(assistantMessage).toEqual({
         id: 'msg-2',
         role: 'assistant',
-        content: 'Goodnight moon! 🌙\n\nThis is a static demo of an AI orchestration and knowledge management system. The real version connects to AI models via OpenRouter for dynamic conversations.',
+        content:
+          'Goodnight moon! 🌙\n\nThis is a static demo of an AI orchestration and knowledge management system. The real version connects to AI models via OpenRouter for dynamic conversations.',
         timestamp: expect.any(Date),
         model: undefined,
         cost: undefined,

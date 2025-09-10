@@ -7,7 +7,7 @@ import type { Message } from '../../types';
 export const useChatOperations = () => {
   const currentRequestRef = useRef<AbortController | null>(null);
   const { isDemoMode: isStaticDemo, demoAPI } = useStaticDemo();
-  
+
   // Store actions
   const {
     currentConversationId,
@@ -28,7 +28,7 @@ export const useChatOperations = () => {
   const utils = trpc.useUtils();
   const refetchMessages = trpc.messages.getByConversation.useQuery(
     { conversationId: currentConversationId || '' },
-    { enabled: false }
+    { enabled: false },
   ).refetch;
 
   // Send message mutation

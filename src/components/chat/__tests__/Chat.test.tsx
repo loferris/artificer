@@ -51,21 +51,21 @@ describe('Chat Component', () => {
     lastFailedMessage: '',
     input: '',
     sidebarOpen: true,
-    
+
     // Demo mode state
     isDemoMode: false,
     demoMessages: [],
     demoConversations: new Map(),
-    
+
     // Computed state
     isConversationReady: false,
     canSendMessage: false,
     shouldShowRetry: false,
-    
+
     // UI helpers
     hasError: false,
     displayError: '',
-    
+
     // Actions
     setCurrentConversation: vi.fn(),
     setLoading: vi.fn(),
@@ -75,14 +75,14 @@ describe('Chat Component', () => {
     clearInput: vi.fn(),
     toggleSidebar: vi.fn(),
     setSidebarOpen: vi.fn(),
-    
+
     // Demo mode actions
     setDemoMode: vi.fn(),
     addDemoMessage: vi.fn(),
     createDemoConversation: vi.fn(),
     getDemoConversation: vi.fn(),
     clearDemoData: vi.fn(),
-    
+
     // Combined actions
     clearError: vi.fn(),
     resetRetry: vi.fn(),
@@ -103,20 +103,20 @@ describe('Chat Component', () => {
     // Data
     conversations: [],
     currentConversationId: null,
-    
+
     // Loading states
     conversationsLoading: false,
     isCreatingConversation: false,
-    
+
     // Errors
     conversationsError: null,
-    
+
     // Actions
     handleNewConversation: vi.fn(),
     handleSelectConversation: vi.fn(),
     handleDeleteConversation: vi.fn(),
     refreshConversations: vi.fn(),
-    
+
     // Mutation states
     isCreating: false,
     isDeleting: false,
@@ -227,13 +227,13 @@ describe('Chat Component', () => {
     it('calls handleSendMessage when send button is clicked', async () => {
       const user = userEvent.setup();
       const mockHandleSendMessage = vi.fn();
-      
+
       mockUseChatState.mockReturnValue({
         ...defaultChatState,
         canSendMessage: true,
         isConversationReady: true,
       });
-      
+
       mockUseChatOperations.mockReturnValue({
         ...defaultChatOperations,
         handleSendMessage: mockHandleSendMessage,
@@ -250,7 +250,7 @@ describe('Chat Component', () => {
     it('calls toggleSidebar when sidebar toggle is clicked', async () => {
       const user = userEvent.setup();
       const mockToggleSidebar = vi.fn();
-      
+
       mockUseChatState.mockReturnValue({
         ...defaultChatState,
         toggleSidebar: mockToggleSidebar,
@@ -267,7 +267,7 @@ describe('Chat Component', () => {
     it('calls handleNewConversation when new chat button is clicked', async () => {
       const user = userEvent.setup();
       const mockHandleNewConversation = vi.fn();
-      
+
       mockUseConversationManager.mockReturnValue({
         ...defaultConversationManager,
         handleNewConversation: mockHandleNewConversation,
@@ -283,7 +283,7 @@ describe('Chat Component', () => {
 
     it('calls updateInput when input value changes', () => {
       const mockUpdateInput = vi.fn();
-      
+
       mockUseChatState.mockReturnValue({
         ...defaultChatState,
         updateInput: mockUpdateInput,
@@ -404,7 +404,9 @@ describe('Chat Component', () => {
 
       render(<Chat />);
 
-      const mainContainer = screen.getByText('AI Chat').closest('div[class*="h-[calc(100vh-40px)]"]');
+      const mainContainer = screen
+        .getByText('AI Chat')
+        .closest('div[class*="h-[calc(100vh-40px)]"]');
       expect(mainContainer).toBeInTheDocument();
     });
   });

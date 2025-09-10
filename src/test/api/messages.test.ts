@@ -20,7 +20,7 @@ describe('/api/messages', () => {
         content: 'Hello, world!',
         tokens: 10,
       };
-      
+
       const { req, res } = createMocks({
         method: 'POST',
         url: '/api/messages/create',
@@ -86,7 +86,7 @@ describe('/api/messages', () => {
       await createMessage(req, res);
 
       expect(res._getStatusCode()).toBe(405);
-      
+
       const responseData = JSON.parse(res._getData());
       expect(responseData).toEqual({
         message: 'Method not allowed',
@@ -116,12 +116,13 @@ describe('/api/messages', () => {
       const responseData = JSON.parse(res._getData());
       expect(Array.isArray(responseData)).toBe(true);
       expect(responseData.length).toBe(1);
-      
+
       const message = responseData[0];
       expect(message).toEqual({
         id: 'demo-msg-1',
         role: 'assistant',
-        content: 'Welcome to this AI chat application! This is a showcase demo featuring real-time AI conversations, conversation management, export functionality, and more!',
+        content:
+          'Welcome to this AI chat application! This is a showcase demo featuring real-time AI conversations, conversation management, export functionality, and more!',
         timestamp: expect.any(String),
         model: 'demo-assistant-v1',
         cost: 0.001,
@@ -143,7 +144,7 @@ describe('/api/messages', () => {
       await listMessages(req, res);
 
       expect(res._getStatusCode()).toBe(405);
-      
+
       const responseData = JSON.parse(res._getData());
       expect(responseData).toEqual({
         message: 'Method not allowed',

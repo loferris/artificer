@@ -5,7 +5,7 @@ import { useStaticDemo } from '../useStaticDemo';
 
 export const useConversationManager = () => {
   const { isDemoMode: isStaticDemo, demoAPI } = useStaticDemo();
-  
+
   // Store state and actions
   const {
     currentConversationId,
@@ -159,20 +159,20 @@ export const useConversationManager = () => {
     // Data
     conversations: displayConversations,
     currentConversationId,
-    
+
     // Loading states
     conversationsLoading,
     isCreatingConversation,
-    
+
     // Errors
     conversationsError,
-    
+
     // Actions
     handleNewConversation,
     handleSelectConversation,
     handleDeleteConversation,
     refreshConversations,
-    
+
     // Mutation states
     isCreating: createConversationMutation.isPending,
     isDeleting: deleteConversationMutation.isPending,

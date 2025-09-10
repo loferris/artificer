@@ -17,9 +17,9 @@ describe('Rate Limiter', () => {
       const identifier = 'test-user';
       const maxRequests = 5;
       const windowMs = 60000; // 1 minute
-      
+
       const result = rateLimiter.check(identifier, maxRequests, windowMs);
-      
+
       expect(result).toEqual({
         allowed: true,
         remaining: 4,
@@ -31,7 +31,7 @@ describe('Rate Limiter', () => {
       const identifier = 'test-user';
       const maxRequests = 5;
       const windowMs = 60000; // 1 minute
-      
+
       // Make 3 requests
       for (let i = 0; i < 3; i++) {
         const result = rateLimiter.check(identifier, maxRequests, windowMs);
@@ -44,13 +44,13 @@ describe('Rate Limiter', () => {
       const identifier = 'test-user';
       const maxRequests = 2;
       const windowMs = 60000; // 1 minute
-      
+
       // Make requests up to the limit
       for (let i = 0; i < maxRequests; i++) {
         const result = rateLimiter.check(identifier, maxRequests, windowMs);
         expect(result.allowed).toBe(true);
       }
-      
+
       // Next request should be blocked
       const result = rateLimiter.check(identifier, maxRequests, windowMs);
       expect(result).toEqual({
@@ -64,15 +64,15 @@ describe('Rate Limiter', () => {
       const identifier = 'test-user';
       const maxRequests = 2;
       const windowMs = 60000; // 1 minute
-      
+
       // Make requests up to the limit
       for (let i = 0; i < maxRequests; i++) {
         rateLimiter.check(identifier, maxRequests, windowMs);
       }
-      
+
       // Advance time beyond window
       vi.advanceTimersByTime(windowMs + 1000);
-      
+
       // Next request should be allowed
       const result = rateLimiter.check(identifier, maxRequests, windowMs);
       expect(result.allowed).toBe(true);
@@ -84,12 +84,12 @@ describe('Rate Limiter', () => {
       const identifier2 = 'user-2';
       const maxRequests = 2;
       const windowMs = 60000; // 1 minute
-      
+
       // Exhaust limit for first user
       for (let i = 0; i < maxRequests; i++) {
         rateLimiter.check(identifier1, maxRequests, windowMs);
       }
-      
+
       // Second user should still be allowed
       const result = rateLimiter.check(identifier2, maxRequests, windowMs);
       expect(result.allowed).toBe(true);
@@ -100,14 +100,14 @@ describe('Rate Limiter', () => {
       const identifier = 'test-user';
       const maxRequests = 2;
       const windowMs = 60000; // 1 minute
-      
+
       // Make a request
       rateLimiter.check(identifier, maxRequests, windowMs);
       expect((rateLimiter as any).limits.size).toBe(1);
-      
+
       // Advance time beyond window
       vi.advanceTimersByTime(windowMs + 1000);
-      
+
       // Manually trigger cleanup
       const now = Date.now();
       for (const [key, entry] of (rateLimiter as any).limits.entries()) {
@@ -115,15 +115,15 @@ describe('Rate Limiter', () => {
           (rateLimiter as any).limits.delete(key);
         }
       }
-      
+
       expect((rateLimiter as any).limits.size).toBe(0);
     });
 
     it('should cleanup resources on shutdown', () => {
       const cleanupSpy = vi.spyOn(global as any, 'clearInterval');
-      
+
       rateLimiter.cleanup();
-      
+
       expect(cleanupSpy).toHaveBeenCalled();
       expect((rateLimiter as any).limits.size).toBe(0);
     });
@@ -142,19 +142,19 @@ describe('Rate Limiter', () => {
       expect(RATE_LIMITS).toHaveProperty('CHAT');
       expect(RATE_LIMITS).toHaveProperty('API');
       expect(RATE_LIMITS).toHaveProperty('EXPORT');
-      
+
       // Check CHAT configuration
       expect(RATE_LIMITS.CHAT).toEqual({
         maxRequests: 30,
         windowMs: 60000,
       });
-      
+
       // Check API configuration
       expect(RATE_LIMITS.API).toEqual({
         maxRequests: 100,
         windowMs: 60000,
       });
-      
+
       // Check EXPORT configuration
       expect(RATE_LIMITS.EXPORT).toEqual({
         maxRequests: 5,
@@ -167,9 +167,9 @@ describe('Rate Limiter', () => {
     it('should create middleware for CHAT limit type', () => {
       const middleware = createRateLimitMiddleware('CHAT');
       const identifier = 'test-user';
-      
+
       const result = middleware(identifier);
-      
+
       expect(result).toEqual({
         allowed: true,
         remaining: 29,
@@ -180,9 +180,9 @@ describe('Rate Limiter', () => {
     it('should create middleware for API limit type', () => {
       const middleware = createRateLimitMiddleware('API');
       const identifier = 'test-user';
-      
+
       const result = middleware(identifier);
-      
+
       expect(result).toEqual({
         allowed: true,
         remaining: 99,
@@ -193,9 +193,9 @@ describe('Rate Limiter', () => {
     it('should create middleware for EXPORT limit type', () => {
       const middleware = createRateLimitMiddleware('EXPORT');
       const identifier = 'test-user';
-      
+
       const result = middleware(identifier);
-      
+
       expect(result).toEqual({
         allowed: true,
         remaining: 4,

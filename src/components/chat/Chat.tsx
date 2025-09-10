@@ -45,12 +45,8 @@ export const Chat: React.FC = () => {
     clearError,
   } = chatState;
 
-  const {
-    conversations,
-    conversationsLoading,
-    conversationsError,
-    isCreatingConversation,
-  } = conversationManager;
+  const { conversations, conversationsLoading, conversationsError, isCreatingConversation } =
+    conversationManager;
 
   // Get current conversation messages with better error handling
   const {
@@ -76,8 +72,6 @@ export const Chat: React.FC = () => {
     }
   }, [messagesError]);
 
-
-
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -96,7 +90,6 @@ export const Chat: React.FC = () => {
       chatOperations.cancelCurrentRequest();
     };
   }, [chatOperations]);
-
 
   // Handle Enter key
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -122,7 +115,6 @@ export const Chat: React.FC = () => {
       return 'Invalid date';
     }
   };
-
 
   return (
     <>
@@ -203,7 +195,9 @@ export const Chat: React.FC = () => {
                       </div>
                     </div>
                     <button
-                      onClick={(e) => conversationManager.handleDeleteConversation(conversation.id, e)}
+                      onClick={(e) =>
+                        conversationManager.handleDeleteConversation(conversation.id, e)
+                      }
                       className='opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-100 rounded text-red-500 hover:text-red-700 ml-2'
                       title='Delete conversation'
                     >

@@ -24,13 +24,13 @@ describe('/api/demo-status', () => {
     const { isDemoMode, isServerSideDemo } = await import('../../utils/demo');
     (isDemoMode as vi.Mock).mockReturnValue(true);
     (isServerSideDemo as vi.Mock).mockReturnValue(false);
-    
+
     // Clear environment variables for clean test
     process.env.DEMO_MODE = undefined;
     process.env.NEXT_PUBLIC_DEMO_MODE = undefined;
     process.env.VERCEL_ENV = undefined;
     process.env.NODE_ENV = undefined;
-    
+
     const { req, res } = createMocks({
       method: 'GET',
       url: '/api/demo-status',
@@ -63,7 +63,7 @@ describe('/api/demo-status', () => {
     process.env.NEXT_PUBLIC_DEMO_MODE = 'true';
     process.env.VERCEL_ENV = 'production';
     process.env.NODE_ENV = 'production';
-    
+
     const { req, res } = createMocks({
       method: 'GET',
       url: '/api/demo-status',
@@ -85,12 +85,12 @@ describe('/api/demo-status', () => {
 
   it('handles error gracefully', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-    
+
     const { isDemoMode } = await import('../../utils/demo');
     (isDemoMode as vi.Mock).mockImplementation(() => {
       throw new Error('Demo check failed');
     });
-    
+
     const { req, res } = createMocks({
       method: 'GET',
       url: '/api/demo-status',
@@ -102,7 +102,7 @@ describe('/api/demo-status', () => {
     await demoStatus(req, res);
 
     expect(res._getStatusCode()).toBe(500);
-    
+
     const responseData = JSON.parse(res._getData());
     expect(responseData).toEqual({
       isDemoMode: false,
@@ -115,9 +115,9 @@ describe('/api/demo-status', () => {
       },
       timestamp: expect.any(String),
     });
-    
+
     expect(consoleError).toHaveBeenCalledWith('Error in demo-status endpoint:', expect.any(Error));
-    
+
     consoleError.mockRestore();
   });
 });

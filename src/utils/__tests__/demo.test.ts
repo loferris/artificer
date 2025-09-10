@@ -17,21 +17,21 @@ describe('Demo Utilities', () => {
   describe('isDemoMode', () => {
     it('should return true when DEMO_MODE is set to true', async () => {
       process.env.DEMO_MODE = 'true';
-      
+
       const { isDemoMode } = await import('../demo');
       expect(isDemoMode()).toBe(true);
     });
 
     it('should return true when NEXT_PUBLIC_DEMO_MODE is set to true', async () => {
       process.env.NEXT_PUBLIC_DEMO_MODE = 'true';
-      
+
       const { isDemoMode } = await import('../demo');
       expect(isDemoMode()).toBe(true);
     });
 
     it('should return true when VERCEL_ENV is preview', async () => {
       process.env.VERCEL_ENV = 'preview';
-      
+
       const { isDemoMode } = await import('../demo');
       expect(isDemoMode()).toBe(true);
     });
@@ -45,7 +45,7 @@ describe('Demo Utilities', () => {
   describe('isServerSideDemo', () => {
     it('should return true when DEMO_MODE is set to true', async () => {
       process.env.DEMO_MODE = 'true';
-      
+
       const { isServerSideDemo } = await import('../demo');
       expect(isServerSideDemo()).toBe(true);
     });
@@ -54,7 +54,7 @@ describe('Demo Utilities', () => {
       // Simulate server-side environment
       global.window = undefined as any;
       process.env.VERCEL_ENV = 'preview';
-      
+
       const { isServerSideDemo } = await import('../demo');
       expect(isServerSideDemo()).toBe(true);
     });
@@ -68,7 +68,7 @@ describe('Demo Utilities', () => {
   describe('isClientSideDemo', () => {
     it('should return true when NEXT_PUBLIC_DEMO_MODE is set to true', async () => {
       process.env.NEXT_PUBLIC_DEMO_MODE = 'true';
-      
+
       const { isClientSideDemo } = await import('../demo');
       expect(isClientSideDemo()).toBe(true);
     });
@@ -81,7 +81,7 @@ describe('Demo Utilities', () => {
         },
       } as any;
       process.env.NEXT_PUBLIC_DEMO_MODE = 'false';
-      
+
       const { isClientSideDemo } = await import('../demo');
       expect(isClientSideDemo()).toBe(true);
     });
@@ -95,7 +95,7 @@ describe('Demo Utilities', () => {
       // Simulate server-side environment
       global.window = undefined as any;
       process.env.NEXT_PUBLIC_DEMO_MODE = 'false';
-      
+
       const { isClientSideDemo } = await import('../demo');
       expect(isClientSideDemo()).toBe(false);
     });
@@ -115,7 +115,7 @@ describe('Demo Utilities', () => {
           code: 'INTERNAL_SERVER_ERROR',
         },
       };
-      
+
       expect(shouldUseDemoFallback(error)).toBe(true);
     });
 
@@ -124,7 +124,7 @@ describe('Demo Utilities', () => {
       const error = {
         message: 'Unexpected token < in JSON.parse at position 0',
       };
-      
+
       expect(shouldUseDemoFallback(error)).toBe(true);
     });
 
@@ -133,7 +133,7 @@ describe('Demo Utilities', () => {
       const error = {
         message: 'Request failed with status code 405',
       };
-      
+
       expect(shouldUseDemoFallback(error)).toBe(true);
     });
 
@@ -142,7 +142,7 @@ describe('Demo Utilities', () => {
       const error = {
         message: 'Database connection failed',
       };
-      
+
       expect(shouldUseDemoFallback(error)).toBe(true);
     });
 
@@ -151,7 +151,7 @@ describe('Demo Utilities', () => {
       const error = {
         message: 'Connection refused',
       };
-      
+
       expect(shouldUseDemoFallback(error)).toBe(true);
     });
 
@@ -160,7 +160,7 @@ describe('Demo Utilities', () => {
       const error = {
         message: 'PrismaClientKnownRequestError',
       };
-      
+
       expect(shouldUseDemoFallback(error)).toBe(true);
     });
 
@@ -169,7 +169,7 @@ describe('Demo Utilities', () => {
       const error = {
         message: 'ENOENT: no such file or directory',
       };
-      
+
       expect(shouldUseDemoFallback(error)).toBe(true);
     });
 
@@ -178,7 +178,7 @@ describe('Demo Utilities', () => {
       const error = {
         message: 'Validation failed',
       };
-      
+
       expect(shouldUseDemoFallback(error)).toBe(false);
     });
 
@@ -187,7 +187,7 @@ describe('Demo Utilities', () => {
       const error = {
         code: 'EACCES',
       };
-      
+
       expect(shouldUseDemoFallback(error)).toBe(false);
     });
   });

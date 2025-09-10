@@ -7,15 +7,15 @@ describe('Logger Utility', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Mock console methods
     console.log = vi.fn();
     console.warn = vi.fn();
     console.error = vi.fn();
     console.debug = vi.fn();
-    
+
     process.env = { ...originalEnv };
-    
+
     // Clear module cache to ensure fresh logger instance
     vi.resetModules();
   });
@@ -61,7 +61,7 @@ describe('Logger Utility', () => {
     it('should log error messages', async () => {
       const { logger } = await import('../logger');
       logger.error('Test error message');
-      
+
       expect(console.error).toHaveBeenCalled();
       const logOutput = JSON.parse((console.error as vi.Mock).mock.calls[0][0]);
       expect(logOutput).toEqual({
@@ -76,7 +76,7 @@ describe('Logger Utility', () => {
       const error = new Error('Test error');
       const { logger } = await import('../logger');
       logger.error('Test error message', error);
-      
+
       expect(console.error).toHaveBeenCalled();
       const logOutput = JSON.parse((console.error as vi.Mock).mock.calls[0][0]);
       expect(logOutput).toEqual({
@@ -94,7 +94,7 @@ describe('Logger Utility', () => {
     it('should log error messages with metadata', async () => {
       const { logger } = await import('../logger');
       logger.error('Test error message', undefined, { userId: 'test-user' });
-      
+
       expect(console.error).toHaveBeenCalled();
       const logOutput = JSON.parse((console.error as vi.Mock).mock.calls[0][0]);
       expect(logOutput).toEqual({
@@ -111,7 +111,7 @@ describe('Logger Utility', () => {
       process.env.LOG_LEVEL = 'warn';
       const { logger } = await import('../logger');
       logger.warn('Test warning message');
-      
+
       expect(console.warn).toHaveBeenCalled();
       const logOutput = JSON.parse((console.warn as vi.Mock).mock.calls[0][0]);
       expect(logOutput).toEqual({
@@ -125,7 +125,7 @@ describe('Logger Utility', () => {
       process.env.LOG_LEVEL = 'warn';
       const { logger } = await import('../logger');
       logger.warn('Test warning message', { userId: 'test-user' });
-      
+
       expect(console.warn).toHaveBeenCalled();
       const logOutput = JSON.parse((console.warn as vi.Mock).mock.calls[0][0]);
       expect(logOutput).toEqual({
@@ -142,7 +142,7 @@ describe('Logger Utility', () => {
       process.env.LOG_LEVEL = 'info';
       const { logger } = await import('../logger');
       logger.info('Test info message');
-      
+
       expect(console.log).toHaveBeenCalled();
       const logOutput = JSON.parse((console.log as vi.Mock).mock.calls[0][0]);
       expect(logOutput).toEqual({
@@ -156,7 +156,7 @@ describe('Logger Utility', () => {
       process.env.LOG_LEVEL = 'info';
       const { logger } = await import('../logger');
       logger.info('Test info message', { userId: 'test-user' });
-      
+
       expect(console.log).toHaveBeenCalled();
       const logOutput = JSON.parse((console.log as vi.Mock).mock.calls[0][0]);
       expect(logOutput).toEqual({
@@ -173,7 +173,7 @@ describe('Logger Utility', () => {
       process.env.LOG_LEVEL = 'debug';
       const { logger } = await import('../logger');
       logger.debug('Test debug message');
-      
+
       expect(console.log).toHaveBeenCalled();
       const logOutput = JSON.parse((console.log as vi.Mock).mock.calls[0][0]);
       expect(logOutput).toEqual({
@@ -187,7 +187,7 @@ describe('Logger Utility', () => {
       process.env.LOG_LEVEL = 'debug';
       const { logger } = await import('../logger');
       logger.debug('Test debug message', { userId: 'test-user' });
-      
+
       expect(console.log).toHaveBeenCalled();
       const logOutput = JSON.parse((console.log as vi.Mock).mock.calls[0][0]);
       expect(logOutput).toEqual({
@@ -206,7 +206,7 @@ describe('Logger Utility', () => {
       process.env.LOG_LEVEL = 'info';
       const { logger } = await import('../logger');
       logger.apiRequest('GET', '/api/test', 100, 200, 'test-user');
-      
+
       expect(console.log).toHaveBeenCalled();
       const logOutput = JSON.parse((console.log as vi.Mock).mock.calls[0][0]);
       expect(logOutput).toEqual({
@@ -227,7 +227,7 @@ describe('Logger Utility', () => {
       process.env.LOG_LEVEL = 'warn';
       const { logger } = await import('../logger');
       logger.rateLimitHit('test-identifier', '/api/test', Date.now() + 60000);
-      
+
       expect(console.warn).toHaveBeenCalled();
       const logOutput = JSON.parse((console.warn as vi.Mock).mock.calls[0][0]);
       expect(logOutput).toEqual({
@@ -247,7 +247,7 @@ describe('Logger Utility', () => {
       const error = new Error('Database connection failed');
       const { logger } = await import('../logger');
       logger.dbQuery('SELECT * FROM users', 50, error);
-      
+
       expect(console.error).toHaveBeenCalled();
       const logOutput = JSON.parse((console.error as vi.Mock).mock.calls[0][0]);
       expect(logOutput).toEqual({
@@ -271,7 +271,7 @@ describe('Logger Utility', () => {
       process.env.LOG_LEVEL = 'debug';
       const { logger } = await import('../logger');
       logger.dbQuery('SELECT * FROM users', 50);
-      
+
       expect(console.log).toHaveBeenCalled();
       const logOutput = JSON.parse((console.log as vi.Mock).mock.calls[0][0]);
       expect(logOutput).toEqual({
@@ -289,7 +289,7 @@ describe('Logger Utility', () => {
       delete process.env.ENABLE_QUERY_LOGGING;
       const { logger } = await import('../logger');
       logger.dbQuery('SELECT * FROM users', 50);
-      
+
       expect(console.log).not.toHaveBeenCalled();
       expect(console.warn).not.toHaveBeenCalled();
       expect(console.error).not.toHaveBeenCalled();
@@ -299,7 +299,7 @@ describe('Logger Utility', () => {
       process.env.LOG_LEVEL = 'info';
       const { logger } = await import('../logger');
       logger.assistantRequest('gpt-4', 100, 0.001, 2000);
-      
+
       expect(console.log).toHaveBeenCalled();
       const logOutput = JSON.parse((console.log as vi.Mock).mock.calls[0][0]);
       expect(logOutput).toEqual({
@@ -320,7 +320,7 @@ describe('Logger Utility', () => {
       const error = new Error('Assistant request failed');
       const { logger } = await import('../logger');
       logger.assistantRequest('gpt-4', 100, 0.001, 2000, error);
-      
+
       expect(console.error).toHaveBeenCalled();
       const logOutput = JSON.parse((console.error as vi.Mock).mock.calls[0][0]);
       expect(logOutput).toEqual({
@@ -347,7 +347,7 @@ describe('Logger Utility', () => {
       delete process.env.LOG_LEVEL; // Default to ERROR level
       const { logger } = await import('../logger');
       logger.debug('Test debug message');
-      
+
       expect(console.log).not.toHaveBeenCalled();
     });
 
@@ -355,7 +355,7 @@ describe('Logger Utility', () => {
       delete process.env.LOG_LEVEL; // Default to ERROR level
       const { logger } = await import('../logger');
       logger.info('Test info message');
-      
+
       expect(console.log).not.toHaveBeenCalled();
     });
 
@@ -363,7 +363,7 @@ describe('Logger Utility', () => {
       delete process.env.LOG_LEVEL; // Default to ERROR level
       const { logger } = await import('../logger');
       logger.warn('Test warning message');
-      
+
       expect(console.warn).not.toHaveBeenCalled();
     });
 
@@ -371,7 +371,7 @@ describe('Logger Utility', () => {
       delete process.env.LOG_LEVEL; // Default to ERROR level
       const { logger } = await import('../logger');
       logger.error('Test error message');
-      
+
       expect(console.error).toHaveBeenCalled();
     });
   });

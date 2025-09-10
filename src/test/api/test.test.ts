@@ -13,7 +13,7 @@ describe('/api/test', () => {
 
   it('handles POST requests correctly', async () => {
     const requestBody = { test: 'data' };
-    
+
     const { req, res } = createMocks({
       method: 'POST',
       url: '/api/test',
@@ -61,7 +61,7 @@ describe('/api/test', () => {
 
   it('handles different HTTP methods correctly', async () => {
     const methods = ['PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'];
-    
+
     for (const method of methods) {
       const { req, res } = createMocks({
         method,
@@ -74,7 +74,7 @@ describe('/api/test', () => {
       await testHandler(req, res);
 
       expect(res._getStatusCode()).toBe(405);
-      
+
       const responseData = JSON.parse(res._getData());
       expect(responseData.message).toBe('Method not allowed');
       expect(responseData.allowedMethods).toEqual(['POST']);
