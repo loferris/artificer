@@ -1,5 +1,7 @@
 # AI Orchestration & Knowledge Management System
 
+**[View UI Demo](https://ai-workflow-engine.vercel.app/) - See the live interface in action**
+
 An intelligent routing layer for AI models that transforms scattered conversations into structured, exportable knowledge. Built to solve my own workflow fragmentation problem - tired of tab-switching between Claude, DeepSeek, and local models while losing track of insights buried in long conversations.
 
 ## What I've Learned Building This
