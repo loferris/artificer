@@ -1,19 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMocks } from 'node-mocks-http';
-import handler from '../chat';
+import handler from '../../../pages/api/stream/chat';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import type { ChatStreamChunk } from '../../../../server/services/chat/ChatService';
+import type { ChatStreamChunk } from '../../../server/services/chat/ChatService';
 
 // Mock the dependencies
-vi.mock('../../../../server/services/ServiceFactory', () => ({
+vi.mock('../../../server/services/ServiceFactory', () => ({
   createServicesFromContext: vi.fn(),
 }));
 
-vi.mock('../../../../server/utils/session', () => ({
+vi.mock('../../../server/utils/session', () => ({
   getUserFromRequest: vi.fn(),
 }));
 
-vi.mock('../../../../server/middleware/rateLimiter', () => ({
+vi.mock('../../../server/middleware/rateLimiter', () => ({
   createRateLimitMiddleware: vi.fn(),
   RATE_LIMITS: { CHAT: {} },
 }));
@@ -30,9 +30,9 @@ vi.mock('../../../../server/db/client', () => ({
   prisma: {},
 }));
 
-import { createServicesFromContext } from '../../../../server/services/ServiceFactory';
-import { getUserFromRequest } from '../../../../server/utils/session';
-import { createRateLimitMiddleware } from '../../../../server/middleware/rateLimiter';
+import { createServicesFromContext } from '../../../server/services/ServiceFactory';
+import { getUserFromRequest } from '../../../server/utils/session';
+import { createRateLimitMiddleware } from '../../../server/middleware/rateLimiter';
 
 describe('/api/stream/chat', () => {
   let mockChatService: any;
