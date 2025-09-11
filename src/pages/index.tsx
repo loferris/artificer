@@ -3,6 +3,7 @@ import { trpc } from '../lib/trpc/client';
 import { TerminalView } from '../components/terminal/TerminalView';
 import { ChatView } from '../components/chat/ChatView';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { CostTracker } from '../components/CostTracker';
 import { useConversationManager } from '../hooks/chat/useConversationManager';
 import { useChatState } from '../hooks/chat/useChatState';
 import { useChatOperations } from '../hooks/chat/useChatOperations';
@@ -252,6 +253,7 @@ export default function HomePage() {
         </button>
       </div>
       {viewMode === 'terminal' ? <TerminalView {...viewProps} /> : <ChatView {...chatViewProps} />}
+      <CostTracker />
     </ErrorBoundary>
   );
 }

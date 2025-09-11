@@ -143,35 +143,22 @@ export class OpenRouterAssistant implements Assistant {
 
   private selectModel(): string {
     try {
-      // Debug: Check all environment variables
-      console.log('[DEBUG] TEST_LOCAL_LOADING:', process.env.TEST_LOCAL_LOADING);
-      console.log('[DEBUG] All env vars:', {
-        OPENROUTER_MODEL: process.env.OPENROUTER_MODEL,
-        OPENROUTER_DEFAULT_MODEL: process.env.OPENROUTER_DEFAULT_MODEL,
-      });
-      
       // Use the primary model from environment
       const envModel = process.env.OPENROUTER_MODEL;
-      console.log('[DEBUG] Environment OPENROUTER_MODEL:', envModel);
       if (envModel && envModel.trim() !== '') {
-        console.log('[DEBUG] Using primary environment model:', envModel);
         return envModel;
       }
 
       // Fall back to default model from environment
       const defaultModel = process.env.OPENROUTER_DEFAULT_MODEL;
-      console.log('[DEBUG] Environment OPENROUTER_DEFAULT_MODEL:', defaultModel);
       if (defaultModel && defaultModel.trim() !== '') {
-        console.log('[DEBUG] Using default environment model:', defaultModel);
         return defaultModel;
       }
 
       // Final hardcoded fallback
-      console.log('[DEBUG] Using hardcoded fallback: deepseek-chat');
       return 'deepseek-chat';
     } catch (error) {
       logger.error('Error selecting model:', error);
-      console.log('[DEBUG] Error fallback to: deepseek-chat');
       return 'deepseek-chat'; // Safe fallback
     }
   }

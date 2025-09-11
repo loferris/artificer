@@ -48,6 +48,7 @@ export const useChatOperations = () => {
       await utils.messages.invalidate();
       await refetchMessages();
       await utils.conversations.list.invalidate();
+      await utils.usage.getSessionStats.invalidate();
 
       // Wait briefly for queries to refetch, then clear loading state
       setTimeout(() => {
