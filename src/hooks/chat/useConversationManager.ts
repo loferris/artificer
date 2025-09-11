@@ -46,9 +46,11 @@ export const useConversationManager = () => {
       clearError();
     },
     onSuccess: (data) => {
+      utils.conversations.list.invalidate();
+      // Manually insert the new conversation into the cache
+      utils.messages.getByConversation.setData({ conversationId: data.id }, data.messages);
       setCurrentConversation(data.id);
       setCreatingConversation(false);
-      utils.conversations.list.invalidate();
     },
     onError: (error) => {
       console.error('Failed to create conversation:', error);
@@ -89,53 +91,22 @@ export const useConversationManager = () => {
     },
   });
 
-  // Auto-create first conversation on app load
-  useEffect(() => {
-    // Only try to create if we don't have a conversation and aren't creating one
-    if (
-      !currentConversationId &&
-      !isCreatingConversation &&
-      displayConversations.length === 0 &&
-      !createConversationMutation.isPending
-    ) {
-      console.log('Attempting to create conversation');
-      createConversationMutation.mutate();
-    }
-    // Set current conversation if we have conversations but no current one
-    else if (
-      !currentConversationId &&
-      !isCreatingConversation &&
-      displayConversations.length > 0 &&
-      !createConversationMutation.isPending
-    ) {
-      console.log('Setting current conversation to first conversation');
-      setCurrentConversation(displayConversations[0].id);
-    }
-  }, [
-    displayConversations,
-    currentConversationId,
-    isCreatingConversation,
-    createConversationMutation.isPending,
-  ]);
+  
 
-  const handleNewConversation = async () => {
+  const handleNewConversation = (callbacks?: { onSuccess?: (data: any) => void; onError?: (error: any) => void; }) => {
     setInput('');
     clearError();
 
-    // Use static demo API if in demo mode
     if (isStaticDemo) {
-      try {
-        setCreatingConversation(true);
-        await demoAPI.createConversation();
-        setCreatingConversation(false);
-      } catch (error) {
-        setCreatingConversation(false);
-        setError('Failed to create demo conversation.');
-      }
+      // Simplified demo handling for now
+      demoAPI.createConversation().then(callbacks?.onSuccess).catch(callbacks?.onError);
       return;
     }
 
-    createConversationMutation.mutate();
+    createConversationMutation.mutate(undefined, {
+      onSuccess: callbacks?.onSuccess,
+      onError: callbacks?.onError,
+    });
   };
 
   const handleSelectConversation = (conversationId: string) => {
@@ -174,6 +145,7 @@ export const useConversationManager = () => {
     refreshConversations,
 
     // Mutation states
+    createConversationMutation,
     isCreating: createConversationMutation.isPending,
     isDeleting: deleteConversationMutation.isPending,
   };

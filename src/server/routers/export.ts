@@ -37,7 +37,7 @@ export const exportRouter = router({
               content: msg.content,
               tokens: msg.tokens || 0,
               cost: msg.cost || 0,
-              createdAt: msg.timestamp,
+              createdAt: msg.timestamp || new Date(),
               parentId: null,
             })),
             metadata: {
@@ -145,7 +145,7 @@ export const exportRouter = router({
           content: msg.content,
           tokens: msg.tokens || 0,
           cost: msg.cost || 0,
-          createdAt: msg.timestamp,
+          createdAt: msg.timestamp || new Date(),
           parentId: null,
         })),
         metadata: {

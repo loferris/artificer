@@ -87,7 +87,7 @@ export class ExportService {
   static async exportToObsidian(
     conversations: ConversationExport[],
     options: ExportOptions = { format: 'obsidian' },
-  ): Promise<{ [filename: string]: string }> {
+  ): Promise<string> {
     const files: { [filename: string]: string } = {};
 
     // Create index file

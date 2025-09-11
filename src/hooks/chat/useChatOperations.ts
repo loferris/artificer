@@ -162,13 +162,13 @@ export const useChatOperations = () => {
     return 'Failed to send message. Please try again.';
   };
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = async (content?: string) => {
     if (!currentConversationId) {
       console.error('No conversation selected');
       return;
     }
 
-    const messageContent = input.trim();
+    const messageContent = content ?? input.trim();
     if (!messageContent) return;
 
     console.log('🚀 Starting new request:', messageContent.slice(0, 20) + '...');
@@ -287,10 +287,32 @@ export const useChatOperations = () => {
     }
   };
 
+  const addLocalAssistantMessage = (content: string) => {
+    if (!currentConversationId) return;
+
+    const assistantMessage: Message = {
+      id: `local-asst-${Date.now()}`,
+      role: 'assistant',
+      content,
+      timestamp: new Date(),
+    };
+
+    utils.messages.getByConversation.setData({ conversationId: currentConversationId }, (oldData) => {
+      if (!oldData) return [assistantMessage];
+      return [...oldData, assistantMessage];
+    });
+
+    // Also clear the input
+    startTransition(() => {
+      useChatStore.getState().setInput('');
+    });
+  };
+
   return {
     handleSendMessage,
     handleRetry,
     cancelCurrentRequest,
+    addLocalAssistantMessage, // Export the new function
     isLoading,
     isMutating: sendMessageMutation.isPending,
   };

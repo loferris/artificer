@@ -143,25 +143,36 @@ export class OpenRouterAssistant implements Assistant {
 
   private selectModel(): string {
     try {
-      // Use the model from environment or default to Claude Haiku
+      // Debug: Check all environment variables
+      console.log('[DEBUG] TEST_LOCAL_LOADING:', process.env.TEST_LOCAL_LOADING);
+      console.log('[DEBUG] All env vars:', {
+        OPENROUTER_MODEL: process.env.OPENROUTER_MODEL,
+        OPENROUTER_DEFAULT_MODEL: process.env.OPENROUTER_DEFAULT_MODEL,
+      });
+      
+      // Use the primary model from environment
       const envModel = process.env.OPENROUTER_MODEL;
-      if (envModel) {
+      console.log('[DEBUG] Environment OPENROUTER_MODEL:', envModel);
+      if (envModel && envModel.trim() !== '') {
+        console.log('[DEBUG] Using primary environment model:', envModel);
         return envModel;
       }
 
-      // Valid OpenRouter models (fast and cost-effective)
-      const validModels = [
-        'anthropic/claude-3-haiku',
-        'anthropic/claude-3-sonnet',
-        'meta-llama/llama-3.1-8b-instruct',
-        'openai/gpt-4o-mini',
-      ];
+      // Fall back to default model from environment
+      const defaultModel = process.env.OPENROUTER_DEFAULT_MODEL;
+      console.log('[DEBUG] Environment OPENROUTER_DEFAULT_MODEL:', defaultModel);
+      if (defaultModel && defaultModel.trim() !== '') {
+        console.log('[DEBUG] Using default environment model:', defaultModel);
+        return defaultModel;
+      }
 
-      // Default to Claude Haiku (fastest and cheapest)
-      return validModels[0];
+      // Final hardcoded fallback
+      console.log('[DEBUG] Using hardcoded fallback: deepseek-chat');
+      return 'deepseek-chat';
     } catch (error) {
       logger.error('Error selecting model:', error);
-      return 'anthropic/claude-3-haiku'; // Safe fallback
+      console.log('[DEBUG] Error fallback to: deepseek-chat');
+      return 'deepseek-chat'; // Safe fallback
     }
   }
 

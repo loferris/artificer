@@ -101,22 +101,40 @@ export class DatabaseConversationService implements ConversationService {
   constructor(private db: PrismaClient) {}
 
   async create(input: CreateConversationInput = {}): Promise<ConversationWithMessages> {
-    const conversation = await this.db.conversation.create({
-      data: {
-        title: input.title ?? null,
-        model: input.model ?? 'deepseek-chat',
-        systemPrompt: input.systemPrompt ?? 'You are a helpful AI assistant.',
-        temperature: input.temperature ?? 0.7,
-        maxTokens: input.maxTokens ?? 1000,
-      },
-      include: {
-        messages: {
-          orderBy: { createdAt: 'asc' },
+    const { firstMessage, ...conversationData } = input;
+
+    const conversation = await this.db.$transaction(async (prisma) => {
+      const newConv = await prisma.conversation.create({
+        data: {
+          title: conversationData.title ?? null,
+          model: conversationData.model || 
+            (process.env.OPENROUTER_MODEL && process.env.OPENROUTER_MODEL.trim() !== '' ? process.env.OPENROUTER_MODEL : null) ||
+            (process.env.OPENROUTER_DEFAULT_MODEL && process.env.OPENROUTER_DEFAULT_MODEL.trim() !== '' ? process.env.OPENROUTER_DEFAULT_MODEL : null) ||
+            'deepseek-chat',
+          systemPrompt: conversationData.systemPrompt ?? 'You are a helpful AI assistant.',
+          temperature: conversationData.temperature ?? 0.7,
+          maxTokens: conversationData.maxTokens ?? 1000,
         },
-      },
+      });
+
+      if (firstMessage) {
+        await prisma.message.create({
+          data: {
+            conversationId: newConv.id,
+            role: 'user',
+            content: firstMessage,
+          },
+        });
+      }
+
+      return newConv;
     });
 
-    return this.transformConversation(conversation);
+    // Refetch with messages to return the full object
+    return this.getById(conversation.id).then(c => {
+      if (!c) throw new Error('Failed to fetch newly created conversation');
+      return c;
+    });
   }
 
   async getById(conversationId: string): Promise<ConversationWithMessages | null> {
@@ -199,6 +217,18 @@ export class DatabaseConversationService implements ConversationService {
     await this.db.conversation.delete({
       where: { id: conversationId },
     });
+  }
+
+  async addMessage(input: { conversationId: string; role: 'user' | 'assistant'; content: string }): Promise<void> {
+    await this.db.message.create({
+      data: {
+        conversationId: input.conversationId,
+        role: input.role,
+        content: input.content,
+      },
+    });
+    // Also update the conversation's updatedAt timestamp
+    await this.updateActivity(input.conversationId);
   }
 
   generateTitle(firstMessage: string): string {
