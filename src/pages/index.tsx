@@ -27,6 +27,7 @@ export default function HomePage() {
   const [localMessages, setLocalMessages] = useState<Message[]>([WELCOME_MESSAGE]);
   const [selectableConversations, setSelectableConversations] = useState<any[]>([]);
   const [invalidAttempts, setInvalidAttempts] = useState(0);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const conversationManager = useConversationManager();
   const chatState = useChatState();
@@ -224,6 +225,37 @@ export default function HomePage() {
     onSendMessage: processInput,
   };
 
+  // Export handlers for chat view
+  const handleExportCurrent = async (format: 'markdown' | 'json' = 'markdown') => {
+    if (!currentConversationId || currentConversationId.trim() === '') {
+      alert('No conversation selected. Start a conversation first.');
+      return;
+    }
+    try {
+      const result = await trpcUtils.export.exportConversation.fetch({ conversationId: currentConversationId, format });
+      if (result && result.data) {
+        triggerDownload(result.data, format, 'current');
+      } else {
+        alert('Export failed: No data received.');
+      }
+    } catch (err: any) {
+      alert(`Export failed: ${err.message}`);
+    }
+  };
+
+  const handleExportAll = async (format: 'markdown' | 'json' = 'markdown') => {
+    try {
+      const result = await exportAllQuery.refetch({ format });
+      if (result.data) {
+        triggerDownload(result.data.data, format, 'all');
+      } else {
+        alert('Export failed: No data received.');
+      }
+    } catch (err: any) {
+      alert(`Export failed: ${err.message}`);
+    }
+  };
+
   const chatViewProps = {
     ...viewProps,
     conversations: conversationManager.conversations,
@@ -234,8 +266,10 @@ export default function HomePage() {
     onNewConversation: handleNewConversation,
     onDeleteConversation: () => {},
     onRefreshConversations: () => {},
-    onToggleSidebar: () => {},
-    sidebarOpen: true,
+    onToggleSidebar: () => setSidebarOpen(!sidebarOpen),
+    onExportCurrent: handleExportCurrent,
+    onExportAll: handleExportAll,
+    sidebarOpen,
   };
 
   return (

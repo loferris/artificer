@@ -35,6 +35,8 @@ interface ChatViewProps {
   onDeleteConversation: (id: string, e: React.MouseEvent) => void;
   onRefreshConversations: () => void;
   onToggleSidebar: () => void;
+  onExportCurrent: (format?: 'markdown' | 'json') => void;
+  onExportAll: (format?: 'markdown' | 'json') => void;
   onInputChange: (value: string) => void;
   onSendMessage: () => void;
 }
@@ -58,6 +60,8 @@ export const ChatView: React.FC<ChatViewProps> = ({
   onDeleteConversation,
   onRefreshConversations,
   onToggleSidebar,
+  onExportCurrent,
+  onExportAll,
   onInputChange,
   onSendMessage,
 }) => {
@@ -197,10 +201,47 @@ export const ChatView: React.FC<ChatViewProps> = ({
               AI Chat (Classic View)
             </h1>
           </div>
-          <div className='text-sm text-gray-500'>
-            {currentConversationId
-              ? conversations.find((c: any) => c.id === currentConversationId)?.title || 'Current Chat'
-              : 'No conversation selected'}
+          
+          <div className='flex items-center gap-3'>
+            {/* Export buttons */}
+            <div className='flex items-center gap-2'>
+              <button
+                onClick={() => onExportCurrent('markdown')}
+                disabled={!currentConversationId}
+                className='px-3 py-1.5 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+                title='Export current conversation as markdown'
+              >
+                Export MD
+              </button>
+              <button
+                onClick={() => onExportCurrent('json')}
+                disabled={!currentConversationId}
+                className='px-3 py-1.5 text-xs bg-green-100 text-green-700 rounded-md hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors'
+                title='Export current conversation as JSON'
+              >
+                Export JSON
+              </button>
+              <button
+                onClick={() => onExportAll('markdown')}
+                className='px-3 py-1.5 text-xs bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors'
+                title='Export all conversations as markdown'
+              >
+                Export All MD
+              </button>
+              <button
+                onClick={() => onExportAll('json')}
+                className='px-3 py-1.5 text-xs bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200 transition-colors'
+                title='Export all conversations as JSON'
+              >
+                Export All JSON
+              </button>
+            </div>
+            
+            <div className='text-sm text-gray-500'>
+              {currentConversationId
+                ? conversations.find((c: any) => c.id === currentConversationId)?.title || 'Current Chat'
+                : 'No conversation selected'}
+            </div>
           </div>
         </div>
 
