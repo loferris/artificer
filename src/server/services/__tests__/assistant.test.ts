@@ -101,6 +101,7 @@ describe('Assistant Service', () => {
           'anthropic/claude-3-sonnet',
           'meta-llama/llama-3.1-8b-instruct',
           'openai/gpt-4o-mini',
+          'deepseek-chat',
         ];
 
         // All models should be from the valid list

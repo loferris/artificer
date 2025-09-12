@@ -19,6 +19,7 @@ describe('Conversations Router', () => {
       createConversation: vi.fn(),
       deleteConversation: vi.fn(),
       updateConversationTitle: vi.fn(),
+      getById: vi.fn(),
     };
 
     // Mock the ServiceFactory
@@ -108,7 +109,7 @@ describe('Conversations Router', () => {
 
   describe('create', () => {
     it('creates a new conversation with default values', async () => {
-      const mockConversation = {
+      const mockCreatedConversation = {
         id: 'conv-123',
         title: null,
         model: 'deepseek-chat',
@@ -120,19 +121,32 @@ describe('Conversations Router', () => {
         messages: [],
       };
 
-      mockConversationService.createConversation.mockResolvedValue(mockConversation);
-
-      const caller = conversationsRouter.createCaller(mockContext);
-      const result = await caller.create();
-
-      expect(result).toEqual(mockConversation);
-      expect(mockConversationService.createConversation).toHaveBeenCalledWith({
+      const mockConversationWithMessages = {
+        id: 'conv-123',
         title: null,
         model: 'deepseek-chat',
         systemPrompt: 'You are a helpful AI assistant.',
         temperature: 0.7,
         maxTokens: 1000,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        messages: [
+          { id: 'msg-1', role: 'user', content: 'Hello', tokens: null, createdAt: new Date(), parentId: null },
+          { id: 'msg-2', role: 'assistant', content: 'Hi there!', tokens: null, createdAt: new Date(), parentId: null }
+        ],
+      };
+
+      mockConversationService.createConversation.mockResolvedValue(mockCreatedConversation);
+      mockConversationService.getById = vi.fn().mockResolvedValue(mockConversationWithMessages);
+
+      const caller = conversationsRouter.createCaller(mockContext);
+      const result = await caller.create();
+
+      expect(result).toEqual(mockConversationWithMessages);
+      expect(mockConversationService.createConversation).toHaveBeenCalledWith({
+        title: null,
       });
+      expect(mockConversationService.getById).toHaveBeenCalledWith('conv-123');
     });
 
     it('handles database errors gracefully', async () => {
