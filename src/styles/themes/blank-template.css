@@ -1,0 +1,427 @@
+/* ============================================================================ */
+/*                      AI ORCHESTRATION THEME TEMPLATE                        */
+/* ============================================================================ */
+/* 
+ * Complete blank template for creating terminal themes optimized for 
+ * AI orchestration, knowledge management, and conversation workflows.
+ * 
+ * Fill in the placeholder values (#______) with your chosen colors.
+ * Remove or customize the commented sections as needed.
+ * 
+ * Usage: Replace 'blank-template' with your theme name throughout.
+ */
+
+[data-terminal-theme='blank-template'] {
+  
+  /* ========================================================================== */
+  /*                              FOUNDATION COLORS                            */
+  /* ========================================================================== */
+  
+  /* Core Background Hierarchy */
+  --terminal-bg-primary: #______;              /* Main terminal background */
+  --terminal-bg-secondary: #______;            /* Slightly different shade for depth */
+  --terminal-bg-tertiary: #______;             /* Deeper background elements */
+  --terminal-bg-elevated: #______;             /* Raised elements (modals, tooltips) */
+  --terminal-bg-sunken: #______;               /* Inset elements (input fields) */
+  
+  /* Base Text Colors */
+  --terminal-text-primary: #______;            /* Main readable text */
+  --terminal-text-secondary: #______;          /* Secondary information */
+  --terminal-text-tertiary: #______;           /* Muted/supporting text */
+  --terminal-text-muted: #______;              /* Dimmed text (timestamps, metadata) */
+  --terminal-text-disabled: #______;           /* Disabled/inactive text */
+  --terminal-text-placeholder: #______;        /* Input placeholder text */
+  
+  /* Border & Outline System */
+  --terminal-border-primary: #______;          /* Main borders */
+  --terminal-border-secondary: #______;        /* Subtle borders */
+  --terminal-border-muted: #______;            /* Very subtle dividers */
+  --terminal-border-accent: #______;           /* Highlighted borders */
+  --terminal-outline-focus: #______;           /* Keyboard focus indicator */
+  
+  /* ========================================================================== */
+  /*                            AI WORKFLOW SEMANTICS                          */
+  /* ========================================================================== */
+  
+  /* AI Model & Routing Colors */
+  --terminal-model-claude: #______;            /* Claude model indicator */
+  --terminal-model-deepseek: #______;          /* DeepSeek model indicator */
+  --terminal-model-local: #______;             /* Local model indicator */
+  --terminal-model-fallback: #______;          /* Unknown/fallback model */
+  --terminal-routing-info: #______;            /* AI routing messages */
+  --terminal-routing-bg: #______;              /* Background for routing info */
+  
+  /* Cost & Performance Indicators */
+  --terminal-cost-low: #______;                /* Low cost operations (green family) */
+  --terminal-cost-medium: #______;             /* Medium cost (yellow/orange family) */
+  --terminal-cost-high: #______;               /* High cost (red family) */
+  --terminal-performance-fast: #______;        /* Fast response times */
+  --terminal-performance-slow: #______;        /* Slow response indicators */
+  
+  /* Conversation Elements */
+  --terminal-prompt-user: #______;             /* User prompt/input - mint green */
+  --terminal-prompt-system: #______;           /* System prompts */
+  --terminal-response-ai: #______;             /* AI assistant responses */
+  --terminal-response-error: #______;          /* Error responses */
+  --terminal-response-thinking: #______;       /* AI "thinking" states */
+  
+  /* Content Type Semantics */
+  --terminal-content-code: #______;            /* Code blocks and syntax */
+  --terminal-content-quote: #______;           /* Quoted text */
+  --terminal-content-link: #______;            /* Links and references */
+  --terminal-content-metadata: #______;        /* File info, timestamps */
+  --terminal-content-export: #______;          /* Export-ready content */
+  
+  /* ========================================================================== */
+  /*                           INTERACTIVE STATES                              */
+  /* ========================================================================== */
+  
+  /* Hover States */
+  --terminal-hover-bg: #______;                /* General hover background */
+  --terminal-hover-text: #______;              /* Hover text color */
+  --terminal-hover-border: #______;            /* Hover border color */
+  --terminal-hover-conversation: #______;      /* Conversation item hover */
+  --terminal-hover-menu: #______;              /* Menu item hover */
+  --terminal-hover-button: #______;            /* Button hover state */
+  
+  /* Active/Selected States */
+  --terminal-active-bg: #______;               /* Active element background */
+  --terminal-active-text: #______;             /* Active element text */
+  --terminal-active-border: #______;           /* Active element border */
+  --terminal-selected-conversation: #______;   /* Selected conversation */
+  --terminal-selected-text: #______;           /* Selected text background */
+  
+  /* Focus States */
+  --terminal-focus-bg: #______;                /* Focus background */
+  --terminal-focus-outline: #______;           /* Focus outline color */
+  --terminal-focus-shadow: #______;            /* Focus glow/shadow */
+  
+  /* Disabled States */
+  --terminal-disabled-bg: #______;             /* Disabled background */
+  --terminal-disabled-text: #______;           /* Disabled text */
+  --terminal-disabled-border: #______;         /* Disabled border */
+  
+  /* ========================================================================== */
+  /*                              ACCENT SYSTEM                                */
+  /* ========================================================================== */
+  
+  /* Primary Accent Palette */
+  --terminal-accent-primary: #______;          /* Main brand/theme accent */
+  --terminal-accent-secondary: #______;        /* Supporting accent */
+  --terminal-accent-tertiary: #______;         /* Third accent color */
+  
+  /* Status & Feedback Colors */
+  --terminal-status-success: #______;          /* Success states (green family) */
+  --terminal-status-warning: #______;          /* Warning states (yellow/orange) */
+  --terminal-status-error: #______;            /* Error states (red family) */
+  --terminal-status-info: #______;             /* Information (blue family) */
+  --terminal-status-neutral: #______;          /* Neutral status */
+  
+  /* Streaming & Real-time Indicators */
+  --terminal-streaming-active: #______;        /* Active streaming indicator */
+  --terminal-streaming-paused: #______;        /* Paused/buffering state */
+  --terminal-streaming-complete: #______;      /* Streaming complete */
+  --terminal-cursor-color: #______;            /* Text cursor */
+  --terminal-cursor-blink: #______;            /* Blinking cursor state */
+  
+  /* ========================================================================== */
+  /*                            DESIGN SYSTEM                                  */
+  /* ========================================================================== */
+  
+  /* Typography Scale */
+  --terminal-text-size-xs: 0.75rem;           /* Very small text */
+  --terminal-text-size-sm: 0.875rem;          /* Small text */
+  --terminal-text-size-base: 1rem;            /* Base text size */
+  --terminal-text-size-lg: 1.125rem;          /* Large text */
+  --terminal-text-size-xl: 1.25rem;           /* Extra large */
+  --terminal-text-size-2xl: 1.5rem;           /* Headers */
+  
+  /* Line Heights */
+  --terminal-line-height-tight: 1.25;         /* Tight spacing */
+  --terminal-line-height-normal: 1.5;         /* Normal spacing */
+  --terminal-line-height-relaxed: 1.75;       /* Relaxed spacing */
+  
+  /* Font Weights */
+  --terminal-font-weight-normal: 400;
+  --terminal-font-weight-medium: 500;
+  --terminal-font-weight-semibold: 600;
+  --terminal-font-weight-bold: 700;
+  
+  /* Spacing Scale */
+  --terminal-spacing-xs: 0.25rem;             /* 4px */
+  --terminal-spacing-sm: 0.5rem;              /* 8px */
+  --terminal-spacing-md: 1rem;                /* 16px */
+  --terminal-spacing-lg: 1.5rem;              /* 24px */
+  --terminal-spacing-xl: 2rem;                /* 32px */
+  --terminal-spacing-2xl: 2.5rem;             /* 40px */
+  --terminal-spacing-3xl: 3rem;               /* 48px */
+  
+  /* Border Radius Scale */
+  --terminal-radius-none: 0;
+  --terminal-radius-sm: 0.125rem;             /* 2px */
+  --terminal-radius-base: 0.25rem;            /* 4px */
+  --terminal-radius-md: 0.375rem;             /* 6px */
+  --terminal-radius-lg: 0.5rem;               /* 8px */
+  --terminal-radius-xl: 0.75rem;              /* 12px */
+  --terminal-radius-full: 9999px;             /* Fully rounded */
+  
+  /* ========================================================================== */
+  /*                           EFFECTS & ANIMATIONS                            */
+  /* ========================================================================== */
+  
+  /* Transition Speeds */
+  --terminal-transition-fast: 0.15s ease-out;
+  --terminal-transition-normal: 0.3s ease-out;
+  --terminal-transition-slow: 0.5s ease-out;
+  --terminal-transition-bounce: 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  
+  /* Opacity Levels */
+  --terminal-opacity-0: 0;
+  --terminal-opacity-10: 0.1;
+  --terminal-opacity-20: 0.2;
+  --terminal-opacity-30: 0.3;
+  --terminal-opacity-40: 0.4;
+  --terminal-opacity-50: 0.5;
+  --terminal-opacity-60: 0.6;
+  --terminal-opacity-70: 0.7;
+  --terminal-opacity-80: 0.8;
+  --terminal-opacity-90: 0.9;
+  --terminal-opacity-100: 1;
+  
+  /* Alpha Channel Backgrounds (for layering) */
+  --terminal-alpha-white-5: rgba(255, 255, 255, 0.05);
+  --terminal-alpha-white-10: rgba(255, 255, 255, 0.1);
+  --terminal-alpha-white-20: rgba(255, 255, 255, 0.2);
+  --terminal-alpha-black-5: rgba(0, 0, 0, 0.05);
+  --terminal-alpha-black-10: rgba(0, 0, 0, 0.1);
+  --terminal-alpha-black-20: rgba(0, 0, 0, 0.2);
+  
+  /* Shadow System */
+  --terminal-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --terminal-shadow-base: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --terminal-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --terminal-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+  --terminal-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.04);
+  
+  /* Glow Effects (for themes that want them) */
+  --terminal-glow-color: #______;              /* Base glow color */
+  --terminal-glow-sm: 0 0 5px var(--terminal-glow-color);
+  --terminal-glow-md: 0 0 10px var(--terminal-glow-color);
+  --terminal-glow-lg: 0 0 20px var(--terminal-glow-color);
+  
+  /* ========================================================================== */
+  /*                        COMPLEX BACKGROUND EFFECTS                         */
+  /* ========================================================================== */
+  /* 
+   * Uncomment and customize these for themes with sophisticated visual effects
+   * like your existing Purple Rich, Amber Forest, and Light Mode themes
+   */
+  
+  /*
+  // Gradient Overlays
+  --terminal-gradient-primary: linear-gradient(135deg, 
+    rgba(_______, 0.1) 0%, 
+    transparent 50%, 
+    rgba(_______, 0.05) 100%);
+  
+  --terminal-gradient-accent: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(_______, 0.1) 50%, 
+    transparent 100%);
+  
+  // Watercolor-style Effects
+  --terminal-watermark-primary: radial-gradient(ellipse 800px 400px at 20% 30%, 
+    rgba(_______, 0.08) 0%, 
+    rgba(_______, 0.03) 50%, 
+    transparent 80%);
+  
+  --terminal-watermark-secondary: radial-gradient(ellipse 600px 300px at 80% 70%, 
+    rgba(_______, 0.06) 0%, 
+    rgba(_______, 0.02) 45%, 
+    transparent 75%);
+  
+  // Multiple Layer Backgrounds (like your existing themes)
+  --terminal-bg-layered: 
+    var(--terminal-watermark-primary),
+    var(--terminal-watermark-secondary),
+    var(--terminal-gradient-primary),
+    var(--terminal-bg-primary);
+  */
+}
+
+/* ========================================================================== */
+/*                           CSS CLASS UTILITIES                             */
+/* ========================================================================== */
+
+/* Core Text Styling */
+[data-terminal-theme='blank-template'] .terminal-text-primary,
+[data-terminal-theme='blank-template'] .text-primary {
+  color: var(--terminal-text-primary) !important;
+}
+
+[data-terminal-theme='blank-template'] .terminal-text-secondary,
+[data-terminal-theme='blank-template'] .text-secondary {
+  color: var(--terminal-text-secondary) !important;
+}
+
+[data-terminal-theme='blank-template'] .terminal-text-muted,
+[data-terminal-theme='blank-template'] .text-muted {
+  color: var(--terminal-text-muted) !important;
+}
+
+/* AI Workflow Elements */
+[data-terminal-theme='blank-template'] .terminal-prompt-user,
+[data-terminal-theme='blank-template'] .prompt-user {
+  color: var(--terminal-prompt-user) !important;
+}
+
+[data-terminal-theme='blank-template'] .terminal-response-ai,
+[data-terminal-theme='blank-template'] .response-ai {
+  color: var(--terminal-response-ai) !important;
+}
+
+[data-terminal-theme='blank-template'] .terminal-routing-info,
+[data-terminal-theme='blank-template'] .routing-info {
+  color: var(--terminal-routing-info) !important;
+  background-color: var(--terminal-routing-bg) !important;
+}
+
+/* Model Indicators */
+[data-terminal-theme='blank-template'] .model-claude {
+  color: var(--terminal-model-claude) !important;
+}
+
+[data-terminal-theme='blank-template'] .model-deepseek {
+  color: var(--terminal-model-deepseek) !important;
+}
+
+[data-terminal-theme='blank-template'] .model-local {
+  color: var(--terminal-model-local) !important;
+}
+
+/* Cost Indicators */
+[data-terminal-theme='blank-template'] .cost-low {
+  color: var(--terminal-cost-low) !important;
+}
+
+[data-terminal-theme='blank-template'] .cost-medium {
+  color: var(--terminal-cost-medium) !important;
+}
+
+[data-terminal-theme='blank-template'] .cost-high {
+  color: var(--terminal-cost-high) !important;
+}
+
+/* Background Classes */
+[data-terminal-theme='blank-template'] .terminal-bg-primary,
+[data-terminal-theme='blank-template'] .bg-primary {
+  background-color: var(--terminal-bg-primary) !important;
+}
+
+[data-terminal-theme='blank-template'] .terminal-bg-secondary,
+[data-terminal-theme='blank-template'] .bg-secondary {
+  background-color: var(--terminal-bg-secondary) !important;
+}
+
+/* Interactive States */
+[data-terminal-theme='blank-template'] .hover-bg:hover {
+  background-color: var(--terminal-hover-bg) !important;
+}
+
+[data-terminal-theme='blank-template'] .focus-outline:focus {
+  outline-color: var(--terminal-focus-outline) !important;
+  box-shadow: 0 0 0 2px var(--terminal-focus-shadow) !important;
+}
+
+/* Status Classes */
+[data-terminal-theme='blank-template'] .status-success {
+  color: var(--terminal-status-success) !important;
+}
+
+[data-terminal-theme='blank-template'] .status-warning {
+  color: var(--terminal-status-warning) !important;
+}
+
+[data-terminal-theme='blank-template'] .status-error {
+  color: var(--terminal-status-error) !important;
+}
+
+[data-terminal-theme='blank-template'] .status-info {
+  color: var(--terminal-status-info) !important;
+}
+
+/* ========================================================================== */
+/*                              THEME EXAMPLES                               */
+/* ========================================================================== */
+/*
+ * Quick-start examples for different theme directions:
+ * Uncomment one of these sections and customize the colors
+ */
+
+/* EXAMPLE 1: Dark Professional Theme
+[data-terminal-theme='blank-template'] {
+  --terminal-bg-primary: #1a1a1a;
+  --terminal-bg-secondary: #2d2d2d;
+  --terminal-text-primary: #e5e5e5;
+  --terminal-text-secondary: #b0b0b0;
+  --terminal-accent-primary: #4a9eff;
+  --terminal-model-claude: #ff6b35;
+  --terminal-model-deepseek: #3b82f6;
+  --terminal-status-success: #22c55e;
+  --terminal-status-error: #ef4444;
+}
+*/
+
+/* EXAMPLE 2: Warm Cozy Theme
+[data-terminal-theme='blank-template'] {
+  --terminal-bg-primary: #2d1f14;
+  --terminal-bg-secondary: #3d2818;
+  --terminal-text-primary: #e8dcc6;
+  --terminal-text-secondary: #c9a96e;
+  --terminal-accent-primary: #d4af37;
+  --terminal-model-claude: #ff8c42;
+  --terminal-model-deepseek: #3b82f6;
+  --terminal-status-success: #8fb28f;
+  --terminal-status-error: #cc6666;
+}
+*/
+
+/* EXAMPLE 3: Light Clean Theme
+[data-terminal-theme='blank-template'] {
+  --terminal-bg-primary: #ffffff;
+  --terminal-bg-secondary: #f8f9fa;
+  --terminal-text-primary: #1a1a1a;
+  --terminal-text-secondary: #666666;
+  --terminal-accent-primary: #0066cc;
+  --terminal-model-claude: #e8510a;
+  --terminal-model-deepseek: #3b82f6;
+  --terminal-status-success: #059669;
+  --terminal-status-error: #dc2626;
+}
+*/
+
+/* ========================================================================== */
+/*                               INSTRUCTIONS                                */
+/* ========================================================================== */
+/*
+ * TO CREATE YOUR THEME:
+ * 
+ * 1. Replace 'blank-template' with your theme name throughout this file
+ * 2. Fill in all the #______ placeholders with your chosen colors
+ * 3. Uncomment and customize the complex effects section if desired
+ * 4. Test with your AI orchestration interface
+ * 5. Iterate based on real usage in different lighting conditions
+ * 
+ * DESIGN TIPS:
+ * - Start with 3-5 core colors, then expand the palette
+ * - Test contrast ratios for accessibility (4.5:1 minimum)
+ * - Consider your primary use case (coding, writing, analysis)
+ * - Think about time of day and lighting conditions
+ * - Make semantic colors meaningful (green=success, red=error)
+ * 
+ * AI ORCHESTRATION SPECIFIC:
+ * - Use distinct colors for different AI models
+ * - Make cost indicators immediately recognizable
+ * - Ensure streaming states are visually obvious
+ * - Consider export workflow visual hierarchy
+ */

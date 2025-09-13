@@ -5,6 +5,7 @@ import { StreamingTerminalView } from '../components/terminal/StreamingTerminalV
 import { ChatView } from '../components/chat/ChatView';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { CostTracker } from '../components/CostTracker';
+import { TerminalThemeProvider, useTerminalTheme, useTerminalThemeClasses } from '../contexts/TerminalThemeContext';
 import { useConversationManager } from '../hooks/chat/useConversationManager';
 import { useChatState } from '../hooks/chat/useChatState';
 import { useChatOperations } from '../hooks/chat/useChatOperations';
@@ -14,7 +15,7 @@ import type { Message } from '../types';
 type ViewMode = 'terminal' | 'chat';
 
 const getManualContent = () => {
-  return `Available commands:\n- /man: Show this manual.\n- /new: Create a new conversation.\n- /list: Show 10 most recent conversations.\n- /list-all: Show all conversations.\n- /export-current [format]: Export current conversation (formats: markdown, json; default: markdown)\n- /export-all [format]: Export all conversations (formats: markdown, json; default: markdown)\n- /reset: Reset the session.`;
+  return `Available commands:\n- /man: Show this manual.\n- /new: Create a new conversation.\n- /list: Show 10 most recent conversations.\n- /list-all: Show all conversations.\n- /export-current [format]: Export current conversation (formats: markdown, json; default: markdown)\n- /export-all [format]: Export all conversations (formats: markdown, json; default: markdown)\n- /theme [dark|amber|light]: Switch terminal theme (default: dark)\n- /view [chat|terminal]: Switch view mode (default: terminal)\n- /streaming [yes|no]: Toggle streaming mode (default: yes)\n- /reset: Reset the session.`;
 };
 
 const WELCOME_MESSAGE: Message = {
@@ -24,7 +25,9 @@ const WELCOME_MESSAGE: Message = {
   timestamp: new Date(),
 };
 
-export default function HomePage() {
+function HomePageContent() {
+  const { setTheme, getThemeDisplayName, theme } = useTerminalTheme();
+  const themeClasses = useTerminalThemeClasses();
   const [viewMode, setViewMode] = useState<ViewMode>('terminal');
   const [streamingMode, setStreamingMode] = useState(true);
   const [localMessages, setLocalMessages] = useState<Message[]>([WELCOME_MESSAGE]);
@@ -73,7 +76,7 @@ export default function HomePage() {
     } else {
       setLocalMessages([WELCOME_MESSAGE]);
     }
-  }, [currentConversationId, pendingStreamingMessage, streamingMode]);
+  }, [currentConversationId, pendingStreamingMessage, streamingMode, streamingChat]);
 
 
   const triggerDownload = (data: any, format: string, exportType: 'all' | 'current') => {
@@ -135,6 +138,70 @@ export default function HomePage() {
       return;
     }
 
+    // Handle theme command
+    if (cmd === 'theme') {
+      const themeMap: Record<string, 'purple-rich' | 'amber-forest' | 'cyan-light'> = {
+        'dark': 'purple-rich',
+        'amber': 'amber-forest', 
+        'light': 'cyan-light'
+      };
+
+      if (!arg1) {
+        displayMessage(`Current theme: ${getThemeDisplayName(theme)} (${theme})\nAvailable themes: dark, amber, light`);
+        return;
+      }
+
+      const newTheme = themeMap[arg1.toLowerCase()];
+      if (!newTheme) {
+        displayMessage(`Invalid theme '${arg1}'. Available themes: dark, amber, light`);
+        return;
+      }
+
+      setTheme(newTheme);
+      displayMessage(`Theme changed to: ${getThemeDisplayName(newTheme)}`);
+      return;
+    }
+
+    // Handle view command
+    if (cmd === 'view') {
+      if (!arg1) {
+        displayMessage(`Current view: ${viewMode}\nAvailable views: chat, terminal`);
+        return;
+      }
+
+      const newView = arg1.toLowerCase() as ViewMode;
+      if (newView !== 'chat' && newView !== 'terminal') {
+        displayMessage(`Invalid view '${arg1}'. Available views: chat, terminal`);
+        return;
+      }
+
+      setViewMode(newView);
+      displayMessage(`View changed to: ${newView}`);
+      return;
+    }
+
+    // Handle streaming command
+    if (cmd === 'streaming') {
+      if (!arg1) {
+        displayMessage(`Streaming mode: ${streamingMode ? 'yes' : 'no'}\nUsage: /streaming [yes|no]`);
+        return;
+      }
+
+      const streamingArg = arg1.toLowerCase();
+      if (streamingArg === 'yes' || streamingArg === 'on' || streamingArg === 'true') {
+        setStreamingMode(true);
+        displayMessage('Streaming mode enabled');
+        return;
+      } else if (streamingArg === 'no' || streamingArg === 'off' || streamingArg === 'false') {
+        setStreamingMode(false);
+        displayMessage('Streaming mode disabled');
+        return;
+      } else {
+        displayMessage(`Invalid streaming option '${arg1}'. Use: yes, no, on, off, true, or false`);
+        return;
+      }
+    }
+
     if (cmd === 'man') {
       displayMessage(`\n${getManualContent()}`);
     } else if (cmd === 'new') {
@@ -176,7 +243,7 @@ export default function HomePage() {
     }
   };
 
-  const processInput = () => {
+  const processTerminalInput = () => {
     const capturedInput = input.trim();
     if (!capturedInput) return;
 
@@ -229,12 +296,26 @@ export default function HomePage() {
     }
   };
 
+  const processChatInput = () => {
+    const capturedInput = input.trim();
+    if (!capturedInput) return;
+
+    updateInput('');
+
+    // Chat view: no slash commands, no local messages, only real conversations
+    if (!currentConversationId) {
+      createConversationMutation.mutate({ firstMessage: capturedInput });
+    } else {
+      handleSendMessage(capturedInput);
+    }
+  };
+
   const { data: serverMessages = [], isLoading: messagesLoading, error: messagesError } = trpc.messages.getByConversation.useQuery(
     { conversationId: currentConversationId || '' },
     { enabled: !!currentConversationId },
   );
 
-  const messages = currentConversationId ? serverMessages : localMessages;
+  const messages = currentConversationId ? serverMessages : (viewMode === 'terminal' ? localMessages : []);
 
   // Clear streaming messages when server messages update (to avoid duplicates)
   useEffect(() => {
@@ -254,7 +335,7 @@ export default function HomePage() {
     }
   }, [serverMessages, streamingChat.messages, currentConversationId, streamingChat]);
 
-  const viewProps = {
+  const terminalViewProps = {
     messages: messages,
     input: input,
     isCreatingConversation: conversationManager.isCreating,
@@ -264,7 +345,7 @@ export default function HomePage() {
     isConversationReady: true,
     canSendMessage: !!input.trim(),
     onInputChange: updateInput,
-    onSendMessage: processInput,
+    onSendMessage: processTerminalInput,
   };
 
   // Export handlers for chat view
@@ -299,7 +380,16 @@ export default function HomePage() {
   };
 
   const chatViewProps = {
-    ...viewProps,
+    messages: currentConversationId ? serverMessages : [],  // No welcome message for chat view
+    input: input,
+    isCreatingConversation: conversationManager.isCreating,
+    messagesLoading: messagesLoading,
+    isLoading: chatState.isLoading,
+    messagesError: messagesError,
+    isConversationReady: true,
+    canSendMessage: !!input.trim(),
+    onInputChange: updateInput,
+    onSendMessage: processChatInput,  // Different handler for chat view
     conversations: conversationManager.conversations,
     currentConversationId: currentConversationId,
     conversationsLoading: conversationManager.conversationsLoading,
@@ -353,52 +443,55 @@ export default function HomePage() {
       return <ChatView {...chatViewProps} />;
     }
 
-    // Terminal view with streaming or standard mode
-    if (streamingMode) {
-      // Combine messages intelligently - avoid duplicates between streaming and server
-      const baseMessages = currentConversationId ? serverMessages : localMessages;
-      
-      // If we have streaming messages, show base messages + streaming messages (deduped)
-      // If no streaming messages, just show base messages
-      const streamingMessages = streamingChat.messages.length > 0 ? 
-        [
-          ...baseMessages,
-          ...streamingChat.messages.filter(streamMsg => 
-            !baseMessages.some(baseMsg => baseMsg.id === streamMsg.id)
-          )
-        ].map(msg => ({
-          ...msg,
-          timestamp: msg.timestamp
-        })) :
-        baseMessages.map(msg => ({
-          ...msg,
-          timestamp: msg.timestamp
-        }));
+    // Terminal view with streaming or standard mode (wrapped with theme provider)
+    const terminalContent = streamingMode ? (
+      (() => {
+        // Combine messages intelligently - avoid duplicates between streaming and server
+        const baseMessages = currentConversationId ? serverMessages : localMessages;
+        
+        // If we have streaming messages, show base messages + streaming messages (deduped)
+        // If no streaming messages, just show base messages
+        const streamingMessages = streamingChat.messages.length > 0 ? 
+          [
+            ...baseMessages,
+            ...streamingChat.messages.filter(streamMsg => 
+              !baseMessages.some(baseMsg => baseMsg.id === streamMsg.id)
+            )
+          ].map(msg => ({
+            ...msg,
+            timestamp: msg.timestamp
+          })) :
+          baseMessages.map(msg => ({
+            ...msg,
+            timestamp: msg.timestamp
+          }));
 
-      const streamingProps = {
-        messages: streamingMessages,
-        input,
-        isCreatingConversation: conversationManager.isCreating,
-        messagesLoading: false, // Streaming manages its own loading
-        isLoading: chatState.isLoading,
-        isStreaming: streamingChat.isStreaming,
-        messagesError: null,
-        streamingError: streamingChat.error,
-        isConversationReady: true, // Always allow input for commands and welcome screen
-        canSendMessage: !!input.trim(),
-        onInputChange: updateInput,
-        onSendMessage: () => {
-          // Use the same command processing logic as standard mode
-          processInput();
-        },
-        onCancelStream: streamingChat.cancelStream
-      };
+        const streamingProps = {
+          messages: streamingMessages,
+          input,
+          isCreatingConversation: conversationManager.isCreating,
+          messagesLoading: false, // Streaming manages its own loading
+          isLoading: chatState.isLoading,
+          isStreaming: streamingChat.isStreaming,
+          messagesError: null,
+          streamingError: streamingChat.error,
+          isConversationReady: true, // Always allow input for commands and welcome screen
+          canSendMessage: !!input.trim(),
+          onInputChange: updateInput,
+          onSendMessage: () => {
+            // Use the same command processing logic as standard mode
+            processTerminalInput();
+          },
+          onCancelStream: streamingChat.cancelStream
+        };
 
-      return <StreamingTerminalView {...streamingProps} />;
-    }
+        return <StreamingTerminalView {...streamingProps} />;
+      })()
+    ) : (
+      <TerminalView {...terminalViewProps} />
+    );
 
-    // Standard terminal view
-    return <TerminalView {...viewProps} />;
+    return terminalContent;
   };
 
   return (
@@ -407,29 +500,62 @@ export default function HomePage() {
         console.error('Page-level error:', error, errorInfo);
       }}
     >
-      <div className="absolute top-2 right-2 z-10 flex gap-2">
+      <div className="fixed top-[180px] right-4 z-30 min-w-[200px] space-y-2">
         <button 
           onClick={() => setViewMode(viewMode === 'terminal' ? 'chat' : 'terminal')}
-          className="px-4 py-2 bg-gray-700 text-white rounded-md shadow-lg hover:bg-gray-800 transition-colors"
+          className={`
+            w-full
+            ${viewMode === 'terminal' 
+              ? `${themeClasses.bgSecondary} ${themeClasses.textPrimary} ${themeClasses.borderPrimary} border hover:bg-[var(--terminal-bg-tertiary)] rounded-none`
+              : 'text-gray-700 border border-pink-200 hover:border-pink-300 hover:text-pink-600 rounded-xl'
+            }
+            ${themeClasses.pSm}
+            ${themeClasses.fontMono}
+            text-xs
+            shadow-lg
+            transition-colors
+          `}
+          style={viewMode === 'chat' ? {
+            background: 'linear-gradient(to bottom right, rgba(255, 255, 255, 0.9), rgba(253, 242, 248, 0.8))',
+            backdropFilter: 'blur(12px)'
+          } : undefined}
         >
-          Switch to {viewMode === 'terminal' ? 'Classic' : 'Terminal'} View
+          $ {viewMode === 'terminal' ? 'chat_view' : 'terminal_view'}
         </button>
-        {viewMode === 'terminal' && (
-          <button 
-            onClick={() => setStreamingMode(!streamingMode)}
-            className={`px-4 py-2 rounded-md shadow-lg transition-colors ${
-              streamingMode 
-                ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                : 'bg-gray-700 hover:bg-gray-800 text-white'
-            }`}
-            title={`Currently: ${streamingMode ? 'Streaming Mode (Default)' : 'Standard Mode (Fallback)'}. Click to switch.`}
+        
+        {viewMode === 'chat' && (
+          <div 
+            className={`
+              w-full
+              text-gray-600
+              border border-purple-200
+              rounded-xl
+              ${themeClasses.pSm}
+              ${themeClasses.fontMono}
+              text-xs
+              shadow-lg
+              text-center
+            `}
+            style={{
+              background: 'linear-gradient(to bottom right, rgba(255, 255, 255, 0.9), rgba(253, 242, 248, 0.8))',
+              backdropFilter: 'blur(12px)'
+            }}
+            title="Chat view uses standard messaging (no streaming)"
           >
-            {streamingMode ? '⚡ Streaming ON' : '📝 Standard ON'}
-          </button>
+            📝 standard_mode
+          </div>
         )}
       </div>
       {renderCurrentView()}
       <CostTracker viewMode={viewMode} />
     </ErrorBoundary>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <TerminalThemeProvider defaultTheme="purple-rich">
+      <HomePageContent />
+    </TerminalThemeProvider>
   );
 }

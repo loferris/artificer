@@ -98,7 +98,7 @@ const WordByWordRenderer: React.FC<ContentRendererProps> = ({
         intervalRef.current = null;
       }
     };
-  }, [segment.content, isStreaming, segment.isComplete]);
+  }, [segment.content, isStreaming, segment.isComplete, displayedLength]);
 
   const displayedText = segment.content.slice(0, displayedLength);
 

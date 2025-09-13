@@ -2,6 +2,7 @@ import React from 'react';
 import { StreamingChatDisplay } from './StreamingChatDisplay';
 import { ChatInput } from './ChatInput';
 import { TerminalHeader } from './TerminalHeader';
+import { useTerminalThemeClasses } from '../../contexts/TerminalThemeContext';
 
 interface Message {
   id: string;
@@ -34,6 +35,10 @@ interface StreamingTerminalViewProps {
   onInputChange: (value: string) => void;
   onSendMessage: () => void;
   onCancelStream?: () => void;
+
+  // Theme props
+  className?: string;
+  style?: React.CSSProperties;
 }
 
 export const StreamingTerminalView: React.FC<StreamingTerminalViewProps> = ({
@@ -49,16 +54,46 @@ export const StreamingTerminalView: React.FC<StreamingTerminalViewProps> = ({
   canSendMessage,
   onInputChange,
   onSendMessage,
-  onCancelStream
+  onCancelStream,
+  className = '',
+  style,
 }) => {
+  const themeClasses = useTerminalThemeClasses();
+
   return (
-    <div className="flex h-screen bg-gray-800 text-white">
+    <div 
+      className={`
+        flex 
+        h-screen 
+        ${themeClasses.bgPrimary} 
+        ${themeClasses.textPrimary}
+        ${themeClasses.fontMono}
+        ${themeClasses.transitionNormal}
+        ${className}
+      `}
+      style={style}
+    >
       <div className="flex-1 flex flex-col">
-        <TerminalHeader />
+        <TerminalHeader 
+          statusText={isStreaming ? 'STREAMING' : undefined}
+        />
         
         {streamingError && (
-          <div className="bg-red-900/20 border-l-4 border-red-500 p-2 text-red-400 text-sm font-mono">
-            Stream Error: {streamingError}
+          <div 
+            className={`
+              ${themeClasses.bgOverlay}
+              ${themeClasses.accentError}
+              ${themeClasses.textSm}
+              ${themeClasses.fontMono}
+              ${themeClasses.pSm}
+              border-l-4
+              border-[var(--terminal-accent-error)]
+            `}
+          >
+            <div className="flex items-center">
+              <span className="mr-2">!</span>
+              <span>stream-error: {streamingError}</span>
+            </div>
           </div>
         )}
         
@@ -80,15 +115,28 @@ export const StreamingTerminalView: React.FC<StreamingTerminalViewProps> = ({
               isConversationReady={isConversationReady}
               isLoading={isLoading || isStreaming}
               canSendMessage={canSendMessage && !isStreaming}
+              placeholder={isStreaming ? 'streaming-in-progress...' : undefined}
             />
           </div>
           {isStreaming && onCancelStream && (
             <button
               onClick={onCancelStream}
-              className="flex-shrink-0 px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors"
+              className={`
+                flex-shrink-0 
+                ${themeClasses.pSm}
+                ${themeClasses.accentError}
+                bg-current
+                ${themeClasses.textPrimary}
+                ${themeClasses.textSm}
+                ${themeClasses.radiusSm}
+                ${themeClasses.transitionFast}
+                ${themeClasses.fontMono}
+                hover:opacity-80
+                cursor-pointer
+              `}
               title="Cancel streaming"
             >
-              Cancel
+              /cancel
             </button>
           )}
         </div>

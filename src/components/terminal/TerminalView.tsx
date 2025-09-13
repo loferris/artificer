@@ -3,6 +3,7 @@ import React from 'react';
 import { ChatDisplay } from './ChatDisplay';
 import { ChatInput } from './ChatInput';
 import { TerminalHeader } from './TerminalHeader';
+import { useTerminalThemeClasses } from '../../contexts/TerminalThemeContext';
 import type { Message, Conversation } from '../types';
 
 interface TerminalViewProps {
@@ -25,6 +26,10 @@ interface TerminalViewProps {
   // Callbacks
   onInputChange: (value: string) => void;
   onSendMessage: () => void;
+
+  // Theme props
+  className?: string;
+  style?: React.CSSProperties;
 }
 
 export const TerminalView: React.FC<TerminalViewProps> = ({
@@ -38,9 +43,24 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
   canSendMessage,
   onInputChange,
   onSendMessage,
+  className = '',
+  style,
 }) => {
+  const themeClasses = useTerminalThemeClasses();
+
   return (
-    <div className={`flex h-screen bg-gray-800 text-white`}>
+    <div 
+      className={`
+        flex 
+        h-screen 
+        ${themeClasses.bgPrimary} 
+        ${themeClasses.textPrimary}
+        ${themeClasses.fontMono}
+        ${themeClasses.transitionNormal}
+        ${className}
+      `}
+      style={style}
+    >
       <div className="flex-1 flex flex-col">
         <TerminalHeader />
         

@@ -3,6 +3,9 @@ import React, { Component } from 'react';
 import type { AppProps } from 'next/app';
 import { trpc } from '../lib/trpc/client';
 import '../styles/index.css';
+import '../styles/themes/purple-rich.css';
+import '../styles/themes/amber-forest.css';
+import '../styles/themes/cyan-light.css';
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (

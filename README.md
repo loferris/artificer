@@ -60,6 +60,9 @@ This is built **API-first** as a headless orchestration service with a clean ser
 - ✅ Export to Markdown and JSON formats
 - ✅ Rate limiting and session management
 - ✅ Type-safe API layer with tRPC
+- ✅ **Dual UI modes**: Terminal interface with slash commands + Classic chat interface
+- ✅ **Theme system**: Multiple responsive themes (Dark, Amber, Light) with CSS custom properties
+- ✅ **Integrated cost tracking**: Real-time usage and cost monitoring widget
 
 **Schema-Ready (Backend Complete, UI Pending)**
 - 🔄 **Conversation branching**: Database schema and service layer support message trees with `parentId` relationships, but UI implementation needed
@@ -114,9 +117,41 @@ npm run db:studio      # Open Prisma Studio GUI
 **In Development**: Conversation branching UI, enhanced export formats
 **Next Phase**: Intelligent model routing, context compression agents, advanced PKM integrations
 
+## User Interface Features
+
+The system provides two distinct interfaces optimized for different workflows:
+
+### **Terminal Interface**
+- **Command-driven workflow** with slash commands (`/new`, `/list`, `/export`, `/theme`, etc.)
+- **Real-time streaming** with visual indicators and typing effects
+- **Theme system** with 3 responsive themes (Dark, Amber, Light)
+- **Integrated cost tracking** with live usage monitoring
+- **Session management** with conversation selection and welcome messages
+
+### **Classic Chat Interface**
+- **Traditional chat experience** with conversation sidebar
+- **Standard messaging** (no streaming, optimized for reliability)
+- **Export functionality** with multiple format options
+- **Visual conversation management** with conversation cards and timestamps
+- **Pink/purple gradient aesthetic** independent of terminal themes
+
+### **Slash Commands (Terminal Mode Only)**
+```bash
+/man                           # Show command manual
+/new                          # Create new conversation
+/list                         # Show 10 recent conversations
+/list-all                     # Show all conversations
+/export-current [markdown|json] # Export current conversation
+/export-all [markdown|json]     # Export all conversations
+/theme [dark|amber|light]       # Switch terminal theme
+/view [chat|terminal]          # Switch interface mode
+/streaming [yes|no]            # Toggle streaming (terminal only)
+/reset                        # Reset session
+```
+
 ## Streaming Integration
 
-The system now supports real-time streaming for both interactive frontends and CLI automation:
+The system supports real-time streaming for both interactive frontends and CLI automation:
 
 - **WebSocket Subscriptions**: Real-time streaming for React frontends via `trpc.subscriptions.chatStream.useSubscription()`
 - **SSE Endpoints**: HTTP streaming for CLI tools and third-party integrations via `POST /api/stream/chat`

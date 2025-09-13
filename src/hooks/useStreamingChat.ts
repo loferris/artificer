@@ -39,10 +39,10 @@ export const useStreamingChat = (): UseStreamingChatReturn => {
   }, []);
 
   const sendMessage = useCallback(async (content: string, conversationId: string) => {
-    console.log('🎬 useStreamingChat.sendMessage called:', { content, conversationId, isStreaming });
+    // Debug: useStreamingChat.sendMessage called
     
     if (isStreaming) {
-      console.log('⏹️ Cancelling existing stream');
+      // Debug: Cancelling existing stream
       cancelStream();
     }
 
@@ -58,7 +58,7 @@ export const useStreamingChat = (): UseStreamingChatReturn => {
       timestamp: new Date()
     };
 
-    console.log('👤 Adding user message to stream');
+    // DEBUG:('👤 Adding user message to stream');
     setMessages(prev => [...prev, userMessage]);
 
     // Create streaming assistant message
@@ -74,7 +74,7 @@ export const useStreamingChat = (): UseStreamingChatReturn => {
     setMessages(prev => [...prev, assistantMessage]);
 
     try {
-      console.log('📡 Starting tRPC subscription:', { content, conversationId });
+      // DEBUG:('📡 Starting tRPC subscription:', { content, conversationId });
       // Use vanilla client to create subscription
       const client = utils.client;
       
@@ -82,7 +82,7 @@ export const useStreamingChat = (): UseStreamingChatReturn => {
         { content, conversationId },
         {
           onData: (chunk: ChatStreamChunk) => {
-            console.log('📦 Received chunk:', { content: chunk.content, finished: chunk.finished });
+            // DEBUG:('📦 Received chunk:', { content: chunk.content, finished: chunk.finished });
             
             if (chunk.error) {
               setError(chunk.error);

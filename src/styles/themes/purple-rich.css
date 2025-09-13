@@ -1,0 +1,453 @@
+/* ============================================================================ */
+/*                             PURPLE-RICH THEME                               */
+/* ============================================================================ */
+/* 
+ * Dark luxury theme with deep purples, emerald accents, and rich gradients
+ * Optimized for AI orchestration workflows with sophisticated visual effects
+ */
+
+[data-terminal-theme='purple-rich'] {
+  
+  /* ========================================================================== */
+  /*                              FOUNDATION COLORS                            */
+  /* ========================================================================== */
+  
+  /* Core Background Hierarchy */
+  --terminal-bg-primary: #0f0a1a;              /* Main terminal background */
+  --terminal-bg-secondary: #1a0f2e;            /* Slightly different shade for depth */
+  --terminal-bg-tertiary: #2d1b47;             /* Deeper background elements */
+  --terminal-bg-elevated: #3a2354;             /* Raised elements (modals, tooltips) */
+  --terminal-bg-sunken: #0c0817;               /* Inset elements (input fields) */
+  
+  /* Base Text Colors */
+  --terminal-text-primary: #c9a8fa;            /* Main readable text */
+  --terminal-text-secondary: #a78bfa;          /* Secondary information */
+  --terminal-text-tertiary: #8b5cf6;           /* Muted/supporting text */
+  --terminal-text-muted: #7c3aed;              /* Dimmed text (timestamps, metadata) */
+  --terminal-text-disabled: #6d28d9;           /* Disabled/inactive text */
+  --terminal-text-placeholder: #8b5cf6;        /* Input placeholder text */
+  
+  /* Border & Outline System */
+  --terminal-border-primary: rgba(147, 51, 234, 0.3);          /* Main borders */
+  --terminal-border-secondary: rgba(147, 51, 234, 0.2);        /* Subtle borders */
+  --terminal-border-muted: rgba(147, 51, 234, 0.1);            /* Very subtle dividers */
+  --terminal-border-accent: rgba(147, 51, 234, 0.5);           /* Highlighted borders */
+  --terminal-outline-focus: #34d399;           /* Keyboard focus indicator */
+  
+  /* ========================================================================== */
+  /*                            AI WORKFLOW SEMANTICS                          */
+  /* ========================================================================== */
+  
+  /* AI Model & Routing Colors */
+  --terminal-model-claude: #ff6b35;            /* Claude model indicator */
+  --terminal-model-deepseek: #3b82f6;          /* DeepSeek model indicator */
+  --terminal-model-local: #c084fc;             /* Local model indicator */
+  --terminal-model-fallback: #a78bfa;          /* Unknown/fallback model */
+  --terminal-routing-info: #34d399;            /* AI routing messages */
+  --terminal-routing-bg: rgba(52, 211, 153, 0.1);              /* Background for routing info */
+  
+  /* Cost & Performance Indicators */
+  --terminal-cost-low: #34d399;                /* Low cost operations (green family) */
+  --terminal-cost-medium: #fbbf24;             /* Medium cost (yellow/orange family) */
+  --terminal-cost-high: #ef4444;               /* High cost (red family) */
+  --terminal-performance-fast: #10b981;        /* Fast response times */
+  --terminal-performance-slow: #f59e0b;        /* Slow response indicators */
+  
+  /* Conversation Elements */
+  --terminal-prompt-user: #6ee7b7;             /* User prompt/input - mint green */
+  --terminal-prompt-system: #c084fc;           /* System prompts */
+  --terminal-response-ai: #fde2e7;             /* AI assistant responses */
+  --terminal-response-error: #ef4444;          /* Error responses */
+  --terminal-response-thinking: #a78bfa;       /* AI "thinking" states */
+  
+  /* Content Type Semantics */
+  --terminal-content-code: #7dd3fc;            /* Code blocks and syntax */
+  --terminal-content-quote: #c9a8fa;           /* Quoted text */
+  --terminal-content-link: #34d399;            /* Links and references */
+  --terminal-content-metadata: #8b5cf6;        /* File info, timestamps */
+  --terminal-content-export: #e0c3fc;          /* Export-ready content */
+  
+  /* ========================================================================== */
+  /*                           INTERACTIVE STATES                              */
+  /* ========================================================================== */
+  
+  /* Hover States */
+  --terminal-hover-bg: #3a2354;                /* General hover background */
+  --terminal-hover-text: #e0c3fc;              /* Hover text color */
+  --terminal-hover-border: rgba(147, 51, 234, 0.4);            /* Hover border color */
+  --terminal-hover-conversation: #3a2354;      /* Conversation item hover */
+  --terminal-hover-menu: #2d1b47;              /* Menu item hover */
+  --terminal-hover-button: #4c1d95;            /* Button hover state */
+  
+  /* Active/Selected States */
+  --terminal-active-bg: #a78bfa;               /* Active element background */
+  --terminal-active-text: #0f0a1a;             /* Active element text */
+  --terminal-active-border: #c9a8fa;           /* Active element border */
+  --terminal-selected-conversation: #a78bfa;   /* Selected conversation */
+  --terminal-selected-text: rgba(147, 51, 234, 0.2);           /* Selected text background */
+  
+  /* Focus States */
+  --terminal-focus-bg: rgba(52, 211, 153, 0.1);                /* Focus background */
+  --terminal-focus-outline: #34d399;           /* Focus outline color */
+  --terminal-focus-shadow: rgba(52, 211, 153, 0.3);            /* Focus glow/shadow */
+  
+  /* Disabled States */
+  --terminal-disabled-bg: #1a0f2e;             /* Disabled background */
+  --terminal-disabled-text: #6d28d9;           /* Disabled text */
+  --terminal-disabled-border: rgba(147, 51, 234, 0.1);         /* Disabled border */
+  
+  /* ========================================================================== */
+  /*                              ACCENT SYSTEM                                */
+  /* ========================================================================== */
+  
+  /* Primary Accent Palette */
+  --terminal-accent-primary: #34d399;          /* Main brand/theme accent */
+  --terminal-accent-secondary: #c9a8fa;        /* Supporting accent */
+  --terminal-accent-tertiary: #f8b4cb;         /* Third accent color */
+  
+  /* Legacy accent mappings for compatibility */
+  --terminal-accent-prompt: #34d399;           /* Terminal prompt color */
+  --terminal-accent-user: #6ee7b7;             /* User input color - mint green */
+  --terminal-accent-assistant: #fde2e7;        /* Assistant response color */
+  --terminal-accent-error: #ef4444;            /* Error message color */
+  --terminal-accent-warning: #f59e0b;          /* Warning message color */
+  --terminal-accent-success: #34d399;          /* Success message color */
+  
+  /* Status & Feedback Colors */
+  --terminal-status-success: #34d399;          /* Success states (green family) */
+  --terminal-status-warning: #f59e0b;          /* Warning states (yellow/orange) */
+  --terminal-status-error: #ef4444;            /* Error states (red family) */
+  --terminal-status-info: #7dd3fc;             /* Information (blue family) */
+  --terminal-status-neutral: #a78bfa;          /* Neutral status */
+  
+  /* Streaming & Real-time Indicators */
+  --terminal-streaming-active: #34d399;        /* Active streaming indicator */
+  --terminal-streaming-paused: #fbbf24;        /* Paused/buffering state */
+  --terminal-streaming-complete: #10b981;      /* Streaming complete */
+  --terminal-cursor-color: #34d399;            /* Text cursor */
+  --terminal-cursor-blink: rgba(52, 211, 153, 0.5);            /* Blinking cursor state */
+  
+  /* ========================================================================== */
+  /*                            DESIGN SYSTEM                                  */
+  /* ========================================================================== */
+  
+  /* Typography Scale */
+  --terminal-text-size-xs: 0.75rem;           /* Very small text */
+  --terminal-text-size-sm: 0.875rem;          /* Small text */
+  --terminal-text-size-base: 1rem;            /* Base text size */
+  --terminal-text-size-lg: 1.125rem;          /* Large text */
+  --terminal-text-size-xl: 1.25rem;           /* Extra large */
+  --terminal-text-size-2xl: 1.5rem;           /* Headers */
+  
+  /* Line Heights */
+  --terminal-line-height-tight: 1.25;         /* Tight spacing */
+  --terminal-line-height-normal: 1.5;         /* Normal spacing */
+  --terminal-line-height-relaxed: 1.75;       /* Relaxed spacing */
+  
+  /* Font Weights */
+  --terminal-font-weight-normal: 400;
+  --terminal-font-weight-medium: 500;
+  --terminal-font-weight-semibold: 600;
+  --terminal-font-weight-bold: 700;
+  
+  /* Spacing Scale */
+  --terminal-spacing-xs: 0.25rem;             /* 4px */
+  --terminal-spacing-sm: 0.5rem;              /* 8px */
+  --terminal-spacing-md: 1rem;                /* 16px */
+  --terminal-spacing-lg: 1.5rem;              /* 24px */
+  --terminal-spacing-xl: 2rem;                /* 32px */
+  --terminal-spacing-2xl: 2.5rem;             /* 40px */
+  --terminal-spacing-3xl: 3rem;               /* 48px */
+  
+  /* Border Radius Scale */
+  --terminal-radius-none: 0;
+  --terminal-radius-sm: 0.125rem;             /* 2px */
+  --terminal-radius-base: 0.25rem;            /* 4px */
+  --terminal-radius-md: 0.375rem;             /* 6px */
+  --terminal-radius-lg: 0.5rem;               /* 8px */
+  --terminal-radius-xl: 0.75rem;              /* 12px */
+  --terminal-radius-full: 9999px;             /* Fully rounded */
+  
+  /* ========================================================================== */
+  /*                           EFFECTS & ANIMATIONS                            */
+  /* ========================================================================== */
+  
+  /* Transition Speeds */
+  --terminal-transition-fast: 0.15s ease-out;
+  --terminal-transition-normal: 0.3s ease-out;
+  --terminal-transition-slow: 0.5s ease-out;
+  --terminal-transition-bounce: 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  
+  /* Opacity Levels */
+  --terminal-opacity-0: 0;
+  --terminal-opacity-10: 0.1;
+  --terminal-opacity-20: 0.2;
+  --terminal-opacity-30: 0.3;
+  --terminal-opacity-40: 0.4;
+  --terminal-opacity-50: 0.5;
+  --terminal-opacity-60: 0.6;
+  --terminal-opacity-70: 0.7;
+  --terminal-opacity-80: 0.8;
+  --terminal-opacity-90: 0.9;
+  --terminal-opacity-100: 1;
+  
+  /* Alpha Channel Backgrounds (for layering) */
+  --terminal-alpha-white-5: rgba(255, 255, 255, 0.05);
+  --terminal-alpha-white-10: rgba(255, 255, 255, 0.1);
+  --terminal-alpha-white-20: rgba(255, 255, 255, 0.2);
+  --terminal-alpha-black-5: rgba(0, 0, 0, 0.05);
+  --terminal-alpha-black-10: rgba(0, 0, 0, 0.1);
+  --terminal-alpha-black-20: rgba(0, 0, 0, 0.2);
+  
+  /* Shadow System */
+  --terminal-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --terminal-shadow-base: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --terminal-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.35), 0 2px 4px rgba(0, 0, 0, 0.3);
+  --terminal-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.4), 0 4px 6px rgba(0, 0, 0, 0.35);
+  --terminal-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.4), 0 10px 10px rgba(0, 0, 0, 0.3);
+  
+  /* Glow Effects */
+  --terminal-glow-color: #34d399;              /* Base glow color */
+  --terminal-glow-sm: 0 0 5px var(--terminal-glow-color);
+  --terminal-glow-md: 0 0 10px var(--terminal-glow-color);
+  --terminal-glow-lg: 0 0 20px var(--terminal-glow-color);
+  
+  /* ========================================================================== */
+  /*                        COMPLEX BACKGROUND EFFECTS                         */
+  /* ========================================================================== */
+  
+  /* Gradient Overlays */
+  --terminal-gradient-primary: linear-gradient(135deg, 
+    rgba(147, 51, 234, 0.1) 0%, 
+    transparent 50%, 
+    rgba(147, 51, 234, 0.05) 100%);
+  
+  --terminal-gradient-accent: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(52, 211, 153, 0.1) 50%, 
+    transparent 100%);
+  
+  /* Watercolor-style Effects */
+  --terminal-watermark-primary: radial-gradient(ellipse 800px 400px at 20% 30%, 
+    rgba(147, 51, 234, 0.08) 0%, 
+    rgba(147, 51, 234, 0.03) 50%, 
+    transparent 80%);
+  
+  --terminal-watermark-secondary: radial-gradient(ellipse 600px 300px at 80% 70%, 
+    rgba(52, 211, 153, 0.06) 0%, 
+    rgba(52, 211, 153, 0.02) 45%, 
+    transparent 75%);
+  
+  /* Multiple Layer Backgrounds */
+  --terminal-bg-layered: 
+    var(--terminal-watermark-primary),
+    var(--terminal-watermark-secondary),
+    var(--terminal-gradient-primary),
+    var(--terminal-bg-primary);
+
+  /* Legacy support variables */
+  --terminal-bg-gradient: linear-gradient(135deg, #0f0a1a, #1a0f2e, #0f0a1a);
+  --header-bg-gradient: linear-gradient(135deg, #2d1b47, #3a2354);
+  --content-bg-gradient: rgba(30, 13, 56, 0.95);
+  --terminal-border: 1px solid var(--terminal-border-primary);
+  --terminal-shadow: var(--terminal-shadow-xl);
+  --header-border: 1px solid var(--terminal-border-primary);
+  --terminal-border-radius: 12px;
+}
+
+/* ========================================================================== */
+/*                           CSS CLASS UTILITIES                             */
+/* ========================================================================== */
+
+/* Core Text Styling */
+[data-terminal-theme='purple-rich'] .terminal-text-primary,
+[data-terminal-theme='purple-rich'] .text-primary {
+  color: var(--terminal-text-primary) !important;
+}
+
+[data-terminal-theme='purple-rich'] .terminal-text-secondary,
+[data-terminal-theme='purple-rich'] .text-secondary {
+  color: var(--terminal-text-secondary) !important;
+}
+
+[data-terminal-theme='purple-rich'] .terminal-text-muted,
+[data-terminal-theme='purple-rich'] .text-muted {
+  color: var(--terminal-text-muted) !important;
+}
+
+/* AI Workflow Elements */
+[data-terminal-theme='purple-rich'] .terminal-prompt-user,
+[data-terminal-theme='purple-rich'] .prompt-user {
+  color: var(--terminal-prompt-user) !important;
+}
+
+[data-terminal-theme='purple-rich'] .terminal-accent-user,
+[data-terminal-theme='purple-rich'] .accent-user {
+  color: var(--terminal-accent-user) !important;
+}
+
+[data-terminal-theme='purple-rich'] .terminal-response-ai,
+[data-terminal-theme='purple-rich'] .response-ai {
+  color: var(--terminal-response-ai) !important;
+}
+
+[data-terminal-theme='purple-rich'] .terminal-routing-info,
+[data-terminal-theme='purple-rich'] .routing-info {
+  color: var(--terminal-routing-info) !important;
+  background-color: var(--terminal-routing-bg) !important;
+}
+
+/* Model Indicators */
+[data-terminal-theme='purple-rich'] .model-claude {
+  color: var(--terminal-model-claude) !important;
+}
+
+[data-terminal-theme='purple-rich'] .model-deepseek {
+  color: var(--terminal-model-deepseek) !important;
+}
+
+[data-terminal-theme='purple-rich'] .model-local {
+  color: var(--terminal-model-local) !important;
+}
+
+/* Cost Indicators */
+[data-terminal-theme='purple-rich'] .cost-low {
+  color: var(--terminal-cost-low) !important;
+}
+
+[data-terminal-theme='purple-rich'] .cost-medium {
+  color: var(--terminal-cost-medium) !important;
+}
+
+[data-terminal-theme='purple-rich'] .cost-high {
+  color: var(--terminal-cost-high) !important;
+}
+
+/* Background Classes */
+[data-terminal-theme='purple-rich'] .terminal-bg-primary,
+[data-terminal-theme='purple-rich'] .bg-primary {
+  background-color: var(--terminal-bg-primary) !important;
+}
+
+[data-terminal-theme='purple-rich'] .terminal-bg-secondary,
+[data-terminal-theme='purple-rich'] .bg-secondary {
+  background-color: var(--terminal-bg-secondary) !important;
+}
+
+/* Interactive States */
+[data-terminal-theme='purple-rich'] .hover-bg:hover {
+  background-color: var(--terminal-hover-bg) !important;
+}
+
+[data-terminal-theme='purple-rich'] .focus-outline:focus {
+  outline-color: var(--terminal-focus-outline) !important;
+  box-shadow: 0 0 0 2px var(--terminal-focus-shadow) !important;
+}
+
+/* Status Classes */
+[data-terminal-theme='purple-rich'] .status-success {
+  color: var(--terminal-status-success) !important;
+}
+
+[data-terminal-theme='purple-rich'] .status-warning {
+  color: var(--terminal-status-warning) !important;
+}
+
+[data-terminal-theme='purple-rich'] .status-error {
+  color: var(--terminal-status-error) !important;
+}
+
+[data-terminal-theme='purple-rich'] .status-info {
+  color: var(--terminal-status-info) !important;
+}
+
+/* Legacy component compatibility */
+[data-terminal-theme="purple-rich"] .terminal-container {
+  background: var(--terminal-bg-gradient);
+  border: var(--terminal-border);
+  border-radius: var(--terminal-border-radius);
+  box-shadow: var(--terminal-shadow);
+}
+
+/* Apply watercolor effects to main terminal view */
+[data-terminal-theme="purple-rich"] .flex.h-screen,
+[data-terminal-theme="purple-rich"] .terminal-main-bg {
+  background: var(--terminal-bg-layered);
+}
+
+[data-terminal-theme="purple-rich"] .terminal-header {
+  background: var(--header-bg-gradient);
+  color: var(--terminal-text-primary);
+  border-bottom: var(--header-border);
+}
+
+[data-terminal-theme="purple-rich"] .terminal-content {
+  background: var(--content-bg-gradient);
+  color: var(--terminal-text-primary);
+}
+
+[data-terminal-theme="purple-rich"] .prompt-symbol {
+  color: var(--terminal-accent-primary);
+  text-shadow: var(--terminal-glow-sm);
+}
+
+[data-terminal-theme="purple-rich"] .user-input {
+  color: var(--terminal-prompt-user);
+}
+
+[data-terminal-theme="purple-rich"] .user-input-bold {
+  color: var(--terminal-accent-primary);
+  font-weight: bold;
+}
+
+[data-terminal-theme="purple-rich"] .ai-response {
+  color: var(--terminal-response-ai);
+}
+
+[data-terminal-theme="purple-rich"] .ai-response-bold {
+  color: var(--terminal-text-secondary);
+  font-weight: bold;
+}
+
+[data-terminal-theme="purple-rich"] .model-name {
+  color: var(--terminal-model-local);
+}
+
+[data-terminal-theme="purple-rich"] .cost-info {
+  color: var(--terminal-status-info);
+}
+
+[data-terminal-theme="purple-rich"] .terminal-dot:nth-child(1) { 
+  background: #ef4444; 
+}
+
+[data-terminal-theme="purple-rich"] .terminal-dot:nth-child(2) { 
+  background: #f59e0b; 
+}
+
+[data-terminal-theme="purple-rich"] .terminal-dot:nth-child(3) { 
+  background: #10b981; 
+}
+
+[data-terminal-theme="purple-rich"] .cursor {
+  background: var(--terminal-cursor-color);
+  box-shadow: var(--terminal-glow-md);
+}
+
+[data-terminal-theme="purple-rich"] .status-bar {
+  background: var(--terminal-bg-secondary);
+  border-top: var(--terminal-border);
+  color: var(--terminal-text-secondary);
+}
+
+[data-terminal-theme="purple-rich"] .accent-rose { 
+  color: var(--terminal-accent-tertiary); 
+}
+
+[data-terminal-theme="purple-rich"] .accent-coral { 
+  color: #fed7aa; 
+}
+
+[data-terminal-theme="purple-rich"] .accent-blue { 
+  color: var(--terminal-status-info); 
+}

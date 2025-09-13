@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import Terminal Theme System */
+@import './themes/terminal.css';
+@import './themes/purple-rich.css';
+@import './themes/amber-forest.css';
+@import './themes/cyan-light.css';
+
 body {
   margin: 0;
   font-family:
@@ -9,4 +15,153 @@ body {
     'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Terminal Theme Transition Animations */
+.terminal-theme-transitioning {
+  transition: var(--terminal-transition-theme, all 0.3s ease-in-out);
+}
+
+.terminal-theme-transitioning * {
+  transition: var(--terminal-transition-theme, all 0.3s ease-in-out);
+}
+
+/* Terminal specific styles that override Tailwind defaults */
+.terminal-container {
+  font-family: var(--terminal-font-family);
+  background-color: var(--terminal-bg-primary);
+  color: var(--terminal-text-primary);
+  transition: var(--terminal-transition-normal);
+}
+
+/* Terminal scrollbar styling for webkit browsers */
+.terminal-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.terminal-scrollbar::-webkit-scrollbar-track {
+  background: var(--terminal-bg-secondary);
+}
+
+.terminal-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--terminal-accent-prompt);
+  border-radius: var(--terminal-border-radius-sm);
+}
+
+.terminal-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--terminal-accent-user);
+}
+
+/* Terminal animation keyframes */
+@keyframes terminal-cursor-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+@keyframes terminal-typing {
+  0% { width: 0; }
+  100% { width: 100%; }
+}
+
+@keyframes terminal-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px var(--terminal-accent-prompt);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--terminal-accent-prompt), 0 0 30px var(--terminal-accent-prompt);
+  }
+}
+
+.terminal-cursor-blink {
+  animation: terminal-cursor-blink 1s infinite;
+}
+
+.terminal-typing {
+  animation: terminal-typing 2s ease-in-out;
+}
+
+.terminal-glow {
+  animation: terminal-glow 2s ease-in-out infinite;
+}
+
+/* Focus and accessibility improvements for terminal */
+.terminal-focus-visible:focus-visible {
+  outline: 2px solid var(--terminal-focus-outline);
+  outline-offset: 2px;
+}
+
+/* High contrast mode improvements */
+@media (prefers-contrast: high) {
+  :root {
+    --terminal-bg-primary: #000000;
+    --terminal-bg-secondary: #000000;
+    --terminal-text-primary: #ffffff;
+    --terminal-text-secondary: #ffffff;
+    --terminal-border-primary: #ffffff;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .terminal-theme-transitioning,
+  .terminal-theme-transitioning * {
+    transition: none !important;
+  }
+  
+  .terminal-cursor-blink {
+    animation: none;
+  }
+  
+  .terminal-typing {
+    animation: none;
+  }
+  
+  .terminal-glow {
+    animation: none;
+  }
+}
+
+/* Print styles for terminal */
+@media print {
+  .terminal-container {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .terminal-no-print {
+    display: none !important;
+  }
+}
+
+/* Special watercolor effects for light theme */
+[data-terminal-theme='light'] .terminal-container,
+[data-terminal-theme='light'] .flex.h-screen {
+  background: 
+    /* Cyan/Periwinkle watercolor washes on pure white */
+    radial-gradient(ellipse 800px 600px at 10% 15%, rgba(125,211,252,0.15) 0%, rgba(125,211,252,0.08) 30%, rgba(125,211,252,0.04) 50%, transparent 80%),
+    radial-gradient(ellipse 700px 500px at 90% 85%, rgba(165,180,252,0.12) 0%, rgba(165,180,252,0.06) 35%, rgba(165,180,252,0.03) 55%, transparent 75%),
+    radial-gradient(ellipse 600px 400px at 60% 5%, rgba(147,197,253,0.10) 0%, rgba(147,197,253,0.05) 40%, rgba(147,197,253,0.02) 60%, transparent 70%),
+    radial-gradient(ellipse 550px 350px at 15% 95%, rgba(34,211,238,0.08) 0%, rgba(34,211,238,0.04) 35%, rgba(34,211,238,0.02) 55%, transparent 65%),
+    radial-gradient(ellipse 400px 250px at 75% 45%, rgba(129,140,248,0.06) 0%, rgba(129,140,248,0.03) 45%, transparent 65%),
+    #ffffff;
+}
+
+/* Enhanced watercolor effects for dark theme */
+[data-terminal-theme='dark'] .terminal-container,
+[data-terminal-theme='dark'] .flex.h-screen {
+  background: 
+    /* Purple gradient with subtle variations */
+    linear-gradient(135deg, #0f0a1a 0%, #1a0f2e 50%, #0f0a1a 100%),
+    radial-gradient(ellipse 600px 400px at 20% 20%, rgba(52, 211, 153, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse 400px 300px at 80% 80%, rgba(168, 139, 250, 0.08) 0%, transparent 60%);
+}
+
+/* Natural texture for amber theme */
+[data-terminal-theme='amber'] .terminal-container,
+[data-terminal-theme='amber'] .flex.h-screen {
+  background: 
+    /* Warm amber gradient with wood-like texture */
+    linear-gradient(135deg, #2d2a1e 0%, #3d3426 50%, #2d2a1e 100%),
+    radial-gradient(ellipse 500px 300px at 30% 70%, rgba(218, 165, 32, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 400px 200px at 70% 30%, rgba(255, 179, 71, 0.04) 0%, transparent 50%);
 }

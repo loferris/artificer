@@ -97,7 +97,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
   };
 
   return (
-    <div className={`flex h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50`}>
+    <div className={`flex h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50`} style={{ background: 'linear-gradient(to bottom right, rgb(253, 242, 248), rgb(250, 245, 255), rgb(238, 242, 255))' }}>
       {/* Sidebar */}
       <div
         className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 bg-white/80 backdrop-blur-sm border-r border-pink-200 overflow-hidden flex flex-col`}
@@ -278,9 +278,14 @@ export const ChatView: React.FC<ChatViewProps> = ({
                   <div
                     className={`max-w-[70%] px-4 py-3 rounded-2xl shadow-sm ${
                       message.role === 'user'
-                        ? 'bg-gradient-to-r from-pink-500 to-purple-600 text-white'
-                        : 'bg-gradient-to-r from-indigo-50 to-purple-50 text-gray-800 border border-purple-200'
+                        ? 'text-white border border-purple-300'
+                        : 'text-gray-800 border border-purple-200'
                     }`}
+                    style={{
+                      background: message.role === 'user' 
+                        ? 'linear-gradient(to right, rgb(236, 72, 153), rgb(147, 51, 234))' 
+                        : 'linear-gradient(to right, rgb(238, 242, 255), rgb(250, 245, 255))'
+                    }}
                   >
                     <div className='whitespace-pre-wrap leading-relaxed'>{message.content}</div>
                     <div className='flex justify-between items-center mt-2'>
