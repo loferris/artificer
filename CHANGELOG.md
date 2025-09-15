@@ -7,9 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2025-09-15] - Test Suite Stabilization & Type Safety
+
+### Fixed
+- **Test Suite Stability**: Fixed failing export router test due to data type inconsistencies
+- **Type Safety Improvements**: Resolved TypeScript compilation errors in error handling for TRPC clients
+- **Test Data Consistency**: Standardized `parentId` field handling between `null` and `undefined` in test mocks
+- **React Hook Dependencies**: Fixed ESLint warning for missing dependencies in `ConversationOrchestrator` useCallback
+- **Error Boundary Type Safety**: Fixed React ErrorInfo componentStack optional type handling
+- **Data Model Consistency**: Standardized `parentId` type from `string | null` to `string?` across the codebase
+
+### Changed
+- **Type Definitions**: Updated Message interface to use consistent optional `parentId` field type
+- **Hook Architecture**: Restructured useCallback dependencies to avoid circular dependencies  
+- **Error Handling**: Improved error type casting for TRPC client errors with proper unknown type conversion
+- **Documentation**: Updated README.md and CHANGELOG.md to reflect accurate current state vs aspirational features
+
+### Technical Details
+- All 400+ tests now pass consistently
+- TypeScript compilation with strict mode enabled
+- ESLint warnings resolved across codebase
+- Improved architectural consistency in data models
+
+## [Previous Release] - Core Feature Development
+
 ### Added
 - **Dual UI Interface System**: Terminal interface with slash commands + Classic chat interface for different workflow preferences
-- **Comprehensive Theme System**: Three responsive themes (Dark/Purple-Rich, Amber/Forest, Light/Cyan) with CSS custom properties
+- **Comprehensive Theme System**: Three responsive themes (Purple-Rich, Amber-Forest, Cyan-Light) with CSS custom properties
 - **Advanced Slash Commands**: `/theme`, `/view`, `/streaming`, `/export`, `/new`, `/list`, `/man` commands for terminal interface
 - **Integrated Cost Tracking**: Real-time usage and cost monitoring widget with theme-responsive styling
 - **Theme Persistence**: Automatic theme saving to localStorage with SSR-safe error handling
@@ -21,14 +45,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **tRPC subscriptions**: Type-safe real-time streaming with `trpc.subscriptions.chatStream.useSubscription()`
 - **SSE streaming endpoints**: HTTP-based streaming at `/api/stream/chat` for CLI and third-party integrations
 - **Unified streaming architecture**: Both WebSocket and SSE use the same ChatService async generators
-- **Comprehensive test suite**: 388+ tests with 51%+ coverage, including theme system and component tests
+- **Comprehensive test suite**: 400+ tests across 42 test files with full coverage of critical components
 - **Split link routing**: Automatic routing of subscriptions to WebSocket, queries/mutations to HTTP
 - **Rate limiting**: Applied to both HTTP and streaming endpoints
 - **CORS support**: Full cross-origin support for SSE endpoints
 - **Error handling**: Graceful error streaming and connection management
 - **CLI documentation**: Complete usage examples for cURL, Node.js, Python, and Bash
 
+### Fixed
+- **Type Safety Improvements**: Fixed TypeScript errors in error handling for TRPC clients
+- **Test Data Consistency**: Resolved `parentId` field inconsistencies between `null` and `undefined` in test mocks
+- **React Hook Dependencies**: Fixed ESLint warning for missing dependencies in `ConversationOrchestrator` useCallback
+- **Error Boundary Type Safety**: Fixed React ErrorInfo componentStack optional type handling
+- **Data Model Consistency**: Standardized `parentId` type from `string | null` to `string?` across the codebase
+
 ### Changed
+- **Type Definitions**: Updated Message interface to use consistent optional `parentId` field type
+- **Hook Architecture**: Restructured useCallback dependencies to avoid circular dependencies
+- **Error Handling**: Improved error type casting for TRPC client errors with proper unknown type conversion
 - **User Interface**: Default interface now starts in terminal mode with theme-aware styling
 - **Message Display**: User input messages now display in mint green (#6ee7b7) across all themes
 - **Chat Interface**: Chat view now uses pink/purple gradient aesthetic independent of terminal themes

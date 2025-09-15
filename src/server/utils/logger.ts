@@ -11,16 +11,21 @@ export class Logger {
     this.logger = pinoInstance;
   }
 
-  error(message: string, error?: Error, meta?: Record<string, unknown>) {
+  error(message: string, error?: Error | unknown, meta?: Record<string, unknown>) {
     if (error) {
-      this.logger.error({ err: error, ...meta }, message);
+      const errorObj = error instanceof Error ? error : new Error(String(error));
+      this.logger.error({ err: errorObj, ...meta }, message);
     } else {
       this.logger.error(meta, message);
     }
   }
 
-  warn(message: string, meta?: Record<string, unknown>) {
-    this.logger.warn(meta, message);
+  warn(message: string, meta?: Record<string, unknown> | string | unknown) {
+    if (typeof meta === 'string' || (meta && typeof meta !== 'object')) {
+      this.logger.warn({ data: meta }, message);
+    } else {
+      this.logger.warn(meta as Record<string, unknown>, message);
+    }
   }
 
   info(message: string, meta?: Record<string, unknown>) {

@@ -140,7 +140,6 @@ export class StreamParser {
                                   line.match(/^\s*-\s*\*\*/) || // Starts with dash + markdown bold
                                   line.match(/^\s*-\s*.{50,}/); // Long lines are likely dialogue, not list items
       
-      console.log('🔍 List detection:', { line: line.trim(), isListItem: !!isListItem, isPotentialDialogue: !!isPotentialDialogue });
       
       if (isListItem && !isPotentialDialogue) {
         if (!this.inList) {

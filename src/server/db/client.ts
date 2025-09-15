@@ -6,11 +6,7 @@ const globalForPrisma = global as unknown as { prisma: PrismaClient };
 export const prisma =
   globalForPrisma.prisma ||
   new PrismaClient({
-    log: [
-      { emit: 'event', level: 'query' },
-      { emit: 'event', level: 'error' },
-      { emit: 'event', level: 'warn' },
-    ],
+    log: ['query', 'error', 'warn'],
     errorFormat: 'pretty',
     datasources: {
       db: {
@@ -24,18 +20,7 @@ if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma;
 }
 
-// Set up event listeners for database logging
-prisma.$on('query', (e) => {
-  logger.dbQuery(e.query, e.duration);
-});
-
-prisma.$on('error', (e) => {
-  logger.error('Database error', new Error(e.message));
-});
-
-prisma.$on('warn', (e) => {
-  logger.warn('Database warning', { message: e.message });
-});
+// Database logging is handled through Prisma's built-in log configuration
 
 // Handle graceful shutdown
 process.on('beforeExit', async () => {

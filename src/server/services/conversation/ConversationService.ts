@@ -27,6 +27,7 @@ export interface CreateConversationInput {
   systemPrompt?: string;
   temperature?: number;
   maxTokens?: number;
+  firstMessage?: string;
 }
 
 export interface UpdateConversationInput {
@@ -65,6 +66,11 @@ export interface ConversationService {
    * List all conversations with summary information
    */
   list(): Promise<ConversationListItem[]>;
+
+  /**
+   * List all conversations - wrapper around list() for consistency
+   */
+  listConversations(): Promise<ConversationListItem[]>;
 
   /**
    * Update conversation metadata

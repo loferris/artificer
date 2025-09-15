@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { trpc } from '../lib/trpc/client';
+import { clientLogger } from '../utils/clientLogger';
 
 interface ExportButtonProps {
   conversationId?: string;
@@ -54,7 +55,11 @@ export const ExportButton: React.FC<ExportButtonProps> = ({ conversationId, clas
 
       setShowFormats(false);
     } catch (error) {
-      console.error('Export failed:', error);
+      clientLogger.error('Export failed', error as Error, {
+        format,
+        conversationId,
+        isExportingAll: !conversationId,
+      }, 'ExportButton');
       alert('Export failed. Please try again.');
     } finally {
       setIsExporting(false);

@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { trpc } from '../lib/trpc/client';
+import { clientLogger } from '../utils/clientLogger';
 import type { ChatStreamChunk } from '../server/services/chat/ChatService';
 
 interface StreamingMessage {
@@ -115,7 +116,10 @@ export const useStreamingChat = (): UseStreamingChatReturn => {
             }
           },
           onError: (err) => {
-            console.error('Streaming error:', err);
+            clientLogger.error('Streaming error', err as Error, {
+              conversationId,
+              content: content.substring(0, 100)
+            }, 'StreamingChat');
             setError(err.message || 'Streaming failed');
             setIsStreaming(false);
             currentStreamRef.current = null;
@@ -126,7 +130,10 @@ export const useStreamingChat = (): UseStreamingChatReturn => {
       currentStreamRef.current = { unsubscribe: subscription.unsubscribe };
       
     } catch (err: any) {
-      console.error('Failed to start streaming:', err);
+      clientLogger.error('Failed to start streaming', err as Error, {
+        conversationId,
+        content: content.substring(0, 100)
+      }, 'StreamingChat');
       setError(err.message || 'Failed to start streaming');
       setIsStreaming(false);
       

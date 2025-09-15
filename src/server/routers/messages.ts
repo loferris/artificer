@@ -17,11 +17,10 @@ export const messagesRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const { messageService } = createServicesFromContext(ctx);
-      return await messageService.createMessage({
+      return await messageService.create({
         conversationId: input.conversationId,
         role: input.role,
         content: input.content,
-        tokens: input.tokens,
       });
     }),
 
@@ -44,13 +43,13 @@ export const messagesRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const { messageService } = createServicesFromContext(ctx);
-      return await messageService.updateMessage(input.id, { content: input.content });
+      return await messageService.update(input.id, { content: input.content });
     }),
 
   delete: publicProcedure
     .input(z.string().min(1, 'Message ID is required'))
     .mutation(async ({ ctx, input: messageId }) => {
       const { messageService } = createServicesFromContext(ctx);
-      return await messageService.deleteMessage(messageId);
+      return await messageService.delete(messageId);
     }),
 });

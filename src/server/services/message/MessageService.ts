@@ -44,6 +44,11 @@ export interface MessageService {
   getByConversation(conversationId: string): Promise<MessageWithCost[]>;
 
   /**
+   * Get all messages in a conversation - wrapper for consistency
+   */
+  getMessagesByConversation(conversationId: string): Promise<MessageWithCost[]>;
+
+  /**
    * Update message content
    */
   update(messageId: string, input: UpdateMessageInput): Promise<Message>;

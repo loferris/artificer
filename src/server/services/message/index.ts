@@ -1,9 +1,12 @@
 export {
-  MessageService,
   DatabaseMessageService,
   DemoMessageService,
-  type Message,
-  type CreateMessageInput,
-  type UpdateMessageInput,
-  type MessageWithCost,
+} from './MessageService';
+
+export type {
+  MessageService,
+  Message,
+  CreateMessageInput,
+  UpdateMessageInput,
+  MessageWithCost,
 } from './MessageService';

@@ -1,9 +1,12 @@
 export {
-  ConversationService,
   DatabaseConversationService,
   DemoConversationService,
-  type ConversationWithMessages,
-  type CreateConversationInput,
-  type UpdateConversationInput,
-  type ConversationListItem,
+} from './ConversationService';
+
+export type {
+  ConversationService,
+  ConversationWithMessages,
+  CreateConversationInput,
+  UpdateConversationInput,
+  ConversationListItem,
 } from './ConversationService';

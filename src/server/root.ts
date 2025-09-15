@@ -1,7 +1,7 @@
 // src/server/root.ts
 import { router } from './trpc';
-import { chatRouter } from './routers/chat';
-import { conversationsRouter } from './routers/conversations';
+import { chatRouterRefactored as chatRouter } from './routers/chat-refactored';
+import { conversationsRouterRefactored as conversationsRouter } from './routers/conversations-refactored';
 import { messagesRouter } from './routers/messages';
 import { usageRouter } from './routers/usage';
 import { exportRouter } from './routers/export';

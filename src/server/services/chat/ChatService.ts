@@ -131,9 +131,6 @@ export class DatabaseChatService implements ChatService {
         conversationId,
         role: 'assistant',
         content: response,
-        model,
-        cost,
-        tokens: this.messageService.estimateTokens(response),
       });
 
       // Check if this is the first user message and generate title
@@ -209,11 +206,12 @@ export class DatabaseChatService implements ChatService {
         let model = 'unknown';
         let totalCost = 0;
 
-        const stream = this.assistant.createResponseStream(content, conversationHistory, {
-          signal,
-        });
+        if (this.assistant.createResponseStream) {
+          const stream = this.assistant.createResponseStream(content, conversationHistory, {
+            signal,
+          });
 
-        for await (const chunk of stream) {
+          for await (const chunk of stream) {
           // Check for cancellation first
           if (signal?.aborted) {
             throw new Error('Request was cancelled');
@@ -248,9 +246,6 @@ export class DatabaseChatService implements ChatService {
           conversationId,
           role: 'assistant',
           content: fullResponse,
-          model,
-          cost: totalCost,
-          tokens: totalTokens || this.messageService.estimateTokens(fullResponse),
         });
 
         await this._updateConversationMetadata(conversationId, content);
@@ -266,6 +261,7 @@ export class DatabaseChatService implements ChatService {
             messageId: assistantMessage.id,
           },
         };
+        }
       } else {
         // Fallback: simulate streaming for non-streaming assistants
         const aiResponse = await this.assistant.getResponse(content, conversationHistory, {
@@ -280,9 +276,6 @@ export class DatabaseChatService implements ChatService {
           conversationId,
           role: 'assistant',
           content: response,
-          model,
-          cost,
-          tokens: this.messageService.estimateTokens(response),
         });
 
         // Simulate streaming by chunking the response
@@ -311,7 +304,7 @@ export class DatabaseChatService implements ChatService {
           content: '',
           finished: true,
           metadata: {
-            tokenCount: assistantMessage.tokens,
+            tokenCount: assistantMessage.tokens || undefined,
             model,
             cost,
             messageId: assistantMessage.id,

@@ -1,4 +1,5 @@
 // src/server/services/assistant/assistant.ts
+import { logger } from '../../utils/logger';
 
 export interface AssistantOptions {
   signal?: AbortSignal;
@@ -286,7 +287,7 @@ export class OpenRouterAssistant implements Assistant {
               }
             } catch (e) {
               // Skip malformed JSON
-              console.warn('Failed to parse SSE data:', data);
+              logger.warn('Failed to parse SSE data:', data);
             }
           }
         }
