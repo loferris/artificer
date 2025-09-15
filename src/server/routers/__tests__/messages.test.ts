@@ -15,10 +15,10 @@ describe('Messages Router', () => {
     vi.clearAllMocks();
 
     mockMessageService = {
-      createMessage: vi.fn(),
+      create: vi.fn(),
       getMessagesByConversation: vi.fn(),
-      updateMessage: vi.fn(),
-      deleteMessage: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
     };
 
     // Mock the ServiceFactory
@@ -67,17 +67,16 @@ describe('Messages Router', () => {
         parentId: null,
       };
 
-      mockMessageService.createMessage.mockResolvedValue(mockMessage);
+      mockMessageService.create.mockResolvedValue(mockMessage);
 
       const caller = messagesRouter.createCaller(mockContext);
       const result = await caller.create(validInput);
 
       expect(result).toEqual(mockMessage);
-      expect(mockMessageService.createMessage).toHaveBeenCalledWith({
+      expect(mockMessageService.create).toHaveBeenCalledWith({
         conversationId: 'conv-123',
         role: 'user',
         content: 'Hello, world!',
-        tokens: 5,
       });
     });
 
@@ -99,7 +98,7 @@ describe('Messages Router', () => {
         parentId: null,
       };
 
-      mockMessageService.createMessage.mockResolvedValue(mockMessage);
+      mockMessageService.create.mockResolvedValue(mockMessage);
 
       const caller = messagesRouter.createCaller(mockContext);
       const result = await caller.create(inputWithZeroTokens);
@@ -108,7 +107,7 @@ describe('Messages Router', () => {
     });
 
     it('throws error when conversation not found', async () => {
-      mockMessageService.createMessage.mockRejectedValue(
+      mockMessageService.create.mockRejectedValue(
         new Error("Cannot read properties of undefined (reading 'id')"),
       );
 
@@ -120,7 +119,7 @@ describe('Messages Router', () => {
     });
 
     it('handles creation errors gracefully', async () => {
-      mockMessageService.createMessage.mockRejectedValue(new Error('Database error'));
+      mockMessageService.create.mockRejectedValue(new Error('Database error'));
 
       const caller = messagesRouter.createCaller(mockContext);
 
@@ -249,19 +248,19 @@ describe('Messages Router', () => {
         parentId: null,
       };
 
-      mockMessageService.updateMessage.mockResolvedValue(updatedMessage);
+      mockMessageService.update.mockResolvedValue(updatedMessage);
 
       const caller = messagesRouter.createCaller(mockContext);
       const result = await caller.update(input);
 
       expect(result).toEqual(updatedMessage);
-      expect(mockMessageService.updateMessage).toHaveBeenCalledWith('msg-123', {
+      expect(mockMessageService.update).toHaveBeenCalledWith('msg-123', {
         content: 'Updated message content',
       });
     });
 
     it('throws error when message not found', async () => {
-      mockMessageService.updateMessage.mockRejectedValue(new Error('Message not found'));
+      mockMessageService.update.mockRejectedValue(new Error('Message not found'));
 
       const caller = messagesRouter.createCaller(mockContext);
 
@@ -269,7 +268,7 @@ describe('Messages Router', () => {
     });
 
     it('handles update errors gracefully', async () => {
-      mockMessageService.updateMessage.mockRejectedValue(new Error('Database error'));
+      mockMessageService.update.mockRejectedValue(new Error('Database error'));
 
       const caller = messagesRouter.createCaller(mockContext);
 
@@ -301,17 +300,17 @@ describe('Messages Router', () => {
     const messageId = 'msg-123';
 
     it('deletes a message by ID', async () => {
-      mockMessageService.deleteMessage.mockResolvedValue({ success: true });
+      mockMessageService.delete.mockResolvedValue({ success: true });
 
       const caller = messagesRouter.createCaller(mockContext);
       const result = await caller.delete(messageId);
 
       expect(result).toEqual({ success: true });
-      expect(mockMessageService.deleteMessage).toHaveBeenCalledWith(messageId);
+      expect(mockMessageService.delete).toHaveBeenCalledWith(messageId);
     });
 
     it('throws error when message not found', async () => {
-      mockMessageService.deleteMessage.mockRejectedValue(new Error('Message not found'));
+      mockMessageService.delete.mockRejectedValue(new Error('Message not found'));
 
       const caller = messagesRouter.createCaller(mockContext);
 
@@ -319,7 +318,7 @@ describe('Messages Router', () => {
     });
 
     it('handles deletion errors gracefully', async () => {
-      mockMessageService.deleteMessage.mockRejectedValue(new Error('Database error'));
+      mockMessageService.delete.mockRejectedValue(new Error('Database error'));
 
       const caller = messagesRouter.createCaller(mockContext);
 

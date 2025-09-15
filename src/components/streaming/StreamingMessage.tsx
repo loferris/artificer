@@ -22,31 +22,21 @@ export const StreamingMessage: React.FC<StreamingMessageProps> = ({
   const previousContentRef = useRef('');
 
   useEffect(() => {
-    console.log('🎯 StreamingMessage processing content:', { 
-      content, 
-      isComplete,
-      length: content.length,
-      contentPreview: content.slice(0, 50) + (content.length > 50 ? '...' : '')
-    });
     
     if (isComplete) {
-      console.log('📚 Content complete - parsing segments');
       // When complete, parse the entire content normally
       const parser = new StreamParser();
       const parsed = parser.parseChunk(content);
       const finalParsed = parser.finalize();
       const allSegments = [...parsed.segments, ...finalParsed.segments];
-      console.log('📝 Final parsed segments:', allSegments);
       setSegments(allSegments);
     } else {
-      console.log('📡 Content streaming - creating text segment');
       // While streaming, treat everything as streaming text for word-by-word display
       const streamingSegment = {
         type: 'text' as any,
         content,
         isComplete: false
       };
-      console.log('🎬 Created streaming segment:', streamingSegment);
       setSegments([streamingSegment]);
     }
   }, [content, isComplete]);

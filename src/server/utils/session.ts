@@ -18,7 +18,8 @@ export function getUserFromRequest(req: {
 
   // Create a simple hash-based user ID from session info
   // In production, this should be replaced with proper JWT/session management
-  const userId = `user_${Buffer.from(sessionId).toString('base64').slice(0, 16)}`;
+  const sessionString = Array.isArray(sessionId) ? sessionId[0] : sessionId;
+  const userId = `user_${Buffer.from(sessionString).toString('base64').slice(0, 16)}`;
 
   return {
     id: userId,

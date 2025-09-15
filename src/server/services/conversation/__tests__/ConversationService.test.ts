@@ -1,44 +1,35 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { TRPCError } from '@trpc/server';
-import type { PrismaClient } from '@prisma/client';
 import {
   DatabaseConversationService,
   DemoConversationService,
   type CreateConversationInput,
 } from '../ConversationService';
-
-// Mock Prisma Client
-const mockPrismaClient = {
-  conversation: {
-    create: vi.fn(),
-    findUnique: vi.fn(),
-    findMany: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-  },
-  message: {
-    deleteMany: vi.fn(),
-  },
-  $transaction: vi.fn(),
-} as unknown as PrismaClient;
+import {
+  setupDatabaseServiceMocks,
+  resetDatabaseMocks,
+  TestScenarios,
+  DatabaseMocks,
+  type MockPrismaClient,
+} from '../../../../test/utils/mockDatabase';
 
 describe('ConversationService', () => {
+  let mockClient: MockPrismaClient;
+
   beforeEach(() => {
-    vi.clearAllMocks();
-    (mockPrismaClient.$transaction as any).mockImplementation((callback: any) =>
-      callback(mockPrismaClient),
-    );
+    mockClient = setupDatabaseServiceMocks();
   });
 
   afterEach(() => {
-    vi.resetAllMocks();
+    resetDatabaseMocks(mockClient);
   });
 
   describe('DatabaseConversationService', () => {
     let service: DatabaseConversationService;
 
     beforeEach(() => {
-      service = new DatabaseConversationService(mockPrismaClient);
+      const { service: testService } = TestScenarios.serviceTest(DatabaseConversationService, mockClient);
+      service = testService;
     });
 
     describe('create', () => {
@@ -66,12 +57,12 @@ describe('ConversationService', () => {
           messages: [],
         };
 
-        mockPrismaClient.conversation.create = vi.fn().mockResolvedValue(mockCreatedConversation);
-        mockPrismaClient.conversation.findUnique = vi.fn().mockResolvedValue(mockConversationWithMessages);
+        mockClient.conversation.create = vi.fn().mockResolvedValue(mockCreatedConversation);
+        mockClient.conversation.findUnique = vi.fn().mockResolvedValue(mockConversationWithMessages);
 
         const result = await service.create();
 
-        expect(mockPrismaClient.conversation.create).toHaveBeenCalledWith({
+        expect(mockClient.conversation.create).toHaveBeenCalledWith({
           data: {
             title: null,
             model: 'deepseek-chat',
@@ -81,7 +72,7 @@ describe('ConversationService', () => {
           },
         });
 
-        expect(mockPrismaClient.conversation.findUnique).toHaveBeenCalledWith({
+        expect(mockClient.conversation.findUnique).toHaveBeenCalledWith({
           where: { id: 'conv-123' },
           include: {
             messages: {
@@ -128,12 +119,12 @@ describe('ConversationService', () => {
           messages: [],
         };
 
-        mockPrismaClient.conversation.create = vi.fn().mockResolvedValue(mockCreatedConversation);
-        mockPrismaClient.conversation.findUnique = vi.fn().mockResolvedValue(mockConversationWithMessages);
+        mockClient.conversation.create = vi.fn().mockResolvedValue(mockCreatedConversation);
+        mockClient.conversation.findUnique = vi.fn().mockResolvedValue(mockConversationWithMessages);
 
         const result = await service.create(input);
 
-        expect(mockPrismaClient.conversation.create).toHaveBeenCalledWith({
+        expect(mockClient.conversation.create).toHaveBeenCalledWith({
           data: {
             title: 'Custom Chat',
             model: 'claude-3-haiku',
@@ -143,7 +134,7 @@ describe('ConversationService', () => {
           },
         });
 
-        expect(mockPrismaClient.conversation.findUnique).toHaveBeenCalledWith({
+        expect(mockClient.conversation.findUnique).toHaveBeenCalledWith({
           where: { id: 'conv-456' },
           include: {
             messages: {
@@ -189,7 +180,7 @@ describe('ConversationService', () => {
           },
         ];
 
-        mockPrismaClient.conversation.findMany = vi.fn().mockResolvedValue(mockConversations);
+        mockClient.conversation.findMany = vi.fn().mockResolvedValue(mockConversations);
 
         const result = await service.list();
 
@@ -257,13 +248,13 @@ describe('ConversationService', () => {
           messages: [],
         };
 
-        mockPrismaClient.conversation.create = vi.fn().mockResolvedValue(mockCreatedConversation);
-        mockPrismaClient.conversation.findUnique = vi.fn().mockResolvedValue(mockConversationWithMessages);
+        mockClient.conversation.create = vi.fn().mockResolvedValue(mockCreatedConversation);
+        mockClient.conversation.findUnique = vi.fn().mockResolvedValue(mockConversationWithMessages);
 
         const result = await service.createConversation();
 
-        expect(mockPrismaClient.conversation.create).toHaveBeenCalled();
-        expect(mockPrismaClient.conversation.findUnique).toHaveBeenCalledWith({
+        expect(mockClient.conversation.create).toHaveBeenCalled();
+        expect(mockClient.conversation.findUnique).toHaveBeenCalledWith({
           where: { id: 'conv-123' },
           include: {
             messages: {
@@ -279,12 +270,12 @@ describe('ConversationService', () => {
       });
 
       it('should call list through listConversations', async () => {
-        mockPrismaClient.conversation.findMany = vi.fn().mockResolvedValue([]);
+        mockClient.conversation.findMany = vi.fn().mockResolvedValue([]);
 
         const result = await service.listConversations();
 
         expect(result).toEqual([]);
-        expect(mockPrismaClient.conversation.findMany).toHaveBeenCalled();
+        expect(mockClient.conversation.findMany).toHaveBeenCalled();
       });
     });
   });

@@ -84,7 +84,7 @@ describe('Export Router', () => {
           tokens: 10,
           cost: 0.00002,
           createdAt: new Date('2024-01-01T10:00:00Z'),
-          parentId: null,
+          parentId: undefined,
         },
         {
           id: 'msg-2',
@@ -93,7 +93,7 @@ describe('Export Router', () => {
           tokens: 15,
           cost: 0.00003,
           createdAt: new Date('2024-01-01T10:01:00Z'),
-          parentId: null,
+          parentId: undefined,
         },
       ],
       metadata: {
@@ -119,7 +119,7 @@ describe('Export Router', () => {
           tokens: 8,
           cost: 0.000016,
           createdAt: new Date('2024-01-02T10:00:00Z'),
-          parentId: null,
+          parentId: undefined,
         },
       ],
       metadata: {
@@ -142,7 +142,7 @@ describe('Export Router', () => {
       cost: 0.00002,
       createdAt: new Date('2024-01-01T10:00:00Z'),
       conversationId: 'conv-1',
-      parentId: null,
+      parentId: undefined,
       timestamp: new Date('2024-01-01T10:00:00Z'),
     },
     {
@@ -153,7 +153,7 @@ describe('Export Router', () => {
       cost: 0.00003,
       createdAt: new Date('2024-01-01T10:01:00Z'),
       conversationId: 'conv-1',
-      parentId: null,
+      parentId: undefined,
       timestamp: new Date('2024-01-01T10:01:00Z'),
     },
     {
@@ -164,7 +164,7 @@ describe('Export Router', () => {
       cost: 0.000016,
       createdAt: new Date('2024-01-02T10:00:00Z'),
       conversationId: 'conv-2',
-      parentId: null,
+      parentId: undefined,
       timestamp: new Date('2024-01-02T10:00:00Z'),
     },
   ];
@@ -414,7 +414,7 @@ describe('Export Router', () => {
           tokens: 10,
           cost: 0.00002,
           createdAt: new Date('2024-01-01T10:00:00Z'),
-          parentId: null,
+          parentId: undefined,
         },
         {
           id: 'msg-2',
@@ -423,7 +423,7 @@ describe('Export Router', () => {
           tokens: 15,
           cost: 0.00003,
           createdAt: new Date('2024-01-01T10:01:00Z'),
-          parentId: null,
+          parentId: undefined,
         },
       ],
       metadata: {
@@ -690,9 +690,9 @@ describe('Export Router', () => {
                 role: 'user',
                 content: 'Hello',
                 tokens: 10,
-                cost: expect.closeTo(0.00002, 5),
-                createdAt: expect.any(Date),
-                parentId: null,
+                cost: 0.00002,
+                createdAt: new Date('2024-01-01T10:00:00.000Z'),
+                parentId: undefined,
               }),
               expect.objectContaining({
                 id: 'msg-2',
@@ -701,7 +701,7 @@ describe('Export Router', () => {
                 tokens: 15,
                 cost: expect.closeTo(0.00003, 5),
                 createdAt: expect.any(Date),
-                parentId: null,
+                parentId: undefined,
               }),
             ]),
             metadata: expect.objectContaining({

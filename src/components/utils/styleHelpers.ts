@@ -1,4 +1,4 @@
-import { TerminalThemeClasses } from '../../contexts/TerminalThemeContext';
+import { useTerminalThemeClasses } from '../../contexts/TerminalThemeContext';
 
 /**
  * Utility functions for generating consistent CSS class strings
@@ -6,7 +6,7 @@ import { TerminalThemeClasses } from '../../contexts/TerminalThemeContext';
 
 export const createCostTrackerStyles = (
   isTerminal: boolean, 
-  themeClasses: ReturnType<typeof import('../../contexts/TerminalThemeContext').useTerminalThemeClasses>
+  themeClasses: ReturnType<typeof useTerminalThemeClasses>
 ) => ({
   container: isTerminal 
     ? `fixed top-16 right-4 z-40 ${themeClasses.bgSecondary} ${themeClasses.textPrimary} ${themeClasses.pSm} ${themeClasses.radiusMd} ${themeClasses.borderPrimary} border ${themeClasses.fontMono} text-xs shadow-lg min-w-[200px]`

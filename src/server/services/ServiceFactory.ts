@@ -10,7 +10,7 @@ import {
   DemoMessageService,
 } from './message/MessageService';
 import { ChatService, DatabaseChatService, DemoChatService } from './chat/ChatService';
-import { createAssistant, Assistant } from './assistant';
+import { createAssistant, type Assistant } from './assistant';
 import { isServerSideDemo } from '../../utils/demo';
 
 export interface ServiceContainer {
@@ -69,7 +69,7 @@ export class ServiceFactory {
       // Create demo services
       conversationService = new DemoConversationService();
       messageService = new DemoMessageService();
-      chatService = new DemoChatService(conversationService, messageService, assistant);
+      chatService = new DemoChatService();
     } else {
       // Create database services
       conversationService = new DatabaseConversationService(db!);

@@ -4,7 +4,7 @@ import { ChatDisplay } from './ChatDisplay';
 import { ChatInput } from './ChatInput';
 import { TerminalHeader } from './TerminalHeader';
 import { useTerminalThemeClasses } from '../../contexts/TerminalThemeContext';
-import type { Message, Conversation } from '../types';
+import type { Message } from '../../types';
 
 interface TerminalViewProps {
   // Data

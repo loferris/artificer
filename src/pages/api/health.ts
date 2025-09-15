@@ -66,7 +66,7 @@ export default async function health(
       uptime = process.uptime();
     } catch (uptimeError) {
       // If we can't get uptime, use 0 as default
-      logger.error('Failed to get process uptime:', uptimeError);
+      logger.error('Failed to get process uptime:', uptimeError as Error);
     }
 
     const duration = Date.now() - startTime;

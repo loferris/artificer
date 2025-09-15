@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { clientLogger } from '../utils/clientLogger';
 
 // Terminal theme types
 export type TerminalTheme = 'purple-rich' | 'amber-forest' | 'cyan-light';
@@ -51,7 +52,7 @@ export const TerminalThemeProvider: React.FC<TerminalThemeProviderProps> = ({
       }
     } catch (error) {
       // localStorage not available (SSR, private browsing, etc.)
-      console.warn('Could not load theme from localStorage:', error);
+      clientLogger.warn('Could not load theme from localStorage', { error }, 'TerminalThemeProvider');
     }
   }, []);
 
@@ -64,7 +65,7 @@ export const TerminalThemeProvider: React.FC<TerminalThemeProviderProps> = ({
       localStorage.setItem(THEME_STORAGE_KEY, theme);
     } catch (error) {
       // localStorage not available (SSR, private browsing, etc.)
-      console.warn('Could not save theme to localStorage:', error);
+      clientLogger.warn('Could not save theme to localStorage', { error }, 'TerminalThemeProvider');
     }
     
     // Also set a CSS custom property for the current theme name

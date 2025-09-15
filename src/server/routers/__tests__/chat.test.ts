@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { chatRouter } from '../chat';
+import { chatRouterRefactored as chatRouter } from '../chat-refactored';
 import { TRPCError } from '@trpc/server';
 import { ServiceFactory } from '../../services/ServiceFactory';
 
@@ -199,6 +199,8 @@ describe('Chat Router', () => {
         timestamp: expect.any(Date),
         model: 'deepseek-chat',
         cost: 0.0001,
+        tokens: 8,
+        conversationTitle: undefined,
       });
     });
 
@@ -259,8 +261,10 @@ describe('Chat Router', () => {
         content: 'Hello! How can I help you?',
         role: 'assistant',
         timestamp: expect.any(Date),
-        model: 'unknown',
-        cost: 0,
+        model: undefined,
+        cost: undefined,
+        tokens: undefined,
+        conversationTitle: undefined,
       });
     });
 

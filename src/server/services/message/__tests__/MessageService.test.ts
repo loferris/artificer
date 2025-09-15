@@ -1,42 +1,36 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { TRPCError } from '@trpc/server';
-import type { PrismaClient } from '@prisma/client';
 import {
   DatabaseMessageService,
   DemoMessageService,
   type CreateMessageInput,
   type UpdateMessageInput,
 } from '../MessageService';
-
-// Mock Prisma Client
-const mockPrismaClient = {
-  message: {
-    create: vi.fn(),
-    findUnique: vi.fn(),
-    findMany: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-  },
-  $transaction: vi.fn(),
-} as unknown as PrismaClient;
+import { 
+  setupDatabaseServiceMocks, 
+  resetDatabaseMocks, 
+  TestScenarios,
+  DatabaseMocks,
+  type MockPrismaClient 
+} from '../../../../test/utils/mockDatabase';
 
 describe('MessageService', () => {
+  let mockClient: MockPrismaClient;
+
   beforeEach(() => {
-    vi.clearAllMocks();
-    (mockPrismaClient.$transaction as any).mockImplementation((queries: any) =>
-      Promise.all(queries.map((query: any) => query)),
-    );
+    mockClient = setupDatabaseServiceMocks();
   });
 
   afterEach(() => {
-    vi.resetAllMocks();
+    resetDatabaseMocks(mockClient);
   });
 
   describe('DatabaseMessageService', () => {
     let service: DatabaseMessageService;
 
     beforeEach(() => {
-      service = new DatabaseMessageService(mockPrismaClient);
+      const { service: testService } = TestScenarios.serviceTest(DatabaseMessageService, mockClient);
+      service = testService;
     });
 
     describe('create', () => {
@@ -57,11 +51,11 @@ describe('MessageService', () => {
           parentId: null,
         };
 
-        mockPrismaClient.message.create = vi.fn().mockResolvedValue(mockMessage);
+        mockClient.message.create = vi.fn().mockResolvedValue(mockMessage);
 
         const result = await service.create(input);
 
-        expect(mockPrismaClient.message.create).toHaveBeenCalledWith({
+        expect(mockClient.message.create).toHaveBeenCalledWith({
           data: {
             conversationId: 'conv-123',
             role: 'user',
@@ -97,7 +91,7 @@ describe('MessageService', () => {
           parentId: 'parent-msg-1',
         };
 
-        mockPrismaClient.message.create = vi.fn().mockResolvedValue(mockMessage);
+        mockClient.message.create = vi.fn().mockResolvedValue(mockMessage);
 
         const result = await service.create(input);
 
@@ -128,11 +122,11 @@ describe('MessageService', () => {
           },
         ];
 
-        mockPrismaClient.message.findMany = vi.fn().mockResolvedValue(mockMessages);
+        mockClient.message.findMany = vi.fn().mockResolvedValue(mockMessages);
 
         const result = await service.getByConversation('conv-123');
 
-        expect(mockPrismaClient.message.findMany).toHaveBeenCalledWith({
+        expect(mockClient.message.findMany).toHaveBeenCalledWith({
           where: { conversationId: 'conv-123' },
           orderBy: { createdAt: 'asc' },
         });
@@ -149,7 +143,7 @@ describe('MessageService', () => {
       });
 
       it('should handle empty conversation', async () => {
-        mockPrismaClient.message.findMany = vi.fn().mockResolvedValue([]);
+        mockClient.message.findMany = vi.fn().mockResolvedValue([]);
 
         const result = await service.getByConversation('conv-empty');
 
@@ -180,11 +174,11 @@ describe('MessageService', () => {
           },
         ];
 
-        mockPrismaClient.message.findMany = vi.fn().mockResolvedValue(mockMessages);
+        mockClient.message.findMany = vi.fn().mockResolvedValue(mockMessages);
 
         const result = await service.getConversationHistory('conv-123');
 
-        expect(mockPrismaClient.message.findMany).toHaveBeenCalledWith({
+        expect(mockClient.message.findMany).toHaveBeenCalledWith({
           where: { conversationId: 'conv-123' },
           orderBy: { createdAt: 'asc' },
           select: {
@@ -227,7 +221,7 @@ describe('MessageService', () => {
           parentId: null,
         };
 
-        mockPrismaClient.message.create = vi.fn().mockResolvedValue(mockMessage);
+        mockClient.message.create = vi.fn().mockResolvedValue(mockMessage);
 
         const result = await service.createMessage({
           conversationId: 'conv-123',
@@ -239,12 +233,12 @@ describe('MessageService', () => {
       });
 
       it('should work through getMessagesByConversation wrapper', async () => {
-        mockPrismaClient.message.findMany = vi.fn().mockResolvedValue([]);
+        mockClient.message.findMany = vi.fn().mockResolvedValue([]);
 
         const result = await service.getMessagesByConversation('conv-123');
 
         expect(result).toEqual([]);
-        expect(mockPrismaClient.message.findMany).toHaveBeenCalledWith({
+        expect(mockClient.message.findMany).toHaveBeenCalledWith({
           where: { conversationId: 'conv-123' },
           orderBy: { createdAt: 'asc' },
         });
