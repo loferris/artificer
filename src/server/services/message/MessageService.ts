@@ -25,6 +25,7 @@ export interface UpdateMessageInput {
 export interface MessageWithCost extends Message {
   cost: number;
   model?: string;
+  timestamp: Date;
 }
 
 export interface MessageService {
@@ -123,6 +124,7 @@ export class DatabaseMessageService implements MessageService {
         ...baseMessage,
         cost: this.calculateCost(msg.tokens || 0),
         model: undefined, // Model info not stored in message yet
+        timestamp: msg.createdAt,
       };
     });
   }
@@ -326,6 +328,7 @@ export class DemoMessageService implements MessageService {
       ...msg,
       cost: this.calculateCost(msg.tokens || 0),
       model: 'demo-assistant-v1',
+      timestamp: msg.createdAt,
     }));
   }
 

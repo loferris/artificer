@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 // Re-defining interfaces locally for props, as this is now a dumb component
 interface Message {
   id: string;
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: Date | string;
 }

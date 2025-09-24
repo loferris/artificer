@@ -224,10 +224,10 @@ export function useChat() {
     ...store,
     conversations: conversationsQuery.data || [],
     conversationsLoading: conversationsQuery.isLoading,
-    conversationsError: conversationsQuery.error,
+    conversationsError: conversationsQuery.error ? new Error(conversationsQuery.error.message) : null,
     refreshConversations: conversationsQuery.refetch,
     messagesLoading: messagesQuery.isLoading,
-    messagesError: messagesQuery.error,
+    messagesError: messagesQuery.error ? new Error(messagesQuery.error.message) : null,
     combinedMessages: combinedMessages(),
     handleMessageSubmit,
     handleDeleteConversation: async (id: string, e: React.MouseEvent) => {

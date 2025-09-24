@@ -1,14 +1,14 @@
 // Base message interface - canonical definition
 export interface Message {
   id: string;
-  role: 'user' | 'assistant';
+  role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: Date;
   model?: string;
   cost?: number;
-  tokens?: number;
+  tokens?: number | null;
   conversationId?: string;
-  parentId?: string;
+  parentId?: string | null;
 }
 
 // Extended message for streaming scenarios
