@@ -25,6 +25,7 @@
     "**/__tests__/**/*",
     "**/*.test.ts",
     "**/*.test.tsx",
-    "src/test/**/*"
+    "src/test/**/*",
+    "vitest.config.ts"
   ]
 }
