@@ -1,6 +1,6 @@
 # SSE Streaming API
 
-Server-Sent Events (SSE) endpoint for streaming chat responses. Perfect for CLI tools, scripts, and third-party integrations.
+Server-Sent Events (SSE) endpoint for streaming chat responses. Intended for CLI tools, scripts, and third-party integrations.
 
 ## Endpoint
 

@@ -48,6 +48,7 @@ export interface ChatState {
   setStreamingError: (error: string | null) => void;
   clearStreamingError: () => void;
   setInput: (input: string) => void;
+  clearMessages: () => void;
   resetConversation: () => void;
   setRetryCount: (count: number) => void;
   setLastFailedMessage: (message: string) => void;
@@ -63,7 +64,7 @@ export const useChatStore = create<ChatState>()(
     (set, get) => ({
       // Initial state
       viewMode: 'terminal',
-      streamingMode: true,
+      streamingMode: false,
       sidebarOpen: true,
       currentConversationId: null,
       messages: [],
@@ -94,6 +95,7 @@ export const useChatStore = create<ChatState>()(
       setStreamingError: (error) => set({ streamingError: error }, false, 'setStreamingError'),
       clearStreamingError: () => set({ streamingError: null }, false, 'clearStreamingError'),
       setInput: (input) => set({ input }, false, 'setInput'),
+      clearMessages: () => set({ messages: [], localMessages: [] }, false, 'clearMessages'),
       resetConversation: () => set({ currentConversationId: null, messages: [], localMessages: [], selectableConversations: [] }, false, 'resetConversation'),
       setRetryCount: (count) => set({ retryCount: count }, false, 'setRetryCount'),
       setLastFailedMessage: (message) => set({ lastFailedMessage: message }, false, 'setLastFailedMessage'),

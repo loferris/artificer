@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import { TerminalThemeProvider } from '../contexts/TerminalThemeContext';
+import { TerminalThemeProvider, useTerminalThemeClasses } from '../contexts/TerminalThemeContext';
 import { ErrorBoundary } from './ErrorBoundary';
 import { CostTracker } from './CostTracker';
 import { ErrorBoundaryDisplay, LoadingSpinner } from './ui';
@@ -16,6 +16,8 @@ import type { ViewMode } from '../types';
 export interface AppShellProps {
   children: React.ReactNode;
   showCostTracker?: boolean;
+  viewMode?: ViewMode;
+  onViewModeChange?: (mode: ViewMode) => void;
   className?: string;
 }
 
@@ -24,7 +26,9 @@ export interface AppShellProps {
  */
 export function AppShell({ 
   children, 
-  showCostTracker = true, 
+  showCostTracker = true,
+  viewMode = 'terminal',
+  onViewModeChange,
   className = '' 
 }: AppShellProps) {
   return (
@@ -33,11 +37,14 @@ export function AppShell({
         <ErrorBoundary>
           <div className="relative h-screen flex flex-col">
             {/* Cost tracker - positioned absolutely */}
-            {showCostTracker && (
-              <div className="absolute top-4 right-4 z-50">
-                <CostTracker viewMode="terminal" />
-              </div>
-            )}
+            {/* Floating toolbar */}
+            <div className={`absolute top-1/2 -translate-y-1/2 right-0 z-30`}>
+              <FloatingToolbar 
+                viewMode={viewMode}
+                onViewModeChange={onViewModeChange}
+                showCostTracker={showCostTracker}
+              />
+            </div>
 
             {/* Main content area */}
             <div className="flex-1 flex flex-col overflow-hidden">
@@ -68,6 +75,7 @@ export function InterfaceSwitcher({
   showModeToggle = true,
   onViewModeChange,
 }: InterfaceSwitcherProps) {
+  console.log('viewMode', viewMode);
   return (
     <div className="flex-1 flex flex-col">
       {/* View mode toggle */}
@@ -128,6 +136,176 @@ export function ViewModeToggle({
           Chat
         </button>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Single view mode switch button - used in top right corner
+ */
+export interface ViewModeSwitchButtonProps {
+  currentMode: ViewMode;
+  onModeChange: (mode: ViewMode) => void;
+}
+
+export function ViewModeSwitchButton({ 
+  currentMode, 
+  onModeChange 
+}: ViewModeSwitchButtonProps) {
+  const themeClasses = useTerminalThemeClasses();
+  
+  const targetMode = currentMode === 'terminal' ? 'chat' : 'terminal';
+  const buttonText = currentMode === 'terminal' ? '→ CHAT' : '→ TERMINAL';
+  
+  const isTerminal = currentMode === 'terminal';
+  const buttonClass = isTerminal
+    ? `
+        px-3 py-1.5 
+        ${themeClasses.bgSecondary}
+        ${themeClasses.textSecondary}
+        ${themeClasses.borderMuted}
+        ${themeClasses.fontMono}
+        ${themeClasses.textXs}
+        ${themeClasses.radiusSm}
+        ${themeClasses.transitionFast}
+        border
+        hover:${themeClasses.textPrimary}
+        hover:${themeClasses.borderPrimary}
+        focus:outline-none
+        focus:ring-2
+        focus:ring-offset-2
+        focus:ring-offset-[var(--terminal-bg-primary)]
+        focus:ring-[var(--terminal-accent-prompt)]
+      `
+    : `
+        px-3 py-1.5 
+        bg-white/80 
+        backdrop-blur-sm 
+        text-gray-700 
+        text-xs 
+        font-mono 
+        rounded-md 
+        border 
+        border-pink-200 
+        hover:bg-white 
+        hover:text-gray-900 
+        hover:border-pink-300 
+        focus:outline-none 
+        focus:ring-2 
+        focus:ring-pink-500 
+        focus:ring-offset-2 
+        transition-all 
+        duration-200 
+        shadow-sm
+      `;
+
+  return (
+    <button
+      onClick={() => onModeChange(targetMode)}
+      className={buttonClass.replace(/\s+/g, ' ').trim()}
+      title={`Switch to ${targetMode} View`}
+    >
+      {buttonText}
+    </button>
+  );
+}
+
+/**
+ * Floating toolbar - compact collapsible toolbar for controls
+ */
+export interface FloatingToolbarProps {
+  viewMode: ViewMode;
+  onViewModeChange?: (mode: ViewMode) => void;
+  showCostTracker?: boolean;
+}
+
+export function FloatingToolbar({ 
+  viewMode, 
+  onViewModeChange, 
+  showCostTracker = true 
+}: FloatingToolbarProps) {
+  const [isExpanded, setIsExpanded] = React.useState(false);
+  const themeClasses = useTerminalThemeClasses();
+  
+  const isTerminal = viewMode === 'terminal';
+  
+  // Compact button styles
+  const compactButtonClass = isTerminal
+    ? `
+        w-8 h-8 
+        ${themeClasses.bgSecondary}
+        ${themeClasses.textSecondary}
+        ${themeClasses.borderMuted}
+        ${themeClasses.radiusSm}
+        ${themeClasses.transitionFast}
+        border
+        hover:${themeClasses.textPrimary}
+        hover:${themeClasses.borderPrimary}
+        flex items-center justify-center
+        text-xs
+        ${themeClasses.fontMono}
+      `
+    : `
+        w-8 h-8 
+        bg-white/80 
+        backdrop-blur-sm 
+        text-gray-700 
+        border 
+        border-pink-200 
+        rounded-md 
+        hover:bg-white 
+        hover:text-gray-900 
+        hover:border-pink-300 
+        transition-all 
+        duration-200 
+        shadow-sm
+        flex items-center justify-center
+        text-xs
+        font-mono
+      `;
+
+  return (
+    <div className="flex items-center">
+      {/* Expanded content - slides out from right */}
+      {isExpanded && (
+        <div className="flex flex-col gap-2 items-end mr-2 animate-in fade-in slide-in-from-right-4 duration-200">
+          {showCostTracker && (
+            <CostTracker viewMode={viewMode} />
+          )}
+          
+          {onViewModeChange && (
+            <ViewModeSwitchButton 
+              currentMode={viewMode} 
+              onModeChange={onViewModeChange}
+            />
+          )}
+        </div>
+      )}
+      
+      {/* Side tab toggle - always visible on screen edge */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className={`
+          w-6 h-12 
+          ${isTerminal ? themeClasses.bgSecondary : 'bg-white/90 backdrop-blur-sm'} 
+          ${isTerminal ? themeClasses.textSecondary : 'text-gray-700'}
+          ${isTerminal ? themeClasses.borderMuted : 'border-pink-200'}
+          border border-r-0
+          ${isTerminal ? 'rounded-l-md' : 'rounded-l-md'}
+          hover:${isTerminal ? themeClasses.textPrimary : 'text-gray-900'}
+          transition-all duration-200 
+          shadow-md
+          flex items-center justify-center
+          text-xs
+          font-mono
+          transform ${isExpanded ? 'translate-x-0' : 'translate-x-0'}
+        `.replace(/\s+/g, ' ').trim()}
+        title={isExpanded ? 'Hide controls' : 'Show controls'}
+      >
+        <div className="transform rotate-90 whitespace-nowrap text-xs">
+          {isExpanded ? '×' : '⋯'}
+        </div>
+      </button>
     </div>
   );
 }

@@ -7,6 +7,15 @@ import { clientLogger } from '../../utils/clientLogger';
 import type { Message } from '../../types';
 import { useCommandProcessor } from './useCommandProcessor';
 
+/**
+ * A comprehensive hook for managing chat functionality.
+ *
+ * This hook orchestrates the entire chat experience, integrating state management (via Zustand),
+ * API communication (via tRPC), and user interaction logic. It handles conversations,
+ * messages, streaming, command processing, and exporting.
+ *
+ * @returns An object containing all the necessary state and handlers for the chat UI.
+ */
 export function useChat() {
   const store = useChatStore();
   const [invalidAttempts, setInvalidAttempts] = useState(0);
@@ -65,28 +74,50 @@ export function useChat() {
   }, [store.selectableConversations, store.setCurrentConversation, displayMessage, store.setSelectableConversations]);
 
   const handleSendMessage = useCallback(async (content: string) => {
+    console.log('🚀 handleSendMessage called:', { content, streamingMode: store.streamingMode, conversationId: store.currentConversationId });
+    
     if (store.streamingMode) {
         handleStreamingMessage(content, store.currentConversationId);
     } else {
-        if (!store.currentConversationId) {
-            const newConversation = await createConversationMutation.mutateAsync({});
-            if (newConversation?.id) {
-                store.setCurrentConversation(newConversation.id);
-                await sendMessageMutation.mutateAsync({ content, conversationId: newConversation.id });
+        try {
+            if (!store.currentConversationId) {
+                console.log('📝 Creating new conversation...');
+                const newConversation = await createConversationMutation.mutateAsync({});
+                if (newConversation?.id) {
+                    console.log('✅ New conversation created:', newConversation.id);
+                    store.setCurrentConversation(newConversation.id);
+                    await sendMessageMutation.mutateAsync({ content, conversationId: newConversation.id });
+                    messagesQuery.refetch();
+                    store.setInput('');
+                    console.log('✅ Message sent to new conversation');
+                }
+            } else {
+                console.log('📤 Sending to existing conversation:', store.currentConversationId);
+                await sendMessageMutation.mutateAsync({ content, conversationId: store.currentConversationId });
+                messagesQuery.refetch();
+                store.setInput('');
+                console.log('✅ Message sent to existing conversation');
             }
-        } else {
-            await sendMessageMutation.mutateAsync({ content, conversationId: store.currentConversationId });
+        } catch (error) {
+            console.error('❌ Error in handleSendMessage:', error);
         }
     }
   }, [store.streamingMode, store.currentConversationId, createConversationMutation, store.setCurrentConversation, sendMessageMutation]);
 
   const handleMessageSubmit = useCallback(async (content: string) => {
+    console.log('📨 handleMessageSubmit called:', { content });
     const trimmedContent = content.trim();
-    if (!trimmedContent) return;
+    if (!trimmedContent) {
+      console.log('❌ Empty content, returning');
+      return;
+    }
 
     if (trimmedContent.startsWith('/')) {
       const processed = processCommand(trimmedContent);
-      if (processed) return;
+      if (processed) {
+        store.setInput(''); // Clear the input after processing command
+        return;
+      }
     }
 
     if (store.selectableConversations.length > 0) {
@@ -164,9 +195,9 @@ export function useChat() {
       return store.currentConversationId ? store.messages : store.localMessages;
     }
 
-    const baseMessages = store.currentConversationId ? store.messages : store.localMessages;
-    
+    // In streaming mode, prioritize streaming messages
     if (streamingChat.messages.length > 0) {
+      const baseMessages = store.currentConversationId ? store.messages : store.localMessages;
       const deduplicatedStreamingMessages = streamingChat.messages.filter(streamMsg => 
         !baseMessages.some(baseMsg => baseMsg.id === streamMsg.id)
       );
@@ -177,7 +208,8 @@ export function useChat() {
       ];
     }
     
-    return baseMessages;
+    // Fallback to base messages
+    return store.currentConversationId ? store.messages : store.localMessages;
   }, [store.streamingMode, store.currentConversationId, store.messages, store.localMessages, streamingChat.messages]);
 
   const handleNewConversation = async () => {

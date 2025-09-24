@@ -30,10 +30,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const [isFocused, setIsFocused] = useState(false);
 
   useEffect(() => {
-    if (inputRef.current && !isLoading && isConversationReady) {
+    if (inputRef.current && !isLoading) {
       inputRef.current.focus();
     }
-  }, [isLoading, isConversationReady]);
+  }, [isLoading]);
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey && canSendMessage) {
@@ -44,13 +44,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   const getPlaceholderText = (): string => {
     if (placeholder) return placeholder;
-    if (isLoading) return 'processing...';
-    if (!isConversationReady) return 'select-or-create-conversation';
     return 'enter-command...';
   };
 
   const getPromptColor = (): string => {
-    if (!isConversationReady) return themeClasses.textDisabled;
     if (isLoading) return themeClasses.accentWarning;
     if (canSendMessage && input.trim()) return themeClasses.accentSuccess;
     return themeClasses.accentPrompt;
@@ -58,8 +55,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   const getInputStatus = (): string => {
     if (isLoading) return 'PROCESSING';
-    if (!isConversationReady) return 'NO SESSION';
     if (input.trim() && canSendMessage) return 'READY';
+    if (input.trim() && !canSendMessage) return 'BLOCKED';
     return 'WAITING';
   };
 
@@ -99,7 +96,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             placeholder={getPlaceholderText()}
-            disabled={!isConversationReady || isLoading}
+            disabled={isLoading}
             className={`
               flex-1 
               bg-transparent 
@@ -110,13 +107,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               ${themeClasses.disabledOpacity}
               ${themeClasses.transitionFast}
               focus:outline-none
-              ${!isConversationReady || isLoading ? 'cursor-not-allowed' : ''}
+              ${isLoading ? 'cursor-not-allowed' : ''}
             `}
             autoComplete="off"
           />
           
           {/* Cursor indicator when focused */}
-          {isFocused && isConversationReady && !isLoading && (
+          {isFocused && !isLoading && (
             <div 
               className={`
                 ml-1 
@@ -139,7 +136,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                 ${themeClasses.fontMono}
               `}
             >
-              [{getInputStatus()}]
+              [{getInputStatus()}] {!canSendMessage && input.trim() && `(ready:${isConversationReady}, loading:${isLoading})`}
             </span>
             
             {input.trim() && (

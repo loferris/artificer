@@ -173,7 +173,7 @@ export const StreamingChatDisplay: React.FC<StreamingChatDisplayProps> = ({
                 `}
               >
                 <div className={`${themeClasses.textXs} ${themeClasses.textMuted} mb-1 flex items-center justify-between`}>
-                  <span>AI Response {isCurrentlyStreaming ? '(streaming)' : ''}:</span>
+                  <span style={{ color: '#f8b4cb' }}>AI Response {isCurrentlyStreaming ? '(streaming)' : ''}:</span>
                   {isCurrentlyStreaming && (
                     <div className={`${themeClasses.accentAssistant} animate-pulse text-xs`}>
                       ●

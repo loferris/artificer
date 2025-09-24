@@ -3,7 +3,20 @@ import { router, publicProcedure } from '../../server/trpc';
 import { TRPCError } from '@trpc/server';
 import { createServicesFromContext } from '../services/ServiceFactory';
 
+/**
+ * The refactored tRPC router for chat-related operations.
+ *
+ * This router handles sending messages and retrieving message history, leveraging
+ * a service-oriented architecture for improved separation of concerns.
+ */
 export const chatRouterRefactored = router({
+  /**
+   * Sends a message to a conversation and returns the assistant's response.
+   *
+   * This mutation handles the entire process of sending a message, including
+   * session validation, calling the chat service, and returning the assistant's
+   * reply with relevant metadata.
+   */
   sendMessage: publicProcedure
     .input(
       z.object({
@@ -54,6 +67,12 @@ export const chatRouterRefactored = router({
       }
     }),
 
+  /**
+   * Retrieves the messages for a specific conversation.
+   *
+   * This query validates the user's session and fetches the complete
+   * message history for a given conversation ID.
+   */
   getMessages: publicProcedure
     .input(
       z.object({

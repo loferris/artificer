@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2025-09-18] - Codebase Documentation and Review
+
+### Added
+- **JSDoc Comments**: Added extensive JSDoc comments to key components, hooks, and API routers to improve code clarity and self-documentation. This includes:
+  - `useChat` hook
+  - `TerminalView` component
+  - `chatRouterRefactored` tRPC router
+
+### Changed
+- **Codebase Review**: Performed a general codebase review focusing on documentation consistency, naming conventions, test design, and comments.
+- **Changelog**: Updated the changelog to reflect the latest release.
+
 ## [2025-09-15] - Test Suite Stabilization & Type Safety
 
 ### Fixed
@@ -24,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Documentation**: Updated README.md and CHANGELOG.md to reflect accurate current state vs aspirational features
 
 ### Technical Details
-- All 400+ tests now pass consistently
+- All 390+ tests now pass consistently
 - TypeScript compilation with strict mode enabled
 - ESLint warnings resolved across codebase
 - Improved architectural consistency in data models
@@ -45,7 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **tRPC subscriptions**: Type-safe real-time streaming with `trpc.subscriptions.chatStream.useSubscription()`
 - **SSE streaming endpoints**: HTTP-based streaming at `/api/stream/chat` for CLI and third-party integrations
 - **Unified streaming architecture**: Both WebSocket and SSE use the same ChatService async generators
-- **Comprehensive test suite**: 400+ tests across 42 test files with full coverage of critical components
+- **Comprehensive test suite**: 390+ tests across 42 test files with full coverage of critical components
 - **Split link routing**: Automatic routing of subscriptions to WebSocket, queries/mutations to HTTP
 - **Rate limiting**: Applied to both HTTP and streaming endpoints
 - **CORS support**: Full cross-origin support for SSE endpoints

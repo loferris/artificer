@@ -7,6 +7,7 @@ import { trpc } from '../../lib/trpc/client';
 const getManualContent = () => {
   return `Available commands:
 - /man: Show this manual.
+- /clear: Clear conversation history.
 - /new: Create a new conversation.
 - /list: Show 10 most recent conversations.
 - /list-all: Show all conversations.
@@ -40,6 +41,21 @@ export function useCommandProcessor() {
   const { setTheme, getThemeDisplayName, theme } = useTerminalTheme();
   const conversationsQuery = trpc.conversations.list.useQuery();
   const createConversationMutation = trpc.conversations.create.useMutation();
+
+  const displayUserCommand = useCallback((command: string) => {
+    const userMessage = {
+      id: `user-cmd-${Date.now()}`,
+      role: 'user' as const,
+      content: command,
+      timestamp: new Date(),
+    };
+
+    if (!store.currentConversationId) {
+      store.addLocalMessage(userMessage);
+    } else {
+      store.addMessage(userMessage);
+    }
+  }, [store.currentConversationId, store.addLocalMessage, store.addMessage]);
 
   const displayMessage = useCallback((content: string) => {
     const localMessage = {
@@ -138,6 +154,9 @@ export function useCommandProcessor() {
       return false;
     }
 
+    // Display the user's command in the terminal
+    displayUserCommand(command);
+
     const [cmd, arg1] = command.substring(1).split(' ');
     const format = (arg1 || 'markdown') as 'markdown' | 'json';
     
@@ -169,6 +188,11 @@ export function useCommandProcessor() {
         
       case 'new':
         handleNewConversation();
+        break;
+        
+      case 'clear':
+        store.clearMessages();
+        displayMessage('Conversation history cleared.');
         break;
         
       case 'reset':

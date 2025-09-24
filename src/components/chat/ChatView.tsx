@@ -98,6 +98,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
 
   return (
     <div className={`flex h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50`} style={{ background: 'linear-gradient(to bottom right, rgb(253, 242, 248), rgb(250, 245, 255), rgb(238, 242, 255))' }}>
+
       {/* Sidebar */}
       <div
         className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 bg-white/80 backdrop-blur-sm border-r border-pink-200 overflow-hidden flex flex-col`}

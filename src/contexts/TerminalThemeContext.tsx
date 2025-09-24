@@ -132,6 +132,7 @@ export const useTerminalThemeClasses = () => {
     accentError: 'terminal-accent-error text-[var(--terminal-accent-error)]',
     accentWarning: 'terminal-accent-warning text-[var(--terminal-accent-warning)]',
     accentSuccess: 'terminal-accent-success text-[var(--terminal-accent-success)]',
+    accentRose: 'terminal-accent-rose text-[var(--terminal-accent-rose)]',
     
     // Border classes
     borderPrimary: 'border-[var(--terminal-border-primary)]',

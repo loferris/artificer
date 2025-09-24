@@ -15,12 +15,12 @@ export const CostTracker: React.FC<CostTrackerProps> = ({ viewMode }) => {
   // Dynamic styles based on view mode and theme
   const isTerminal = viewMode === 'terminal';
   const containerClass = isTerminal 
-    ? `fixed top-16 right-4 z-40 ${themeClasses.bgSecondary} ${themeClasses.textPrimary} ${themeClasses.pSm} ${themeClasses.radiusMd} ${themeClasses.borderPrimary} border ${themeClasses.fontMono} text-xs shadow-lg min-w-[200px]`
-    : `fixed top-16 right-4 z-40 text-gray-700 ${themeClasses.pSm} border ${themeClasses.fontMono} text-xs shadow-lg min-w-[200px] rounded-xl border-pink-200`;
+    ? `${themeClasses.bgSecondary} ${themeClasses.textPrimary} ${themeClasses.pSm} ${themeClasses.radiusMd} ${themeClasses.borderPrimary} border ${themeClasses.fontMono} text-xs shadow-lg min-w-[180px] max-w-[200px]`
+    : `text-gray-700 ${themeClasses.pSm} border ${themeClasses.fontMono} text-xs shadow-lg min-w-[180px] max-w-[200px] rounded-xl border-pink-200`;
   
   const errorClass = isTerminal
-    ? `fixed top-16 right-4 z-40 ${themeClasses.bgSecondary} ${themeClasses.accentError} ${themeClasses.pSm} ${themeClasses.radiusMd} ${themeClasses.borderPrimary} border ${themeClasses.fontMono} text-xs shadow-lg`
-    : "fixed top-16 right-4 z-40 bg-red-50 text-red-800 p-3 rounded-lg border border-red-200 font-mono text-xs shadow-lg";
+    ? `${themeClasses.bgSecondary} ${themeClasses.accentError} ${themeClasses.pSm} ${themeClasses.radiusMd} ${themeClasses.borderPrimary} border ${themeClasses.fontMono} text-xs shadow-lg max-w-[200px]`
+    : "bg-red-50 text-red-800 p-3 rounded-lg border border-red-200 font-mono text-xs shadow-lg max-w-[200px]";
 
   if (error) {
     return (

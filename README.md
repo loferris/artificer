@@ -15,7 +15,7 @@ This is a **conversation orchestration platform** that treats AI interactions as
 - **Theme system** with multiple responsive designs
 - **Cost tracking** and usage monitoring
 
-The system is designed API-first with a clean service layer, making it suitable for integration with CLI tools, Obsidian plugins, and other knowledge management workflows.
+The system is designed API-first with a distinct service layer, making it suitable for integration with CLI tools, Obsidian plugins, and other knowledge management workflows.
 
 ## Current Features
 
@@ -25,18 +25,18 @@ The system is designed API-first with a clean service layer, making it suitable 
 - Real-time streaming via WebSocket subscriptions and SSE endpoints
 - Type-safe API layer with tRPC
 - Comprehensive rate limiting and session management
-- **400+ tests** with full test coverage for critical components
+- **390+ tests** with full test coverage for critical components
 
 **User Interface**
 - **Dual Interface System**: Terminal mode with slash commands + traditional chat interface
-- **Theme System**: Three responsive themes (Purple-Rich, Amber-Forest, Cyan-Light) with CSS custom properties
+- **Theme System**: Three responsive themes ("purple-rich" dark, "amber," and cyan-rich light) with CSS custom properties
 - **Real-time Streaming**: Visual streaming indicators with typing effects in terminal mode
 - **Cost Tracking Widget**: Live usage monitoring with theme-responsive styling
 - **Export Functionality**: Markdown and JSON export with basic support for Notion/Obsidian formats
 
 **Service Architecture**
 - Clean service layer with dependency injection for business logic
-- Conversation lifecycle management with branching support (database schema ready)
+- Database scheme for conversation lifecycle management with branching support ready
 - Message operations with token tracking and cost calculation
 - Export services optimized for knowledge management workflows
 
@@ -47,13 +47,13 @@ The system is designed API-first with a clean service layer, making it suitable 
 - **Frontend**: React 18.3 + Tailwind CSS 3.4 + Zustand state management
 - **Real-time**: WebSocket subscriptions + SSE endpoints with unified ChatService backend
 - **AI Integration**: OpenRouter API supporting multiple models (Claude, DeepSeek, Qwen, etc.)
-- **Testing**: Vitest with 400+ tests and comprehensive coverage
+- **Testing**: Vitest with 390+ tests and comprehensive coverage
 - **Styling**: CSS custom properties with theme system and responsive design
 
 ## Architecture Design
 
 **API-First Service Layer**
-- Clean separation between UI and business logic
+- Strict separation between UI and business logic
 - Dependency injection for testable service architecture
 - Type-safe APIs with runtime validation using Zod schemas
 - Unified streaming infrastructure for both WebSocket and HTTP clients
@@ -71,13 +71,13 @@ The service layer is designed for integration with external tools:
 - Real-time streaming (WebSocket + SSE with unified backend)
 - Multi-model AI access via OpenRouter API
 - PostgreSQL conversation persistence with Prisma ORM
-- Export system (Markdown, JSON, basic Notion/Obsidian support)
+- Export system (Markdown, JSON)
 - Comprehensive rate limiting and session management
 - Type-safe API layer with tRPC and Zod validation
 - Dual UI system (terminal mode with slash commands + traditional chat)
 - Theme system (3 responsive themes with CSS custom properties)
 - Cost tracking widget with real-time usage monitoring
-- 400+ automated tests with comprehensive coverage
+- 390+ automated tests with comprehensive coverage
 
 **🔄 Backend Complete, Frontend In Progress**
 - Conversation branching system (database schema and services ready)
@@ -87,7 +87,7 @@ The service layer is designed for integration with external tools:
 **📋 Planned Enhancements**
 - Intelligent model routing based on cost and task complexity
 - Context compression and conversation summarization
-- Enhanced PKM tool integrations (full Notion, Obsidian, Google Docs)
+- Enhanced PKM tool integrations (full Notion, Obsidian, Google Docs integrations)
 - Cross-session context preservation and conversation merging
 
 ## Getting Started
@@ -153,9 +153,9 @@ npm run test:ui
 npm test -- src/components/__tests__/CostTracker.test.tsx
 ```
 
-**Current Test Coverage**: 400+ tests across 42 test files covering:
+**Current Test Coverage**: 390+ tests across 42 test files covering:
 - Component functionality and rendering
-- Service layer business logic  
+- Service layer business logic 
 - API endpoints and error handling
 - Real-time streaming infrastructure
 - Theme system and responsive design
@@ -186,7 +186,7 @@ The system provides two distinct interfaces optimized for different workflows:
 /list-all                       # Show all conversations  
 /export-current [markdown|json]  # Export current conversation
 /export-all [markdown|json]     # Export all conversations
-/theme [purple-rich|amber-forest|cyan-light] # Switch terminal theme
+/theme [dark|amber|light]       # Switch terminal theme
 /view [chat|terminal]           # Switch interface mode
 /streaming [yes|no]             # Toggle streaming (terminal only)
 /reset                          # Reset session
@@ -195,7 +195,7 @@ The system provides two distinct interfaces optimized for different workflows:
 ### **Theme System**
 - **Purple-Rich**: Dark theme with purple gradients and rich contrast
 - **Amber-Forest**: Warm earth tones with amber accents
-- **Cyan-Light**: Light theme with cyan highlights and clean typography
+- **Cyan-Rich**: Light theme with cyan highlights and clean typography
 - All themes include responsive design and watercolor visual effects
 
 ## API Integration
@@ -229,4 +229,4 @@ For complete API documentation and CLI examples, see `docs/internal/` directory.
 
 ## Project Status
 
-This is a working system with production-ready features for conversation management and AI model orchestration. The codebase demonstrates clean architecture patterns, comprehensive testing, and real-world streaming implementations.
+This is a working system with features for conversation management and AI model orchestration for an individual user.
