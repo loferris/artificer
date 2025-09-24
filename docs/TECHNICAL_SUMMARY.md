@@ -6,7 +6,7 @@
 The AI Workflow Engine is a **production-ready conversation orchestration platform** that provides structured AI interactions through multiple interfaces. The system treats AI conversations as structured data for export to knowledge management workflows.
 
 ### Technical Status
-- **✅ Production Ready**: 400+ tests passing, TypeScript strict mode, ESLint clean
+- **✅ Production Ready**: 390+ tests passing, TypeScript strict mode, ESLint clean
 - **✅ Type Safe**: Comprehensive type safety with tRPC, Zod validation, and strict TypeScript
 - **✅ Well Tested**: 42 test files covering components, services, APIs, and streaming
 - **✅ Architecture Clean**: Service layer separation, dependency injection, error handling
@@ -80,7 +80,7 @@ HTTP/WebSocket → tRPC Router → Service Layer → Database/External APIs
 - Enhanced React error boundary type safety
 
 #### **Test Suite Stabilization**
-- All 400+ tests now pass consistently
+- All 390+ tests now pass consistently
 - Fixed export router test data inconsistencies
 - Standardized test mocks for data type consistency
 - Comprehensive coverage of critical components

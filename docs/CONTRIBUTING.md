@@ -83,7 +83,7 @@ See `SSE_STREAMING.md` for CLI usage examples.
 ## Contribution Process
 
 1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/your-feature-name`
+2. **Create a feature branch**: `git checkout -b feat/your-feature-name`
 3. **Make your changes**
    - Follow existing code patterns
    - Add tests for new functionality

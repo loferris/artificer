@@ -137,19 +137,66 @@ export const UnifiedChatDisplay: React.FC<UnifiedChatDisplayProps> = ({
   if (messages.length === 0 && !messagesLoading) {
     return (
       <div 
-        className={`${baseContainerClasses} ${themeClasses.textMuted}`}
+        className={`${baseContainerClasses} ${themeClasses.textSecondary}`}
         style={style}
       >
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div className="flex items-center">
-            <span className={`${themeClasses.accentPrompt} mr-2`}>$</span>
-            <span>{isStreaming ? 'streaming-session-initialized' : 'session-initialized'}</span>
+            <span className={`${themeClasses.accentPrompt} mr-2 text-lg`}>$</span>
+            <span className="text-base">{isStreaming ? 'streaming-session-initialized' : 'session-initialized'}</span>
           </div>
-          <div className={`${themeClasses.textTertiary} text-xs ml-4`}>
+          <div className={`${themeClasses.textTertiary} text-sm ml-4`}>
             {isStreaming ? '// Real-time streaming enabled' : '// Start typing to interact with the AI assistant'}
           </div>
-          <div className={`${themeClasses.textTertiary} text-xs ml-4`}>
-            {/* Type '/help' for available commands */}
+          
+          <div className="ml-4 mt-4 space-y-2">
+            <div className={`${themeClasses.textSecondary} text-sm font-semibold`}>Available Commands:</div>
+            <div className="ml-2 space-y-1">
+              <div className={`${themeClasses.textTertiary} text-sm flex`}>
+                <span className={`${themeClasses.accentSuccess} w-20`}>/man</span>
+                <span>- Show this manual</span>
+              </div>
+              <div className={`${themeClasses.textTertiary} text-sm flex`}>
+                <span className={`${themeClasses.accentSuccess} w-20`}>/clear</span>
+                <span>- Clear conversation history</span>
+              </div>
+              <div className={`${themeClasses.textTertiary} text-sm flex`}>
+                <span className={`${themeClasses.accentSuccess} w-20`}>/new</span>
+                <span>- Create a new conversation</span>
+              </div>
+              <div className={`${themeClasses.textTertiary} text-sm flex`}>
+                <span className={`${themeClasses.accentSuccess} w-20`}>/list</span>
+                <span>- Show 10 most recent conversations</span>
+              </div>
+              <div className={`${themeClasses.textTertiary} text-sm flex`}>
+                <span className={`${themeClasses.accentSuccess} w-20`}>/list-all</span>
+                <span>- Show all conversations</span>
+              </div>
+              <div className={`${themeClasses.textTertiary} text-sm flex`}>
+                <span className={`${themeClasses.accentSuccess} w-20`}>/export-current</span>
+                <span>- Export current conversation</span>
+              </div>
+              <div className={`${themeClasses.textTertiary} text-sm flex`}>
+                <span className={`${themeClasses.accentSuccess} w-20`}>/export-all</span>
+                <span>- Export all conversations</span>
+              </div>
+              <div className={`${themeClasses.textTertiary} text-sm flex`}>
+                <span className={`${themeClasses.accentSuccess} w-20`}>/theme</span>
+                <span>- Switch terminal theme (dark|amber|light)</span>
+              </div>
+              <div className={`${themeClasses.textTertiary} text-sm flex`}>
+                <span className={`${themeClasses.accentSuccess} w-20`}>/view</span>
+                <span>- Switch view mode (chat|terminal)</span>
+              </div>
+              <div className={`${themeClasses.textTertiary} text-sm flex`}>
+                <span className={`${themeClasses.accentSuccess} w-20`}>/streaming</span>
+                <span>- Toggle streaming mode (yes|no)</span>
+              </div>
+              <div className={`${themeClasses.textTertiary} text-sm flex`}>
+                <span className={`${themeClasses.accentSuccess} w-20`}>/reset</span>
+                <span>- Reset the session</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

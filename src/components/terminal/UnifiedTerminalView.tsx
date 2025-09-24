@@ -42,6 +42,7 @@ export interface UnifiedTerminalViewProps {
   sidebarOpen?: boolean;
   onSidebarToggle?: () => void;
 
+
   // Theme props
   className?: string;
   style?: React.CSSProperties;
@@ -81,6 +82,7 @@ export const UnifiedTerminalView: React.FC<UnifiedTerminalViewProps> = ({
       `}
       style={style}
     >
+
       <div className="flex-1 flex flex-col">
         <TerminalHeader 
           statusText={isStreaming ? 'STREAMING' : undefined}
@@ -125,9 +127,9 @@ export const UnifiedTerminalView: React.FC<UnifiedTerminalViewProps> = ({
               onInputChange={onInputChange}
               onSendMessage={() => onMessageSend(input)}
               isConversationReady={isConversationReady}
-              isLoading={isLoading || (isStreaming && !onCancelStream)} // Disable input during streaming unless cancellable
-              canSendMessage={canSendMessage && !isStreaming}
-              placeholder={isStreaming ? 'streaming-in-progress...' : undefined}
+              isLoading={false} // Always enable input in terminal mode
+              canSendMessage={canSendMessage}
+              placeholder={undefined}
             />
           </div>
           

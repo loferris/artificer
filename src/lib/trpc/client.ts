@@ -32,36 +32,24 @@ export const trpc = createTRPCNext<AppRouter>({
   config() {
     return {
       links: [
-        splitLink({
-          condition(op) {
-            // Use WebSocket for subscriptions, HTTP for queries/mutations
-            return op.type === 'subscription';
-          },
-          true: wsLink({
-            client: createWSClient({
-              url: getWsUrl(),
-            }),
-            transformer: superjson,
-          }),
-          false: httpBatchLink({
-            url: `${getBaseUrl()}/api/trpc`,
-            transformer: superjson,
-            fetch(url, options) {
-              // Create a longer timeout for AI requests (2 minutes)
-              const controller = new AbortController();
-              const timeoutId = setTimeout(() => controller.abort(), 120000);
+        httpBatchLink({
+          url: `${getBaseUrl()}/api/trpc`,
+          transformer: superjson,
+          fetch(url, options) {
+            // Create a longer timeout for AI requests (2 minutes)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 120000);
 
-              return fetch(url, {
-                ...options,
-                signal: controller.signal,
-              }).finally(() => clearTimeout(timeoutId));
-            },
-            headers() {
-              return {
-                'x-session-id': getSessionId(),
-              };
-            },
-          }),
+            return fetch(url, {
+              ...options,
+              signal: controller.signal,
+            }).finally(() => clearTimeout(timeoutId));
+          },
+          headers() {
+            return {
+              'x-session-id': getSessionId(),
+            };
+          },
         }),
       ],
     };

@@ -70,7 +70,7 @@ export const MessageRenderer: React.FC<MessageRendererProps> = ({
       `}
     >
       {variant === 'terminal' && (
-        <div className={`${themeClasses.textXs} ${themeClasses.textMuted} mb-1`}>
+        <div className={`${themeClasses.textXs} mb-1`} style={{ color: '#f8b4cb' }}>
           AI Response:
         </div>
       )}

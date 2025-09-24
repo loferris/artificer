@@ -20,8 +20,8 @@ function HomePage() {
       isCreatingConversation={chat.isCreatingConversation}
       messagesLoading={chat.messagesLoading}
       messagesError={chat.messagesError}
-      isConversationReady={!!chat.currentConversationId && !chat.isCreatingConversation}
-      canSendMessage={!!chat.input.trim() && !chat.isLoading && !!chat.currentConversationId && !chat.isCreatingConversation}
+      isConversationReady={true}
+      canSendMessage={!!chat.input.trim() && !chat.isLoading && !chat.isCreatingConversation}
     />
   );
 
@@ -38,8 +38,8 @@ function HomePage() {
       isLoading={chat.isLoading}
       conversationsError={chat.conversationsError}
       messagesError={chat.messagesError}
-      isConversationReady={!!chat.currentConversationId && !chat.isCreatingConversation}
-      canSendMessage={!!chat.input.trim() && !chat.isLoading && !!chat.currentConversationId && !chat.isCreatingConversation}
+      isConversationReady={true}
+      canSendMessage={!!chat.input.trim() && !chat.isLoading && !chat.isCreatingConversation}
       onSelectConversation={chat.setCurrentConversation}
       onNewConversation={chat.handleNewConversation}
       onDeleteConversation={chat.handleDeleteConversation}
@@ -48,12 +48,12 @@ function HomePage() {
       onExportCurrent={chat.onExportCurrent}
       onExportAll={chat.onExportAll}
       onInputChange={chat.setInput}
-      onSendMessage={chat.handleMessageSubmit}
+      onSendMessage={() => chat.handleMessageSubmit(chat.input)}
     />
   );
 
   return (
-    <AppShell>
+    <AppShell viewMode={chat.viewMode} onViewModeChange={chat.setViewMode}>
       <InterfaceSwitcher
         viewMode={chat.viewMode}
         terminalInterface={renderTerminalInterface()}

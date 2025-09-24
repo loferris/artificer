@@ -5,7 +5,7 @@ The AI Workflow Engine features a comprehensive theme system built with CSS cust
 ## Available Themes
 
 ### 🌙 **Dark Mode** (`purple-rich`)
-- **Description**: Luxury dark theme with deep purples and emerald accents
+- **Description**: Dark theme with deep purples and emerald accents
 - **Background**: Deep purple gradients (#0f0a1a to #1a0f2e)
 - **Accent Colors**: Emerald green user input, cyan assistant responses
 - **Best For**: Low-light environments, extended coding sessions
@@ -16,7 +16,7 @@ The AI Workflow Engine features a comprehensive theme system built with CSS cust
 - **Accent Colors**: Mint green user input, warm amber highlights
 - **Best For**: Natural lighting, focus-intensive work
 
-### ☀️ **Light Mode** (`cyan-light`)
+### ☀️ **Light Mode** (`cyan-rich`)
 - **Description**: Clean light theme with cyan and periwinkle watercolor effects
 - **Background**: Subtle watercolor gradients with cyan/periwinkle washes
 - **Accent Colors**: Darker mint green for contrast, cyan highlights
