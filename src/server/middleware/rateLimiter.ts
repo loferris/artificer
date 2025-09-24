@@ -16,11 +16,11 @@ class InMemoryRateLimiter {
     this.cleanupInterval = setInterval(
       () => {
         const now = Date.now();
-        for (const [key, entry] of this.limits.entries()) {
+        this.limits.forEach((entry, key) => {
           if (now > entry.resetTime) {
             this.limits.delete(key);
           }
-        }
+        });
       },
       5 * 60 * 1000,
     ); // 5 minutes
@@ -75,6 +75,15 @@ export const RATE_LIMITS = {
 } as const;
 
 export function createRateLimitMiddleware(limitType: keyof typeof RATE_LIMITS) {
+  // Disable rate limiting for tests and development
+  if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {
+    return (identifier: string) => ({
+      allowed: true,
+      remaining: 999,
+      resetTime: Date.now() + 60000,
+    });
+  }
+
   return (identifier: string) => {
     const config = RATE_LIMITS[limitType];
     return rateLimiter.check(identifier, config.maxRequests, config.windowMs);

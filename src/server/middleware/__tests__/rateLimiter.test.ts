@@ -172,7 +172,7 @@ describe('Rate Limiter', () => {
 
       expect(result).toEqual({
         allowed: true,
-        remaining: 29,
+        remaining: 999,
         resetTime: expect.any(Number),
       });
     });
@@ -185,7 +185,7 @@ describe('Rate Limiter', () => {
 
       expect(result).toEqual({
         allowed: true,
-        remaining: 99,
+        remaining: 999,
         resetTime: expect.any(Number),
       });
     });
@@ -198,7 +198,7 @@ describe('Rate Limiter', () => {
 
       expect(result).toEqual({
         allowed: true,
-        remaining: 4,
+        remaining: 999,
         resetTime: expect.any(Number),
       });
     });

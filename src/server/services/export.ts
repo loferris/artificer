@@ -10,6 +10,15 @@ export interface ExportOptions {
   template?: string;
 }
 
+export interface ExportResult {
+  // For single file exports (markdown, json)
+  content?: string;
+  // For multi-file exports (obsidian)
+  files?: { [filename: string]: string };
+  // For structured exports (notion)
+  data?: any[];
+}
+
 export interface ConversationExport {
   id: string;
   title: string;
@@ -44,7 +53,7 @@ export class ExportService {
   static async exportToMarkdown(
     conversations: ConversationExport[],
     options: ExportOptions = { format: 'markdown' },
-  ): Promise<string> {
+  ): Promise<ExportResult> {
     let content = '';
 
     if (options.includeMetadata) {
@@ -78,7 +87,7 @@ export class ExportService {
       content += '---\n\n';
     }
 
-    return content;
+    return { content };
   }
 
   /**
@@ -87,7 +96,7 @@ export class ExportService {
   static async exportToObsidian(
     conversations: ConversationExport[],
     options: ExportOptions = { format: 'obsidian' },
-  ): Promise<{ [filename: string]: string }> {
+  ): Promise<ExportResult> {
     const files: { [filename: string]: string } = {};
 
     // Create index file
@@ -127,7 +136,7 @@ export class ExportService {
     }
 
     files['Chat Conversations.md'] = indexContent;
-    return files;
+    return { files };
   }
 
   /**
@@ -136,7 +145,7 @@ export class ExportService {
   static async exportToNotion(
     conversations: ConversationExport[],
     options: ExportOptions = { format: 'notion' },
-  ): Promise<any[]> {
+  ): Promise<ExportResult> {
     const notionPages = [];
 
     for (const conv of conversations) {
@@ -187,8 +196,8 @@ export class ExportService {
       for (const message of conv.messages) {
         page.children.push({
           object: 'block',
-          type: 'heading_3',
-          heading_3: {
+          type: 'heading_2',
+          heading_2: {
             rich_text: [
               {
                 type: 'text',
@@ -198,7 +207,7 @@ export class ExportService {
               },
             ],
           },
-        });
+        } as any);
 
         page.children.push({
           object: 'block',
@@ -206,13 +215,13 @@ export class ExportService {
           paragraph: {
             rich_text: [{ type: 'text', text: { content: message.content } }],
           },
-        });
+        } as any);
       }
 
       notionPages.push(page);
     }
 
-    return notionPages;
+    return { data: notionPages };
   }
 
   /**
@@ -221,7 +230,7 @@ export class ExportService {
   static async exportToGoogleDocs(
     conversations: ConversationExport[],
     options: ExportOptions = { format: 'google-docs' },
-  ): Promise<string> {
+  ): Promise<ExportResult> {
     let html = `
       <!DOCTYPE html>
       <html>
@@ -272,7 +281,7 @@ export class ExportService {
     }
 
     html += `</body></html>`;
-    return html;
+    return { content: html };
   }
 
   /**
@@ -281,7 +290,7 @@ export class ExportService {
   static async exportToJSON(
     conversations: ConversationExport[],
     options: ExportOptions = { format: 'json' },
-  ): Promise<string> {
+  ): Promise<ExportResult> {
     const exportData = {
       exportDate: new Date().toISOString(),
       version: '1.0',
@@ -296,7 +305,7 @@ export class ExportService {
       })),
     };
 
-    return JSON.stringify(exportData, null, 2);
+    return { content: JSON.stringify(exportData, null, 2) };
   }
 
   /**

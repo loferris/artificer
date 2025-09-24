@@ -6,6 +6,14 @@ import { createServicesFromContext } from '../services/ServiceFactory';
 export const conversationsRouterRefactored = router({
   list: publicProcedure.query(async ({ ctx }) => {
     try {
+      // Basic session validation
+      if (!ctx.user) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Session required',
+        });
+      }
+
       // Create services with proper dependency injection
       const { conversationService } = createServicesFromContext(ctx);
 

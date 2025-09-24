@@ -1,84 +1,103 @@
-# AI Orchestration & Knowledge Management System
+# AI Workflow Engine
 
 **[View UI Demo](https://ai-workflow-engine.vercel.app/) - See the live interface in action**
 
-An intelligent routing layer for AI models that transforms scattered conversations into structured, exportable knowledge. Built to solve my own workflow fragmentation problem - tired of tab-switching between Claude, DeepSeek, and local models while losing track of insights buried in long conversations.
+A structured conversation system for AI models that transforms scattered chat sessions into organized, exportable knowledge. Built to solve workflow fragmentation across multiple AI models and interfaces while preserving conversation context and insights.
 
-## What I've Learned Building This
+## What This System Does
 
-The real problem isn't having access to AI models - it's **orchestrating them effectively** and **capturing the knowledge they help generate**. When you're researching complex topics or planning technical projects, conversations naturally span multiple models and sessions. The valuable insights get lost in chat histories that aren't designed for knowledge work.
+This is a **conversation orchestration platform** that treats AI interactions as structured data rather than ephemeral chat logs. It provides:
 
-This system treats AI conversations as **structured data** to be organized, compressed, and exported rather than ephemeral chat logs.
+- **Unified multi-model access** through OpenRouter API integration
+- **Real-time streaming** with WebSocket and SSE endpoints
+- **Dual interface modes** (terminal with slash commands + traditional chat)
+- **Structured export system** for knowledge management workflows
+- **Theme system** with multiple responsive designs
+- **Cost tracking** and usage monitoring
 
-## Current Implementation
+The system is designed API-first with a distinct service layer, making it suitable for integration with CLI tools, Obsidian plugins, and other knowledge management workflows.
 
-**Foundation Layer**
+## Current Features
 
-- AI conversation persistence with PostgreSQL database
-- OpenRouter API integration for multi-model access
-- Rate limiting and session management
+**Core Infrastructure**
+- PostgreSQL database with Prisma ORM for conversation persistence
+- OpenRouter API integration supporting multiple AI models
+- Real-time streaming via WebSocket subscriptions and SSE endpoints
 - Type-safe API layer with tRPC
-- **Real-time streaming**: WebSocket subscriptions + SSE endpoints
+- Comprehensive rate limiting and session management
+- **390+ tests** with full test coverage for critical components
 
-**Conversation Management**
+**User Interface**
+- **Dual Interface System**: Terminal mode with slash commands + traditional chat interface
+- **Theme System**: Three responsive themes ("purple-rich" dark, "amber," and cyan-rich light) with CSS custom properties
+- **Real-time Streaming**: Visual streaming indicators with typing effects in terminal mode
+- **Cost Tracking Widget**: Live usage monitoring with theme-responsive styling
+- **Export Functionality**: Markdown and JSON export with basic support for Notion/Obsidian formats
 
-- Service layer handling conversation lifecycle
+**Service Architecture**
+- Clean service layer with dependency injection for business logic
+- Database scheme for conversation lifecycle management with branching support ready
 - Message operations with token tracking and cost calculation
-- Database schema designed for conversation branching
-- Export to structured formats (Markdown, JSON, with basic Notion/Obsidian/HTML support)
+- Export services optimized for knowledge management workflows
 
-**Knowledge Capture**
+## Technical Stack
 
-- Structured conversation data optimized for export
-- Service layer architecture for UI-agnostic business logic
-- Export system ready for PKM workflows
-- Clean separation of concerns with dependency injection
+- **Backend**: Next.js 15.5 + Custom WebSocket Server + tRPC 11.5 for type-safe APIs
+- **Database**: PostgreSQL with Prisma 6.15 ORM
+- **Frontend**: React 18.3 + Tailwind CSS 3.4 + Zustand state management
+- **Real-time**: WebSocket subscriptions + SSE endpoints with unified ChatService backend
+- **AI Integration**: OpenRouter API supporting multiple models (Claude, DeepSeek, Qwen, etc.)
+- **Testing**: Vitest with 390+ tests and comprehensive coverage
+- **Styling**: CSS custom properties with theme system and responsive design
 
-## Technical Implementation
+## Architecture Design
 
-- **Backend**: Next.js + Custom Server + tRPC for type-safe APIs  
-- **Real-time**: WebSocket subscriptions for frontend + SSE streaming for CLI tools
-- **Database**: PostgreSQL with Prisma ORM
-- **AI Integration**: OpenRouter API for multi-model access
-- **Export System**: Structured data optimized for knowledge management tools
+**API-First Service Layer**
+- Strict separation between UI and business logic
+- Dependency injection for testable service architecture
+- Type-safe APIs with runtime validation using Zod schemas
+- Unified streaming infrastructure for both WebSocket and HTTP clients
 
-## Architecture Philosophy
+**Integration Ready**
+The service layer is designed for integration with external tools:
+- **CLI tools** via SSE endpoints (`/api/stream/chat`)
+- **Browser extensions** via tRPC subscriptions
+- **Knowledge management tools** via structured export formats
+- **Automation scripts** via HTTP APIs with proper CORS support
 
-This is built **API-first** as a headless orchestration service with a clean service layer architecture. The React interface is scaffolding - the real value is in the business logic services and export capabilities that can integrate with:
+## Feature Status
 
-- **CLI tools** for quick queries and automation
-- **Obsidian plugins** for seamless PKM integration
-- **org-mode functions** for programmable knowledge management
-- **Shell scripts** for development workflow integration
+**✅ Production Ready**
+- Real-time streaming (WebSocket + SSE with unified backend)
+- Multi-model AI access via OpenRouter API
+- PostgreSQL conversation persistence with Prisma ORM
+- Export system (Markdown, JSON)
+- Comprehensive rate limiting and session management
+- Type-safe API layer with tRPC and Zod validation
+- Dual UI system (terminal mode with slash commands + traditional chat)
+- Theme system (3 responsive themes with CSS custom properties)
+- Cost tracking widget with real-time usage monitoring
+- 390+ automated tests with comprehensive coverage
 
-## Development Status & Planned Features
+**🔄 Backend Complete, Frontend In Progress**
+- Conversation branching system (database schema and services ready)
+- Message threading with `parentId` relationships (service layer complete)
+- Advanced export format support (services implemented, UI integration needed)
 
-**Currently Implemented**
-- ✅ Real-time streaming (WebSocket + SSE)
-- ✅ Multi-model API access via OpenRouter
-- ✅ Conversation persistence with PostgreSQL
-- ✅ Export to Markdown and JSON formats
-- ✅ Rate limiting and session management
-- ✅ Type-safe API layer with tRPC
-
-**Schema-Ready (Backend Complete, UI Pending)**
-- 🔄 **Conversation branching**: Database schema and service layer support message trees with `parentId` relationships, but UI implementation needed
-- 🔄 **Advanced message threading**: Backend infrastructure ready for conversation branching workflows
-
-**Planned Features**
-- 📋 **Intelligent Model Routing**: Cost-aware switching between models based on task complexity
-- 📋 **Context Compression Agents**: AI-powered conversation summarization and insight extraction
-- 📋 **Enhanced Export Formats**: Full Notion, Obsidian, and Google Docs integration (basic implementations exist)
-- 📋 **Cross-session context preservation**: Advanced conversation state management
+**📋 Planned Enhancements**
+- Intelligent model routing based on cost and task complexity
+- Context compression and conversation summarization
+- Enhanced PKM tool integrations (full Notion, Obsidian, Google Docs integrations)
+- Cross-session context preservation and conversation merging
 
 ## Getting Started
 
 ```bash
-git clone [repo]
-cd chat-app
+git clone https://github.com/yourusername/ai-workflow-engine.git
+cd ai-workflow-engine
 npm install
 cp .env.example .env
-# Add your OPENROUTER_API_KEY and other config
+# Configure OPENROUTER_API_KEY and DATABASE_URL in .env
 
 # Start PostgreSQL database (Docker)
 npm run db:up
@@ -86,11 +105,21 @@ npm run db:up
 # Run database migrations
 npm run db:migrate
 
-# Start development server (with WebSocket support)
+# Start development server with WebSocket support
 npm run dev
 
-# Optional: Open database GUI
+# Optional: Open Prisma Studio database GUI
 npm run db:studio
+```
+
+### Environment Configuration
+
+Required environment variables in `.env`:
+```bash
+DATABASE_URL="postgresql://postgres:password@localhost:5432/ai_workflow_engine"
+OPENROUTER_API_KEY="your_openrouter_api_key"
+NEXTAUTH_SECRET="your_secret_key"
+NEXTAUTH_URL="http://localhost:3000"
 ```
 
 ## Database Management
@@ -108,20 +137,96 @@ npm run db:studio      # Open Prisma Studio GUI
 # See docs/DATABASE_SETUP.md for detailed setup options
 ```
 
-## Development Status
+## Testing
 
-**Implemented**: Conversation persistence, OpenRouter integration, structured exports, rate limiting, service layer architecture, **real-time streaming (WebSocket + SSE)**
-**In Development**: Conversation branching UI, enhanced export formats
-**Next Phase**: Intelligent model routing, context compression agents, advanced PKM integrations
+```bash
+# Run all tests
+npm test
 
-## Streaming Integration
+# Run tests with coverage
+npm run test:coverage
 
-The system now supports real-time streaming for both interactive frontends and CLI automation:
+# Run tests with UI
+npm run test:ui
 
-- **WebSocket Subscriptions**: Real-time streaming for React frontends via `trpc.subscriptions.chatStream.useSubscription()`
-- **SSE Endpoints**: HTTP streaming for CLI tools and third-party integrations via `POST /api/stream/chat`
-- **Unified Backend**: Both approaches use the same ChatService streaming infrastructure
+# Run specific test file
+npm test -- src/components/__tests__/CostTracker.test.tsx
+```
 
-See `docs/SSE_STREAMING.md` for CLI usage examples and `docs/API.md` for complete API documentation.
+**Current Test Coverage**: 390+ tests across 42 test files covering:
+- Component functionality and rendering
+- Service layer business logic 
+- API endpoints and error handling
+- Real-time streaming infrastructure
+- Theme system and responsive design
 
-This is a build-in-public project documenting the journey of creating better AI workflows for knowledge work. The development process itself is becoming content for [my DevRel blog](https://the-hacker-screen.ghost.io) about AI-assisted development.
+## User Interface Features
+
+The system provides two distinct interfaces optimized for different workflows:
+
+### **Terminal Interface**
+- **Command-driven workflow** with slash commands (`/new`, `/list`, `/export`, `/theme`, etc.)
+- **Real-time streaming** with visual indicators and typing effects
+- **Theme system** with 3 responsive themes (Dark, Amber, Light)
+- **Integrated cost tracking** with live usage monitoring
+- **Session management** with conversation selection and welcome messages
+
+### **Classic Chat Interface**
+- **Traditional chat experience** with conversation sidebar
+- **Standard messaging** (no streaming, optimized for reliability)
+- **Export functionality** with multiple format options
+- **Visual conversation management** with conversation cards and timestamps
+- **Pink/purple gradient aesthetic** independent of terminal themes
+
+### **Slash Commands (Terminal Mode)**
+```bash
+/man                             # Show command manual
+/new                            # Create new conversation
+/list                           # Show 10 recent conversations
+/list-all                       # Show all conversations  
+/export-current [markdown|json]  # Export current conversation
+/export-all [markdown|json]     # Export all conversations
+/theme [dark|amber|light]       # Switch terminal theme
+/view [chat|terminal]           # Switch interface mode
+/streaming [yes|no]             # Toggle streaming (terminal only)
+/reset                          # Reset session
+```
+
+### **Theme System**
+- **Purple-Rich**: Dark theme with purple gradients and rich contrast
+- **Amber-Forest**: Warm earth tones with amber accents
+- **Cyan-Rich**: Light theme with cyan highlights and clean typography
+- All themes include responsive design and watercolor visual effects
+
+## API Integration
+
+### Real-time Streaming
+The system provides multiple endpoints for real-time AI conversation streaming:
+
+**WebSocket Subscriptions** (Frontend)
+```typescript
+const { data: streamData } = trpc.subscriptions.chatStream.useSubscription({
+  content: "Your message",
+  conversationId: "conv-123"
+});
+```
+
+**Server-Sent Events** (CLI/Automation)
+```bash
+curl -X POST http://localhost:3000/api/stream/chat \
+  -H "Content-Type: application/json" \
+  -d '{"content": "Hello", "conversationId": "conv-123"}' \
+  --no-buffer
+```
+
+### API Endpoints
+- `POST /api/stream/chat` - SSE streaming endpoint
+- `GET /api/trpc/[trpc]` - tRPC HTTP endpoint
+- `WS /api/trpc-ws` - WebSocket subscriptions
+- `GET /api/health` - Health check endpoint
+
+For complete API documentation and CLI examples, see `docs/internal/` directory.
+
+## Project Status
+
+This is a working system with features for conversation management and AI model orchestration for an individual user.

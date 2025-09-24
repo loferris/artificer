@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { conversationsRouter } from '../conversations';
+import { conversationsRouterRefactored as conversationsRouter } from '../conversations-refactored';
 import { ServiceFactory } from '../../services/ServiceFactory';
 
 // Mock the ServiceFactory
@@ -15,10 +15,14 @@ describe('Conversations Router', () => {
     vi.clearAllMocks();
 
     mockConversationService = {
-      listConversations: vi.fn(),
-      createConversation: vi.fn(),
-      deleteConversation: vi.fn(),
-      updateConversationTitle: vi.fn(),
+      list: vi.fn(),
+      create: vi.fn(),
+      delete: vi.fn(),
+      updateTitle: vi.fn(),
+      getById: vi.fn(),
+      validateAccess: vi.fn(),
+      generateTitle: vi.fn(),
+      update: vi.fn(),
     };
 
     // Mock the ServiceFactory
@@ -77,17 +81,17 @@ describe('Conversations Router', () => {
         },
       ];
 
-      mockConversationService.listConversations.mockResolvedValue(mockConversations);
+      mockConversationService.list.mockResolvedValue(mockConversations);
 
       const caller = conversationsRouter.createCaller(mockContext);
       const result = await caller.list();
 
       expect(result).toEqual(mockConversations);
-      expect(mockConversationService.listConversations).toHaveBeenCalled();
+      expect(mockConversationService.list).toHaveBeenCalled();
     });
 
     it('handles database errors gracefully', async () => {
-      mockConversationService.listConversations.mockRejectedValue(
+      mockConversationService.list.mockRejectedValue(
         new Error('Database connection failed'),
       );
 
@@ -97,7 +101,7 @@ describe('Conversations Router', () => {
     });
 
     it('returns empty array when no conversations exist', async () => {
-      mockConversationService.listConversations.mockResolvedValue([]);
+      mockConversationService.list.mockResolvedValue([]);
 
       const caller = conversationsRouter.createCaller(mockContext);
       const result = await caller.list();
@@ -108,7 +112,7 @@ describe('Conversations Router', () => {
 
   describe('create', () => {
     it('creates a new conversation with default values', async () => {
-      const mockConversation = {
+      const mockCreatedConversation = {
         id: 'conv-123',
         title: null,
         model: 'deepseek-chat',
@@ -120,23 +124,17 @@ describe('Conversations Router', () => {
         messages: [],
       };
 
-      mockConversationService.createConversation.mockResolvedValue(mockConversation);
+      mockConversationService.create.mockResolvedValue(mockCreatedConversation);
 
       const caller = conversationsRouter.createCaller(mockContext);
       const result = await caller.create();
 
-      expect(result).toEqual(mockConversation);
-      expect(mockConversationService.createConversation).toHaveBeenCalledWith({
-        title: null,
-        model: 'deepseek-chat',
-        systemPrompt: 'You are a helpful AI assistant.',
-        temperature: 0.7,
-        maxTokens: 1000,
-      });
+      expect(result).toEqual(mockCreatedConversation);
+      expect(mockConversationService.create).toHaveBeenCalledWith(undefined);
     });
 
     it('handles database errors gracefully', async () => {
-      mockConversationService.createConversation.mockRejectedValue(new Error('Database error'));
+      mockConversationService.create.mockRejectedValue(new Error('Database error'));
 
       const caller = conversationsRouter.createCaller(mockContext);
 
@@ -148,17 +146,18 @@ describe('Conversations Router', () => {
     const conversationId = 'conv-123';
 
     it('deletes a conversation by ID', async () => {
-      mockConversationService.deleteConversation.mockResolvedValue({ success: true });
+      mockConversationService.delete.mockResolvedValue({ success: true });
 
       const caller = conversationsRouter.createCaller(mockContext);
       const result = await caller.delete(conversationId);
 
       expect(result).toEqual({ success: true });
-      expect(mockConversationService.deleteConversation).toHaveBeenCalledWith(conversationId);
+      expect(mockConversationService.validateAccess).toHaveBeenCalledWith(conversationId, 'test-session');
+      expect(mockConversationService.delete).toHaveBeenCalledWith(conversationId);
     });
 
     it('handles deletion errors gracefully', async () => {
-      mockConversationService.deleteConversation.mockRejectedValue(new Error('Database error'));
+      mockConversationService.validateAccess.mockRejectedValue(new Error('Database error'));
 
       const caller = conversationsRouter.createCaller(mockContext);
 
@@ -191,15 +190,17 @@ describe('Conversations Router', () => {
         messages: [],
       };
 
-      mockConversationService.updateConversationTitle.mockResolvedValue(mockConversation);
+      mockConversationService.generateTitle.mockReturnValue('Hello, how are you?');
+      mockConversationService.updateTitle.mockResolvedValue(mockConversation);
 
       const caller = conversationsRouter.createCaller(mockContext);
       const result = await caller.updateTitle(input);
 
       expect(result).toEqual(mockConversation);
-      expect(mockConversationService.updateConversationTitle).toHaveBeenCalledWith(
+      expect(mockConversationService.generateTitle).toHaveBeenCalledWith(input.firstMessage);
+      expect(mockConversationService.updateTitle).toHaveBeenCalledWith(
         input.conversationId,
-        input.firstMessage,
+        'Hello, how are you?',
       );
     });
 
@@ -209,7 +210,8 @@ describe('Conversations Router', () => {
         firstMessage: 'Hello, how are you?',
       };
 
-      mockConversationService.updateConversationTitle.mockRejectedValue(
+      mockConversationService.generateTitle.mockReturnValue('Hello, how are you?');
+      mockConversationService.updateTitle.mockRejectedValue(
         new Error('Database error'),
       );
 

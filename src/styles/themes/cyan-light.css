@@ -1,0 +1,470 @@
+/* ============================================================================ */
+/*                             CYAN-LIGHT THEME                                */
+/* ============================================================================ */
+/* 
+ * Clean light theme with cyan/periwinkle accents and watercolor effects
+ * Optimized for AI orchestration workflows with soft, modern aesthetics
+ */
+
+[data-terminal-theme='cyan-light'] {
+  
+  /* ========================================================================== */
+  /*                              FOUNDATION COLORS                            */
+  /* ========================================================================== */
+  
+  /* Core Background Hierarchy */
+  --terminal-bg-primary: #ffffff;              /* Main terminal background */
+  --terminal-bg-secondary: #f8fafc;            /* Slightly different shade for depth */
+  --terminal-bg-tertiary: #f1f5f9;             /* Deeper background elements */
+  --terminal-bg-elevated: #ffffff;             /* Raised elements (modals, tooltips) */
+  --terminal-bg-sunken: #f9fafb;               /* Inset elements (input fields) */
+  
+  /* Base Text Colors */
+  --terminal-text-primary: #1e40af;            /* Main readable text */
+  --terminal-text-secondary: #3730a3;          /* Secondary information */
+  --terminal-text-tertiary: #374151;           /* Muted/supporting text */
+  --terminal-text-muted: #64748b;              /* Dimmed text (timestamps, metadata) */
+  --terminal-text-disabled: #9ca3af;           /* Disabled/inactive text */
+  --terminal-text-placeholder: #94a3b8;        /* Input placeholder text */
+  
+  /* Border & Outline System */
+  --terminal-border-primary: rgba(71, 85, 105, 0.2);          /* Main borders */
+  --terminal-border-secondary: rgba(71, 85, 105, 0.1);        /* Subtle borders */
+  --terminal-border-muted: rgba(71, 85, 105, 0.05);           /* Very subtle dividers */
+  --terminal-border-accent: rgba(71, 85, 105, 0.3);           /* Highlighted borders */
+  --terminal-outline-focus: #047857;           /* Keyboard focus indicator */
+  
+  /* ========================================================================== */
+  /*                            AI WORKFLOW SEMANTICS                          */
+  /* ========================================================================== */
+  
+  /* AI Model & Routing Colors */
+  --terminal-model-claude: #e8510a;            /* Claude model indicator */
+  --terminal-model-deepseek: #3b82f6;          /* DeepSeek model indicator */
+  --terminal-model-local: #3730a3;             /* Local model indicator */
+  --terminal-model-fallback: #64748b;          /* Unknown/fallback model */
+  --terminal-routing-info: #059669;            /* AI routing messages */
+  --terminal-routing-bg: rgba(5, 150, 105, 0.1);              /* Background for routing info */
+  
+  /* Cost & Performance Indicators */
+  --terminal-cost-low: #059669;                /* Low cost operations (green family) */
+  --terminal-cost-medium: #d97706;             /* Medium cost (yellow/orange family) */
+  --terminal-cost-high: #dc2626;               /* High cost (red family) */
+  --terminal-performance-fast: #10b981;        /* Fast response times */
+  --terminal-performance-slow: #f59e0b;        /* Slow response indicators */
+  
+  /* Conversation Elements */
+  --terminal-prompt-user: #059669;             /* User prompt/input - mint green */
+  --terminal-prompt-system: #1e40af;           /* System prompts */
+  --terminal-response-ai: #374151;             /* AI assistant responses */
+  --terminal-response-error: #dc2626;          /* Error responses */
+  --terminal-response-thinking: #64748b;       /* AI "thinking" states */
+  
+  /* Content Type Semantics */
+  --terminal-content-code: #0891b2;            /* Code blocks and syntax */
+  --terminal-content-quote: #374151;           /* Quoted text */
+  --terminal-content-link: #047857;            /* Links and references */
+  --terminal-content-metadata: #64748b;        /* File info, timestamps */
+  --terminal-content-export: #1e40af;          /* Export-ready content */
+  
+  /* ========================================================================== */
+  /*                           INTERACTIVE STATES                              */
+  /* ========================================================================== */
+  
+  /* Hover States */
+  --terminal-hover-bg: rgba(125, 211, 252, 0.1);              /* General hover background */
+  --terminal-hover-text: #1e40af;              /* Hover text color */
+  --terminal-hover-border: rgba(71, 85, 105, 0.3);            /* Hover border color */
+  --terminal-hover-conversation: rgba(125, 211, 252, 0.1);    /* Conversation item hover */
+  --terminal-hover-menu: #f1f5f9;              /* Menu item hover */
+  --terminal-hover-button: rgba(125, 211, 252, 0.15);         /* Button hover state */
+  
+  /* Active/Selected States */
+  --terminal-active-bg: #047857;               /* Active element background */
+  --terminal-active-text: #ffffff;             /* Active element text */
+  --terminal-active-border: #10b981;           /* Active element border */
+  --terminal-selected-conversation: #047857;   /* Selected conversation */
+  --terminal-selected-text: rgba(4, 120, 87, 0.1);            /* Selected text background */
+  
+  /* Focus States */
+  --terminal-focus-bg: rgba(4, 120, 87, 0.05);                /* Focus background */
+  --terminal-focus-outline: #047857;           /* Focus outline color */
+  --terminal-focus-shadow: rgba(4, 120, 87, 0.2);             /* Focus glow/shadow */
+  
+  /* Disabled States */
+  --terminal-disabled-bg: #f1f5f9;             /* Disabled background */
+  --terminal-disabled-text: #9ca3af;           /* Disabled text */
+  --terminal-disabled-border: rgba(71, 85, 105, 0.05);        /* Disabled border */
+  
+  /* ========================================================================== */
+  /*                              ACCENT SYSTEM                                */
+  /* ========================================================================== */
+  
+  /* Primary Accent Palette */
+  --terminal-accent-primary: #047857;          /* Main brand/theme accent */
+  --terminal-accent-secondary: #0891b2;        /* Supporting accent */
+  --terminal-accent-tertiary: #3b82f6;         /* Third accent color */
+  
+  /* Legacy accent mappings for compatibility */
+  --terminal-accent-prompt: #047857;           /* Terminal prompt color */
+  --terminal-accent-user: #059669;             /* User input color - mint green (darker for light theme) */
+  --terminal-accent-assistant: #374151;        /* Assistant response color */
+  --terminal-accent-error: #dc2626;            /* Error message color */
+  --terminal-accent-warning: #d97706;          /* Warning message color */
+  --terminal-accent-success: #059669;          /* Success message color */
+  
+  /* Status & Feedback Colors */
+  --terminal-status-success: #059669;          /* Success states (green family) */
+  --terminal-status-warning: #d97706;          /* Warning states (yellow/orange) */
+  --terminal-status-error: #dc2626;            /* Error states (red family) */
+  --terminal-status-info: #0891b2;             /* Information (blue family) */
+  --terminal-status-neutral: #64748b;          /* Neutral status */
+  
+  /* Streaming & Real-time Indicators */
+  --terminal-streaming-active: #047857;        /* Active streaming indicator */
+  --terminal-streaming-paused: #d97706;        /* Paused/buffering state */
+  --terminal-streaming-complete: #10b981;      /* Streaming complete */
+  --terminal-cursor-color: #047857;            /* Text cursor */
+  --terminal-cursor-blink: rgba(4, 120, 87, 0.5);             /* Blinking cursor state */
+  
+  /* ========================================================================== */
+  /*                            DESIGN SYSTEM                                  */
+  /* ========================================================================== */
+  
+  /* Typography Scale */
+  --terminal-text-size-xs: 0.75rem;           /* Very small text */
+  --terminal-text-size-sm: 0.875rem;          /* Small text */
+  --terminal-text-size-base: 1rem;            /* Base text size */
+  --terminal-text-size-lg: 1.125rem;          /* Large text */
+  --terminal-text-size-xl: 1.25rem;           /* Extra large */
+  --terminal-text-size-2xl: 1.5rem;           /* Headers */
+  
+  /* Line Heights */
+  --terminal-line-height-tight: 1.25;         /* Tight spacing */
+  --terminal-line-height-normal: 1.5;         /* Normal spacing */
+  --terminal-line-height-relaxed: 1.75;       /* Relaxed spacing */
+  
+  /* Font Weights */
+  --terminal-font-weight-normal: 400;
+  --terminal-font-weight-medium: 500;
+  --terminal-font-weight-semibold: 600;
+  --terminal-font-weight-bold: 700;
+  
+  /* Spacing Scale */
+  --terminal-spacing-xs: 0.25rem;             /* 4px */
+  --terminal-spacing-sm: 0.5rem;              /* 8px */
+  --terminal-spacing-md: 1rem;                /* 16px */
+  --terminal-spacing-lg: 1.5rem;              /* 24px */
+  --terminal-spacing-xl: 2rem;                /* 32px */
+  --terminal-spacing-2xl: 2.5rem;             /* 40px */
+  --terminal-spacing-3xl: 3rem;               /* 48px */
+  
+  /* Border Radius Scale */
+  --terminal-radius-none: 0;
+  --terminal-radius-sm: 0.125rem;             /* 2px */
+  --terminal-radius-base: 0.25rem;            /* 4px */
+  --terminal-radius-md: 0.375rem;             /* 6px */
+  --terminal-radius-lg: 0.5rem;               /* 8px */
+  --terminal-radius-xl: 0.75rem;              /* 12px */
+  --terminal-radius-full: 9999px;             /* Fully rounded */
+  
+  /* ========================================================================== */
+  /*                           EFFECTS & ANIMATIONS                            */
+  /* ========================================================================== */
+  
+  /* Transition Speeds */
+  --terminal-transition-fast: 0.15s ease-out;
+  --terminal-transition-normal: 0.3s ease-out;
+  --terminal-transition-slow: 0.5s ease-out;
+  --terminal-transition-bounce: 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  
+  /* Opacity Levels */
+  --terminal-opacity-0: 0;
+  --terminal-opacity-10: 0.1;
+  --terminal-opacity-20: 0.2;
+  --terminal-opacity-30: 0.3;
+  --terminal-opacity-40: 0.4;
+  --terminal-opacity-50: 0.5;
+  --terminal-opacity-60: 0.6;
+  --terminal-opacity-70: 0.7;
+  --terminal-opacity-80: 0.8;
+  --terminal-opacity-90: 0.9;
+  --terminal-opacity-100: 1;
+  
+  /* Alpha Channel Backgrounds (for layering) */
+  --terminal-alpha-white-5: rgba(255, 255, 255, 0.05);
+  --terminal-alpha-white-10: rgba(255, 255, 255, 0.1);
+  --terminal-alpha-white-20: rgba(255, 255, 255, 0.2);
+  --terminal-alpha-black-5: rgba(0, 0, 0, 0.05);
+  --terminal-alpha-black-10: rgba(0, 0, 0, 0.1);
+  --terminal-alpha-black-20: rgba(0, 0, 0, 0.2);
+  
+  /* Shadow System */
+  --terminal-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --terminal-shadow-base: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --terminal-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --terminal-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+  --terminal-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.04);
+  
+  /* Glow Effects */
+  --terminal-glow-color: #047857;              /* Base glow color */
+  --terminal-glow-sm: 0 0 5px var(--terminal-glow-color);
+  --terminal-glow-md: 0 0 10px var(--terminal-glow-color);
+  --terminal-glow-lg: 0 0 20px var(--terminal-glow-color);
+  
+  /* ========================================================================== */
+  /*                        COMPLEX BACKGROUND EFFECTS                         */
+  /* ========================================================================== */
+  
+  /* Gradient Overlays */
+  --terminal-gradient-primary: linear-gradient(135deg, 
+    rgba(125, 211, 252, 0.1) 0%, 
+    transparent 50%, 
+    rgba(125, 211, 252, 0.05) 100%);
+  
+  --terminal-gradient-accent: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(165, 180, 252, 0.1) 50%, 
+    transparent 100%);
+  
+  /* Watercolor-style Effects */
+  --terminal-watermark-primary: radial-gradient(ellipse 800px 600px at 10% 15%, 
+    rgba(125, 211, 252, 0.30) 0%, 
+    rgba(125, 211, 252, 0.20) 30%, 
+    rgba(125, 211, 252, 0.10) 50%, 
+    transparent 80%);
+  
+  --terminal-watermark-secondary: radial-gradient(ellipse 700px 500px at 90% 85%, 
+    rgba(165, 180, 252, 0.28) 0%, 
+    rgba(165, 180, 252, 0.18) 35%, 
+    rgba(165, 180, 252, 0.08) 55%, 
+    transparent 75%);
+  
+  /* Multiple Layer Backgrounds */
+  --terminal-bg-layered: 
+    var(--terminal-watermark-primary),
+    var(--terminal-watermark-secondary),
+    var(--terminal-gradient-primary),
+    var(--terminal-bg-primary);
+
+  /* Legacy support variables */
+  --terminal-bg-gradient: 
+    radial-gradient(ellipse 800px 600px at 10% 15%, rgba(125,211,252,0.30) 0%, rgba(125,211,252,0.20) 30%, rgba(125,211,252,0.10) 50%, transparent 80%),
+    radial-gradient(ellipse 700px 500px at 90% 85%, rgba(165,180,252,0.28) 0%, rgba(165,180,252,0.18) 35%, rgba(165,180,252,0.08) 55%, transparent 75%),
+    #ffffff;
+  --header-bg-gradient:
+    radial-gradient(ellipse 400px 100px at 20% 50%, rgba(125,211,252,0.25) 0%, rgba(125,211,252,0.12) 60%, transparent 80%),
+    #ffffff;
+  --content-bg-gradient:
+    radial-gradient(ellipse 500px 400px at 80% 20%, rgba(34,211,238,0.12) 0%, rgba(34,211,238,0.05) 50%, transparent 70%),
+    #ffffff;
+  --terminal-border: 1px solid var(--terminal-border-primary);
+  --terminal-shadow: var(--terminal-shadow-xl);
+  --header-border: 1px solid var(--terminal-border-primary);
+  --terminal-border-radius: 12px;
+}
+
+/* ========================================================================== */
+/*                           CSS CLASS UTILITIES                             */
+/* ========================================================================== */
+
+/* Core Text Styling */
+[data-terminal-theme='cyan-light'] .terminal-text-primary,
+[data-terminal-theme='cyan-light'] .text-primary {
+  color: var(--terminal-text-primary) !important;
+}
+
+[data-terminal-theme='cyan-light'] .terminal-text-secondary,
+[data-terminal-theme='cyan-light'] .text-secondary {
+  color: var(--terminal-text-secondary) !important;
+}
+
+[data-terminal-theme='cyan-light'] .terminal-text-muted,
+[data-terminal-theme='cyan-light'] .text-muted {
+  color: var(--terminal-text-muted) !important;
+}
+
+/* AI Workflow Elements */
+[data-terminal-theme='cyan-light'] .terminal-prompt-user,
+[data-terminal-theme='cyan-light'] .prompt-user {
+  color: var(--terminal-prompt-user) !important;
+}
+
+[data-terminal-theme='cyan-light'] .terminal-accent-user,
+[data-terminal-theme='cyan-light'] .accent-user {
+  color: var(--terminal-accent-user) !important;
+}
+
+[data-terminal-theme='cyan-light'] .terminal-response-ai,
+[data-terminal-theme='cyan-light'] .response-ai {
+  color: var(--terminal-response-ai) !important;
+}
+
+[data-terminal-theme='cyan-light'] .terminal-routing-info,
+[data-terminal-theme='cyan-light'] .routing-info {
+  color: var(--terminal-routing-info) !important;
+  background-color: var(--terminal-routing-bg) !important;
+}
+
+/* Model Indicators */
+[data-terminal-theme='cyan-light'] .model-claude {
+  color: var(--terminal-model-claude) !important;
+}
+
+[data-terminal-theme='cyan-light'] .model-deepseek {
+  color: var(--terminal-model-deepseek) !important;
+}
+
+[data-terminal-theme='cyan-light'] .model-local {
+  color: var(--terminal-model-local) !important;
+}
+
+/* Cost Indicators */
+[data-terminal-theme='cyan-light'] .cost-low {
+  color: var(--terminal-cost-low) !important;
+}
+
+[data-terminal-theme='cyan-light'] .cost-medium {
+  color: var(--terminal-cost-medium) !important;
+}
+
+[data-terminal-theme='cyan-light'] .cost-high {
+  color: var(--terminal-cost-high) !important;
+}
+
+/* Background Classes */
+[data-terminal-theme='cyan-light'] .terminal-bg-primary,
+[data-terminal-theme='cyan-light'] .bg-primary {
+  background-color: var(--terminal-bg-primary) !important;
+}
+
+[data-terminal-theme='cyan-light'] .terminal-bg-secondary,
+[data-terminal-theme='cyan-light'] .bg-secondary {
+  background-color: var(--terminal-bg-secondary) !important;
+}
+
+/* Interactive States */
+[data-terminal-theme='cyan-light'] .hover-bg:hover {
+  background-color: var(--terminal-hover-bg) !important;
+}
+
+[data-terminal-theme='cyan-light'] .focus-outline:focus {
+  outline-color: var(--terminal-focus-outline) !important;
+  box-shadow: 0 0 0 2px var(--terminal-focus-shadow) !important;
+}
+
+/* Status Classes */
+[data-terminal-theme='cyan-light'] .status-success {
+  color: var(--terminal-status-success) !important;
+}
+
+[data-terminal-theme='cyan-light'] .status-warning {
+  color: var(--terminal-status-warning) !important;
+}
+
+[data-terminal-theme='cyan-light'] .status-error {
+  color: var(--terminal-status-error) !important;
+}
+
+[data-terminal-theme='cyan-light'] .status-info {
+  color: var(--terminal-status-info) !important;
+}
+
+/* Legacy component compatibility */
+[data-terminal-theme="cyan-light"] .terminal-container {
+  background: var(--terminal-bg-gradient);
+  border: var(--terminal-border);
+  border-radius: var(--terminal-border-radius);
+  box-shadow: var(--terminal-shadow);
+}
+
+/* Apply watercolor effects to main terminal view */
+[data-terminal-theme="cyan-light"] .flex.h-screen,
+[data-terminal-theme="cyan-light"] .terminal-main-bg {
+  background: var(--terminal-bg-layered);
+}
+
+[data-terminal-theme="cyan-light"] .terminal-header {
+  background: var(--header-bg-gradient);
+  color: var(--terminal-text-primary);
+  border-bottom: var(--header-border);
+}
+
+[data-terminal-theme="cyan-light"] .terminal-content {
+  background: var(--content-bg-gradient);
+  color: var(--terminal-text-primary);
+}
+
+[data-terminal-theme="cyan-light"] .prompt-symbol {
+  color: var(--terminal-accent-primary);
+  text-shadow: 0 0 3px rgba(4, 120, 87, 0.3);
+}
+
+[data-terminal-theme="cyan-light"] .user-input {
+  color: var(--terminal-prompt-user);
+}
+
+[data-terminal-theme="cyan-light"] .user-input-bold {
+  color: var(--terminal-text-primary);
+  font-weight: bold;
+}
+
+[data-terminal-theme="cyan-light"] .ai-response {
+  color: var(--terminal-response-ai);
+}
+
+[data-terminal-theme="cyan-light"] .ai-response-bold {
+  color: #1f2937;
+  font-weight: bold;
+}
+
+[data-terminal-theme="cyan-light"] .model-name {
+  color: var(--terminal-model-local);
+}
+
+[data-terminal-theme="cyan-light"] .cost-info {
+  color: var(--terminal-status-info);
+}
+
+[data-terminal-theme="cyan-light"] .terminal-dot:nth-child(1) { 
+  background: #ef4444; 
+}
+
+[data-terminal-theme="cyan-light"] .terminal-dot:nth-child(2) { 
+  background: #f59e0b; 
+}
+
+[data-terminal-theme="cyan-light"] .terminal-dot:nth-child(3) { 
+  background: #10b981; 
+}
+
+[data-terminal-theme="cyan-light"] .cursor {
+  background: var(--terminal-cursor-color);
+  box-shadow: 0 0 3px rgba(4, 120, 87, 0.5);
+}
+
+[data-terminal-theme="cyan-light"] .status-bar {
+  background: rgba(71, 85, 105, 0.05);
+  border-top: 1px solid rgba(71, 85, 105, 0.1);
+  color: var(--terminal-text-muted);
+}
+
+[data-terminal-theme="cyan-light"] .accent-blue { 
+  color: var(--terminal-accent-tertiary); 
+}
+
+[data-terminal-theme="cyan-light"] .accent-orange { 
+  color: #f97316; 
+}
+
+[data-terminal-theme="cyan-light"] .accent-green { 
+  color: #10b981; 
+}
+
+[data-terminal-theme="cyan-light"] .accent-mint { 
+  color: var(--terminal-accent-secondary); 
+}
+
+[data-terminal-theme="cyan-light"] .accent-lavender { 
+  color: #8b5cf6; 
+}

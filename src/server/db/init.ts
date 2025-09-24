@@ -5,7 +5,7 @@ export async function initDatabase() {
   try {
     // Test database connection
     await prisma.$connect();
-    console.log('✅ Database connected successfully');
+    logger.info('✅ Database connected successfully');
 
     // Optional: Run migrations or seed data here
     // await prisma.$executeRaw`PRAGMA foreign_keys = ON`;

@@ -2,6 +2,14 @@ import { beforeAll, afterAll, afterEach, vi } from 'vitest';
 import '@testing-library/jest-dom';
 import { mockDataScenarios } from './realistic-mocks';
 
+// Mock DOM APIs not available in jsdom
+beforeAll(() => {
+  Object.defineProperty(Element.prototype, 'scrollIntoView', {
+    value: vi.fn(),
+    writable: true,
+  });
+});
+
 // Mock the tRPC module for E2E testing
 vi.mock('../../lib/trpc/client', () => ({
   trpc: {
@@ -129,7 +137,7 @@ export const mockUsageStats = {
 };
 
 // Helper function to set up default mock responses
-export const setupDefaultMocks = () => {
+export const setupDefaultMocks = async () => {
   const mockTrpc = {
     conversations: {
       list: {
@@ -212,7 +220,8 @@ export const setupDefaultMocks = () => {
   };
 
   // Apply the mock to the module
-  const { trpc } = require('../../lib/trpc/client');
+  const trpcModule = vi.mocked(await import('../../lib/trpc/client'));
+  const { trpc } = trpcModule;
   Object.assign(trpc, mockTrpc);
 };
 
@@ -224,8 +233,9 @@ export const simulateApiDelay = (delay: number = 100) => {
 };
 
 // Helper function to simulate API errors
-export const simulateApiError = (endpoint: string, errorMessage: string = 'API Error') => {
-  const { trpc } = require('../../lib/trpc/client');
+export const simulateApiError = async (endpoint: string, errorMessage: string = 'API Error') => {
+  const trpcModule = vi.mocked(await import('../../lib/trpc/client'));
+  const { trpc } = trpcModule;
 
   switch (endpoint) {
     case 'conversations.list':
@@ -256,8 +266,9 @@ export const simulateApiError = (endpoint: string, errorMessage: string = 'API E
 };
 
 // Helper function to update mock data for specific endpoints
-export const updateMockData = (endpoint: string, data: any) => {
-  const { trpc } = require('../../lib/trpc/client');
+export const updateMockData = async (endpoint: string, data: any) => {
+  const trpcModule = vi.mocked(await import('../../lib/trpc/client'));
+  const { trpc } = trpcModule;
 
   switch (endpoint) {
     case 'conversations.list':
@@ -288,8 +299,9 @@ export const updateMockData = (endpoint: string, data: any) => {
 };
 
 // Helper function to simulate loading states
-export const simulateLoading = (endpoint: string) => {
-  const { trpc } = require('../../lib/trpc/client');
+export const simulateLoading = async (endpoint: string) => {
+  const trpcModule = vi.mocked(await import('../../lib/trpc/client'));
+  const { trpc } = trpcModule;
 
   switch (endpoint) {
     case 'conversations.list':
@@ -320,8 +332,9 @@ export const simulateLoading = (endpoint: string) => {
 };
 
 // Helper function to simulate mutation states
-export const simulateMutationState = (mutation: string, state: 'pending' | 'success' | 'error') => {
-  const { trpc } = require('../../lib/trpc/client');
+export const simulateMutationState = async (mutation: string, state: 'pending' | 'success' | 'error') => {
+  const trpcModule = vi.mocked(await import('../../lib/trpc/client'));
+  const { trpc } = trpcModule;
 
   const baseState = {
     mutate: vi.fn(),

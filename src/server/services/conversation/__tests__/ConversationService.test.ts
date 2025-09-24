@@ -1,49 +1,51 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { TRPCError } from '@trpc/server';
-import type { PrismaClient } from '@prisma/client';
 import {
   DatabaseConversationService,
   DemoConversationService,
   type CreateConversationInput,
 } from '../ConversationService';
-
-// Mock Prisma Client
-const mockPrismaClient = {
-  conversation: {
-    create: vi.fn(),
-    findUnique: vi.fn(),
-    findMany: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-  },
-  message: {
-    deleteMany: vi.fn(),
-  },
-  $transaction: vi.fn(),
-} as unknown as PrismaClient;
+import {
+  setupDatabaseServiceMocks,
+  resetDatabaseMocks,
+  TestScenarios,
+  DatabaseMocks,
+  type MockPrismaClient,
+} from '../../../../test/utils/mockDatabase';
 
 describe('ConversationService', () => {
+  let mockClient: MockPrismaClient;
+
   beforeEach(() => {
-    vi.clearAllMocks();
-    (mockPrismaClient.$transaction as any).mockImplementation((callback: any) =>
-      callback(mockPrismaClient),
-    );
+    mockClient = setupDatabaseServiceMocks();
   });
 
   afterEach(() => {
-    vi.resetAllMocks();
+    resetDatabaseMocks(mockClient);
   });
 
   describe('DatabaseConversationService', () => {
     let service: DatabaseConversationService;
 
     beforeEach(() => {
-      service = new DatabaseConversationService(mockPrismaClient);
+      const { service: testService } = TestScenarios.serviceTest(DatabaseConversationService, mockClient);
+      service = testService;
     });
 
     describe('create', () => {
       it('should create conversation with default settings', async () => {
-        const mockConversation = {
+        const mockCreatedConversation = {
+          id: 'conv-123',
+          title: null,
+          model: 'deepseek-chat',
+          systemPrompt: 'You are a helpful AI assistant.',
+          temperature: 0.7,
+          maxTokens: 1000,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        const mockConversationWithMessages = {
           id: 'conv-123',
           title: null,
           model: 'deepseek-chat',
@@ -55,11 +57,12 @@ describe('ConversationService', () => {
           messages: [],
         };
 
-        mockPrismaClient.conversation.create = vi.fn().mockResolvedValue(mockConversation);
+        mockClient.conversation.create = vi.fn().mockResolvedValue(mockCreatedConversation);
+        mockClient.conversation.findUnique = vi.fn().mockResolvedValue(mockConversationWithMessages);
 
         const result = await service.create();
 
-        expect(mockPrismaClient.conversation.create).toHaveBeenCalledWith({
+        expect(mockClient.conversation.create).toHaveBeenCalledWith({
           data: {
             title: null,
             model: 'deepseek-chat',
@@ -67,6 +70,10 @@ describe('ConversationService', () => {
             temperature: 0.7,
             maxTokens: 1000,
           },
+        });
+
+        expect(mockClient.conversation.findUnique).toHaveBeenCalledWith({
+          where: { id: 'conv-123' },
           include: {
             messages: {
               orderBy: { createdAt: 'asc' },
@@ -89,7 +96,18 @@ describe('ConversationService', () => {
           maxTokens: 2000,
         };
 
-        const mockConversation = {
+        const mockCreatedConversation = {
+          id: 'conv-456',
+          title: 'Custom Chat',
+          model: 'claude-3-haiku',
+          systemPrompt: 'You are a creative assistant.',
+          temperature: 0.9,
+          maxTokens: 2000,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        const mockConversationWithMessages = {
           id: 'conv-456',
           title: 'Custom Chat',
           model: 'claude-3-haiku',
@@ -101,11 +119,12 @@ describe('ConversationService', () => {
           messages: [],
         };
 
-        mockPrismaClient.conversation.create = vi.fn().mockResolvedValue(mockConversation);
+        mockClient.conversation.create = vi.fn().mockResolvedValue(mockCreatedConversation);
+        mockClient.conversation.findUnique = vi.fn().mockResolvedValue(mockConversationWithMessages);
 
         const result = await service.create(input);
 
-        expect(mockPrismaClient.conversation.create).toHaveBeenCalledWith({
+        expect(mockClient.conversation.create).toHaveBeenCalledWith({
           data: {
             title: 'Custom Chat',
             model: 'claude-3-haiku',
@@ -113,6 +132,10 @@ describe('ConversationService', () => {
             temperature: 0.9,
             maxTokens: 2000,
           },
+        });
+
+        expect(mockClient.conversation.findUnique).toHaveBeenCalledWith({
+          where: { id: 'conv-456' },
           include: {
             messages: {
               orderBy: { createdAt: 'asc' },
@@ -157,7 +180,7 @@ describe('ConversationService', () => {
           },
         ];
 
-        mockPrismaClient.conversation.findMany = vi.fn().mockResolvedValue(mockConversations);
+        mockClient.conversation.findMany = vi.fn().mockResolvedValue(mockConversations);
 
         const result = await service.list();
 
@@ -202,7 +225,18 @@ describe('ConversationService', () => {
 
     describe('wrapper methods', () => {
       it('should call create through createConversation', async () => {
-        const mockConversation = {
+        const mockCreatedConversation = {
+          id: 'conv-123',
+          title: null,
+          model: 'deepseek-chat',
+          systemPrompt: 'You are a helpful AI assistant.',
+          temperature: 0.7,
+          maxTokens: 1000,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        const mockConversationWithMessages = {
           id: 'conv-123',
           title: null,
           model: 'deepseek-chat',
@@ -214,9 +248,20 @@ describe('ConversationService', () => {
           messages: [],
         };
 
-        mockPrismaClient.conversation.create = vi.fn().mockResolvedValue(mockConversation);
+        mockClient.conversation.create = vi.fn().mockResolvedValue(mockCreatedConversation);
+        mockClient.conversation.findUnique = vi.fn().mockResolvedValue(mockConversationWithMessages);
 
         const result = await service.createConversation();
+
+        expect(mockClient.conversation.create).toHaveBeenCalled();
+        expect(mockClient.conversation.findUnique).toHaveBeenCalledWith({
+          where: { id: 'conv-123' },
+          include: {
+            messages: {
+              orderBy: { createdAt: 'asc' },
+            },
+          },
+        });
 
         expect(result).toMatchObject({
           id: 'conv-123',
@@ -225,12 +270,12 @@ describe('ConversationService', () => {
       });
 
       it('should call list through listConversations', async () => {
-        mockPrismaClient.conversation.findMany = vi.fn().mockResolvedValue([]);
+        mockClient.conversation.findMany = vi.fn().mockResolvedValue([]);
 
         const result = await service.listConversations();
 
         expect(result).toEqual([]);
-        expect(mockPrismaClient.conversation.findMany).toHaveBeenCalled();
+        expect(mockClient.conversation.findMany).toHaveBeenCalled();
       });
     });
   });

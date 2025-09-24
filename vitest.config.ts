@@ -18,6 +18,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      'node-fetch': 'node-fetch/lib/index.js',
     },
   },
 });

@@ -3,148 +3,36 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor, act, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { render, mockWindowFunctions } from '../../../test/utils';
-import { Chat } from '../Chat';
-
-// Mock the new custom hooks
-const mockUseChatState = vi.fn();
-const mockUseChatOperations = vi.fn();
-const mockUseConversationManager = vi.fn();
-
-vi.mock('../../../hooks/chat', () => ({
-  useChatState: () => mockUseChatState(),
-  useChatOperations: () => mockUseChatOperations(),
-  useConversationManager: () => mockUseConversationManager(),
-}));
-
-// Mock the static demo hook
-const mockUseStaticDemo = vi.fn();
-vi.mock('../../../hooks/useStaticDemo', () => ({
-  useStaticDemo: () => mockUseStaticDemo(),
-}));
-
-// Mock tRPC - simplified since most logic is now in hooks
-const mockMessagesQuery = vi.fn();
-
-vi.mock('../../../lib/trpc/client', () => ({
-  trpc: {
-    messages: {
-      getByConversation: {
-        useQuery: () => mockMessagesQuery(),
-      },
-    },
-  },
-}));
-
-// Mock ExportButton
-vi.mock('../../ExportButton', () => ({
-  ExportButton: () => <div data-testid='export-button'>Export Button</div>,
-}));
+import { ChatView } from '../ChatView';
 
 describe('Chat Component', () => {
-  const defaultChatState = {
-    // Basic state
-    currentConversationId: null,
-    isLoading: false,
-    isCreatingConversation: false,
-    error: null,
-    retryCount: 0,
-    lastFailedMessage: '',
-    input: '',
-    sidebarOpen: true,
-
-    // Demo mode state
-    isDemoMode: false,
-    demoMessages: [],
-    demoConversations: new Map(),
-
-    // Computed state
-    isConversationReady: false,
-    canSendMessage: false,
-    shouldShowRetry: false,
-
-    // UI helpers
-    hasError: false,
-    displayError: '',
-
-    // Actions
-    setCurrentConversation: vi.fn(),
-    setLoading: vi.fn(),
-    setCreatingConversation: vi.fn(),
-    setError: vi.fn(),
-    updateInput: vi.fn(),
-    clearInput: vi.fn(),
-    toggleSidebar: vi.fn(),
-    setSidebarOpen: vi.fn(),
-
-    // Demo mode actions
-    setDemoMode: vi.fn(),
-    addDemoMessage: vi.fn(),
-    createDemoConversation: vi.fn(),
-    getDemoConversation: vi.fn(),
-    clearDemoData: vi.fn(),
-
-    // Combined actions
-    clearError: vi.fn(),
-    resetRetry: vi.fn(),
-    startMessageSend: vi.fn(),
-    finishMessageSend: vi.fn(),
-    handleMessageError: vi.fn(),
-  };
-
-  const defaultChatOperations = {
-    handleSendMessage: vi.fn(),
-    handleRetry: vi.fn(),
-    cancelCurrentRequest: vi.fn(),
-    isLoading: false,
-    isMutating: false,
-  };
-
-  const defaultConversationManager = {
-    // Data
+  const defaultProps = {
     conversations: [],
     currentConversationId: null,
-
-    // Loading states
+    messages: [],
+    input: '',
+    sidebarOpen: true,
     conversationsLoading: false,
     isCreatingConversation: false,
-
-    // Errors
-    conversationsError: null,
-
-    // Actions
-    handleNewConversation: vi.fn(),
-    handleSelectConversation: vi.fn(),
-    handleDeleteConversation: vi.fn(),
-    refreshConversations: vi.fn(),
-
-    // Mutation states
-    isCreating: false,
-    isDeleting: false,
-  };
-
-  const defaultStaticDemo = {
-    isDemoMode: false,
-    demoAPI: {
-      sendMessage: vi.fn(),
-      createConversation: vi.fn(),
-    },
-  };
-
-  const defaultMessagesQuery = {
-    data: [],
+    messagesLoading: false,
     isLoading: false,
-    error: null,
+    conversationsError: null,
+    messagesError: null,
+    isConversationReady: false,
+    canSendMessage: false,
+    onSelectConversation: vi.fn(),
+    onNewConversation: vi.fn(),
+    onDeleteConversation: vi.fn(),
+    onRefreshConversations: vi.fn(),
+    onToggleSidebar: vi.fn(),
+    onExportCurrent: vi.fn(),
+    onExportAll: vi.fn(),
+    onInputChange: vi.fn(),
+    onSendMessage: vi.fn(),
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-
-    // Set up default mocks
-    mockUseChatState.mockReturnValue(defaultChatState);
-    mockUseChatOperations.mockReturnValue(defaultChatOperations);
-    mockUseConversationManager.mockReturnValue(defaultConversationManager);
-    mockUseStaticDemo.mockReturnValue(defaultStaticDemo);
-    mockMessagesQuery.mockReturnValue(defaultMessagesQuery);
   });
 
   afterEach(() => {
@@ -153,9 +41,9 @@ describe('Chat Component', () => {
 
   describe('Basic Rendering', () => {
     it('renders chat interface correctly', () => {
-      render(<Chat />);
+      render(<ChatView {...defaultProps} />);
 
-      expect(screen.getByText('AI Chat')).toBeInTheDocument();
+      expect(screen.getByText('AI Chat (Classic View)')).toBeInTheDocument();
       expect(screen.getByText('Conversations')).toBeInTheDocument();
       expect(screen.getByText('+ New Chat')).toBeInTheDocument();
       expect(screen.getByRole('textbox')).toBeInTheDocument();
@@ -163,7 +51,7 @@ describe('Chat Component', () => {
     });
 
     it('displays welcome message when no messages exist', () => {
-      render(<Chat />);
+      render(<ChatView {...defaultProps} />);
 
       expect(screen.getByText('Welcome to your colorful chat!')).toBeInTheDocument();
       expect(
@@ -172,21 +60,21 @@ describe('Chat Component', () => {
     });
 
     it('shows sidebar with new chat button', () => {
-      render(<Chat />);
+      render(<ChatView {...defaultProps} />);
 
       expect(screen.getByText('+ New Chat')).toBeInTheDocument();
-      expect(screen.getByTestId('export-button')).toBeInTheDocument();
+      expect(screen.getByText('Export MD')).toBeInTheDocument();
     });
 
     it('shows sidebar toggle button', () => {
-      render(<Chat />);
+      render(<ChatView {...defaultProps} />);
 
       const toggleButton = screen.getByTitle('Hide sidebar');
       expect(toggleButton).toBeInTheDocument();
     });
 
     it('shows empty state when no conversations exist', () => {
-      render(<Chat />);
+      render(<ChatView {...defaultProps} />);
 
       expect(screen.getByText('No conversations yet')).toBeInTheDocument();
       expect(screen.getByText('Start chatting to create one!')).toBeInTheDocument();
@@ -195,219 +83,159 @@ describe('Chat Component', () => {
 
   describe('Accessibility', () => {
     it('has proper input id for accessibility', () => {
-      mockUseChatState.mockReturnValue({
-        ...defaultChatState,
-        isConversationReady: true,
-      });
-
-      render(<Chat />);
+      const props = { ...defaultProps, isConversationReady: true };
+      render(<ChatView {...props} />);
 
       const input = screen.getByRole('textbox');
       expect(input).toHaveAttribute('id', 'chat-input');
     });
 
     it('has proper button roles', () => {
-      render(<Chat />);
+      render(<ChatView {...defaultProps} />);
 
       const sendButton = screen.getByRole('button', { name: /send/i });
       expect(sendButton).toBeInTheDocument();
     });
 
     it('has proper ARIA attributes for messages', () => {
-      // Note: Message display tests are complex due to tRPC mocking requirements
-      // ARIA attributes are tested implicitly through other functionality tests
-      render(<Chat />);
+      render(<ChatView {...defaultProps} />);
 
-      // Basic accessibility test - check that the component renders without errors
       expect(screen.getByRole('textbox')).toBeInTheDocument();
     });
   });
 
   describe('Interaction Handling', () => {
-    it('calls handleSendMessage when send button is clicked', async () => {
+    it('calls onSendMessage when send button is clicked', async () => {
       const user = userEvent.setup();
-      const mockHandleSendMessage = vi.fn();
+      const mockOnSendMessage = vi.fn();
 
-      mockUseChatState.mockReturnValue({
-        ...defaultChatState,
-        canSendMessage: true,
+      const props = {
+        ...defaultProps,
+        input: 'Test message',
         isConversationReady: true,
-      });
+        canSendMessage: true,
+        onSendMessage: mockOnSendMessage,
+      };
 
-      mockUseChatOperations.mockReturnValue({
-        ...defaultChatOperations,
-        handleSendMessage: mockHandleSendMessage,
-      });
-
-      render(<Chat />);
+      render(<ChatView {...props} />);
 
       const sendButton = screen.getByRole('button', { name: /send/i });
       await user.click(sendButton);
 
-      expect(mockHandleSendMessage).toHaveBeenCalled();
+      expect(mockOnSendMessage).toHaveBeenCalled();
     });
 
-    it('calls toggleSidebar when sidebar toggle is clicked', async () => {
+    it('calls onToggleSidebar when sidebar toggle is clicked', async () => {
       const user = userEvent.setup();
-      const mockToggleSidebar = vi.fn();
+      const mockOnToggleSidebar = vi.fn();
 
-      mockUseChatState.mockReturnValue({
-        ...defaultChatState,
-        toggleSidebar: mockToggleSidebar,
-      });
+      const props = {
+        ...defaultProps,
+        onToggleSidebar: mockOnToggleSidebar,
+      };
 
-      render(<Chat />);
+      render(<ChatView {...props} />);
 
       const toggleButton = screen.getByTitle('Hide sidebar');
       await user.click(toggleButton);
 
-      expect(mockToggleSidebar).toHaveBeenCalled();
+      expect(mockOnToggleSidebar).toHaveBeenCalled();
     });
 
-    it('calls handleNewConversation when new chat button is clicked', async () => {
+    it('calls onNewConversation when new chat button is clicked', async () => {
       const user = userEvent.setup();
-      const mockHandleNewConversation = vi.fn();
+      const mockOnNewConversation = vi.fn();
 
-      mockUseConversationManager.mockReturnValue({
-        ...defaultConversationManager,
-        handleNewConversation: mockHandleNewConversation,
-      });
+      const props = {
+        ...defaultProps,
+        onNewConversation: mockOnNewConversation,
+      };
 
-      render(<Chat />);
+      render(<ChatView {...props} />);
 
       const newChatButton = screen.getByText('+ New Chat');
       await user.click(newChatButton);
 
-      expect(mockHandleNewConversation).toHaveBeenCalled();
+      expect(mockOnNewConversation).toHaveBeenCalled();
     });
 
-    it('calls updateInput when input value changes', () => {
-      const mockUpdateInput = vi.fn();
+    it('calls onInputChange when input value changes', () => {
+      const mockOnInputChange = vi.fn();
 
-      mockUseChatState.mockReturnValue({
-        ...defaultChatState,
-        updateInput: mockUpdateInput,
+      const props = {
+        ...defaultProps,
         isConversationReady: true,
-      });
+        onInputChange: mockOnInputChange,
+      };
 
-      render(<Chat />);
+      render(<ChatView {...props} />);
 
       const input = screen.getByRole('textbox');
-      // Use fireEvent for direct testing of onChange handler
       fireEvent.change(input, { target: { value: 'test message' } });
 
-      expect(mockUpdateInput).toHaveBeenCalledWith('test message');
+      expect(mockOnInputChange).toHaveBeenCalledWith('test message');
     });
   });
 
   describe('Edge Cases', () => {
     it('handles empty message content by disabling send button', async () => {
-      mockUseChatState.mockReturnValue({
-        ...defaultChatState,
+      const props = {
+        ...defaultProps,
         currentConversationId: 'conv1',
         input: '   ', // Only whitespace
         isConversationReady: true,
         canSendMessage: false, // Should be false for whitespace
-      });
+      };
 
-      render(<Chat />);
+      render(<ChatView {...props} />);
 
       const sendButton = screen.getByRole('button', { name: /send/i });
       expect(sendButton).toBeDisabled();
     });
 
     it('handles missing conversation data gracefully', () => {
-      mockUseConversationManager.mockReturnValue({
-        ...defaultConversationManager,
+      const props = {
+        ...defaultProps,
         conversations: [], // Empty conversations
-      });
+      };
 
-      render(<Chat />);
+      render(<ChatView {...props} />);
 
       expect(screen.getByText('No conversations yet')).toBeInTheDocument();
     });
 
-    it('displays error when error state exists', () => {
-      const errorMessage = 'Something went wrong';
-      mockUseChatState.mockReturnValue({
-        ...defaultChatState,
-        error: errorMessage,
-        shouldShowRetry: true,
-      });
-
-      render(<Chat />);
-
-      expect(screen.getByText('Error')).toBeInTheDocument();
-      expect(screen.getByText(errorMessage)).toBeInTheDocument();
-      expect(screen.getByText('Retry')).toBeInTheDocument();
-    });
-
     it('shows loading state when creating conversation', () => {
-      mockUseChatState.mockReturnValue({
-        ...defaultChatState,
+      const props = {
+        ...defaultProps,
         isCreatingConversation: true,
-      });
+      };
 
-      mockUseConversationManager.mockReturnValue({
-        ...defaultConversationManager,
-        isCreatingConversation: true,
-      });
-
-      render(<Chat />);
+      render(<ChatView {...props} />);
 
       expect(screen.getByText('Creating your conversation...')).toBeInTheDocument();
     });
 
     it('shows loading state when messages are loading', () => {
-      mockMessagesQuery.mockReturnValue({
-        data: [],
-        isLoading: true,
-        error: null,
-      });
+      const props = {
+        ...defaultProps,
+        messagesLoading: true,
+      };
 
-      render(<Chat />);
+      render(<ChatView {...props} />);
 
       expect(screen.getByText('Loading messages...')).toBeInTheDocument();
     });
 
     it('shows messages error state', () => {
-      mockMessagesQuery.mockReturnValue({
-        data: [],
-        isLoading: false,
-        error: new Error('Failed to load'),
-      });
+      const props = {
+        ...defaultProps,
+        messagesError: new Error('Failed to load'),
+      };
 
-      render(<Chat />);
+      render(<ChatView {...props} />);
 
       expect(screen.getByText('Failed to load messages')).toBeInTheDocument();
     });
   });
 
-  describe('Static Demo Mode', () => {
-    it('shows demo banner when in static demo mode', () => {
-      mockUseStaticDemo.mockReturnValue({
-        ...defaultStaticDemo,
-        isDemoMode: true,
-      });
-
-      render(<Chat />);
-
-      expect(screen.getByText(/Chat App Demo/)).toBeInTheDocument();
-      expect(screen.getByText(/This is a static demo showcasing the UI/)).toBeInTheDocument();
-    });
-
-    it('adjusts layout height when demo banner is shown', () => {
-      mockUseStaticDemo.mockReturnValue({
-        ...defaultStaticDemo,
-        isDemoMode: true,
-      });
-
-      render(<Chat />);
-
-      const mainContainer = screen
-        .getByText('AI Chat')
-        .closest('div[class*="h-[calc(100vh-40px)]"]');
-      expect(mainContainer).toBeInTheDocument();
-    });
-  });
 });

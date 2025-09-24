@@ -1,28 +1,17 @@
 import { logger } from '../utils/logger';
 import { DEMO_CONFIG } from '../config/demo';
+import { 
+  type Assistant,
+  type AssistantResponse,
+  type AssistantOptions 
+} from './assistant/assistant';
 
-export interface AssistantResponse {
-  response: string;
-  model: string;
-  cost: number;
-}
+// Re-export types for consistency
+export type { Assistant, AssistantResponse, AssistantOptions };
 
 export interface AssistantConfig {
   apiKey?: string;
   siteName?: string;
-}
-
-export interface AssistantOptions {
-  signal?: AbortSignal;
-}
-
-export interface Assistant {
-  getResponse(
-    userMessage: string,
-    conversationHistory?: Array<{ role: string; content: string }>,
-    options?: AssistantOptions,
-  ): Promise<AssistantResponse>;
-  getModelUsageStats(): Array<{ model: string; count: number; percentage: number }>;
 }
 
 export class OpenRouterAssistant implements Assistant {
@@ -39,7 +28,7 @@ export class OpenRouterAssistant implements Assistant {
     userMessage: string,
     conversationHistory: Array<{ role: string; content: string }> = [],
     options?: AssistantOptions,
-  ): Promise<AssistantResponse> {
+  ): Promise<string | AssistantResponse> {
     try {
       if (!userMessage || userMessage.trim() === '') {
         throw new Error('User message cannot be empty');
@@ -143,25 +132,23 @@ export class OpenRouterAssistant implements Assistant {
 
   private selectModel(): string {
     try {
-      // Use the model from environment or default to Claude Haiku
+      // Use the primary model from environment
       const envModel = process.env.OPENROUTER_MODEL;
-      if (envModel) {
+      if (envModel && envModel.trim() !== '') {
         return envModel;
       }
 
-      // Valid OpenRouter models (fast and cost-effective)
-      const validModels = [
-        'anthropic/claude-3-haiku',
-        'anthropic/claude-3-sonnet',
-        'meta-llama/llama-3.1-8b-instruct',
-        'openai/gpt-4o-mini',
-      ];
+      // Fall back to default model from environment
+      const defaultModel = process.env.OPENROUTER_DEFAULT_MODEL;
+      if (defaultModel && defaultModel.trim() !== '') {
+        return defaultModel;
+      }
 
-      // Default to Claude Haiku (fastest and cheapest)
-      return validModels[0];
+      // Final hardcoded fallback
+      return 'deepseek-chat';
     } catch (error) {
       logger.error('Error selecting model:', error);
-      return 'anthropic/claude-3-haiku'; // Safe fallback
+      return 'deepseek-chat'; // Safe fallback
     }
   }
 
@@ -293,7 +280,7 @@ export class OpenRouterAssistant implements Assistant {
 
         if (isRetryable) {
           const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff: 1s, 2s, 4s
-          console.log(
+          logger.info(
             `Retrying OpenRouter request in ${delay}ms (attempt ${retryCount + 1}/${maxRetries})`,
           );
 
@@ -372,7 +359,7 @@ export function createAssistant(config: AssistantConfig): Assistant {
     if (!envKey) {
       // Only log in development to avoid production log spam
       if (process.env.NODE_ENV === 'development') {
-        console.warn('No OpenRouter API key provided, using mock assistant');
+        logger.warn('No OpenRouter API key provided, using mock assistant');
       }
       return new MockAssistant();
     }
@@ -444,7 +431,7 @@ Feel free to ask me about the app's functionality, technical details, or just ha
     userMessage: string,
     conversationHistory?: Array<{ role: string; content: string }>,
     options?: AssistantOptions,
-  ): Promise<AssistantResponse> {
+  ): Promise<string | AssistantResponse> {
     // Check if cancelled before starting
     if (options?.signal?.aborted) {
       throw new Error('Request was cancelled');

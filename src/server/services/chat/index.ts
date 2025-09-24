@@ -1,8 +1,11 @@
 export {
-  ChatService,
   DatabaseChatService,
   DemoChatService,
-  type ChatMessage,
-  type SendMessageInput,
-  type SendMessageResult,
+} from './ChatService';
+
+export type {
+  ChatService,
+  ChatMessage,
+  SendMessageInput,
+  SendMessageResult,
 } from './ChatService';

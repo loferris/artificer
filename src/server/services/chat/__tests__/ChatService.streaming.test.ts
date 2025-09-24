@@ -116,16 +116,15 @@ describe('ChatService Streaming', () => {
         conversationId: 'conv-1',
         role: 'assistant',
         content: 'Mock streaming response to: "Hello"',
-        model: 'mock-assistant',
-        cost: expect.any(Number),
-        tokens: expect.any(Number),
       });
     });
 
     it('should handle conversation validation errors', async () => {
-      (mockConversationService.validateAccess as Mock).mockRejectedValue(
-        new Error('Conversation not found'),
-      );
+      const validationError = new Error('Conversation not found');
+      (mockConversationService.validateAccess as Mock).mockRejectedValue(validationError);
+
+      const loggerModule = await import('../../../utils/logger');
+      const loggerErrorSpy = vi.spyOn(loggerModule.logger, 'error').mockImplementation(() => {});
 
       const stream = chatService.createMessageStream({
         content: 'Hello',
@@ -140,9 +139,19 @@ describe('ChatService Streaming', () => {
       expect(chunks).toHaveLength(1);
       expect(chunks[0].finished).toBe(true);
       expect(chunks[0].error).toContain('Conversation not found');
+
+      expect(loggerErrorSpy).toHaveBeenCalledWith('Chat stream error', validationError, {
+        conversationId: 'invalid-conv',
+        userId: undefined,
+      });
+
+      loggerErrorSpy.mockRestore();
     });
 
     it('should handle message validation errors', async () => {
+      const loggerModule = await import('../../../utils/logger');
+      const loggerErrorSpy = vi.spyOn(loggerModule.logger, 'error').mockImplementation(() => {});
+
       const stream = chatService.createMessageStream({
         content: '', // Invalid empty content
         conversationId: 'conv-1',
@@ -156,10 +165,17 @@ describe('ChatService Streaming', () => {
       expect(chunks).toHaveLength(1);
       expect(chunks[0].finished).toBe(true);
       expect(chunks[0].error).toContain('Message content cannot be empty');
+
+      expect(loggerErrorSpy).toHaveBeenCalled();
+
+      loggerErrorSpy.mockRestore();
     });
 
     it('should handle cancellation via AbortSignal', async () => {
       const controller = new AbortController();
+
+      const loggerModule = await import('../../../utils/logger');
+      const loggerErrorSpy = vi.spyOn(loggerModule.logger, 'error').mockImplementation(() => {});
 
       // Cancel after short delay
       setTimeout(() => controller.abort(), 100);
@@ -179,6 +195,10 @@ describe('ChatService Streaming', () => {
       const finalChunk = chunks[chunks.length - 1];
       expect(finalChunk.finished).toBe(true);
       expect(finalChunk.error).toBe('Request was cancelled');
+
+      expect(loggerErrorSpy).toHaveBeenCalled();
+
+      loggerErrorSpy.mockRestore();
     });
 
     it('should update conversation title for first exchange', async () => {
@@ -317,6 +337,9 @@ describe('DemoChatService Streaming', () => {
     });
 
     it('should validate demo messages', async () => {
+      const loggerModule = await import('../../../utils/logger');
+      const loggerErrorSpy = vi.spyOn(loggerModule.logger, 'error').mockImplementation(() => {});
+
       const stream = demoService.createMessageStream({
         content: '', // Invalid
         conversationId: 'demo-conv',
@@ -329,10 +352,17 @@ describe('DemoChatService Streaming', () => {
 
       expect(chunks).toHaveLength(1);
       expect(chunks[0].error).toContain('Message content cannot be empty');
+
+      expect(loggerErrorSpy).toHaveBeenCalled();
+
+      loggerErrorSpy.mockRestore();
     });
 
     it('should handle demo cancellation', async () => {
       const controller = new AbortController();
+      const loggerModule = await import('../../../utils/logger');
+      const loggerErrorSpy = vi.spyOn(loggerModule.logger, 'error').mockImplementation(() => {});
+
       setTimeout(() => controller.abort(), 50);
 
       const stream = demoService.createMessageStream({
@@ -349,6 +379,10 @@ describe('DemoChatService Streaming', () => {
       const finalChunk = chunks[chunks.length - 1];
       expect(finalChunk.finished).toBe(true);
       expect(finalChunk.error).toBe('Request was cancelled');
+
+      expect(loggerErrorSpy).not.toHaveBeenCalled();
+
+      loggerErrorSpy.mockRestore();
     });
   });
 });

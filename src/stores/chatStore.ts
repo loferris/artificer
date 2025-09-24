@@ -2,9 +2,19 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { Message } from '../types';
 
+export type ViewMode = 'chat' | 'terminal';
+
 export interface ChatState {
+  // View mode
+  viewMode: ViewMode;
+  streamingMode: boolean;
+  sidebarOpen: boolean;
+
   // Current conversation
   currentConversationId: string | null;
+  messages: Message[];
+  localMessages: Message[];
+  selectableConversations: any[];
 
   // Loading states
   isLoading: boolean;
@@ -12,38 +22,36 @@ export interface ChatState {
 
   // Error state
   error: string | null;
+  streamingError: string | null;
+
+  // Input state
+  input: string;
 
   // Retry functionality
   retryCount: number;
   lastFailedMessage: string;
 
-  // UI state
-  input: string;
-  sidebarOpen: boolean;
-
-  // Demo mode state
-  isDemoMode: boolean;
-  demoMessages: Message[];
-  demoConversations: Map<string, { id: string; title: string; messages: Message[] }>;
-
   // Actions
+  setViewMode: (mode: ViewMode) => void;
+  setStreamingMode: (enabled: boolean) => void;
+  toggleSidebar: () => void;
+  toggleStreaming: () => void;
   setCurrentConversation: (id: string | null) => void;
+  setMessages: (messages: Message[]) => void;
+  addMessage: (message: Message) => void;
+  setLocalMessages: (messages: Message[]) => void;
+  addLocalMessage: (message: Message) => void;
+  setSelectableConversations: (conversations: any[]) => void;
   setLoading: (loading: boolean) => void;
   setCreatingConversation: (creating: boolean) => void;
   setError: (error: string | null) => void;
+  setStreamingError: (error: string | null) => void;
+  clearStreamingError: () => void;
+  setInput: (input: string) => void;
+  clearMessages: () => void;
+  resetConversation: () => void;
   setRetryCount: (count: number) => void;
   setLastFailedMessage: (message: string) => void;
-  setInput: (input: string) => void;
-  setSidebarOpen: (open: boolean) => void;
-  setDemoMode: (isDemo: boolean) => void;
-  addDemoMessage: (message: Message) => void;
-  createDemoConversation: (id: string, title?: string) => void;
-  getDemoConversation: (
-    id: string,
-  ) => { id: string; title: string; messages: Message[] } | undefined;
-  clearDemoData: () => void;
-
-  // Combined actions
   clearError: () => void;
   resetRetry: () => void;
   startMessageSend: (message: string) => void;
@@ -55,92 +63,43 @@ export const useChatStore = create<ChatState>()(
   devtools(
     (set, get) => ({
       // Initial state
+      viewMode: 'terminal',
+      streamingMode: false,
+      sidebarOpen: true,
       currentConversationId: null,
+      messages: [],
+      localMessages: [],
+      selectableConversations: [],
       isLoading: false,
       isCreatingConversation: false,
       error: null,
+      streamingError: null,
+      input: '',
       retryCount: 0,
       lastFailedMessage: '',
-      input: '',
-      sidebarOpen: true,
-      isDemoMode: false,
-      demoMessages: [],
-      demoConversations: new Map(),
 
-      // Basic setters
-      setCurrentConversation: (id) =>
-        set({ currentConversationId: id }, false, 'setCurrentConversation'),
+      // Actions
+      setViewMode: (mode) => set({ viewMode: mode }, false, 'setViewMode'),
+      setStreamingMode: (enabled) => set({ streamingMode: enabled }, false, 'setStreamingMode'),
+      toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen }), false, 'toggleSidebar'),
+      toggleStreaming: () => set((state) => ({ streamingMode: !state.streamingMode }), false, 'toggleStreaming'),
+      setCurrentConversation: (id) => set({ currentConversationId: id, messages: [], localMessages: [] }, false, 'setCurrentConversation'),
+      setMessages: (messages) => set({ messages }, false, 'setMessages'),
+      addMessage: (message) => set((state) => ({ messages: [...state.messages, message] }), false, 'addMessage'),
+      setLocalMessages: (messages) => set({ localMessages: messages }, false, 'setLocalMessages'),
+      addLocalMessage: (message) => set((state) => ({ localMessages: [...state.localMessages, message] }), false, 'addLocalMessage'),
+      setSelectableConversations: (conversations) => set({ selectableConversations: conversations }, false, 'setSelectableConversations'),
       setLoading: (loading) => set({ isLoading: loading }, false, 'setLoading'),
-      setCreatingConversation: (creating) =>
-        set({ isCreatingConversation: creating }, false, 'setCreatingConversation'),
+      setCreatingConversation: (creating) => set({ isCreatingConversation: creating }, false, 'setCreatingConversation'),
       setError: (error) => set({ error }, false, 'setError'),
-      setRetryCount: (count) => set({ retryCount: count }, false, 'setRetryCount'),
-      setLastFailedMessage: (message) =>
-        set({ lastFailedMessage: message }, false, 'setLastFailedMessage'),
+      setStreamingError: (error) => set({ streamingError: error }, false, 'setStreamingError'),
+      clearStreamingError: () => set({ streamingError: null }, false, 'clearStreamingError'),
       setInput: (input) => set({ input }, false, 'setInput'),
-      setSidebarOpen: (open) => set({ sidebarOpen: open }, false, 'setSidebarOpen'),
-      setDemoMode: (isDemo) => set({ isDemoMode: isDemo }, false, 'setDemoMode'),
-      addDemoMessage: (message) =>
-        set(
-          (state) => {
-            // Also add to current demo conversation if it exists
-            const currentId = state.currentConversationId;
-            if (currentId && state.demoConversations.has(currentId)) {
-              const conv = state.demoConversations.get(currentId)!;
-              const updatedConv = {
-                ...conv,
-                messages: [...conv.messages, message],
-              };
-              const updatedConversations = new Map(state.demoConversations);
-              updatedConversations.set(currentId, updatedConv);
-              return {
-                demoMessages: [...state.demoMessages, message],
-                demoConversations: updatedConversations,
-              };
-            }
-            return { demoMessages: [...state.demoMessages, message] };
-          },
-          false,
-          'addDemoMessage',
-        ),
-
-      createDemoConversation: (id, title) =>
-        set(
-          (state) => {
-            const newConversation = {
-              id,
-              title: title || `Demo Conversation ${Date.now()}`,
-              messages: [],
-            };
-            const updatedConversations = new Map(state.demoConversations);
-            updatedConversations.set(id, newConversation);
-            return {
-              demoConversations: updatedConversations,
-              currentConversationId: id,
-            };
-          },
-          false,
-          'createDemoConversation',
-        ),
-
-      getDemoConversation: (id) => {
-        return get().demoConversations.get(id);
-      },
-
-      clearDemoData: () =>
-        set(
-          {
-            demoMessages: [],
-            demoConversations: new Map(),
-            isDemoMode: false,
-          },
-          false,
-          'clearDemoData',
-        ),
-
-      // Combined actions
+      clearMessages: () => set({ messages: [], localMessages: [] }, false, 'clearMessages'),
+      resetConversation: () => set({ currentConversationId: null, messages: [], localMessages: [], selectableConversations: [] }, false, 'resetConversation'),
+      setRetryCount: (count) => set({ retryCount: count }, false, 'setRetryCount'),
+      setLastFailedMessage: (message) => set({ lastFailedMessage: message }, false, 'setLastFailedMessage'),
       clearError: () => set({ error: null }, false, 'clearError'),
-
       resetRetry: () =>
         set(
           {
@@ -150,7 +109,6 @@ export const useChatStore = create<ChatState>()(
           false,
           'resetRetry',
         ),
-
       startMessageSend: (message) => {
         set(
           {
@@ -163,7 +121,6 @@ export const useChatStore = create<ChatState>()(
           'startMessageSend',
         );
       },
-
       finishMessageSend: () => {
         set(
           {
@@ -176,7 +133,6 @@ export const useChatStore = create<ChatState>()(
           'finishMessageSend',
         );
       },
-
       handleMessageError: (error) => {
         set(
           (state) => ({
@@ -190,30 +146,7 @@ export const useChatStore = create<ChatState>()(
       },
     }),
     {
-      name: 'chat-store', // DevTools name
+      name: 'chat-store',
     },
   ),
 );
-
-// Selectors for common state combinations
-export const useIsConversationReady = () => {
-  return useChatStore(
-    (state) => state.currentConversationId !== null && !state.isCreatingConversation,
-  );
-};
-
-export const useCanSendMessage = () => {
-  return useChatStore(
-    (state) =>
-      !!state.input.trim() &&
-      !state.isLoading &&
-      state.currentConversationId !== null &&
-      !state.isCreatingConversation,
-  );
-};
-
-export const useShouldShowRetry = () => {
-  return useChatStore(
-    (state) => !!state.error && state.error.includes('try again') && !!state.lastFailedMessage,
-  );
-};
