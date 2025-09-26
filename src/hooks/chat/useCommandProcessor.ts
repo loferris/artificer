@@ -42,35 +42,41 @@ export function useCommandProcessor() {
   const conversationsQuery = trpc.conversations.list.useQuery();
   const createConversationMutation = trpc.conversations.create.useMutation();
 
-  const displayUserCommand = useCallback((command: string) => {
-    const userMessage = {
-      id: `user-cmd-${Date.now()}`,
-      role: 'user' as const,
-      content: command,
-      timestamp: new Date(),
-    };
+  const displayUserCommand = useCallback(
+    (command: string) => {
+      const userMessage = {
+        id: `user-cmd-${Date.now()}`,
+        role: 'user' as const,
+        content: command,
+        timestamp: new Date(),
+      };
 
-    if (!store.currentConversationId) {
-      store.addLocalMessage(userMessage);
-    } else {
-      store.addMessage(userMessage);
-    }
-  }, [store.currentConversationId, store.addLocalMessage, store.addMessage]);
+      if (!store.currentConversationId) {
+        store.addLocalMessage(userMessage);
+      } else {
+        store.addMessage(userMessage);
+      }
+    },
+    [store.currentConversationId, store.addLocalMessage, store.addMessage],
+  );
 
-  const displayMessage = useCallback((content: string) => {
-    const localMessage = {
-      id: `local-cmd-${Date.now()}`,
-      role: 'assistant' as const,
-      content: content.trim(),
-      timestamp: new Date(),
-    };
+  const displayMessage = useCallback(
+    (content: string) => {
+      const localMessage = {
+        id: `local-cmd-${Date.now()}`,
+        role: 'assistant' as const,
+        content: content.trim(),
+        timestamp: new Date(),
+      };
 
-    if (!store.currentConversationId) {
-      store.addLocalMessage(localMessage);
-    } else {
-      store.addMessage(localMessage);
-    }
-  }, [store.currentConversationId, store.addLocalMessage, store.addMessage]);
+      if (!store.currentConversationId) {
+        store.addLocalMessage(localMessage);
+      } else {
+        store.addMessage(localMessage);
+      }
+    },
+    [store.currentConversationId, store.addLocalMessage, store.addMessage],
+  );
 
   const exportManager = useExportManager({
     currentConversationId: store.currentConversationId,
@@ -80,20 +86,22 @@ export function useCommandProcessor() {
   const handleNewConversation = async () => {
     const newConversation = await createConversationMutation.mutateAsync({});
     if (newConversation?.id) {
-        store.setCurrentConversation(newConversation.id);
-        conversationsQuery.refetch();
+      store.setCurrentConversation(newConversation.id);
+      conversationsQuery.refetch();
     }
   };
 
   const handleThemeCommand = (arg?: string) => {
     const themeMap: Record<string, 'purple-rich' | 'amber-forest' | 'cyan-light'> = {
-      'dark': 'purple-rich',
-      'amber': 'amber-forest', 
-      'light': 'cyan-light'
+      dark: 'purple-rich',
+      amber: 'amber-forest',
+      light: 'cyan-light',
     };
 
     if (!arg) {
-      displayMessage(`Current theme: ${getThemeDisplayName(theme)} (${theme})\nAvailable themes: dark, amber, light`);
+      displayMessage(
+        `Current theme: ${getThemeDisplayName(theme)} (${theme})\nAvailable themes: dark, amber, light`,
+      );
       return;
     }
 
@@ -125,7 +133,9 @@ export function useCommandProcessor() {
 
   const handleStreamingCommand = (arg?: string) => {
     if (!arg) {
-      displayMessage(`Streaming mode: ${store.streamingMode ? 'yes' : 'no'}\nUsage: /streaming [yes|no]`);
+      displayMessage(
+        `Streaming mode: ${store.streamingMode ? 'yes' : 'no'}\nUsage: /streaming [yes|no]`,
+      );
       return;
     }
 
@@ -159,9 +169,13 @@ export function useCommandProcessor() {
 
     const [cmd, arg1] = command.substring(1).split(' ');
     const format = (arg1 || 'markdown') as 'markdown' | 'json';
-    
+
     const validFormats = ['markdown', 'json'];
-    if ((cmd === 'export-current' || cmd === 'export-all') && arg1 && !validFormats.includes(arg1)) {
+    if (
+      (cmd === 'export-current' || cmd === 'export-all') &&
+      arg1 &&
+      !validFormats.includes(arg1)
+    ) {
       displayMessage(`Error: Invalid format '${arg1}'. Valid formats: ${validFormats.join(', ')}`);
       return true;
     }
@@ -185,34 +199,34 @@ export function useCommandProcessor() {
       case 'man':
         displayMessage(`\n${getManualContent()}`);
         break;
-        
+
       case 'new':
         handleNewConversation();
         break;
-        
+
       case 'clear':
         store.clearMessages();
         displayMessage('Conversation history cleared.');
         break;
-        
+
       case 'reset':
         store.resetConversation();
         break;
-        
+
       case 'list':
       case 'list-all':
         handleListCommand(cmd);
         break;
-        
+
       case 'export-current':
         exportManager.exportCurrent(format);
         break;
-        
+
       case 'export-all':
         exportManager.exportAll(format);
         break;
-        
-default:
+
+      default:
         displayMessage(`Unknown command: /${cmd}\nType /man for help.`);
         break;
     }

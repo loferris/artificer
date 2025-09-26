@@ -1,7 +1,4 @@
-export {
-  DatabaseMessageService,
-  DemoMessageService,
-} from './MessageService';
+export { DatabaseMessageService, DemoMessageService } from './MessageService';
 
 export type {
   MessageService,

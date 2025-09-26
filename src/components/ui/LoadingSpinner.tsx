@@ -1,6 +1,6 @@
 /**
  * Shared Loading Spinner Primitive Component
- * 
+ *
  * Provides consistent loading indicators across terminal and chat modes
  * with different variants for various loading states.
  */
@@ -44,19 +44,21 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 
   // Spinner variant (classic rotating circle)
   const SpinnerIcon = () => (
-    <div className={`
+    <div
+      className={`
       ${sizeClasses[size]}
       border-2
       border-current
       border-t-transparent
       rounded-full
       animate-spin
-    `} />
+    `}
+    />
   );
 
   // Dots variant (three bouncing dots)
   const DotsIcon = () => (
-    <div className="flex space-x-1">
+    <div className='flex space-x-1'>
       {[0, 1, 2].map((i) => (
         <div
           key={i}
@@ -74,18 +76,20 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 
   // Pulse variant (growing/shrinking circle)
   const PulseIcon = () => (
-    <div className={`
+    <div
+      className={`
       ${sizeClasses[size]}
       bg-current
       rounded-full
       animate-pulse
       opacity-60
-    `} />
+    `}
+    />
   );
 
   // Bars variant (loading bars)
   const BarsIcon = () => (
-    <div className="flex space-x-0.5 items-end">
+    <div className='flex space-x-0.5 items-end'>
       {[0, 1, 2, 3].map((i) => (
         <div
           key={i}
@@ -95,7 +99,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
             rounded-sm
             animate-pulse
           `}
-          style={{ 
+          style={{
             height: size === 'xs' ? '8px' : size === 'sm' ? '12px' : '16px',
             animationDelay: `${i * 100}ms`,
             animationDuration: '1s',
@@ -112,7 +116,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
       <span className={`${themeClasses.textMuted} ${themeClasses.textSm}`}>
         {text || 'ai-thinking'}
       </span>
-      <div className="flex space-x-1">
+      <div className='flex space-x-1'>
         {[0, 1, 2].map((i) => (
           <div
             key={i}
@@ -134,11 +138,16 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   // Select the appropriate icon based on variant
   const renderIcon = () => {
     switch (variant) {
-      case 'dots': return <DotsIcon />;
-      case 'pulse': return <PulseIcon />;
-      case 'bars': return <BarsIcon />;
-      case 'thinking': return <ThinkingIcon />;
-      default: return <SpinnerIcon />;
+      case 'dots':
+        return <DotsIcon />;
+      case 'pulse':
+        return <PulseIcon />;
+      case 'bars':
+        return <BarsIcon />;
+      case 'thinking':
+        return <ThinkingIcon />;
+      default:
+        return <SpinnerIcon />;
     }
   };
 
@@ -149,17 +158,21 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
     ${colorClasses[color]}
     ${variant === 'thinking' ? '' : 'gap-2'}
     ${className}
-  `.trim().replace(/\s+/g, ' ');
+  `
+    .trim()
+    .replace(/\s+/g, ' ');
 
   return (
     <div className={containerClasses}>
       {renderIcon()}
       {text && variant !== 'thinking' && (
-        <span className={`
+        <span
+          className={`
           ${themeClasses.textSm}
           ${themeClasses.fontMono}
           ${colorClasses[color]}
-        `}>
+        `}
+        >
           {text}
         </span>
       )}
@@ -168,16 +181,16 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 };
 
 // Pre-configured loading variants for common use cases
-export const ProcessingSpinner: React.FC<Omit<LoadingSpinnerProps, 'variant' | 'text'>> = (props) => (
-  <LoadingSpinner variant="thinking" text="processing..." {...props} />
-);
+export const ProcessingSpinner: React.FC<Omit<LoadingSpinnerProps, 'variant' | 'text'>> = (
+  props,
+) => <LoadingSpinner variant='thinking' text='processing...' {...props} />;
 
 export const LoadingDots: React.FC<Omit<LoadingSpinnerProps, 'variant'>> = (props) => (
-  <LoadingSpinner variant="dots" {...props} />
+  <LoadingSpinner variant='dots' {...props} />
 );
 
 export const LoadingBars: React.FC<Omit<LoadingSpinnerProps, 'variant'>> = (props) => (
-  <LoadingSpinner variant="bars" {...props} />
+  <LoadingSpinner variant='bars' {...props} />
 );
 
 // Loading overlay for full-screen loading states
@@ -198,26 +211,32 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
   if (!isVisible) return null;
 
   return (
-    <div className={`
+    <div
+      className={`
       fixed inset-0 z-50 flex items-center justify-center
       ${backdrop ? `${themeClasses.bgOverlay} backdrop-blur-sm` : ''}
-    `}>
-      <div className={`
+    `}
+    >
+      <div
+        className={`
         flex flex-col items-center gap-4
         ${themeClasses.bgPrimary}
         ${themeClasses.textPrimary}
         ${themeClasses.pLg}
         ${themeClasses.radiusMd}
         ${backdrop ? 'shadow-lg border border-opacity-20' : ''}
-      `}>
+      `}
+      >
         <LoadingSpinner {...spinnerProps} />
         {message && (
-          <p className={`
+          <p
+            className={`
             ${themeClasses.textSm}
             ${themeClasses.textSecondary}
             text-center
             max-w-sm
-          `}>
+          `}
+          >
             {message}
           </p>
         )}
@@ -244,12 +263,8 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-4">
-        <LoadingSpinner
-          variant={variant}
-          size={size}
-          text={loadingText}
-        />
+      <div className='flex items-center justify-center py-4'>
+        <LoadingSpinner variant={variant} size={size} text={loadingText} />
       </div>
     );
   }

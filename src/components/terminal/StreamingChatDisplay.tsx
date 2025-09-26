@@ -80,11 +80,8 @@ export const StreamingChatDisplay: React.FC<StreamingChatDisplayProps> = ({
 
   if (messagesLoading || isCreatingConversation) {
     return (
-      <div 
-        className={`${baseContainerClasses} ${themeClasses.textTertiary}`}
-        style={style}
-      >
-        <div className="flex items-center">
+      <div className={`${baseContainerClasses} ${themeClasses.textTertiary}`} style={style}>
+        <div className='flex items-center'>
           <span className={`${themeClasses.accentPrompt} mr-2`}>$</span>
           <span className={`${themeClasses.textMuted}`}>
             {isCreatingConversation ? 'initializing-session...' : 'loading-history...'}
@@ -97,11 +94,8 @@ export const StreamingChatDisplay: React.FC<StreamingChatDisplayProps> = ({
 
   if (messagesError) {
     return (
-      <div 
-        className={`${baseContainerClasses} ${themeClasses.accentError}`}
-        style={style}
-      >
-        <div className="flex items-center">
+      <div className={`${baseContainerClasses} ${themeClasses.accentError}`} style={style}>
+        <div className='flex items-center'>
           <span className={`${themeClasses.accentError} mr-2`}>!</span>
           <span>error: failed-to-load-messages</span>
         </div>
@@ -114,12 +108,9 @@ export const StreamingChatDisplay: React.FC<StreamingChatDisplayProps> = ({
 
   if (messages.length === 0 && !messagesLoading) {
     return (
-      <div 
-        className={`${baseContainerClasses} ${themeClasses.textMuted}`}
-        style={style}
-      >
-        <div className="space-y-2">
-          <div className="flex items-center">
+      <div className={`${baseContainerClasses} ${themeClasses.textMuted}`} style={style}>
+        <div className='space-y-2'>
+          <div className='flex items-center'>
             <span className={`${themeClasses.accentPrompt} mr-2`}>$</span>
             <span>streaming-session-initialized</span>
           </div>
@@ -135,7 +126,7 @@ export const StreamingChatDisplay: React.FC<StreamingChatDisplayProps> = ({
   }
 
   return (
-    <div 
+    <div
       ref={scrollContainerRef}
       className={`${baseContainerClasses} ${themeClasses.textSecondary}`}
       onScroll={handleScroll}
@@ -144,23 +135,21 @@ export const StreamingChatDisplay: React.FC<StreamingChatDisplayProps> = ({
       {messages.map((message) => {
         const isComplete = message.isComplete ?? true;
         const isCurrentlyStreaming = !isComplete && isStreaming;
-        
+
         return (
-          <div 
-            key={`${message.id}-${message.timestamp}`} 
+          <div
+            key={`${message.id}-${message.timestamp}`}
             className={`mb-2 ${themeClasses.transitionFast}`}
           >
             {message.role === 'user' ? (
-              <div className="flex items-start">
+              <div className='flex items-start'>
                 <span className={`${themeClasses.accentUser} pr-2 flex-shrink-0`}>$</span>
-                <span 
-                  className={`${themeClasses.accentUser} break-words flex-1`}
-                >
+                <span className={`${themeClasses.accentUser} break-words flex-1`}>
                   {message.content}
                 </span>
               </div>
             ) : (
-              <div 
+              <div
                 className={`
                   ${themeClasses.pSm} 
                   ${themeClasses.bgOverlay} 
@@ -172,12 +161,14 @@ export const StreamingChatDisplay: React.FC<StreamingChatDisplayProps> = ({
                   relative
                 `}
               >
-                <div className={`${themeClasses.textXs} ${themeClasses.textMuted} mb-1 flex items-center justify-between`}>
-                  <span style={{ color: '#f8b4cb' }}>AI Response {isCurrentlyStreaming ? '(streaming)' : ''}:</span>
+                <div
+                  className={`${themeClasses.textXs} ${themeClasses.textMuted} mb-1 flex items-center justify-between`}
+                >
+                  <span style={{ color: '#f8b4cb' }}>
+                    AI Response {isCurrentlyStreaming ? '(streaming)' : ''}:
+                  </span>
                   {isCurrentlyStreaming && (
-                    <div className={`${themeClasses.accentAssistant} animate-pulse text-xs`}>
-                      ●
-                    </div>
+                    <div className={`${themeClasses.accentAssistant} animate-pulse text-xs`}>●</div>
                   )}
                 </div>
                 <StreamingMessage
@@ -193,27 +184,25 @@ export const StreamingChatDisplay: React.FC<StreamingChatDisplayProps> = ({
 
       {(isLoading || isStreaming) && (
         <div className={`flex items-center ${themeClasses.accentAssistant} mt-4`}>
-          <span className="mr-2">⟨</span>
+          <span className='mr-2'>⟨</span>
           <span>ai-{isStreaming ? 'streaming' : 'thinking'}</span>
-          <div className="ml-2 flex space-x-1">
-            <div 
+          <div className='ml-2 flex space-x-1'>
+            <div
               className={`w-1 h-1 ${themeClasses.accentAssistant} bg-current rounded-full animate-bounce`}
               style={{ animationDelay: '0ms' }}
             />
-            <div 
+            <div
               className={`w-1 h-1 ${themeClasses.accentAssistant} bg-current rounded-full animate-bounce`}
               style={{ animationDelay: '150ms' }}
             />
-            <div 
+            <div
               className={`w-1 h-1 ${themeClasses.accentAssistant} bg-current rounded-full animate-bounce`}
               style={{ animationDelay: '300ms' }}
             />
           </div>
-          <span className="ml-2">⟩</span>
+          <span className='ml-2'>⟩</span>
           {isStreaming && (
-            <span className={`ml-2 ${themeClasses.textMuted} text-xs`}>
-              /cancel to stop
-            </span>
+            <span className={`ml-2 ${themeClasses.textMuted} text-xs`}>/cancel to stop</span>
           )}
         </div>
       )}

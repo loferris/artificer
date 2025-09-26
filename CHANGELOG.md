@@ -10,18 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2025-09-18] - Codebase Documentation and Review
 
 ### Added
+
 - **JSDoc Comments**: Added extensive JSDoc comments to key components, hooks, and API routers to improve code clarity and self-documentation. This includes:
   - `useChat` hook
   - `TerminalView` component
   - `chatRouterRefactored` tRPC router
 
 ### Changed
+
 - **Codebase Review**: Performed a general codebase review focusing on documentation consistency, naming conventions, test design, and comments.
 - **Changelog**: Updated the changelog to reflect the latest release.
 
 ## [2025-09-15] - Test Suite Stabilization & Type Safety
 
 ### Fixed
+
 - **Test Suite Stability**: Fixed failing export router test due to data type inconsistencies
 - **Type Safety Improvements**: Resolved TypeScript compilation errors in error handling for TRPC clients
 - **Test Data Consistency**: Standardized `parentId` field handling between `null` and `undefined` in test mocks
@@ -30,12 +33,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Data Model Consistency**: Standardized `parentId` type from `string | null` to `string?` across the codebase
 
 ### Changed
+
 - **Type Definitions**: Updated Message interface to use consistent optional `parentId` field type
-- **Hook Architecture**: Restructured useCallback dependencies to avoid circular dependencies  
+- **Hook Architecture**: Restructured useCallback dependencies to avoid circular dependencies
 - **Error Handling**: Improved error type casting for TRPC client errors with proper unknown type conversion
 - **Documentation**: Updated README.md and CHANGELOG.md to reflect accurate current state vs aspirational features
 
 ### Technical Details
+
 - All 390+ tests now pass consistently
 - TypeScript compilation with strict mode enabled
 - ESLint warnings resolved across codebase
@@ -44,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Previous Release] - Core Feature Development
 
 ### Added
+
 - **Dual UI Interface System**: Terminal interface with slash commands + Classic chat interface for different workflow preferences
 - **Comprehensive Theme System**: Three responsive themes (Purple-Rich, Amber-Forest, Cyan-Light) with CSS custom properties
 - **Advanced Slash Commands**: `/theme`, `/view`, `/streaming`, `/export`, `/new`, `/list`, `/man` commands for terminal interface
@@ -65,6 +71,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CLI documentation**: Complete usage examples for cURL, Node.js, Python, and Bash
 
 ### Fixed
+
 - **Type Safety Improvements**: Fixed TypeScript errors in error handling for TRPC clients
 - **Test Data Consistency**: Resolved `parentId` field inconsistencies between `null` and `undefined` in test mocks
 - **React Hook Dependencies**: Fixed ESLint warning for missing dependencies in `ConversationOrchestrator` useCallback
@@ -72,6 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Data Model Consistency**: Standardized `parentId` type from `string | null` to `string?` across the codebase
 
 ### Changed
+
 - **Type Definitions**: Updated Message interface to use consistent optional `parentId` field type
 - **Hook Architecture**: Restructured useCallback dependencies to avoid circular dependencies
 - **Error Handling**: Improved error type casting for TRPC client errors with proper unknown type conversion
@@ -86,6 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Session management**: Consistent session handling across HTTP and WebSocket connections
 
 ### Technical Details
+
 - **Theme Architecture**: CSS custom properties system with 90+ design tokens per theme
 - **React Context API**: Centralized theme management with `TerminalThemeProvider` and `useTerminalTheme` hooks
 - **CSS Class Generation**: Dynamic theme-aware CSS class utilities via `useTerminalThemeClasses`
@@ -98,6 +107,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation restructured for public vs internal use
 
 ### Documentation
+
 - **New Theme Documentation**: Comprehensive theming guide at `docs/THEMING.md`
 - **Updated README**: Added UI features section with slash commands reference
 - **Developer Docs**: Updated architecture documentation in `docs/internal/CLAUDE.md`

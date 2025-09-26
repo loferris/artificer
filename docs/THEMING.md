@@ -5,18 +5,21 @@ The AI Workflow Engine features a comprehensive theme system built with CSS cust
 ## Available Themes
 
 ### 🌙 **Dark Mode** (`purple-rich`)
+
 - **Description**: Dark theme with deep purples and emerald accents
 - **Background**: Deep purple gradients (#0f0a1a to #1a0f2e)
 - **Accent Colors**: Emerald green user input, cyan assistant responses
 - **Best For**: Low-light environments, extended coding sessions
 
-### 🌲 **Amber Mode** (`amber-forest`) 
+### 🌲 **Amber Mode** (`amber-forest`)
+
 - **Description**: Warm earth tones with forest-inspired colors
 - **Background**: Rich brown/amber gradients (#2d2a1e to #3d3426)
 - **Accent Colors**: Mint green user input, warm amber highlights
 - **Best For**: Natural lighting, focus-intensive work
 
 ### ☀️ **Light Mode** (`cyan-rich`)
+
 - **Description**: Clean light theme with cyan and periwinkle watercolor effects
 - **Background**: Subtle watercolor gradients with cyan/periwinkle washes
 - **Accent Colors**: Darker mint green for contrast, cyan highlights
@@ -25,6 +28,7 @@ The AI Workflow Engine features a comprehensive theme system built with CSS cust
 ## Theme Architecture
 
 ### CSS Custom Properties System
+
 Each theme defines 90+ CSS custom properties providing complete design tokens:
 
 ```css
@@ -32,13 +36,13 @@ Each theme defines 90+ CSS custom properties providing complete design tokens:
   /* Foundation Colors */
   --terminal-bg-primary: #0f0a1a;
   --terminal-text-primary: #c9a8fa;
-  --terminal-accent-user: #6ee7b7;    /* Mint green user input */
-  
+  --terminal-accent-user: #6ee7b7; /* Mint green user input */
+
   /* AI Workflow Semantics */
   --terminal-model-claude: #ff6b35;
   --terminal-model-deepseek: #3b82f6;
   --terminal-cost-low: #34d399;
-  
+
   /* Interactive States */
   --terminal-hover-bg: #374151;
   --terminal-focus-outline: #34d399;
@@ -47,6 +51,7 @@ Each theme defines 90+ CSS custom properties providing complete design tokens:
 ```
 
 ### React Context API
+
 Theme state management via `TerminalThemeContext`:
 
 ```typescript
@@ -65,14 +70,16 @@ setTheme('amber-forest');  // purple-rich | amber-forest | cyan-light
 ### Switching Themes
 
 **Terminal Interface (Slash Commands):**
+
 ```bash
 /theme dark    # Switch to purple-rich (dark mode)
-/theme amber   # Switch to amber-forest  
+/theme amber   # Switch to amber-forest
 /theme light   # Switch to cyan-light
 /theme         # Show current theme
 ```
 
 **Programmatic Theme Switching:**
+
 ```typescript
 import { useTerminalTheme } from '@/contexts/TerminalThemeContext';
 
@@ -87,10 +94,10 @@ import { useTerminalThemeClasses } from '@/contexts/TerminalThemeContext';
 
 const MyComponent = () => {
   const themeClasses = useTerminalThemeClasses();
-  
+
   return (
     <div className={`
-      ${themeClasses.bgPrimary} 
+      ${themeClasses.bgPrimary}
       ${themeClasses.textPrimary}
       ${themeClasses.borderPrimary}
     `}>
@@ -112,13 +119,15 @@ const MyComponent = () => {
 ### Theme-Responsive Components
 
 **CostTracker**: Different styling for terminal vs chat modes
+
 ```typescript
-const containerClass = isTerminal 
+const containerClass = isTerminal
   ? `${themeClasses.bgSecondary} ${themeClasses.textPrimary}` // Terminal theme
-  : `bg-white/80 text-gray-700 border-pink-200`;              // Chat mode override
+  : `bg-white/80 text-gray-700 border-pink-200`; // Chat mode override
 ```
 
 **ChatInput**: Uses theme-aware user input color
+
 ```typescript
 className={themeClasses.accentUser}  // Mint green in all themes
 ```
@@ -126,11 +135,13 @@ className={themeClasses.accentUser}  // Mint green in all themes
 ### View Mode Separation
 
 **Terminal View**: Full theme system integration
+
 - All components use theme classes
 - Watercolor effects for enhanced visual appeal
 - Complete theme responsiveness
 
 **Chat View**: Independent styling
+
 - Pink/purple gradient aesthetic regardless of terminal theme
 - Hardcoded styles with inline CSS for theme immunity
 - Cost tracker and buttons adapt to chat aesthetic
@@ -141,7 +152,7 @@ className={themeClasses.accentUser}  // Mint green in all themes
 src/
 ├── styles/themes/
 │   ├── purple-rich.css      # Dark mode theme
-│   ├── amber-forest.css     # Amber mode theme  
+│   ├── amber-forest.css     # Amber mode theme
 │   ├── cyan-light.css       # Light mode theme
 │   ├── terminal.css         # Base terminal styles
 │   └── blank-template.css   # Template for new themes
@@ -164,7 +175,7 @@ src/
 Each theme provides consistent design tokens for:
 
 - **Foundation Colors**: Backgrounds, text, borders (12 properties)
-- **AI Workflow Semantics**: Model colors, routing info, cost indicators (15 properties)  
+- **AI Workflow Semantics**: Model colors, routing info, cost indicators (15 properties)
 - **Interactive States**: Hover, focus, disabled states (8 properties)
 - **Typography**: Font families, sizes, line heights (12 properties)
 - **Layout**: Spacing, padding, border radius (15 properties)

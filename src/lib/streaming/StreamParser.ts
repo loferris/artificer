@@ -1,8 +1,4 @@
-import { 
-  ContentType, 
-  ContentSegment, 
-  ParsedStreamChunk 
-} from './types';
+import { ContentType, ContentSegment, ParsedStreamChunk } from './types';
 
 export class StreamParser {
   private buffer = '';
@@ -17,11 +13,11 @@ export class StreamParser {
   parseChunk(chunk: string): ParsedStreamChunk {
     this.buffer += chunk;
     const newSegments = this.extractSegments();
-    
+
     return {
       segments: newSegments,
       buffer: this.buffer,
-      isComplete: false // Will be set by calling code when stream ends
+      isComplete: false, // Will be set by calling code when stream ends
     };
   }
 
@@ -34,7 +30,7 @@ export class StreamParser {
       const finalSegment: ContentSegment = {
         type: this.detectContentType(this.buffer),
         content: this.buffer,
-        isComplete: true
+        isComplete: true,
       };
       this.currentSegments.push(finalSegment);
       this.buffer = '';
@@ -43,7 +39,7 @@ export class StreamParser {
     const result = {
       segments: this.currentSegments,
       buffer: '',
-      isComplete: true
+      isComplete: true,
     };
 
     this.reset();
@@ -80,7 +76,7 @@ export class StreamParser {
             type: ContentType.CODE_BLOCK,
             content: currentSegment.trim(),
             isComplete: true,
-            metadata: { language: this.codeBlockLanguage }
+            metadata: { language: this.codeBlockLanguage },
           });
           currentSegment = '';
           this.inCodeBlock = false;
@@ -92,7 +88,7 @@ export class StreamParser {
             segments.push({
               type: this.detectContentType(currentSegment),
               content: currentSegment.trim(),
-              isComplete: true
+              isComplete: true,
             });
           }
           this.inCodeBlock = true;
@@ -118,7 +114,7 @@ export class StreamParser {
           segments.push({
             type: this.detectContentType(currentSegment),
             content: currentSegment.trim(),
-            isComplete: true
+            isComplete: true,
           });
           currentSegment = '';
         }
@@ -126,7 +122,7 @@ export class StreamParser {
           type: ContentType.HEADER,
           content: line,
           isComplete: true,
-          metadata: { level: line.match(/^#+/)?.[0].length || 1 }
+          metadata: { level: line.match(/^#+/)?.[0].length || 1 },
         });
         processedLines = i + 1;
         continue;
@@ -134,13 +130,13 @@ export class StreamParser {
 
       // List detection - be more conservative about what constitutes a list
       const isListItem = line.match(/^\s*[-*+]\s/) || line.match(/^\s*\d+\.\s/);
-      const isPotentialDialogue = line.match(/^\s*-\s*["'""]/) || // Starts with dash + quote
-                                  line.match(/^\s*-\s*[A-Z][a-z]/) || // Starts with dash + capital + lowercase (dialogue)
-                                  line.match(/^\s*-\s*\w+:/) || // Starts with dash + word + colon (speaker:)
-                                  line.match(/^\s*-\s*\*\*/) || // Starts with dash + markdown bold
-                                  line.match(/^\s*-\s*.{50,}/); // Long lines are likely dialogue, not list items
-      
-      
+      const isPotentialDialogue =
+        line.match(/^\s*-\s*["'""]/) || // Starts with dash + quote
+        line.match(/^\s*-\s*[A-Z][a-z]/) || // Starts with dash + capital + lowercase (dialogue)
+        line.match(/^\s*-\s*\w+:/) || // Starts with dash + word + colon (speaker:)
+        line.match(/^\s*-\s*\*\*/) || // Starts with dash + markdown bold
+        line.match(/^\s*-\s*.{50,}/); // Long lines are likely dialogue, not list items
+
       if (isListItem && !isPotentialDialogue) {
         if (!this.inList) {
           // Start of new list
@@ -148,29 +144,29 @@ export class StreamParser {
             segments.push({
               type: this.detectContentType(currentSegment),
               content: currentSegment.trim(),
-              isComplete: true
+              isComplete: true,
             });
             currentSegment = '';
           }
           this.inList = true;
         }
         currentSegment += line + '\n';
-        
+
         // Check if next line continues the list
         if (i + 1 < lines.length) {
           const nextLine = lines[i + 1];
           const nextIsListItem = nextLine.match(/^\s*[-*+]\s/) || nextLine.match(/^\s*\d+\.\s/);
           const nextIsEmpty = nextLine.trim() === '';
-          
+
           if (!nextIsListItem && !nextIsEmpty) {
             // End of list
             segments.push({
               type: ContentType.LIST,
               content: currentSegment.trim(),
               isComplete: true,
-              metadata: { 
-                listType: line.match(/^\s*\d+\./) ? 'ordered' : 'unordered' 
-              }
+              metadata: {
+                listType: line.match(/^\s*\d+\./) ? 'ordered' : 'unordered',
+              },
             });
             currentSegment = '';
             this.inList = false;
@@ -191,7 +187,7 @@ export class StreamParser {
           type: ContentType.LIST,
           content: currentSegment.trim(),
           isComplete: true,
-          metadata: { listType: 'unordered' } // Default
+          metadata: { listType: 'unordered' }, // Default
         });
         currentSegment = line + '\n';
         this.inList = false;
@@ -201,7 +197,7 @@ export class StreamParser {
 
       // Regular text - don't emit until we have a natural break or completion
       currentSegment += line + (isLastLine ? '' : '\n');
-      
+
       // For text, emit segments on sentence boundaries or substantial content
       if (!isLastLine && line.trim() !== '') {
         const trimmed = currentSegment.trim();
@@ -210,7 +206,7 @@ export class StreamParser {
           segments.push({
             type: ContentType.TEXT,
             content: trimmed,
-            isComplete: true
+            isComplete: true,
           });
           currentSegment = '';
           processedLines = i + 1;
@@ -228,11 +224,11 @@ export class StreamParser {
 
   private detectContentType(content: string): ContentType {
     const trimmed = content.trim();
-    
+
     if (trimmed.startsWith('```')) return ContentType.CODE_BLOCK;
     if (trimmed.match(/^#{1,6}\s/)) return ContentType.HEADER;
     if (trimmed.match(/^\s*[-*+]\s/) || trimmed.match(/^\s*\d+\.\s/)) return ContentType.LIST;
-    
+
     return ContentType.TEXT;
   }
 }

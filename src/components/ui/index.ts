@@ -1,6 +1,6 @@
 /**
  * Shared UI Primitives - Centralized Design System
- * 
+ *
  * Exports all shared UI primitive components for consistent styling
  * across terminal and chat modes throughout the application.
  */
@@ -18,7 +18,7 @@ export {
   type ButtonGroupProps,
 } from './Button';
 
-// Input primitives  
+// Input primitives
 export {
   Input,
   TerminalInput,

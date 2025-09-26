@@ -1,6 +1,8 @@
-
 import React, { useEffect, useRef } from 'react';
-import { useTerminalThemeClasses, useTerminalThemeProps } from '../../contexts/TerminalThemeContext';
+import {
+  useTerminalThemeClasses,
+  useTerminalThemeProps,
+} from '../../contexts/TerminalThemeContext';
 
 interface Message {
   id: string;
@@ -48,11 +50,8 @@ export const ChatDisplay: React.FC<ChatDisplayProps> = ({
 
   if (messagesLoading || isCreatingConversation) {
     return (
-      <div 
-        className={`${baseContainerClasses} ${themeClasses.textTertiary}`}
-        style={style}
-      >
-        <div className="flex items-center">
+      <div className={`${baseContainerClasses} ${themeClasses.textTertiary}`} style={style}>
+        <div className='flex items-center'>
           <span className={`${themeClasses.accentPrompt} mr-2`}>$</span>
           <span className={`${themeClasses.textMuted}`}>
             {isCreatingConversation ? 'initializing-session...' : 'loading-history...'}
@@ -65,11 +64,8 @@ export const ChatDisplay: React.FC<ChatDisplayProps> = ({
 
   if (messagesError) {
     return (
-      <div 
-        className={`${baseContainerClasses} ${themeClasses.accentError}`}
-        style={style}
-      >
-        <div className="flex items-center">
+      <div className={`${baseContainerClasses} ${themeClasses.accentError}`} style={style}>
+        <div className='flex items-center'>
           <span className={`${themeClasses.accentError} mr-2`}>!</span>
           <span>error: failed-to-load-messages</span>
         </div>
@@ -82,12 +78,9 @@ export const ChatDisplay: React.FC<ChatDisplayProps> = ({
 
   if (messages.length === 0 && !messagesLoading) {
     return (
-      <div 
-        className={`${baseContainerClasses} ${themeClasses.textMuted}`}
-        style={style}
-      >
-        <div className="space-y-2">
-          <div className="flex items-center">
+      <div className={`${baseContainerClasses} ${themeClasses.textMuted}`} style={style}>
+        <div className='space-y-2'>
+          <div className='flex items-center'>
             <span className={`${themeClasses.accentPrompt} mr-2`}>$</span>
             <span>session-initialized</span>
           </div>
@@ -103,26 +96,21 @@ export const ChatDisplay: React.FC<ChatDisplayProps> = ({
   }
 
   return (
-    <div 
-      className={`${baseContainerClasses} ${themeClasses.textSecondary}`}
-      style={style}
-    >
+    <div className={`${baseContainerClasses} ${themeClasses.textSecondary}`} style={style}>
       {messages.map((message) => (
-        <div 
-          key={`${message.id}-${message.timestamp}`} 
+        <div
+          key={`${message.id}-${message.timestamp}`}
           className={`mb-2 ${themeClasses.transitionFast}`}
         >
           {message.role === 'user' ? (
-            <div className="flex items-start">
+            <div className='flex items-start'>
               <span className={`${themeClasses.accentUser} pr-2 flex-shrink-0`}>$</span>
-              <span 
-                className={`${themeClasses.accentUser} break-words flex-1`}
-              >
+              <span className={`${themeClasses.accentUser} break-words flex-1`}>
                 {message.content}
               </span>
             </div>
           ) : (
-            <div 
+            <div
               className={`
                 whitespace-pre-wrap 
                 ${themeClasses.pSm} 
@@ -146,23 +134,23 @@ export const ChatDisplay: React.FC<ChatDisplayProps> = ({
 
       {isLoading && (
         <div className={`flex items-center ${themeClasses.accentAssistant} mt-4`}>
-          <span className="mr-2">⟨</span>
+          <span className='mr-2'>⟨</span>
           <span>ai-thinking</span>
-          <div className="ml-2 flex space-x-1">
-            <div 
+          <div className='ml-2 flex space-x-1'>
+            <div
               className={`w-1 h-1 ${themeClasses.accentAssistant} bg-current rounded-full animate-bounce`}
               style={{ animationDelay: '0ms' }}
             />
-            <div 
+            <div
               className={`w-1 h-1 ${themeClasses.accentAssistant} bg-current rounded-full animate-bounce`}
               style={{ animationDelay: '150ms' }}
             />
-            <div 
+            <div
               className={`w-1 h-1 ${themeClasses.accentAssistant} bg-current rounded-full animate-bounce`}
               style={{ animationDelay: '300ms' }}
             />
           </div>
-          <span className="ml-2">⟩</span>
+          <span className='ml-2'>⟩</span>
         </div>
       )}
       <div ref={messagesEndRef} />

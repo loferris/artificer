@@ -22,23 +22,27 @@ If you discover a security vulnerability, please report it responsibly:
 ## Security Considerations
 
 ### API Security
+
 - Rate limiting applied to all endpoints
 - Session-based authentication for single-user deployment
 - Input validation on all user-provided data
 - SQL injection protection via Prisma ORM
 
 ### Data Protection
+
 - Conversation data stored locally in your database
 - No data sent to third parties except chosen AI model providers
 - Environment variables properly isolated
 - Exported conversations excluded from version control
 
 ### Streaming Security
+
 - WebSocket connections include rate limiting
 - SSE endpoints validate input and apply CORS properly
 - All streaming includes proper error handling and cleanup
 
 ### Development Security
+
 - Dependencies regularly updated
 - TypeScript strict mode enabled
 - Linting rules enforce security best practices
@@ -47,6 +51,7 @@ If you discover a security vulnerability, please report it responsibly:
 ## Best Practices for Deployment
 
 ### Environment Variables
+
 ```bash
 # Never commit these to version control
 OPENROUTER_API_KEY=your_key_here
@@ -55,18 +60,21 @@ NEXTAUTH_SECRET=your_secret_here
 ```
 
 ### Database Security
+
 - Use strong database passwords
 - Enable SSL for database connections in production
 - Regular database backups
 - Restrict database access to application only
 
 ### Network Security
+
 - Use HTTPS in production
 - Configure proper CORS policies
 - Implement reverse proxy for additional security
 - Monitor for unusual traffic patterns
 
 ### Dependency Security
+
 ```bash
 npm audit                    # Check for vulnerabilities
 npm audit fix               # Fix automatically fixable issues
@@ -84,6 +92,7 @@ We appreciate security researchers who responsibly disclose vulnerabilities. We 
 ## Security Updates
 
 Security updates will be:
+
 - Released as soon as possible after confirmation
 - Clearly marked in release notes
 - Documented in CHANGELOG.md

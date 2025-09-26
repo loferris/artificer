@@ -212,55 +212,55 @@ export class DatabaseChatService implements ChatService {
           });
 
           for await (const chunk of stream) {
-          // Check for cancellation first
-          if (signal?.aborted) {
-            throw new Error('Request was cancelled');
+            // Check for cancellation first
+            if (signal?.aborted) {
+              throw new Error('Request was cancelled');
+            }
+
+            // Check if the assistant's stream is done
+            if (chunk.finished) {
+              model = chunk.model || model; // Grab final metadata
+              break; // Exit the service's loop over the assistant's chunks
+            }
+
+            // If not finished, process the content
+            fullResponse += chunk.content;
+            totalTokens += chunk.tokenCount || 0;
+            model = chunk.model || model;
+            totalCost += chunk.cost || 0;
+
+            // Yield the chunk to the client
+            yield {
+              content: chunk.content,
+              finished: false,
+              metadata: {
+                tokenCount: chunk.tokenCount,
+                model: chunk.model,
+                cost: chunk.cost,
+              },
+            };
           }
 
-          // Check if the assistant's stream is done
-          if (chunk.finished) {
-            model = chunk.model || model; // Grab final metadata
-            break; // Exit the service's loop over the assistant's chunks
-          }
+          // Save the complete assistant message to database
+          const assistantMessage = await this.messageService.create({
+            conversationId,
+            role: 'assistant',
+            content: fullResponse,
+          });
 
-          // If not finished, process the content
-          fullResponse += chunk.content;
-          totalTokens += chunk.tokenCount || 0;
-          model = chunk.model || model;
-          totalCost += chunk.cost || 0;
+          await this._updateConversationMetadata(conversationId, content);
 
-          // Yield the chunk to the client
+          // Final chunk with completion metadata
           yield {
-            content: chunk.content,
-            finished: false,
+            content: '',
+            finished: true,
             metadata: {
-              tokenCount: chunk.tokenCount,
-              model: chunk.model,
-              cost: chunk.cost,
+              tokenCount: totalTokens,
+              model,
+              cost: totalCost,
+              messageId: assistantMessage.id,
             },
           };
-        }
-
-        // Save the complete assistant message to database
-        const assistantMessage = await this.messageService.create({
-          conversationId,
-          role: 'assistant',
-          content: fullResponse,
-        });
-
-        await this._updateConversationMetadata(conversationId, content);
-
-        // Final chunk with completion metadata
-        yield {
-          content: '',
-          finished: true,
-          metadata: {
-            tokenCount: totalTokens,
-            model,
-            cost: totalCost,
-            messageId: assistantMessage.id,
-          },
-        };
         }
       } else {
         // Fallback: simulate streaming for non-streaming assistants

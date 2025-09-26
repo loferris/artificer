@@ -39,108 +39,122 @@ export const useStreamingChat = (): UseStreamingChatReturn => {
     setIsStreaming(false);
   }, []);
 
-  const sendMessage = useCallback(async (content: string, conversationId: string) => {
-    // Debug: useStreamingChat.sendMessage called
-    
-    if (isStreaming) {
-      // Debug: Cancelling existing stream
-      cancelStream();
-    }
+  const sendMessage = useCallback(
+    async (content: string, conversationId: string) => {
+      // Debug: useStreamingChat.sendMessage called
 
-    setError(null);
-    setIsStreaming(true);
+      if (isStreaming) {
+        // Debug: Cancelling existing stream
+        cancelStream();
+      }
 
-    // Add user message immediately
-    const userMessage: StreamingMessage = {
-      id: `user-${Date.now()}`,
-      role: 'user',
-      content,
-      isComplete: true,
-      timestamp: new Date()
-    };
+      setError(null);
+      setIsStreaming(true);
 
-    // DEBUG:('👤 Adding user message to stream');
-    setMessages(prev => [...prev, userMessage]);
+      // Add user message immediately
+      const userMessage: StreamingMessage = {
+        id: `user-${Date.now()}`,
+        role: 'user',
+        content,
+        isComplete: true,
+        timestamp: new Date(),
+      };
 
-    // Create streaming assistant message
-    const assistantMessageId = `assistant-${Date.now()}`;
-    const assistantMessage: StreamingMessage = {
-      id: assistantMessageId,
-      role: 'assistant',
-      content: '',
-      isComplete: false,
-      timestamp: new Date()
-    };
+      // DEBUG:('👤 Adding user message to stream');
+      setMessages((prev) => [...prev, userMessage]);
 
-    setMessages(prev => [...prev, assistantMessage]);
+      // Create streaming assistant message
+      const assistantMessageId = `assistant-${Date.now()}`;
+      const assistantMessage: StreamingMessage = {
+        id: assistantMessageId,
+        role: 'assistant',
+        content: '',
+        isComplete: false,
+        timestamp: new Date(),
+      };
 
-    try {
-      // DEBUG:('📡 Starting tRPC subscription:', { content, conversationId });
-      // Use vanilla client to create subscription
-      const client = utils.client;
-      
-      const subscription = client.subscriptions.chatStream.subscribe(
-        { content, conversationId },
-        {
-          onData: (chunk: ChatStreamChunk) => {
-            // DEBUG:('📦 Received chunk:', { content: chunk.content, finished: chunk.finished });
-            
-            if (chunk.error) {
-              setError(chunk.error);
-              setIsStreaming(false);
-              return;
-            }
+      setMessages((prev) => [...prev, assistantMessage]);
 
-            // Update the streaming message
-            setMessages(prev => prev.map(msg => 
-              msg.id === assistantMessageId 
-                ? {
-                    ...msg,
-                    content: msg.content + chunk.content,
-                    isComplete: chunk.finished,
-                    model: chunk.metadata?.model || msg.model,
-                    cost: chunk.metadata?.cost || msg.cost,
-                    tokens: chunk.metadata?.tokenCount || msg.tokens
-                  }
-                : msg
-            ));
+      try {
+        // DEBUG:('📡 Starting tRPC subscription:', { content, conversationId });
+        // Use vanilla client to create subscription
+        const client = utils.client;
 
-            if (chunk.finished) {
+        const subscription = client.subscriptions.chatStream.subscribe(
+          { content, conversationId },
+          {
+            onData: (chunk: ChatStreamChunk) => {
+              // DEBUG:('📦 Received chunk:', { content: chunk.content, finished: chunk.finished });
+
+              if (chunk.error) {
+                setError(chunk.error);
+                setIsStreaming(false);
+                return;
+              }
+
+              // Update the streaming message
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === assistantMessageId
+                    ? {
+                        ...msg,
+                        content: msg.content + chunk.content,
+                        isComplete: chunk.finished,
+                        model: chunk.metadata?.model || msg.model,
+                        cost: chunk.metadata?.cost || msg.cost,
+                        tokens: chunk.metadata?.tokenCount || msg.tokens,
+                      }
+                    : msg,
+                ),
+              );
+
+              if (chunk.finished) {
+                setIsStreaming(false);
+                currentStreamRef.current = null;
+
+                // Invalidate related queries to update UI
+                utils.messages.getByConversation.invalidate({ conversationId });
+                utils.conversations.list.invalidate();
+                utils.usage.getSessionStats.invalidate();
+              }
+            },
+            onError: (err) => {
+              clientLogger.error(
+                'Streaming error',
+                err as Error,
+                {
+                  conversationId,
+                  content: content.substring(0, 100),
+                },
+                'StreamingChat',
+              );
+              setError(err.message || 'Streaming failed');
               setIsStreaming(false);
               currentStreamRef.current = null;
-              
-              // Invalidate related queries to update UI
-              utils.messages.getByConversation.invalidate({ conversationId });
-              utils.conversations.list.invalidate();
-              utils.usage.getSessionStats.invalidate();
-            }
+            },
           },
-          onError: (err) => {
-            clientLogger.error('Streaming error', err as Error, {
-              conversationId,
-              content: content.substring(0, 100)
-            }, 'StreamingChat');
-            setError(err.message || 'Streaming failed');
-            setIsStreaming(false);
-            currentStreamRef.current = null;
-          }
-        }
-      );
+        );
 
-      currentStreamRef.current = { unsubscribe: subscription.unsubscribe };
-      
-    } catch (err: any) {
-      clientLogger.error('Failed to start streaming', err as Error, {
-        conversationId,
-        content: content.substring(0, 100)
-      }, 'StreamingChat');
-      setError(err.message || 'Failed to start streaming');
-      setIsStreaming(false);
-      
-      // Remove the incomplete assistant message
-      setMessages(prev => prev.filter(msg => msg.id !== assistantMessageId));
-    }
-  }, [isStreaming, cancelStream, utils]);
+        currentStreamRef.current = { unsubscribe: subscription.unsubscribe };
+      } catch (err: any) {
+        clientLogger.error(
+          'Failed to start streaming',
+          err as Error,
+          {
+            conversationId,
+            content: content.substring(0, 100),
+          },
+          'StreamingChat',
+        );
+        setError(err.message || 'Failed to start streaming');
+        setIsStreaming(false);
+
+        // Remove the incomplete assistant message
+        setMessages((prev) => prev.filter((msg) => msg.id !== assistantMessageId));
+      }
+    },
+    [isStreaming, cancelStream, utils],
+  );
 
   const clearMessages = useCallback(() => {
     setMessages([]);
@@ -152,6 +166,6 @@ export const useStreamingChat = (): UseStreamingChatReturn => {
     sendMessage,
     error,
     cancelStream,
-    clearMessages
+    clearMessages,
   };
 };

@@ -91,9 +91,7 @@ describe('Conversations Router', () => {
     });
 
     it('handles database errors gracefully', async () => {
-      mockConversationService.list.mockRejectedValue(
-        new Error('Database connection failed'),
-      );
+      mockConversationService.list.mockRejectedValue(new Error('Database connection failed'));
 
       const caller = conversationsRouter.createCaller(mockContext);
 
@@ -152,7 +150,10 @@ describe('Conversations Router', () => {
       const result = await caller.delete(conversationId);
 
       expect(result).toEqual({ success: true });
-      expect(mockConversationService.validateAccess).toHaveBeenCalledWith(conversationId, 'test-session');
+      expect(mockConversationService.validateAccess).toHaveBeenCalledWith(
+        conversationId,
+        'test-session',
+      );
       expect(mockConversationService.delete).toHaveBeenCalledWith(conversationId);
     });
 
@@ -211,9 +212,7 @@ describe('Conversations Router', () => {
       };
 
       mockConversationService.generateTitle.mockReturnValue('Hello, how are you?');
-      mockConversationService.updateTitle.mockRejectedValue(
-        new Error('Database error'),
-      );
+      mockConversationService.updateTitle.mockRejectedValue(new Error('Database error'));
 
       const caller = conversationsRouter.createCaller(mockContext);
 

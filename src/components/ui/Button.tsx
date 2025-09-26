@@ -1,6 +1,6 @@
 /**
  * Shared Button Primitive Component
- * 
+ *
  * Provides consistent button styling across terminal and chat modes
  * with variants for different use cases and states.
  */
@@ -106,18 +106,23 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   // Disabled state
-  const disabledClasses = disabled || isLoading ? `
+  const disabledClasses =
+    disabled || isLoading
+      ? `
     opacity-50
     cursor-not-allowed
     pointer-events-none
-  ` : 'cursor-pointer';
+  `
+      : 'cursor-pointer';
 
   // Loading spinner
   const LoadingSpinner = () => (
-    <div className={`
+    <div
+      className={`
       w-4 h-4 border-2 border-current border-t-transparent 
       rounded-full animate-spin
-    `} />
+    `}
+    />
   );
 
   const buttonClasses = `
@@ -126,41 +131,39 @@ export const Button: React.FC<ButtonProps> = ({
     ${variantClasses[variant]}
     ${disabledClasses}
     ${className}
-  `.trim().replace(/\s+/g, ' ');
+  `
+    .trim()
+    .replace(/\s+/g, ' ');
 
   return (
-    <button
-      className={buttonClasses}
-      disabled={disabled || isLoading}
-      {...props}
-    >
+    <button className={buttonClasses} disabled={disabled || isLoading} {...props}>
       {isLoading && <LoadingSpinner />}
-      {!isLoading && leftIcon && <span className="flex-shrink-0">{leftIcon}</span>}
-      {!isLoading && children && <span className="truncate">{children}</span>}
-      {!isLoading && rightIcon && <span className="flex-shrink-0">{rightIcon}</span>}
+      {!isLoading && leftIcon && <span className='flex-shrink-0'>{leftIcon}</span>}
+      {!isLoading && children && <span className='truncate'>{children}</span>}
+      {!isLoading && rightIcon && <span className='flex-shrink-0'>{rightIcon}</span>}
     </button>
   );
 };
 
 // Pre-configured button variants for common use cases
 export const PrimaryButton: React.FC<Omit<ButtonProps, 'variant'>> = (props) => (
-  <Button variant="primary" {...props} />
+  <Button variant='primary' {...props} />
 );
 
 export const SecondaryButton: React.FC<Omit<ButtonProps, 'variant'>> = (props) => (
-  <Button variant="secondary" {...props} />
+  <Button variant='secondary' {...props} />
 );
 
 export const DangerButton: React.FC<Omit<ButtonProps, 'variant'>> = (props) => (
-  <Button variant="danger" {...props} />
+  <Button variant='danger' {...props} />
 );
 
 export const GhostButton: React.FC<Omit<ButtonProps, 'variant'>> = (props) => (
-  <Button variant="ghost" {...props} />
+  <Button variant='ghost' {...props} />
 );
 
 export const IconButton: React.FC<Omit<ButtonProps, 'variant'>> = (props) => (
-  <Button variant="icon" {...props} />
+  <Button variant='icon' {...props} />
 );
 
 // Button group for related actions
@@ -171,12 +174,14 @@ export interface ButtonGroupProps {
 
 export const ButtonGroup: React.FC<ButtonGroupProps> = ({ children, className = '' }) => {
   const themeClasses = useTerminalThemeClasses();
-  
+
   return (
-    <div className={`
+    <div
+      className={`
       flex gap-2 items-center
       ${className}
-    `}>
+    `}
+    >
       {children}
     </div>
   );

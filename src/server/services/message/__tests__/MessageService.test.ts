@@ -6,12 +6,12 @@ import {
   type CreateMessageInput,
   type UpdateMessageInput,
 } from '../MessageService';
-import { 
-  setupDatabaseServiceMocks, 
-  resetDatabaseMocks, 
+import {
+  setupDatabaseServiceMocks,
+  resetDatabaseMocks,
   TestScenarios,
   DatabaseMocks,
-  type MockPrismaClient 
+  type MockPrismaClient,
 } from '../../../../test/utils/mockDatabase';
 
 describe('MessageService', () => {
@@ -29,7 +29,10 @@ describe('MessageService', () => {
     let service: DatabaseMessageService;
 
     beforeEach(() => {
-      const { service: testService } = TestScenarios.serviceTest(DatabaseMessageService, mockClient);
+      const { service: testService } = TestScenarios.serviceTest(
+        DatabaseMessageService,
+        mockClient,
+      );
       service = testService;
     });
 

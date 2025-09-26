@@ -1,6 +1,6 @@
 /**
  * Export manager component - handles all export functionality
- * 
+ *
  * Extracts export logic from main page component to provide
  * reusable export functionality across the application.
  */
@@ -19,15 +19,19 @@ export function useExportManager({ currentConversationId, onStatusMessage }: Exp
   /**
    * Triggers a file download with the provided content
    */
-  const triggerDownload = (content: string, format: 'markdown' | 'json', scope: 'current' | 'all') => {
+  const triggerDownload = (
+    content: string,
+    format: 'markdown' | 'json',
+    scope: 'current' | 'all',
+  ) => {
     const timestamp = new Date().toISOString().split('T')[0];
     const extension = format === 'markdown' ? 'md' : 'json';
     const filename = `conversations_${scope}_${timestamp}.${extension}`;
-    
+
     const mimeType = format === 'markdown' ? 'text/markdown' : 'application/json';
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
-    
+
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
@@ -48,7 +52,7 @@ export function useExportManager({ currentConversationId, onStatusMessage }: Exp
     }
 
     onStatusMessage?.(`Exporting current conversation as ${format}...`);
-    
+
     try {
       const result = await utils.export.exportConversation.fetch({
         conversationId: currentConversationId,
@@ -57,7 +61,7 @@ export function useExportManager({ currentConversationId, onStatusMessage }: Exp
         includeTimestamps: true,
         includeCosts: true,
       });
-      
+
       if (result) {
         // Handle different export result types
         const exportResult = result.data; // Extract the actual ExportResult
@@ -72,21 +76,28 @@ export function useExportManager({ currentConversationId, onStatusMessage }: Exp
             .join('\n\n');
         } else if (exportResult.data) {
           // Structured exports (notion) - stringify
-          downloadData = Array.isArray(exportResult.data) ? JSON.stringify(exportResult.data, null, 2) : String(exportResult.data);
+          downloadData = Array.isArray(exportResult.data)
+            ? JSON.stringify(exportResult.data, null, 2)
+            : String(exportResult.data);
         } else {
           downloadData = 'No content available';
         }
-        
+
         triggerDownload(downloadData, format, 'current');
         onStatusMessage?.('Export complete.');
       } else {
         onStatusMessage?.('Export failed: No data received.');
       }
     } catch (error) {
-      clientLogger.error('Export current failed', error as Error, {
-        conversationId: currentConversationId,
-        format,
-      }, 'ExportManager');
+      clientLogger.error(
+        'Export current failed',
+        error as Error,
+        {
+          conversationId: currentConversationId,
+          format,
+        },
+        'ExportManager',
+      );
       onStatusMessage?.('Export failed: ' + (error as Error).message);
     }
   };
@@ -96,7 +107,7 @@ export function useExportManager({ currentConversationId, onStatusMessage }: Exp
    */
   const exportAll = async (format: 'markdown' | 'json' = 'markdown') => {
     onStatusMessage?.(`Exporting all conversations as ${format}...`);
-    
+
     try {
       const result = await utils.export.exportAll.fetch({
         format,
@@ -105,7 +116,7 @@ export function useExportManager({ currentConversationId, onStatusMessage }: Exp
         includeCosts: true,
         groupByConversation: true,
       });
-      
+
       if (result) {
         // Handle different export result types
         const exportResult = result.data; // Extract the actual ExportResult
@@ -120,20 +131,27 @@ export function useExportManager({ currentConversationId, onStatusMessage }: Exp
             .join('\n\n');
         } else if (exportResult.data) {
           // Structured exports (notion) - stringify
-          downloadData = Array.isArray(exportResult.data) ? JSON.stringify(exportResult.data, null, 2) : String(exportResult.data);
+          downloadData = Array.isArray(exportResult.data)
+            ? JSON.stringify(exportResult.data, null, 2)
+            : String(exportResult.data);
         } else {
           downloadData = 'No content available';
         }
-        
+
         triggerDownload(downloadData, format, 'all');
         onStatusMessage?.('Export complete.');
       } else {
         onStatusMessage?.('Export failed: No data received.');
       }
     } catch (error) {
-      clientLogger.error('Export all failed', error as Error, {
-        format,
-      }, 'ExportManager');
+      clientLogger.error(
+        'Export all failed',
+        error as Error,
+        {
+          format,
+        },
+        'ExportManager',
+      );
       onStatusMessage?.('Export failed: ' + (error as Error).message);
     }
   };

@@ -1,6 +1,6 @@
 /**
  * Shared Message Bubble Primitive Component
- * 
+ *
  * Provides consistent message display across terminal and chat modes
  * with support for different roles, content types, and interactions.
  */
@@ -80,20 +80,20 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
     <div className={`mb-2 ${themeClasses.transitionFast} ${className}`}>
       {role === 'user' ? (
         // User message in terminal style
-        <div className="flex items-start">
+        <div className='flex items-start'>
           <span className={`${roleStyles[role].accent} pr-2 flex-shrink-0`}>
             {roleStyles[role].prompt}
           </span>
-          <div className="flex-1">
-            <span className={`${roleStyles[role].accent} break-words`}>
-              {content}
-            </span>
+          <div className='flex-1'>
+            <span className={`${roleStyles[role].accent} break-words`}>{content}</span>
             {showTimestamp && timestamp && (
-              <span className={`
+              <span
+                className={`
                 ml-2 
                 ${themeClasses.textXs} 
                 ${themeClasses.textMuted}
-              `}>
+              `}
+              >
                 {formatTimestamp(timestamp)}
               </span>
             )}
@@ -101,7 +101,8 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
         </div>
       ) : (
         // Assistant/system message with background
-        <div className={`
+        <div
+          className={`
           whitespace-pre-wrap 
           ${themeClasses.pSm} 
           ${themeClasses.bgOverlay} 
@@ -112,16 +113,19 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
           border-[var(--terminal-accent-${role})]
           relative
           group
-        `}>
+        `}
+        >
           {/* Message header */}
-          <div className={`
+          <div
+            className={`
             ${themeClasses.textXs} 
             ${themeClasses.textMuted} 
             mb-1
             flex items-center justify-between
-          `}>
+          `}
+          >
             <span>{roleStyles[role].label}:</span>
-            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className='flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity'>
               {onCopy && (
                 <button
                   onClick={onCopy}
@@ -156,7 +160,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 
           {/* Message content */}
           {isLoading ? (
-            <LoadingSpinner variant="thinking" size="sm" />
+            <LoadingSpinner variant='thinking' size='sm' />
           ) : isStreaming && !isComplete ? (
             <StreamingMessage content={content} isComplete={isComplete} />
           ) : (
@@ -165,22 +169,18 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 
           {/* Message metadata */}
           {metadata && (
-            <div className={`
+            <div
+              className={`
               mt-2 pt-2 
               border-t border-opacity-10
               ${themeClasses.textXs}
               ${themeClasses.textTertiary}
               flex items-center gap-4
-            `}>
-              {metadata.model && (
-                <span>model: {metadata.model}</span>
-              )}
-              {metadata.tokens && (
-                <span>tokens: {metadata.tokens}</span>
-              )}
-              {metadata.cost && (
-                <span>cost: ${metadata.cost.toFixed(4)}</span>
-              )}
+            `}
+            >
+              {metadata.model && <span>model: {metadata.model}</span>}
+              {metadata.tokens && <span>tokens: {metadata.tokens}</span>}
+              {metadata.cost && <span>cost: ${metadata.cost.toFixed(4)}</span>}
             </div>
           )}
         </div>
@@ -190,36 +190,43 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 
   // Chat variant (more traditional chat bubble)
   const renderChat = () => (
-    <div className={`
+    <div
+      className={`
       flex 
       ${role === 'user' ? 'justify-end' : 'justify-start'}
       mb-4
       ${className}
-    `}>
-      <div className={`
+    `}
+    >
+      <div
+        className={`
         max-w-[70%]
-        ${role === 'user' 
-          ? `${themeClasses.accentUser} bg-current ${themeClasses.textPrimary} rounded-l-lg rounded-tr-lg`
-          : `${themeClasses.bgOverlay} ${themeClasses.textSecondary} rounded-r-lg rounded-tl-lg`
+        ${
+          role === 'user'
+            ? `${themeClasses.accentUser} bg-current ${themeClasses.textPrimary} rounded-l-lg rounded-tr-lg`
+            : `${themeClasses.bgOverlay} ${themeClasses.textSecondary} rounded-r-lg rounded-tl-lg`
         }
         ${themeClasses.pMd}
         ${themeClasses.radiusMd}
         shadow-sm
         relative
         group
-      `}>
+      `}
+      >
         {/* Avatar */}
         {showAvatar && role !== 'user' && (
-          <div className="absolute -left-8 top-0">
+          <div className='absolute -left-8 top-0'>
             {avatar || (
-              <div className={`
+              <div
+                className={`
                 w-6 h-6
                 ${themeClasses.bgSecondary}
                 ${themeClasses.accentAssistant}
                 rounded-full
                 flex items-center justify-center
                 ${themeClasses.textXs}
-              `}>
+              `}
+              >
                 AI
               </div>
             )}
@@ -228,26 +235,26 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 
         {/* Message content */}
         {isLoading ? (
-          <LoadingSpinner variant="dots" size="sm" />
+          <LoadingSpinner variant='dots' size='sm' />
         ) : isStreaming && !isComplete ? (
           <StreamingMessage content={content} isComplete={isComplete} />
         ) : (
-          <div className="prose prose-sm max-w-none">
-            {content}
-          </div>
+          <div className='prose prose-sm max-w-none'>{content}</div>
         )}
 
         {/* Timestamp and actions */}
         {(showTimestamp || onCopy || onRetry) && (
-          <div className={`
+          <div
+            className={`
             mt-2 pt-2
             border-t border-opacity-10
             flex items-center justify-between
             ${themeClasses.textXs}
             opacity-0 group-hover:opacity-100
             transition-opacity
-          `}>
-            <div className="flex items-center gap-2">
+          `}
+          >
+            <div className='flex items-center gap-2'>
               {onCopy && (
                 <button
                   onClick={onCopy}
@@ -272,9 +279,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
               )}
             </div>
             {showTimestamp && timestamp && (
-              <span className={themeClasses.textMuted}>
-                {formatTimestamp(timestamp)}
-              </span>
+              <span className={themeClasses.textMuted}>{formatTimestamp(timestamp)}</span>
             )}
           </div>
         )}
@@ -284,27 +289,31 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 
   // Compact variant (single line)
   const renderCompact = () => (
-    <div className={`
+    <div
+      className={`
       flex items-center gap-2
       ${themeClasses.textSm}
       ${themeClasses.fontMono}
       ${className}
-    `}>
-      <span className={`${roleStyles[role].accent} flex-shrink-0`}>
-        {roleStyles[role].prompt}
-      </span>
-      <span className={`
+    `}
+    >
+      <span className={`${roleStyles[role].accent} flex-shrink-0`}>{roleStyles[role].prompt}</span>
+      <span
+        className={`
         ${role === 'user' ? roleStyles[role].accent : themeClasses.textSecondary}
         truncate
-      `}>
+      `}
+      >
         {isLoading ? 'Loading...' : content}
       </span>
       {showTimestamp && timestamp && (
-        <span className={`
+        <span
+          className={`
           ${themeClasses.textXs} 
           ${themeClasses.textMuted}
           flex-shrink-0
-        `}>
+        `}
+        >
           {formatTimestamp(timestamp)}
         </span>
       )}
@@ -313,23 +322,26 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
 
   // Render based on variant
   switch (variant) {
-    case 'chat': return renderChat();
-    case 'compact': return renderCompact();
-    default: return renderTerminal();
+    case 'chat':
+      return renderChat();
+    case 'compact':
+      return renderCompact();
+    default:
+      return renderTerminal();
   }
 };
 
 // Pre-configured message variants for common use cases
 export const UserMessage: React.FC<Omit<MessageBubbleProps, 'role'>> = (props) => (
-  <MessageBubble role="user" {...props} />
+  <MessageBubble role='user' {...props} />
 );
 
 export const AssistantMessage: React.FC<Omit<MessageBubbleProps, 'role'>> = (props) => (
-  <MessageBubble role="assistant" {...props} />
+  <MessageBubble role='assistant' {...props} />
 );
 
 export const SystemMessage: React.FC<Omit<MessageBubbleProps, 'role'>> = (props) => (
-  <MessageBubble role="system" {...props} />
+  <MessageBubble role='system' {...props} />
 );
 
 // Message list container for multiple messages
@@ -375,9 +387,10 @@ export const MessageList: React.FC<MessageListProps> = ({
           showAvatar={showAvatars}
           metadata={message.metadata}
           onCopy={onCopyMessage ? () => onCopyMessage(message.id, message.content) : undefined}
-          onRetry={onRetryMessage && message.role === 'assistant' 
-            ? () => onRetryMessage(message.id) 
-            : undefined
+          onRetry={
+            onRetryMessage && message.role === 'assistant'
+              ? () => onRetryMessage(message.id)
+              : undefined
           }
         />
       ))}

@@ -1,6 +1,6 @@
 /**
  * Shared Message Renderer Component
- * 
+ *
  * Extracts common message rendering logic used across terminal and chat views.
  * Provides consistent message display with support for streaming, user/assistant roles,
  * and theme-aware styling.
@@ -32,7 +32,7 @@ export const MessageRenderer: React.FC<MessageRendererProps> = ({
         {variant === 'terminal' && (
           <span className={`${themeClasses.accentUser} pr-2 flex-shrink-0`}>$</span>
         )}
-        <span 
+        <span
           className={`
             ${themeClasses.accentUser} 
             break-words 
@@ -48,9 +48,11 @@ export const MessageRenderer: React.FC<MessageRendererProps> = ({
 
   // Assistant message
   return (
-    <div 
+    <div
       className={`
-        ${variant === 'terminal' ? `
+        ${
+          variant === 'terminal'
+            ? `
           whitespace-pre-wrap 
           ${themeClasses.pSm} 
           ${themeClasses.bgOverlay} 
@@ -60,12 +62,14 @@ export const MessageRenderer: React.FC<MessageRendererProps> = ({
           ml-6
           border-l-2
           border-[var(--terminal-accent-assistant)]
-        ` : `
+        `
+            : `
           ${themeClasses.bgOverlay}
           ${themeClasses.pMd}
           ${themeClasses.radiusMd}
           ${themeClasses.textSecondary}
-        `}
+        `
+        }
         ${className}
       `}
     >
@@ -74,10 +78,10 @@ export const MessageRenderer: React.FC<MessageRendererProps> = ({
           AI Response:
         </div>
       )}
-      
+
       {isStreaming && !('isComplete' in message && (message as any).isComplete) ? (
-        <StreamingMessage 
-          content={message.content} 
+        <StreamingMessage
+          content={message.content}
           isComplete={('isComplete' in message ? (message as any).isComplete : false) || false}
         />
       ) : (
@@ -107,15 +111,11 @@ export const MessageListRenderer: React.FC<MessageListRendererProps> = ({
   return (
     <div className={className}>
       {messages.map((message) => (
-        <div 
-          key={`${message.id}-${message.timestamp}`} 
+        <div
+          key={`${message.id}-${message.timestamp}`}
           className={`mb-2 ${themeClasses.transitionFast}`}
         >
-          <MessageRenderer 
-            message={message}
-            isStreaming={isStreaming}
-            variant={variant}
-          />
+          <MessageRenderer message={message} isStreaming={isStreaming} variant={variant} />
         </div>
       ))}
     </div>

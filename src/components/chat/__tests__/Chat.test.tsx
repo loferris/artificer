@@ -237,5 +237,4 @@ describe('Chat Component', () => {
       expect(screen.getByText('Failed to load messages')).toBeInTheDocument();
     });
   });
-
 });

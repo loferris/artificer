@@ -1,25 +1,29 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { TerminalThemeProvider, useTerminalTheme, useTerminalThemeClasses } from '../TerminalThemeContext';
+import {
+  TerminalThemeProvider,
+  useTerminalTheme,
+  useTerminalThemeClasses,
+} from '../TerminalThemeContext';
 
 // Test component to access the context
 const TestComponent = () => {
   const { theme, setTheme, availableThemes, getThemeDisplayName } = useTerminalTheme();
   const classes = useTerminalThemeClasses();
-  
+
   return (
     <div>
-      <div data-testid="current-theme">{theme}</div>
-      <div data-testid="theme-display-name">{getThemeDisplayName(theme)}</div>
-      <div data-testid="bg-primary">{classes.bgPrimary}</div>
-      <div data-testid="accent-user">{classes.accentUser}</div>
-      <button onClick={() => setTheme('amber-forest')} data-testid="set-amber">
+      <div data-testid='current-theme'>{theme}</div>
+      <div data-testid='theme-display-name'>{getThemeDisplayName(theme)}</div>
+      <div data-testid='bg-primary'>{classes.bgPrimary}</div>
+      <div data-testid='accent-user'>{classes.accentUser}</div>
+      <button onClick={() => setTheme('amber-forest')} data-testid='set-amber'>
         Set Amber
       </button>
-      <button onClick={() => setTheme('cyan-light')} data-testid="set-light">
+      <button onClick={() => setTheme('cyan-light')} data-testid='set-light'>
         Set Light
       </button>
-      <div data-testid="available-themes">{availableThemes.join(',')}</div>
+      <div data-testid='available-themes'>{availableThemes.join(',')}</div>
     </div>
   );
 };
@@ -36,7 +40,7 @@ describe('TerminalThemeContext', () => {
     render(
       <TerminalThemeProvider>
         <TestComponent />
-      </TerminalThemeProvider>
+      </TerminalThemeProvider>,
     );
 
     expect(screen.getByTestId('current-theme')).toHaveTextContent('purple-rich');
@@ -47,7 +51,7 @@ describe('TerminalThemeContext', () => {
     render(
       <TerminalThemeProvider>
         <TestComponent />
-      </TerminalThemeProvider>
+      </TerminalThemeProvider>,
     );
 
     fireEvent.click(screen.getByTestId('set-amber'));
@@ -63,7 +67,7 @@ describe('TerminalThemeContext', () => {
     render(
       <TerminalThemeProvider>
         <TestComponent />
-      </TerminalThemeProvider>
+      </TerminalThemeProvider>,
     );
 
     fireEvent.click(screen.getByTestId('set-amber'));
@@ -74,11 +78,11 @@ describe('TerminalThemeContext', () => {
     render(
       <TerminalThemeProvider>
         <TestComponent />
-      </TerminalThemeProvider>
+      </TerminalThemeProvider>,
     );
 
     expect(document.documentElement.getAttribute('data-terminal-theme')).toBe('purple-rich');
-    
+
     fireEvent.click(screen.getByTestId('set-light'));
     expect(document.documentElement.getAttribute('data-terminal-theme')).toBe('cyan-light');
   });
@@ -87,7 +91,7 @@ describe('TerminalThemeContext', () => {
     render(
       <TerminalThemeProvider>
         <TestComponent />
-      </TerminalThemeProvider>
+      </TerminalThemeProvider>,
     );
 
     const bgPrimary = screen.getByTestId('bg-primary').textContent;
@@ -103,7 +107,7 @@ describe('TerminalThemeContext', () => {
     render(
       <TerminalThemeProvider>
         <TestComponent />
-      </TerminalThemeProvider>
+      </TerminalThemeProvider>,
     );
 
     const availableThemes = screen.getByTestId('available-themes').textContent;
@@ -112,11 +116,11 @@ describe('TerminalThemeContext', () => {
 
   it('should load theme from localStorage on mount', () => {
     localStorage.setItem('terminal-theme', 'amber-forest');
-    
+
     render(
       <TerminalThemeProvider>
         <TestComponent />
-      </TerminalThemeProvider>
+      </TerminalThemeProvider>,
     );
 
     expect(screen.getByTestId('current-theme')).toHaveTextContent('amber-forest');
@@ -124,11 +128,11 @@ describe('TerminalThemeContext', () => {
 
   it('should ignore invalid theme from localStorage', () => {
     localStorage.setItem('terminal-theme', 'invalid-theme');
-    
+
     render(
       <TerminalThemeProvider>
         <TestComponent />
-      </TerminalThemeProvider>
+      </TerminalThemeProvider>,
     );
 
     expect(screen.getByTestId('current-theme')).toHaveTextContent('purple-rich');

@@ -1,7 +1,4 @@
-export {
-  DatabaseConversationService,
-  DemoConversationService,
-} from './ConversationService';
+export { DatabaseConversationService, DemoConversationService } from './ConversationService';
 
 export type {
   ConversationService,

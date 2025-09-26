@@ -55,11 +55,16 @@ export const ExportButton: React.FC<ExportButtonProps> = ({ conversationId, clas
 
       setShowFormats(false);
     } catch (error) {
-      clientLogger.error('Export failed', error as Error, {
-        format,
-        conversationId,
-        isExportingAll: !conversationId,
-      }, 'ExportButton');
+      clientLogger.error(
+        'Export failed',
+        error as Error,
+        {
+          format,
+          conversationId,
+          isExportingAll: !conversationId,
+        },
+        'ExportButton',
+      );
       alert('Export failed. Please try again.');
     } finally {
       setIsExporting(false);
