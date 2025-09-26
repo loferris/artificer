@@ -18,12 +18,12 @@ export const TerminalHeader: React.FC<TerminalHeaderProps> = ({
   title = 'AI Terminal Interface',
   statusText,
 }) => {
-  const { theme, getThemeDisplayName } = useTerminalTheme();
+  const { theme } = useTerminalTheme();
   const themeClasses = useTerminalThemeClasses();
 
   const getStatusIndicator = () => {
     if (statusText) return statusText;
-    return `[${getThemeDisplayName(theme)}]`;
+    return 'READY';
   };
 
   return (

@@ -1,8 +1,22 @@
 # AI Workflow Engine
 
-**[View UI Demo](https://ai-workflow-engine.vercel.app/) - See the live interface in action**
+**[View Live Demo](https://ai-workflow-engine.vercel.app/) - Full-featured demo without API dependencies**
 
 A structured conversation system for AI models that transforms scattered chat sessions into organized, exportable knowledge. Built to solve workflow fragmentation across multiple AI models and interfaces while preserving conversation context and insights.
+
+## 🎯 Demo Features
+
+The **live demo** showcases all major features without requiring API keys or database setup:
+
+- **🎨 Dual Interface System**: Switch between Terminal mode (command-line style) and Chat mode (modern bubbles)
+- **⌨️ Command Processing**: Try `/help`, `/themes`, `/export`, `/cost`, and other slash commands
+- **🖼️ Theme Switching**: Three beautiful themes (Purple Rich, Amber Forest, Cyan Light) with instant switching
+- **📱 Responsive Design**: Works seamlessly across desktop, tablet, and mobile devices
+- **💾 Export Functionality**: Download conversations in Markdown, JSON, or plain text formats
+- **📊 Cost Tracking**: Real-time usage monitoring with detailed breakdowns (demo data)
+- **✨ Floating Toolbar**: Quick access to controls and interface switching
+
+**Try the demo**: Use the floating toolbar (→) to explore features, switch interfaces, change themes, or export conversations!
 
 ## What This System Does
 

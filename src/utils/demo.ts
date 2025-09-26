@@ -3,13 +3,17 @@ export const isDemoMode = (): boolean => {
   return (
     process.env.DEMO_MODE === 'true' ||
     process.env.NEXT_PUBLIC_DEMO_MODE === 'true' ||
-    process.env.VERCEL_ENV === 'preview'
+    process.env.VERCEL_ENV === 'preview' ||
+    (typeof window !== 'undefined' && 
+      (window.location.hostname.includes('vercel.app') || 
+       window.location.hostname.includes('demo')))
   );
 };
 
 export const isServerSideDemo = (): boolean => {
   return (
     process.env.DEMO_MODE === 'true' ||
+    process.env.VERCEL_ENV === 'preview' ||
     (typeof window === 'undefined' && process.env.VERCEL_ENV === 'preview')
   );
 };
@@ -17,7 +21,9 @@ export const isServerSideDemo = (): boolean => {
 export const isClientSideDemo = (): boolean => {
   return (
     process.env.NEXT_PUBLIC_DEMO_MODE === 'true' ||
-    (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app'))
+    (typeof window !== 'undefined' && 
+      (window.location.hostname.includes('vercel.app') ||
+       window.location.hostname.includes('demo')))
   );
 };
 

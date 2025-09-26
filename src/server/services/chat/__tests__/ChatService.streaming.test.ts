@@ -327,7 +327,7 @@ describe('DemoChatService Streaming', () => {
       const streamingChunks = chunks.slice(0, -1);
       streamingChunks.forEach((chunk) => {
         expect(chunk.finished).toBe(false);
-        expect(chunk.metadata?.model).toBe('demo');
+        expect(chunk.metadata?.model).toBe('demo-assistant-v1');
       });
 
       // Final chunk should be completion
