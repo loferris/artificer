@@ -37,7 +37,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
         `}
         title={`Current theme: ${getThemeDisplayName(theme)}. Click to cycle themes.`}
       >
-        /theme
+        🎨
       </button>
     );
   }

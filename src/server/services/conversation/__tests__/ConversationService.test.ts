@@ -313,8 +313,8 @@ describe('ConversationService', () => {
       it('should return demo conversations including default one', async () => {
         const result = await service.list();
 
-        expect(result).toHaveLength(1); // Default demo conversation
-        expect(result[0].title).toBe('Welcome to the Chat App Demo!');
+        expect(result).toHaveLength(3); // Three demo conversations from config
+        expect(result.find(c => c.title?.includes('Welcome'))).toBeDefined();
       });
 
       it('should include created conversations in list', async () => {
@@ -322,7 +322,7 @@ describe('ConversationService', () => {
 
         const result = await service.list();
 
-        expect(result).toHaveLength(2); // Default + created
+        expect(result).toHaveLength(4); // Three demo conversations + created
         expect(result.find((c) => c.title === 'Test Chat')).toBeDefined();
       });
     });
@@ -366,7 +366,7 @@ describe('ConversationService', () => {
 
       it('should work through listConversations wrapper', async () => {
         const result = await service.listConversations();
-        expect(result).toHaveLength(1);
+        expect(result).toHaveLength(3);
       });
 
       it('should work through deleteConversation wrapper', async () => {

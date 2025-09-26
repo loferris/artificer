@@ -293,10 +293,12 @@ describe('MessageService', () => {
       it('should return demo conversation default message', async () => {
         const messages = await service.getByConversation('demo-1');
 
-        expect(messages).toHaveLength(1);
-        expect(messages[0].content).toContain('Welcome to this AI chat application');
-        expect(messages[0].cost).toBeGreaterThan(0);
-        expect(messages[0].id).toBe('demo-msg-1');
+        expect(messages).toHaveLength(2); // First conversation has 2 messages (user + assistant)
+        expect(messages.find(m => m.role === 'user')).toBeDefined();
+        expect(messages.find(m => m.role === 'assistant')).toBeDefined();
+        const assistantMsg = messages.find(m => m.role === 'assistant');
+        expect(assistantMsg?.cost).toBeGreaterThan(0);
+        expect(messages[0].id).toBe('demo-1-msg-1');
       });
 
       it('should return empty array for unknown conversation', async () => {

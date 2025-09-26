@@ -43,6 +43,36 @@ export function useChat() {
     }
   }, [messagesQuery.data, store.setMessages]);
 
+  // Show demo welcome message in terminal mode
+  useEffect(() => {
+    const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true' ||
+                       (typeof window !== 'undefined' && 
+                        (window.location.hostname.includes('vercel.app') || 
+                         window.location.hostname.includes('demo')));
+    
+    const hasShownWelcome = localStorage.getItem('demo-welcome-shown');
+    
+    if (isDemoMode && store.viewMode === 'terminal' && !hasShownWelcome && !store.currentConversationId) {
+      const welcomeMessage = {
+        id: `welcome-${Date.now()}`,
+        role: 'assistant' as const,
+        content: `🚀 Welcome to the AI Workflow Engine Terminal Demo!
+
+Try these commands to explore:
+• /list - See showcase conversations with different features
+• /man - View all available commands  
+• /theme amber - Switch to different terminal themes
+• /view chat - Try the modern chat interface
+
+Type a message to start chatting, or explore the demo conversations!`,
+        timestamp: new Date(),
+      };
+      
+      store.addLocalMessage(welcomeMessage);
+      localStorage.setItem('demo-welcome-shown', 'true');
+    }
+  }, [store.viewMode, store.currentConversationId, store.addLocalMessage]);
+
   const displayMessage = useCallback((content: string) => {
     const localMessage: Message = {
       id: `local-cmd-${Date.now()}`,

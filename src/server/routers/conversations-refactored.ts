@@ -3,17 +3,35 @@ import { router, publicProcedure } from '../../server/trpc';
 import { TRPCError } from '@trpc/server';
 import { createServicesFromContext } from '../services/ServiceFactory';
 
+// Helper function to ensure user exists in demo mode
+function ensureDemoUser(ctx: any) {
+  const isDemoMode = process.env.DEMO_MODE === 'true' || 
+                    process.env.NEXT_PUBLIC_DEMO_MODE === 'true' || 
+                    !ctx.db;
+  
+  let user = ctx.user;
+  if (!user && isDemoMode) {
+    user = {
+      id: 'demo-user',
+      sessionId: 'demo-session',
+    };
+  }
+
+  if (!user && !isDemoMode) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'Session required',
+    });
+  }
+
+  return user;
+}
+
 export const conversationsRouterRefactored = router({
   list: publicProcedure.query(async ({ ctx }) => {
     try {
-      // Basic session validation
-      if (!ctx.user) {
-        throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'Session required',
-        });
-      }
-
+      const user = ensureDemoUser(ctx);
+      
       // Create services with proper dependency injection
       const { conversationService } = createServicesFromContext(ctx);
 
@@ -57,13 +75,7 @@ export const conversationsRouterRefactored = router({
     .input(z.string().min(1, 'Conversation ID is required'))
     .query(async ({ ctx, input: conversationId }) => {
       try {
-        // Basic session validation
-        if (!ctx.user) {
-          throw new TRPCError({
-            code: 'UNAUTHORIZED',
-            message: 'Session required',
-          });
-        }
+        const user = ensureDemoUser(ctx);
 
         // Create services
         const { conversationService } = createServicesFromContext(ctx);
@@ -71,7 +83,7 @@ export const conversationsRouterRefactored = router({
         // Validate access and get conversation
         const conversation = await conversationService.validateAccess(
           conversationId,
-          ctx.user.sessionId,
+          user.sessionId,
         );
 
         return conversation;
@@ -93,13 +105,7 @@ export const conversationsRouterRefactored = router({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        // Basic session validation
-        if (!ctx.user) {
-          throw new TRPCError({
-            code: 'UNAUTHORIZED',
-            message: 'Session required',
-          });
-        }
+        const user = ensureDemoUser(ctx);
 
         const { conversationId, ...updateData } = input;
 
@@ -107,7 +113,7 @@ export const conversationsRouterRefactored = router({
         const { conversationService } = createServicesFromContext(ctx);
 
         // Validate access first
-        await conversationService.validateAccess(conversationId, ctx.user.sessionId);
+        await conversationService.validateAccess(conversationId, user.sessionId);
 
         // Update conversation
         const conversation = await conversationService.update(conversationId, updateData);
@@ -146,19 +152,13 @@ export const conversationsRouterRefactored = router({
     .input(z.string().min(1, 'Conversation ID is required'))
     .mutation(async ({ ctx, input: conversationId }) => {
       try {
-        // Basic session validation
-        if (!ctx.user) {
-          throw new TRPCError({
-            code: 'UNAUTHORIZED',
-            message: 'Session required',
-          });
-        }
+        const user = ensureDemoUser(ctx);
 
         // Create services
         const { conversationService } = createServicesFromContext(ctx);
 
         // Validate access first
-        await conversationService.validateAccess(conversationId, ctx.user.sessionId);
+        await conversationService.validateAccess(conversationId, user.sessionId);
 
         // Delete conversation
         await conversationService.delete(conversationId);

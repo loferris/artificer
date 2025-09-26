@@ -3,6 +3,30 @@ import { router, publicProcedure } from '../../server/trpc';
 import { TRPCError } from '@trpc/server';
 import { createServicesFromContext } from '../services/ServiceFactory';
 
+// Helper function to ensure user exists in demo mode
+function ensureDemoUser(ctx: any) {
+  const isDemoMode = process.env.DEMO_MODE === 'true' || 
+                    process.env.NEXT_PUBLIC_DEMO_MODE === 'true' || 
+                    !ctx.db;
+  
+  let user = ctx.user;
+  if (!user && isDemoMode) {
+    user = {
+      id: 'demo-user',
+      sessionId: 'demo-session',
+    };
+  }
+
+  if (!user && !isDemoMode) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'Session required',
+    });
+  }
+
+  return user;
+}
+
 /**
  * The refactored tRPC router for chat-related operations.
  *
@@ -29,13 +53,7 @@ export const chatRouterRefactored = router({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        // Basic session validation
-        if (!ctx.user) {
-          throw new TRPCError({
-            code: 'UNAUTHORIZED',
-            message: 'Session required',
-          });
-        }
+        const user = ensureDemoUser(ctx);
 
         // Create services with proper dependency injection
         const { chatService } = createServicesFromContext(ctx);
@@ -46,7 +64,7 @@ export const chatRouterRefactored = router({
             content: input.content,
             conversationId: input.conversationId,
           },
-          ctx.user.sessionId,
+          user.sessionId,
         );
 
         // Return the assistant message with metadata
@@ -81,13 +99,7 @@ export const chatRouterRefactored = router({
     )
     .query(async ({ ctx, input }) => {
       try {
-        // Basic session validation
-        if (!ctx.user) {
-          throw new TRPCError({
-            code: 'UNAUTHORIZED',
-            message: 'Session required',
-          });
-        }
+        const user = ensureDemoUser(ctx);
 
         // Create services
         const { chatService } = createServicesFromContext(ctx);
@@ -95,7 +107,7 @@ export const chatRouterRefactored = router({
         // Get chat messages
         const messages = await chatService.getChatMessages(
           input.conversationId,
-          ctx.user.sessionId,
+          user.sessionId,
         );
 
         return messages;

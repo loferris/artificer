@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import type { PrismaClient } from '@prisma/client';
+import { DEMO_CONFIG } from '../../config/demo';
 
 export interface ConversationWithMessages {
   id: string;
@@ -348,19 +349,29 @@ export class DemoConversationService implements ConversationService {
   private conversations = new Map<string, ConversationWithMessages>();
 
   constructor() {
-    // Initialize with sample conversation
-    const sampleConversation: ConversationWithMessages = {
-      id: 'demo-1',
-      title: 'Welcome to the Chat App Demo!',
-      model: 'demo-assistant-v1',
-      systemPrompt: 'You are a helpful AI assistant.',
-      temperature: 0.7,
-      maxTokens: 1000,
-      createdAt: new Date(Date.now() - 3600000),
-      updatedAt: new Date(Date.now() - 3600000),
-      messages: [],
-    };
-    this.conversations.set('demo-1', sampleConversation);
+    // Initialize with enhanced demo conversations from config
+    
+    DEMO_CONFIG.SAMPLE_CONVERSATIONS.forEach((demoConv: any) => {
+      const conversation: ConversationWithMessages = {
+        id: demoConv.id,
+        title: demoConv.title,
+        model: 'demo-assistant-v1',
+        systemPrompt: 'You are a helpful AI assistant showcasing demo features.',
+        temperature: 0.7,
+        maxTokens: 1000,
+        createdAt: new Date(Date.now() - Math.random() * 86400000), // Random times in last 24h
+        updatedAt: new Date(Date.now() - Math.random() * 3600000), // Random times in last hour
+        messages: demoConv.messages.map((msg: any, index: number) => ({
+          id: `${demoConv.id}-msg-${index + 1}`,
+          role: msg.role,
+          content: msg.content,
+          tokens: Math.ceil(msg.content.length / 4),
+          createdAt: msg.timestamp,
+          parentId: null,
+        })),
+      };
+      this.conversations.set(demoConv.id, conversation);
+    });
   }
 
   async create(input: CreateConversationInput = {}): Promise<ConversationWithMessages> {

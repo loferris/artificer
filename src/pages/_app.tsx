@@ -3,6 +3,7 @@ import React, { Component } from 'react';
 import type { AppProps } from 'next/app';
 import { trpc } from '../lib/trpc/client';
 import { TerminalThemeProvider } from '../contexts/TerminalThemeContext';
+import { DemoBanner } from '../components/DemoBanner';
 import { clientLogger } from '../utils/clientLogger';
 import '../styles/index.css';
 import '../styles/themes/purple-rich.css';
@@ -13,7 +14,10 @@ function MyApp({ Component, pageProps }: AppProps) {
   return (
     <ErrorBoundary>
       <TerminalThemeProvider>
-        <Component {...pageProps} />
+        <div className="min-h-screen">
+          <DemoBanner />
+          <Component {...pageProps} />
+        </div>
       </TerminalThemeProvider>
     </ErrorBoundary>
   );

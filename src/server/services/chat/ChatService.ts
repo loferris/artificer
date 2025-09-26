@@ -5,6 +5,7 @@ import { TRPCError } from '@trpc/server';
 import type { ConversationService } from '../conversation/ConversationService';
 import type { MessageService } from '../message/MessageService';
 import type { Assistant, AssistantResponse } from '../assistant';
+import { generateDemoResponse } from '../../../utils/staticDemo';
 
 export interface ChatMessage {
   id: string;
@@ -386,6 +387,11 @@ export class DatabaseChatService implements ChatService {
 export class DemoChatService implements ChatService {
   private conversations = new Map<string, ChatMessage[]>();
 
+  constructor(
+    private conversationService?: ConversationService,
+    private messageService?: MessageService,
+  ) {}
+
   // Existing sendMessage implementation...
   async sendMessage(input: SendMessageInput, userId?: string): Promise<SendMessageResult> {
     // Your existing demo implementation
@@ -402,20 +408,40 @@ export class DemoChatService implements ChatService {
 
     await new Promise((resolve) => setTimeout(resolve, 500));
 
+    // Generate a smart demo response
+    const demoResponse = generateDemoResponse(content);
+    
     const assistantMessage: ChatMessage = {
       id: `demo-msg-${Date.now()}-assistant`,
       role: 'assistant',
-      content: `Demo response to: "${content}"`,
+      content: demoResponse.content,
       timestamp: new Date(),
-      model: 'demo',
-      cost: 0.001,
-      tokens: 10,
+      model: demoResponse.model || 'demo-assistant-v1',
+      cost: demoResponse.cost || 0.001,
+      tokens: Math.ceil(demoResponse.content.length / 4),
     };
 
-    // Store in demo conversation
-    const messages = this.conversations.get(conversationId) || [];
-    messages.push(userMessage, assistantMessage);
-    this.conversations.set(conversationId, messages);
+    // Store messages using messageService if available
+    if (this.messageService) {
+      // Store user message
+      await this.messageService.create({
+        conversationId,
+        role: 'user',
+        content: userMessage.content,
+      });
+
+      // Store assistant message
+      await this.messageService.create({
+        conversationId,
+        role: 'assistant', 
+        content: assistantMessage.content,
+      });
+    } else {
+      // Fallback to in-memory storage
+      const messages = this.conversations.get(conversationId) || [];
+      messages.push(userMessage, assistantMessage);
+      this.conversations.set(conversationId, messages);
+    }
 
     return { userMessage, assistantMessage };
   }
@@ -438,8 +464,9 @@ export class DemoChatService implements ChatService {
         timestamp: new Date(),
       };
 
-      // Demo streaming response
-      const response = `Demo streaming response to: "${content}". This simulates how AI responses would stream in real-time.`;
+      // Generate smart demo streaming response
+      const demoResponse = generateDemoResponse(content);
+      const response = demoResponse.content;
       const words = response.split(' ');
 
       let fullResponse = '';
@@ -457,7 +484,7 @@ export class DemoChatService implements ChatService {
           content: chunk,
           finished: false,
           metadata: {
-            model: 'demo',
+            model: demoResponse.model || 'demo-assistant-v1',
             tokenCount: 1,
           },
         };
@@ -472,15 +499,32 @@ export class DemoChatService implements ChatService {
         role: 'assistant',
         content: fullResponse,
         timestamp: new Date(),
-        model: 'demo',
-        cost: 0.001,
+        model: demoResponse.model || 'demo-assistant-v1',
+        cost: demoResponse.cost || 0.001,
         tokens: words.length,
       };
 
-      // Store in demo conversation
-      const messages = this.conversations.get(conversationId) || [];
-      messages.push(userMessage, assistantMessage);
-      this.conversations.set(conversationId, messages);
+      // Store messages using messageService if available
+      if (this.messageService) {
+        // Store user message
+        await this.messageService.create({
+          conversationId,
+          role: 'user',
+          content: userMessage.content,
+        });
+
+        // Store assistant message
+        await this.messageService.create({
+          conversationId,
+          role: 'assistant', 
+          content: assistantMessage.content,
+        });
+      } else {
+        // Fallback to in-memory storage
+        const messages = this.conversations.get(conversationId) || [];
+        messages.push(userMessage, assistantMessage);
+        this.conversations.set(conversationId, messages);
+      }
 
       // Final completion chunk
       yield {
@@ -488,8 +532,8 @@ export class DemoChatService implements ChatService {
         finished: true,
         metadata: {
           tokenCount: words.length,
-          model: 'demo',
-          cost: 0.001,
+          model: demoResponse.model || 'demo-assistant-v1',
+          cost: demoResponse.cost || 0.001,
           messageId: assistantMessage.id,
         },
       };

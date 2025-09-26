@@ -69,7 +69,7 @@ export class ServiceFactory {
       // Create demo services
       conversationService = new DemoConversationService();
       messageService = new DemoMessageService();
-      chatService = new DemoChatService();
+      chatService = new DemoChatService(conversationService, messageService);
     } else {
       // Create database services
       conversationService = new DatabaseConversationService(db!);
