@@ -181,8 +181,107 @@ const Capabilities: React.FC<CapabilitiesProps> = ({ data }) => {
   );
 };
 
+interface TimeBasedUsageProps {
+  timeFrame: TimeFrame;
+  onTimeFrameChange: (timeFrame: TimeFrame) => void;
+}
+
+const TimeBasedUsage: React.FC<TimeBasedUsageProps> = ({ timeFrame, onTimeFrameChange }) => {
+  const { data: timeBasedData, isLoading, error } = trpc.monitoring.getTimeBasedUsage.useQuery(
+    { timeFrame },
+    {
+      refetchInterval: 30000,
+      refetchOnWindowFocus: false,
+    }
+  );
+
+  const timeFrameLabels: Record<TimeFrame, string> = {
+    hour: 'Last Hour',
+    day: 'Last 24 Hours',
+    week: 'Last 7 Days',
+    month: 'Last 30 Days',
+  };
+
+  if (isLoading) {
+    return (
+      <div className="bg-white dark:bg-gray-900 p-4 rounded-lg shadow">
+        <h3 className="text-lg font-semibold mb-4">Time-Based Usage</h3>
+        <div className="flex items-center justify-center h-32">
+          <div className="text-gray-600 dark:text-gray-400">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white dark:bg-gray-900 p-4 rounded-lg shadow">
+        <h3 className="text-lg font-semibold mb-4">Time-Based Usage</h3>
+        <div className="text-red-600 dark:text-red-400">Error: {error.message}</div>
+      </div>
+    );
+  }
+
+  const usage = timeBasedData?.usage || [];
+
+  return (
+    <div className="bg-white dark:bg-gray-900 p-4 rounded-lg shadow">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold">Time-Based Usage</h3>
+        <select
+          value={timeFrame}
+          onChange={(e) => onTimeFrameChange(e.target.value as TimeFrame)}
+          className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-sm"
+        >
+          {Object.entries(timeFrameLabels).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {usage.length === 0 ? (
+        <p className="text-gray-600 dark:text-gray-400">
+          No usage data available for {timeFrameLabels[timeFrame].toLowerCase()}
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {usage.map((stat) => (
+            <div key={stat.model} className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {stat.model}
+                  </span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    {stat.count} requests ({stat.percentage.toFixed(1)}%)
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div
+                    className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${stat.percentage}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {timeBasedData?.timestamp && (
+        <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+          Last updated: {new Date(timeBasedData.timestamp).toLocaleString()}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const MonitoringDashboard: React.FC = () => {
   const [refreshKey, setRefreshKey] = useState(0);
+  const [timeFrame, setTimeFrame] = useState<TimeFrame>('day');
   
   const { data: monitoringData, isLoading, error, refetch } = trpc.monitoring.getModelMonitoring.useQuery(
     undefined,
@@ -244,6 +343,21 @@ export const MonitoringDashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <UsageStats data={monitoringData?.usage || []} />
         <HealthStatus data={monitoringData?.health || []} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <TimeBasedUsage 
+          timeFrame={timeFrame} 
+          onTimeFrameChange={setTimeFrame} 
+        />
+        <div className="bg-white dark:bg-gray-900 p-4 rounded-lg shadow">
+          <h3 className="text-lg font-semibold mb-4">Quick Info</h3>
+          <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+            <p><strong>openai/gpt-4o-mini:</strong> This model appears in your fallback models list</p>
+            <p><strong>Usage Tracking:</strong> Time-based statistics track relative percentages over various periods</p>
+            <p><strong>Data Retention:</strong> Last 10,000 usage records are kept in memory</p>
+          </div>
+        </div>
       </div>
 
       <div className="mb-6">
