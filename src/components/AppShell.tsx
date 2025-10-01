@@ -11,6 +11,8 @@ import { TerminalThemeProvider, useTerminalThemeClasses } from '../contexts/Term
 import { ErrorBoundary } from './ErrorBoundary';
 import { CostTracker } from './CostTracker';
 import { ErrorBoundaryDisplay, LoadingSpinner } from './ui';
+import { ProjectSelector } from './ProjectSelector';
+import { useChatStore } from '../stores/chatStore';
 import type { ViewMode } from '../types';
 
 export interface AppShellProps {
@@ -108,8 +110,16 @@ export function ViewModeToggle({
   onModeChange, 
   className = '' 
 }: ViewModeToggleProps) {
+  const { currentProjectId, setCurrentProject } = useChatStore();
+  
   return (
-    <div className={`flex items-center justify-center p-2 border-b border-gray-200 ${className}`}>
+    <div className={`flex items-center justify-between p-2 border-b border-gray-200 ${className}`}>
+      <ProjectSelector 
+        currentProjectId={currentProjectId}
+        onProjectChange={setCurrentProject}
+        className="flex-shrink-0"
+      />
+      
       <div className="flex bg-gray-100 rounded-lg p-1">
         <button
           onClick={() => onModeChange('terminal')}
@@ -136,6 +146,8 @@ export function ViewModeToggle({
           Chat
         </button>
       </div>
+      
+      <div className="flex-shrink-0 w-[200px]" /> {/* Spacer for balance */}
     </div>
   );
 }

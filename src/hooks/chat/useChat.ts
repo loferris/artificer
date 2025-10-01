@@ -112,7 +112,9 @@ Type a message to start chatting, or explore the demo conversations!`,
         try {
             if (!store.currentConversationId) {
                 console.log('📝 Creating new conversation...');
-                const newConversation = await createConversationMutation.mutateAsync({});
+                const newConversation = await createConversationMutation.mutateAsync({
+                    projectId: store.currentProjectId || undefined,
+                });
                 if (newConversation?.id) {
                     console.log('✅ New conversation created:', newConversation.id);
                     store.setCurrentConversation(newConversation.id);
@@ -189,7 +191,9 @@ Type a message to start chatting, or explore the demo conversations!`,
   const handleStreamingMessage = useCallback(async (content: string, conversationId: string | null): Promise<void> => {
     if (!conversationId) {
       try {
-        const newConversation = await createConversationMutation.mutateAsync({});
+        const newConversation = await createConversationMutation.mutateAsync({
+          projectId: store.currentProjectId || undefined,
+        });
         if (newConversation?.id) {
           store.setCurrentConversation(newConversation.id);
           setTimeout(async () => {
@@ -243,7 +247,9 @@ Type a message to start chatting, or explore the demo conversations!`,
   }, [store.streamingMode, store.currentConversationId, store.messages, store.localMessages, streamingChat.messages]);
 
   const handleNewConversation = async () => {
-    const newConversation = await createConversationMutation.mutateAsync({});
+    const newConversation = await createConversationMutation.mutateAsync({
+      projectId: store.currentProjectId || undefined,
+    });
     if (newConversation?.id) {
         store.setCurrentConversation(newConversation.id);
         conversationsQuery.refetch();

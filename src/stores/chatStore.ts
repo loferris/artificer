@@ -10,6 +10,9 @@ export interface ChatState {
   streamingMode: boolean;
   sidebarOpen: boolean;
 
+  // Project awareness
+  currentProjectId: string | null;
+
   // Current conversation
   currentConversationId: string | null;
   messages: Message[];
@@ -36,6 +39,7 @@ export interface ChatState {
   setStreamingMode: (enabled: boolean) => void;
   toggleSidebar: () => void;
   toggleStreaming: () => void;
+  setCurrentProject: (id: string | null) => void;
   setCurrentConversation: (id: string | null) => void;
   setMessages: (messages: Message[]) => void;
   addMessage: (message: Message) => void;
@@ -66,6 +70,7 @@ export const useChatStore = create<ChatState>()(
       viewMode: 'terminal',
       streamingMode: false,
       sidebarOpen: true,
+      currentProjectId: null,
       currentConversationId: null,
       messages: [],
       localMessages: [],
@@ -83,6 +88,7 @@ export const useChatStore = create<ChatState>()(
       setStreamingMode: (enabled) => set({ streamingMode: enabled }, false, 'setStreamingMode'),
       toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen }), false, 'toggleSidebar'),
       toggleStreaming: () => set((state) => ({ streamingMode: !state.streamingMode }), false, 'toggleStreaming'),
+      setCurrentProject: (id) => set({ currentProjectId: id }, false, 'setCurrentProject'),
       setCurrentConversation: (id) => set({ currentConversationId: id, messages: [], localMessages: [] }, false, 'setCurrentConversation'),
       setMessages: (messages) => set({ messages }, false, 'setMessages'),
       addMessage: (message) => set((state) => ({ messages: [...state.messages, message] }), false, 'addMessage'),
@@ -96,7 +102,7 @@ export const useChatStore = create<ChatState>()(
       clearStreamingError: () => set({ streamingError: null }, false, 'clearStreamingError'),
       setInput: (input) => set({ input }, false, 'setInput'),
       clearMessages: () => set({ messages: [], localMessages: [] }, false, 'clearMessages'),
-      resetConversation: () => set({ currentConversationId: null, messages: [], localMessages: [], selectableConversations: [] }, false, 'resetConversation'),
+      resetConversation: () => set({ currentProjectId: null, currentConversationId: null, messages: [], localMessages: [], selectableConversations: [] }, false, 'resetConversation'),
       setRetryCount: (count) => set({ retryCount: count }, false, 'setRetryCount'),
       setLastFailedMessage: (message) => set({ lastFailedMessage: message }, false, 'setLastFailedMessage'),
       clearError: () => set({ error: null }, false, 'clearError'),

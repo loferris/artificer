@@ -7,12 +7,33 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  userId      String?  // Future: user authentication
+  settings    Json?    // Custom instructions, model preferences, etc.
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  conversations    Conversation[]
+  documents        Document[]
+  knowledgeEntities KnowledgeEntity[]
+
+  @@map("projects")
+}
+
 model Conversation {
   id        String   @id @default(cuid())
   title     String?
   model     String   // claude-3-5-sonnet, deepseek-coder, etc.
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Project association (optional - conversations can exist without projects)
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   messages Message[]
 
@@ -40,4 +61,46 @@ model Message {
   children Message[] @relation("MessageTree")
 
   @@map("messages")
+}
+
+model Document {
+  id          String   @id @default(cuid())
+  projectId   String
+  filename    String
+  originalName String  // Keep original filename for display
+  contentType String   // MIME type
+  content     String   // Extracted text content
+  size        Int      // File size in bytes
+  embedding   Float[]  // Vector embedding for semantic search
+  metadata    Json?    // Additional metadata (page count, etc.)
+  uploadedAt  DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
+  @@index([projectId])
+  @@index([contentType])
+}
+
+model KnowledgeEntity {
+  id           String   @id @default(cuid())
+  projectId    String
+  type         String   // "character", "location", "concept", etc.
+  name         String   // Primary identifier
+  data         Json     // Flexible structured data specific to entity type
+  embedding    Float[]  // Vector embedding for semantic search
+  sourceType   String   // "conversation", "document", "manual"
+  sourceId     String?  // ID of source (conversationId, documentId, etc.)
+  extractedAt  DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("knowledge_entities")
+  @@index([projectId])
+  @@index([type])
+  @@index([projectId, type])
 }

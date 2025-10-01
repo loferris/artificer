@@ -109,7 +109,9 @@ export function useCommandProcessor() {
   });
 
   const handleNewConversation = async () => {
-    const newConversation = await createConversationMutation.mutateAsync({});
+    const newConversation = await createConversationMutation.mutateAsync({
+      projectId: store.currentProjectId || undefined,
+    });
     if (newConversation?.id) {
         store.setCurrentConversation(newConversation.id);
         conversationsQuery.refetch();
