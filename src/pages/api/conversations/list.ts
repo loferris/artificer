@@ -38,7 +38,10 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
     res.status(200).json(conversations);
   } catch (error) {
-    logger.error('Error fetching conversations:', error instanceof Error ? error : new Error(String(error)));
+    logger.error(
+      'Error fetching conversations:',
+      error instanceof Error ? error : new Error(String(error)),
+    );
     res.status(500).json({
       message: 'Failed to fetch conversations',
       error: error instanceof Error ? error.message : 'Unknown error',

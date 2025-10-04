@@ -54,21 +54,34 @@ body {
 
 /* Terminal animation keyframes */
 @keyframes terminal-cursor-blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
 }
 
 @keyframes terminal-typing {
-  0% { width: 0; }
-  100% { width: 100%; }
+  0% {
+    width: 0;
+  }
+  100% {
+    width: 100%;
+  }
 }
 
 @keyframes terminal-glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 5px var(--terminal-accent-prompt);
   }
   50% {
-    box-shadow: 0 0 20px var(--terminal-accent-prompt), 0 0 30px var(--terminal-accent-prompt);
+    box-shadow:
+      0 0 20px var(--terminal-accent-prompt),
+      0 0 30px var(--terminal-accent-prompt);
   }
 }
 
@@ -107,15 +120,15 @@ body {
   .terminal-theme-transitioning * {
     transition: none !important;
   }
-  
+
   .terminal-cursor-blink {
     animation: none;
   }
-  
+
   .terminal-typing {
     animation: none;
   }
-  
+
   .terminal-glow {
     animation: none;
   }
@@ -127,7 +140,7 @@ body {
     background: white !important;
     color: black !important;
   }
-  
+
   .terminal-no-print {
     display: none !important;
   }
@@ -138,11 +151,40 @@ body {
 [data-terminal-theme='light'] .flex.h-screen {
   background: 
     /* Cyan/Periwinkle watercolor washes on pure white */
-    radial-gradient(ellipse 800px 600px at 10% 15%, rgba(125,211,252,0.15) 0%, rgba(125,211,252,0.08) 30%, rgba(125,211,252,0.04) 50%, transparent 80%),
-    radial-gradient(ellipse 700px 500px at 90% 85%, rgba(165,180,252,0.12) 0%, rgba(165,180,252,0.06) 35%, rgba(165,180,252,0.03) 55%, transparent 75%),
-    radial-gradient(ellipse 600px 400px at 60% 5%, rgba(147,197,253,0.10) 0%, rgba(147,197,253,0.05) 40%, rgba(147,197,253,0.02) 60%, transparent 70%),
-    radial-gradient(ellipse 550px 350px at 15% 95%, rgba(34,211,238,0.08) 0%, rgba(34,211,238,0.04) 35%, rgba(34,211,238,0.02) 55%, transparent 65%),
-    radial-gradient(ellipse 400px 250px at 75% 45%, rgba(129,140,248,0.06) 0%, rgba(129,140,248,0.03) 45%, transparent 65%),
+    radial-gradient(
+      ellipse 800px 600px at 10% 15%,
+      rgba(125, 211, 252, 0.15) 0%,
+      rgba(125, 211, 252, 0.08) 30%,
+      rgba(125, 211, 252, 0.04) 50%,
+      transparent 80%
+    ),
+    radial-gradient(
+      ellipse 700px 500px at 90% 85%,
+      rgba(165, 180, 252, 0.12) 0%,
+      rgba(165, 180, 252, 0.06) 35%,
+      rgba(165, 180, 252, 0.03) 55%,
+      transparent 75%
+    ),
+    radial-gradient(
+      ellipse 600px 400px at 60% 5%,
+      rgba(147, 197, 253, 0.1) 0%,
+      rgba(147, 197, 253, 0.05) 40%,
+      rgba(147, 197, 253, 0.02) 60%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 550px 350px at 15% 95%,
+      rgba(34, 211, 238, 0.08) 0%,
+      rgba(34, 211, 238, 0.04) 35%,
+      rgba(34, 211, 238, 0.02) 55%,
+      transparent 65%
+    ),
+    radial-gradient(
+      ellipse 400px 250px at 75% 45%,
+      rgba(129, 140, 248, 0.06) 0%,
+      rgba(129, 140, 248, 0.03) 45%,
+      transparent 65%
+    ),
     #ffffff;
 }
 

@@ -1,6 +1,6 @@
 /**
  * Advanced transaction mocking with realistic behavior simulation
- * 
+ *
  * This module provides sophisticated transaction mocking that better
  * simulates real Prisma transaction behavior including rollback scenarios,
  * isolation, and error handling.
@@ -19,17 +19,17 @@ export interface TransactionOptions {
    * Simulate transaction rollback on error
    */
   enableRollback?: boolean;
-  
+
   /**
    * Simulate transaction isolation (operations don't affect outer scope until commit)
    */
   enableIsolation?: boolean;
-  
+
   /**
    * Maximum time before transaction timeout (ms)
    */
   maxTimeout?: number;
-  
+
   /**
    * Simulate deadlock detection
    */
@@ -96,78 +96,81 @@ export class AdvancedTransactionMock {
    * Creates an advanced transaction mock implementation
    */
   createTransactionMock(mockClient: MockPrismaClient): MockInstance {
-    return mockClient.$transaction.mockImplementation(async (queriesOrCallback: any, options?: any) => {
-      const transactionId = `tx_${++AdvancedTransactionMock.transactionCount}`;
-      const transactionState = new TransactionState();
-      this.activeTransactions.set(transactionId, transactionState);
+    return mockClient.$transaction.mockImplementation(
+      async (queriesOrCallback: any, options?: any) => {
+        const transactionId = `tx_${++AdvancedTransactionMock.transactionCount}`;
+        const transactionState = new TransactionState();
+        this.activeTransactions.set(transactionId, transactionState);
 
-      try {
-        // Handle timeout
-        if (this.options.maxTimeout) {
-          setTimeout(() => {
-            if (!transactionState.isCommitted() && !transactionState.isRolledBack()) {
-              transactionState.rollback();
-              throw new Error('Transaction timeout');
-            }
-          }, this.options.maxTimeout);
+        try {
+          // Handle timeout
+          if (this.options.maxTimeout) {
+            setTimeout(() => {
+              if (!transactionState.isCommitted() && !transactionState.isRolledBack()) {
+                transactionState.rollback();
+                throw new Error('Transaction timeout');
+              }
+            }, this.options.maxTimeout);
+          }
+
+          let result: any;
+
+          if (Array.isArray(queriesOrCallback)) {
+            // Array-style transaction: $transaction([query1, query2])
+            result = await this.handleArrayTransaction(queriesOrCallback, transactionState);
+          } else if (typeof queriesOrCallback === 'function') {
+            // Callback-style transaction: $transaction(async (tx) => { ... })
+            result = await this.handleCallbackTransaction(
+              queriesOrCallback,
+              mockClient,
+              transactionState,
+            );
+          } else {
+            throw new Error('Invalid transaction input');
+          }
+
+          // Simulate successful commit
+          transactionState.commit();
+          return result;
+        } catch (error: any) {
+          // Simulate rollback on error
+          if (this.options.enableRollback) {
+            transactionState.rollback();
+
+            // Enhance error with transaction context
+            const enhancedError = new Error(
+              `Transaction failed: ${error.message}`,
+            ) as TransactionError;
+            enhancedError.code = 'P2034'; // Prisma transaction conflict code
+            enhancedError.meta = {
+              transactionId,
+              operations: transactionState.getOperations(),
+              duration: transactionState.getDuration(),
+            };
+
+            throw enhancedError;
+          }
+
+          throw error;
+        } finally {
+          this.activeTransactions.delete(transactionId);
         }
-
-        let result: any;
-
-        if (Array.isArray(queriesOrCallback)) {
-          // Array-style transaction: $transaction([query1, query2])
-          result = await this.handleArrayTransaction(queriesOrCallback, transactionState);
-        } else if (typeof queriesOrCallback === 'function') {
-          // Callback-style transaction: $transaction(async (tx) => { ... })
-          result = await this.handleCallbackTransaction(
-            queriesOrCallback, 
-            mockClient, 
-            transactionState
-          );
-        } else {
-          throw new Error('Invalid transaction input');
-        }
-
-        // Simulate successful commit
-        transactionState.commit();
-        return result;
-
-      } catch (error: any) {
-        // Simulate rollback on error
-        if (this.options.enableRollback) {
-          transactionState.rollback();
-          
-          // Enhance error with transaction context
-          const enhancedError = new Error(`Transaction failed: ${error.message}`) as TransactionError;
-          enhancedError.code = 'P2034'; // Prisma transaction conflict code
-          enhancedError.meta = {
-            transactionId,
-            operations: transactionState.getOperations(),
-            duration: transactionState.getDuration(),
-          };
-          
-          throw enhancedError;
-        }
-        
-        throw error;
-      } finally {
-        this.activeTransactions.delete(transactionId);
-      }
-    });
+      },
+    );
   }
 
   /**
    * Handles array-style transactions with parallel execution simulation
    */
   private async handleArrayTransaction(
-    queries: any[], 
-    transactionState: TransactionState
+    queries: any[],
+    transactionState: TransactionState,
   ): Promise<any[]> {
     const results: any[] = [];
-    
+
     for (let i = 0; i < queries.length; i++) {
       const query = queries[i];
-      
+
       try {
         // Simulate the query execution
         const result = await this.executeQuery(query, `batch_${i}`);
@@ -178,7 +181,7 @@ export class AdvancedTransactionMock {
         throw new Error(`Batch operation ${i} failed: ${(error as Error).message}`);
       }
     }
-    
+
     return results;
   }
 
@@ -188,11 +191,11 @@ export class AdvancedTransactionMock {
   private async handleCallbackTransaction(
     callback: Function,
     mockClient: MockPrismaClient,
-    transactionState: TransactionState
+    transactionState: TransactionState,
   ): Promise<any> {
     // Create transactional client that tracks operations
     const transactionalClient = this.createTransactionalClient(mockClient, transactionState);
-    
+
     try {
       return await callback(transactionalClient);
     } catch (error) {
@@ -206,7 +209,7 @@ export class AdvancedTransactionMock {
    */
   private createTransactionalClient(
     mockClient: MockPrismaClient,
-    transactionState: TransactionState
+    transactionState: TransactionState,
   ): MockPrismaClient {
     // Create a proxy that wraps all operations with transaction tracking
     const transactionalClient = { ...mockClient };
@@ -281,9 +284,9 @@ export class AdvancedTransactionMock {
   static simulateDeadlock(): never {
     const error = new Error('Transaction deadlock detected') as TransactionError;
     error.code = 'P2034';
-    error.meta = { 
+    error.meta = {
       target: ['conversation', 'message'],
-      deadlockDetected: true 
+      deadlockDetected: true,
     };
     throw error;
   }
@@ -341,8 +344,8 @@ export const TransactionMocks = {
    * Setup advanced transaction mock with full features
    */
   advanced: (
-    mockClient: MockPrismaClient, 
-    options: TransactionOptions = {}
+    mockClient: MockPrismaClient,
+    options: TransactionOptions = {},
   ): AdvancedTransactionMock => {
     const advancedMock = new AdvancedTransactionMock(options);
     advancedMock.createTransactionMock(mockClient);

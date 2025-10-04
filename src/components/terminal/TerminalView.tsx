@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ChatDisplay } from './ChatDisplay';
 import { ChatInput } from './ChatInput';
@@ -44,7 +43,6 @@ interface TerminalViewProps {
   style?: React.CSSProperties;
 }
 
-
 /**
  * The main component for the terminal-style chat interface.
  *
@@ -55,7 +53,6 @@ interface TerminalViewProps {
  * @returns {React.ReactElement} The rendered terminal view.
  */
 export const TerminalView: React.FC<TerminalViewProps> = ({
-
   messages,
   input,
   isCreatingConversation,
@@ -72,7 +69,7 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
   const themeClasses = useTerminalThemeClasses();
 
   return (
-    <div 
+    <div
       className={`
         flex 
         h-screen 
@@ -84,9 +81,9 @@ export const TerminalView: React.FC<TerminalViewProps> = ({
       `}
       style={style}
     >
-      <div className="flex-1 flex flex-col">
+      <div className='flex-1 flex flex-col'>
         <TerminalHeader />
-        
+
         <ChatDisplay
           messages={messages}
           isLoading={isLoading}

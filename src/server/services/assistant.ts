@@ -1,13 +1,15 @@
 import { logger } from '../utils/logger';
 import { DEMO_CONFIG } from '../config/demo';
-import { 
+import {
   type Assistant,
   type AssistantResponse,
-  type AssistantOptions 
+  type AssistantOptions,
+  type ModelCapabilities,
+  type ModelHealthCheck,
 } from './assistant/assistant';
 
 // Re-export types for consistency
-export type { Assistant, AssistantResponse, AssistantOptions };
+export type { Assistant, AssistantResponse, AssistantOptions, ModelCapabilities, ModelHealthCheck };
 
 export interface AssistantConfig {
   apiKey?: string;
@@ -18,10 +20,18 @@ export class OpenRouterAssistant implements Assistant {
   private apiKey: string;
   private siteName: string;
   private modelUsage: Map<string, number> = new Map();
+  private modelCapabilities: Map<string, ModelCapabilities> = new Map();
+  private modelHealthStatus: Map<string, ModelHealthCheck> = new Map();
+  private fallbackModels: string[] = [
+    'deepseek-chat',
+    'anthropic/claude-3-haiku',
+    'openai/gpt-4o-mini',
+  ];
 
   constructor(config: { apiKey: string; siteName: string }) {
     this.apiKey = config.apiKey;
     this.siteName = config.siteName;
+    this.initializeModelCapabilities();
   }
 
   async getResponse(
@@ -35,9 +45,9 @@ export class OpenRouterAssistant implements Assistant {
       }
 
       const messages = this.buildMessagesArray(userMessage, conversationHistory);
-      const model = this.selectModel();
+      const model = await this.selectModel();
 
-      const response = await this.fetchResponse(messages, model, options?.signal);
+      const response = await this.fetchResponseWithFallback(messages, model, options?.signal);
 
       if (!response || response.trim() === '') {
         throw new Error('Assistant response is empty');
@@ -112,6 +122,58 @@ export class OpenRouterAssistant implements Assistant {
     }
   }
 
+  getModelCapabilities(modelId?: string): ModelCapabilities | Map<string, ModelCapabilities> {
+    if (modelId) {
+      return (
+        this.modelCapabilities.get(modelId) || {
+          maxTokens: 4096,
+          costPer1kTokens: 0.001,
+          supportsStreaming: false,
+          contextWindow: 4096,
+        }
+      );
+    }
+    return this.modelCapabilities;
+  }
+
+  getModelHealthStatus(modelId?: string): ModelHealthCheck | Map<string, ModelHealthCheck> {
+    if (modelId) {
+      return (
+        this.modelHealthStatus.get(modelId) || {
+          model: modelId,
+          isHealthy: false,
+          responseTime: 0,
+          lastChecked: new Date(0),
+          error: 'No health check performed',
+        }
+      );
+    }
+    return this.modelHealthStatus;
+  }
+
+  async checkAllModelsHealth(): Promise<ModelHealthCheck[]> {
+    const models = [
+      process.env.OPENROUTER_MODEL,
+      process.env.OPENROUTER_DEFAULT_MODEL,
+      ...this.fallbackModels,
+    ].filter((model): model is string => Boolean(model && model.trim() !== ''));
+
+    const uniqueModels = [...new Set(models)];
+    const healthChecks = await Promise.allSettled(
+      uniqueModels.map(async (model) => {
+        await this.validateModel(model);
+        return this.modelHealthStatus.get(model)!;
+      }),
+    );
+
+    return healthChecks
+      .filter(
+        (result): result is PromiseFulfilledResult<ModelHealthCheck> =>
+          result.status === 'fulfilled',
+      )
+      .map((result) => result.value);
+  }
+
   private buildMessagesArray(
     userMessage: string,
     conversationHistory: Array<{ role: string; content: string }>,
@@ -130,25 +192,165 @@ export class OpenRouterAssistant implements Assistant {
     }
   }
 
-  private selectModel(): string {
+  private initializeModelCapabilities(): void {
+    const capabilities: Record<string, ModelCapabilities> = {
+      'deepseek-chat': {
+        maxTokens: 4096,
+        costPer1kTokens: 0.0002,
+        supportsStreaming: true,
+        contextWindow: 4096,
+      },
+      'anthropic/claude-3-haiku': {
+        maxTokens: 4096,
+        costPer1kTokens: 0.00025,
+        supportsStreaming: true,
+        contextWindow: 200000,
+      },
+      'anthropic/claude-3-sonnet': {
+        maxTokens: 4096,
+        costPer1kTokens: 0.003,
+        supportsStreaming: true,
+        contextWindow: 200000,
+      },
+      'openai/gpt-4o-mini': {
+        maxTokens: 16384,
+        costPer1kTokens: 0.00015,
+        supportsStreaming: true,
+        contextWindow: 128000,
+      },
+    };
+
+    for (const [model, caps] of Object.entries(capabilities)) {
+      this.modelCapabilities.set(model, caps);
+    }
+  }
+
+  private async validateModel(modelId: string): Promise<boolean> {
     try {
-      // Use the primary model from environment
-      const envModel = process.env.OPENROUTER_MODEL;
-      if (envModel && envModel.trim() !== '') {
-        return envModel;
+      // Skip validation in test environment
+      if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+        return true;
       }
 
-      // Fall back to default model from environment
-      const defaultModel = process.env.OPENROUTER_DEFAULT_MODEL;
-      if (defaultModel && defaultModel.trim() !== '') {
-        return defaultModel;
+      // Skip validation if fetch is not available (test/server environment)
+      if (typeof fetch === 'undefined') {
+        return true;
       }
 
-      // Final hardcoded fallback
-      return 'deepseek-chat';
+      const healthCheck = this.modelHealthStatus.get(modelId);
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+
+      // Use cached health check if recent and healthy
+      if (healthCheck && healthCheck.lastChecked > fiveMinutesAgo && healthCheck.isHealthy) {
+        return true;
+      }
+
+      const startTime = Date.now();
+
+      // Quick health check with minimal request
+      const response = await fetch('https://openrouter.ai/api/v1/models', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        signal: AbortSignal.timeout(5000), // 5 second timeout for health check
+      });
+
+      const responseTime = Date.now() - startTime;
+      const isHealthy = response.ok;
+
+      const healthCheckResult: ModelHealthCheck = {
+        model: modelId,
+        isHealthy,
+        responseTime,
+        lastChecked: new Date(),
+        error: isHealthy ? undefined : `HTTP ${response.status}: ${response.statusText}`,
+      };
+
+      this.modelHealthStatus.set(modelId, healthCheckResult);
+
+      if (isHealthy) {
+        // Verify the specific model exists in the response
+        const data = await response.json();
+        const modelExists = data.data?.some((model: any) => model.id === modelId);
+        return modelExists;
+      }
+
+      return false;
     } catch (error) {
-      logger.error('Error selecting model:', error);
-      return 'deepseek-chat'; // Safe fallback
+      // In test environment, don't log validation errors
+      if (typeof process === 'undefined' || process.env.NODE_ENV !== 'test') {
+        const healthCheckResult: ModelHealthCheck = {
+          model: modelId,
+          isHealthy: false,
+          responseTime: 0,
+          lastChecked: new Date(),
+          error: error instanceof Error ? error.message : 'Unknown error',
+        };
+
+        this.modelHealthStatus.set(modelId, healthCheckResult);
+        logger.error(`Model validation failed for ${modelId}:`, error);
+      }
+      return false;
+    }
+  }
+
+  private async selectModel(): Promise<string> {
+    try {
+      // Build candidate list with priority order
+      const candidates = [
+        process.env.OPENROUTER_MODEL,
+        process.env.OPENROUTER_DEFAULT_MODEL,
+        ...this.fallbackModels,
+      ].filter((model): model is string => Boolean(model && model.trim() !== ''));
+
+      // Try each candidate with validation
+      for (const candidate of candidates) {
+        const isValid = await this.validateModel(candidate);
+        if (isValid) {
+          logger.info(`Selected validated model: ${candidate}`);
+          return candidate;
+        } else {
+          logger.warn(`Model ${candidate} failed validation, trying next fallback`);
+        }
+      }
+
+      // If all validations fail, return the primary env model or first fallback
+      const fallbackModel = process.env.OPENROUTER_MODEL || this.fallbackModels[0];
+      logger.warn(`All model validations failed, using fallback: ${fallbackModel}`);
+      return fallbackModel;
+    } catch (error) {
+      logger.error('Error in model selection:', error);
+      return this.fallbackModels[0]; // Safe fallback
+    }
+  }
+
+  private async fetchResponseWithFallback(
+    messages: Array<{ role: 'user' | 'assistant'; content: string }>,
+    primaryModel: string,
+    signal?: AbortSignal,
+  ): Promise<string> {
+    try {
+      return await this.fetchResponse(messages, primaryModel, signal);
+    } catch (error) {
+      logger.warn(`Primary model ${primaryModel} failed, trying fallbacks:`, error);
+
+      // Try fallback models if primary fails
+      for (const fallbackModel of this.fallbackModels) {
+        if (fallbackModel === primaryModel) continue; // Skip if same as primary
+
+        try {
+          logger.info(`Attempting fallback model: ${fallbackModel}`);
+          return await this.fetchResponse(messages, fallbackModel, signal);
+        } catch (fallbackError) {
+          logger.warn(`Fallback model ${fallbackModel} also failed:`, fallbackError);
+          continue;
+        }
+      }
+
+      // If all models fail, throw the original error
+      throw error;
     }
   }
 
@@ -296,15 +498,24 @@ export class OpenRouterAssistant implements Assistant {
   private estimateCost(response: string, model: string): number {
     try {
       const tokens = Math.ceil(response.length / 4); // Rough token estimation
-      const costPerToken: Record<string, number> = {
+      const capabilities = this.modelCapabilities.get(model);
+
+      if (capabilities) {
+        // Use capabilities-based pricing (per 1k tokens, convert to per token)
+        return tokens * (capabilities.costPer1kTokens / 1000);
+      }
+
+      // Fallback to legacy pricing if no capabilities found
+      const fallbackCostPerToken: Record<string, number> = {
         'anthropic/claude-3-haiku': 0.00000025,
         'anthropic/claude-3-sonnet': 0.000003,
         'anthropic/claude-3-opus': 0.000015,
         'meta-llama/llama-3.1-8b-instruct': 0.0000002,
         'openai/gpt-4o-mini': 0.00000015,
+        'deepseek-chat': 0.0000002,
       };
 
-      return tokens * (costPerToken[model] || 0.000001);
+      return tokens * (fallbackCostPerToken[model] || 0.000001);
     } catch (error) {
       logger.error('Error estimating cost:', error);
       return 0;

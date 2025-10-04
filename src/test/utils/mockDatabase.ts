@@ -1,6 +1,6 @@
 /**
  * Shared database mocking utilities for tests
- * 
+ *
  * This module provides reusable mock utilities to avoid duplication
  * across test files and ensure consistent mocking patterns.
  */
@@ -86,8 +86,8 @@ export function setupTransactionMocks(mockClient: MockPrismaClient): void {
  * Use this for tests that need to verify transaction behavior, rollbacks, etc.
  */
 export function setupAdvancedTransactionMocks(
-  mockClient: MockPrismaClient, 
-  options: { enableRollback?: boolean; enableIsolation?: boolean } = {}
+  mockClient: MockPrismaClient,
+  options: { enableRollback?: boolean; enableIsolation?: boolean } = {},
 ): void {
   const { TransactionMocks } = require('./advancedMockTransaction');
   TransactionMocks.advanced(mockClient, options);
@@ -119,7 +119,7 @@ export function setupDatabaseServiceMocks(): MockPrismaClient {
  */
 export function resetDatabaseMocks(mockClient: MockPrismaClient): void {
   vi.clearAllMocks();
-  
+
   // Re-setup transaction behavior after clearing
   setupTransactionMocks(mockClient);
   setupConnectionMocks(mockClient);
@@ -135,7 +135,9 @@ export interface MockServiceContainer {
   assistant: any;
 }
 
-export function createMockServiceContainer(overrides: Partial<MockServiceContainer> = {}): MockServiceContainer {
+export function createMockServiceContainer(
+  overrides: Partial<MockServiceContainer> = {},
+): MockServiceContainer {
   return {
     messageService: {
       createMessage: vi.fn(),
@@ -184,7 +186,7 @@ export const TestScenarios = {
   serviceTest: <T>(ServiceClass: new (client: any) => T, mockClient?: MockPrismaClient) => {
     const client = mockClient || setupDatabaseServiceMocks();
     const service = new ServiceClass(client as any);
-    
+
     return { service, mockClient: client };
   },
 
@@ -193,11 +195,11 @@ export const TestScenarios = {
    */
   apiTest: (mockServices?: Partial<MockServiceContainer>) => {
     const services = createMockServiceContainer(mockServices);
-    
+
     beforeEach(async () => {
       await setupServiceFactoryMocks(services);
     });
-    
+
     return { mockServices: services };
   },
 
@@ -206,7 +208,7 @@ export const TestScenarios = {
    */
   integrationTest: (mockClient?: MockPrismaClient) => {
     const client = mockClient || setupDatabaseServiceMocks();
-    
+
     return { mockClient: client };
   },
 };
@@ -228,16 +230,26 @@ export const DatabaseMocks = {
   /**
    * Mock a successful create operation
    */
-  mockCreate: (mockClient: MockPrismaClient, entity: 'conversation' | 'message', returnValue: any) => {
+  mockCreate: (
+    mockClient: MockPrismaClient,
+    entity: 'conversation' | 'message',
+    returnValue: any,
+  ) => {
     mockClient[entity].create.mockResolvedValue(returnValue);
   },
 
   /**
    * Mock a successful find operation
    */
-  mockFind: (mockClient: MockPrismaClient, entity: 'conversation' | 'message', returnValue: any) => {
+  mockFind: (
+    mockClient: MockPrismaClient,
+    entity: 'conversation' | 'message',
+    returnValue: any,
+  ) => {
     mockClient[entity].findMany.mockResolvedValue(returnValue);
-    mockClient[entity].findUnique.mockResolvedValue(Array.isArray(returnValue) ? returnValue[0] : returnValue);
+    mockClient[entity].findUnique.mockResolvedValue(
+      Array.isArray(returnValue) ? returnValue[0] : returnValue,
+    );
   },
 
   /**
@@ -251,7 +263,12 @@ export const DatabaseMocks = {
   /**
    * Mock an operation failure
    */
-  mockError: (mockClient: MockPrismaClient, entity: 'conversation' | 'message', operation: string, error: string) => {
+  mockError: (
+    mockClient: MockPrismaClient,
+    entity: 'conversation' | 'message',
+    operation: string,
+    error: string,
+  ) => {
     (mockClient[entity] as any)[operation].mockRejectedValue(new Error(error));
   },
 
@@ -260,10 +277,10 @@ export const DatabaseMocks = {
    * Integrates with mock data factories for consistent test data
    */
   mockCrudScenario: (
-    mockClient: MockPrismaClient, 
+    mockClient: MockPrismaClient,
     entity: 'conversation' | 'message',
     scenario: 'success' | 'notFound' | 'error',
-    data?: any
+    data?: any,
   ) => {
     switch (scenario) {
       case 'success':

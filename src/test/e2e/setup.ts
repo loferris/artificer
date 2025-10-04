@@ -332,7 +332,10 @@ export const simulateLoading = async (endpoint: string) => {
 };
 
 // Helper function to simulate mutation states
-export const simulateMutationState = async (mutation: string, state: 'pending' | 'success' | 'error') => {
+export const simulateMutationState = async (
+  mutation: string,
+  state: 'pending' | 'success' | 'error',
+) => {
   const trpcModule = vi.mocked(await import('../../lib/trpc/client'));
   const { trpc } = trpcModule;
 

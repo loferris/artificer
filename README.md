@@ -34,6 +34,7 @@ The system is designed API-first with a distinct service layer, making it suitab
 ## Current Features
 
 **Core Infrastructure**
+
 - PostgreSQL database with Prisma ORM for conversation persistence
 - OpenRouter API integration supporting multiple AI models
 - Real-time streaming via WebSocket subscriptions and SSE endpoints
@@ -42,6 +43,7 @@ The system is designed API-first with a distinct service layer, making it suitab
 - **390+ tests** with full test coverage for critical components
 
 **User Interface**
+
 - **Dual Interface System**: Terminal mode with slash commands + traditional chat interface
 - **Theme System**: Three responsive themes ("purple-rich" dark, "amber," and cyan-rich light) with CSS custom properties
 - **Real-time Streaming**: Visual streaming indicators with typing effects in terminal mode
@@ -49,6 +51,7 @@ The system is designed API-first with a distinct service layer, making it suitab
 - **Export Functionality**: Markdown and JSON export with basic support for Notion/Obsidian formats
 
 **Service Architecture**
+
 - Clean service layer with dependency injection for business logic
 - Database scheme for conversation lifecycle management with branching support ready
 - Message operations with token tracking and cost calculation
@@ -67,6 +70,7 @@ The system is designed API-first with a distinct service layer, making it suitab
 ## Architecture Design
 
 **API-First Service Layer**
+
 - Strict separation between UI and business logic
 - Dependency injection for testable service architecture
 - Type-safe APIs with runtime validation using Zod schemas
@@ -74,6 +78,7 @@ The system is designed API-first with a distinct service layer, making it suitab
 
 **Integration Ready**
 The service layer is designed for integration with external tools:
+
 - **CLI tools** via SSE endpoints (`/api/stream/chat`)
 - **Browser extensions** via tRPC subscriptions
 - **Knowledge management tools** via structured export formats
@@ -82,6 +87,7 @@ The service layer is designed for integration with external tools:
 ## Feature Status
 
 **✅ Production Ready**
+
 - Real-time streaming (WebSocket + SSE with unified backend)
 - Multi-model AI access via OpenRouter API
 - PostgreSQL conversation persistence with Prisma ORM
@@ -94,11 +100,13 @@ The service layer is designed for integration with external tools:
 - 390+ automated tests with comprehensive coverage
 
 **🔄 Backend Complete, Frontend In Progress**
+
 - Conversation branching system (database schema and services ready)
 - Message threading with `parentId` relationships (service layer complete)
 - Advanced export format support (services implemented, UI integration needed)
 
 **📋 Planned Enhancements**
+
 - Intelligent model routing based on cost and task complexity
 - Context compression and conversation summarization
 - Enhanced PKM tool integrations (full Notion, Obsidian, Google Docs integrations)
@@ -129,6 +137,7 @@ npm run db:studio
 ### Environment Configuration
 
 Required environment variables in `.env`:
+
 ```bash
 DATABASE_URL="postgresql://postgres:password@localhost:5432/ai_workflow_engine"
 OPENROUTER_API_KEY="your_openrouter_api_key"
@@ -168,8 +177,9 @@ npm test -- src/components/__tests__/CostTracker.test.tsx
 ```
 
 **Current Test Coverage**: 390+ tests across 42 test files covering:
+
 - Component functionality and rendering
-- Service layer business logic 
+- Service layer business logic
 - API endpoints and error handling
 - Real-time streaming infrastructure
 - Theme system and responsive design
@@ -179,6 +189,7 @@ npm test -- src/components/__tests__/CostTracker.test.tsx
 The system provides two distinct interfaces optimized for different workflows:
 
 ### **Terminal Interface**
+
 - **Command-driven workflow** with slash commands (`/new`, `/list`, `/export`, `/theme`, etc.)
 - **Real-time streaming** with visual indicators and typing effects
 - **Theme system** with 3 responsive themes (Dark, Amber, Light)
@@ -186,6 +197,7 @@ The system provides two distinct interfaces optimized for different workflows:
 - **Session management** with conversation selection and welcome messages
 
 ### **Classic Chat Interface**
+
 - **Traditional chat experience** with conversation sidebar
 - **Standard messaging** (no streaming, optimized for reliability)
 - **Export functionality** with multiple format options
@@ -193,11 +205,12 @@ The system provides two distinct interfaces optimized for different workflows:
 - **Pink/purple gradient aesthetic** independent of terminal themes
 
 ### **Slash Commands (Terminal Mode)**
+
 ```bash
 /man                             # Show command manual
 /new                            # Create new conversation
 /list                           # Show 10 recent conversations
-/list-all                       # Show all conversations  
+/list-all                       # Show all conversations
 /export-current [markdown|json]  # Export current conversation
 /export-all [markdown|json]     # Export all conversations
 /theme [dark|amber|light]       # Switch terminal theme
@@ -207,6 +220,7 @@ The system provides two distinct interfaces optimized for different workflows:
 ```
 
 ### **Theme System**
+
 - **Purple-Rich**: Dark theme with purple gradients and rich contrast
 - **Amber-Forest**: Warm earth tones with amber accents
 - **Cyan-Rich**: Light theme with cyan highlights and clean typography
@@ -215,17 +229,20 @@ The system provides two distinct interfaces optimized for different workflows:
 ## API Integration
 
 ### Real-time Streaming
+
 The system provides multiple endpoints for real-time AI conversation streaming:
 
 **WebSocket Subscriptions** (Frontend)
+
 ```typescript
 const { data: streamData } = trpc.subscriptions.chatStream.useSubscription({
-  content: "Your message",
-  conversationId: "conv-123"
+  content: 'Your message',
+  conversationId: 'conv-123',
 });
 ```
 
 **Server-Sent Events** (CLI/Automation)
+
 ```bash
 curl -X POST http://localhost:3000/api/stream/chat \
   -H "Content-Type: application/json" \
@@ -234,6 +251,7 @@ curl -X POST http://localhost:3000/api/stream/chat \
 ```
 
 ### API Endpoints
+
 - `POST /api/stream/chat` - SSE streaming endpoint
 - `GET /api/trpc/[trpc]` - tRPC HTTP endpoint
 - `WS /api/trpc-ws` - WebSocket subscriptions

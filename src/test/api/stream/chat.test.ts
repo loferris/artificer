@@ -18,8 +18,6 @@ vi.mock('../../../server/middleware/rateLimiter', () => ({
   RATE_LIMITS: { CHAT: {} },
 }));
 
-
-
 vi.mock('../../../../server/db/client', () => ({
   prisma: {},
 }));
@@ -220,18 +218,18 @@ describe('/api/stream/chat', () => {
       await handler(req as NextApiRequest, res as NextApiResponse);
 
       const responseData = res._getData();
-      
+
       // Verify SSE format
       expect(responseData).toContain(': SSE stream connected');
       expect(responseData).toContain('event: connection');
       expect(responseData).toContain('data: {"type":"connected"');
-      
+
       // Verify chunks
       expect(responseData).toContain('event: chunk');
       expect(responseData).toContain('data: {"content":"Hello","finished":false}');
       expect(responseData).toContain('data: {"content":" world","finished":false}');
       expect(responseData).toContain('data: {"content":"!","finished":true');
-      
+
       // Verify completion
       expect(responseData).toContain('event: complete');
       expect(responseData).toContain('data: {"type":"completed"');
@@ -259,11 +257,11 @@ describe('/api/stream/chat', () => {
       await handler(req as NextApiRequest, res as NextApiResponse);
 
       const responseData = res._getData();
-      
+
       // Should contain error chunk
       expect(responseData).toContain('event: chunk');
       expect(responseData).toContain('"error":"Conversation not found"');
-      
+
       // Should still complete gracefully
       expect(responseData).toContain('event: complete');
       expect(responseData).toContain(': Stream ended');
@@ -308,17 +306,17 @@ describe('/api/stream/chat', () => {
   describe('Request cleanup', () => {
     it('should handle request abortion', async () => {
       let abortController: AbortController;
-      
+
       mockChatService.createMessageStream.mockImplementation(async function* () {
         // Simulate long-running stream
         yield { content: 'Start', finished: false };
-        
+
         // Wait and check if aborted
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         if (abortController?.signal.aborted) {
           return;
         }
-        
+
         yield { content: 'End', finished: true };
       });
 
@@ -332,7 +330,7 @@ describe('/api/stream/chat', () => {
 
       // Start the handler
       const handlerPromise = handler(req as NextApiRequest, res as NextApiResponse);
-      
+
       // Simulate client disconnect after a short delay
       setTimeout(() => {
         req.emit('close');
@@ -375,7 +373,7 @@ describe('/api/stream/chat', () => {
           content: 'Hello',
           conversationId: 'conv-123',
         }),
-        'anonymous'
+        'anonymous',
       );
     });
   });

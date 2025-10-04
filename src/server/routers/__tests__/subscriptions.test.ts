@@ -31,9 +31,9 @@ describe('Subscriptions Router', () => {
       res: {
         setHeader: vi.fn(),
       },
-      user: { 
+      user: {
         id: 'test-user',
-        sessionId: 'test-session' 
+        sessionId: 'test-session',
       },
       signal: new AbortController().signal,
     };
@@ -106,7 +106,7 @@ describe('Subscriptions Router', () => {
           conversationId: input.conversationId,
           signal: expect.any(AbortSignal),
         },
-        mockContext.user.sessionId
+        mockContext.user.sessionId,
       );
 
       expect(emittedValues).toHaveLength(3);
@@ -203,7 +203,7 @@ describe('Subscriptions Router', () => {
           }
           yield chunk;
           // Add a small delay to allow cancellation to take effect
-          await new Promise(resolve => setTimeout(resolve, 10));
+          await new Promise((resolve) => setTimeout(resolve, 10));
         }
       });
 
@@ -262,9 +262,7 @@ describe('Subscriptions Router', () => {
         signal: new AbortController().signal,
       };
 
-      const mockChunks: ChatStreamChunk[] = [
-        { content: 'Response', finished: true },
-      ];
+      const mockChunks: ChatStreamChunk[] = [{ content: 'Response', finished: true }];
 
       mockChatService.createMessageStream.mockImplementation(async function* () {
         for (const chunk of mockChunks) {
@@ -301,7 +299,7 @@ describe('Subscriptions Router', () => {
           content: input.content,
           conversationId: input.conversationId,
         }),
-        undefined // no user session
+        undefined, // no user session
       );
       expect(emittedValues).toHaveLength(1);
     });

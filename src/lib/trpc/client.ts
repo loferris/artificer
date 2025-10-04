@@ -19,7 +19,7 @@ function getWsUrl() {
 
 function getSessionId() {
   if (typeof window === 'undefined') return '';
-  
+
   let sessionId = localStorage.getItem('session-id') || '';
   if (!sessionId) {
     sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;

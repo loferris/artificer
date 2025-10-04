@@ -1,6 +1,6 @@
 /**
  * Shared Error Display Primitive Component
- * 
+ *
  * Provides consistent error display across terminal and chat modes
  * with different variants for various error types and contexts.
  */
@@ -58,47 +58,54 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
 
   // Variant-specific layouts
   const renderInline = () => (
-    <div className={`
+    <div
+      className={`
       ${severityClasses[severity].bg}
       ${themeClasses.pSm}
       ${themeClasses.radiusSm}
       ${themeClasses.textSm}
       ${className}
-    `}>
-      <div className="flex items-start gap-2">
-        <span className={`
+    `}
+    >
+      <div className='flex items-start gap-2'>
+        <span
+          className={`
           ${severityClasses[severity].accent}
           ${themeClasses.fontMono}
           flex-shrink-0
           mt-0.5
-        `}>
+        `}
+        >
           {severityClasses[severity].icon}
         </span>
-        <div className="flex-1">
+        <div className='flex-1'>
           {title && (
-            <div className={`
+            <div
+              className={`
               ${severityClasses[severity].accent}
               ${themeClasses.fontMono}
               font-medium
               mb-1
-            `}>
+            `}
+            >
               {title}
             </div>
           )}
-          <div className={themeClasses.textSecondary}>
-            {message}
-          </div>
+          <div className={themeClasses.textSecondary}>{message}</div>
           {details && (
-            <details className="mt-2">
-              <summary className={`
+            <details className='mt-2'>
+              <summary
+                className={`
                 ${themeClasses.textTertiary}
                 ${themeClasses.textXs}
                 cursor-pointer
                 hover:${themeClasses.textSecondary}
-              `}>
+              `}
+              >
                 Show details
               </summary>
-              <div className={`
+              <div
+                className={`
                 mt-1
                 ${themeClasses.textXs}
                 ${themeClasses.fontMono}
@@ -107,7 +114,8 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
                 ${themeClasses.pXs}
                 ${themeClasses.radiusSm}
                 overflow-x-auto
-              `}>
+              `}
+              >
                 {details}
               </div>
             </details>
@@ -130,12 +138,8 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
         )}
       </div>
       {action && (
-        <div className="mt-3 pt-2 border-t border-opacity-20">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={action.onClick}
-          >
+        <div className='mt-3 pt-2 border-t border-opacity-20'>
+          <Button variant='secondary' size='sm' onClick={action.onClick}>
             {action.label}
           </Button>
         </div>
@@ -144,44 +148,44 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
   );
 
   const renderBanner = () => (
-    <div className={`
+    <div
+      className={`
       ${severityClasses[severity].bg}
       ${themeClasses.pMd}
       border-t border-b
       border-opacity-20
       ${className}
-    `}>
-      <div className="flex items-center justify-between max-w-4xl mx-auto">
-        <div className="flex items-center gap-3">
-          <span className={`
+    `}
+    >
+      <div className='flex items-center justify-between max-w-4xl mx-auto'>
+        <div className='flex items-center gap-3'>
+          <span
+            className={`
             ${severityClasses[severity].accent}
             ${themeClasses.fontMono}
             text-lg
-          `}>
+          `}
+          >
             {severityClasses[severity].icon}
           </span>
           <div>
             {title && (
-              <div className={`
+              <div
+                className={`
                 ${severityClasses[severity].accent}
                 font-medium
                 mb-1
-              `}>
+              `}
+              >
                 {title}
               </div>
             )}
-            <div className={themeClasses.textSecondary}>
-              {message}
-            </div>
+            <div className={themeClasses.textSecondary}>{message}</div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className='flex items-center gap-2'>
           {action && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={action.onClick}
-            >
+            <Button variant='secondary' size='sm' onClick={action.onClick}>
               {action.label}
             </Button>
           )}
@@ -205,43 +209,51 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
   );
 
   const renderTerminal = () => (
-    <div className={`
+    <div
+      className={`
       ${themeClasses.fontMono}
       ${themeClasses.textSm}
       ${className}
-    `}>
-      <div className="flex items-center gap-2">
-        <span className={`
+    `}
+    >
+      <div className='flex items-center gap-2'>
+        <span
+          className={`
           ${severityClasses[severity].accent}
           font-bold
-        `}>
+        `}
+        >
           {severityClasses[severity].icon}
         </span>
-        <span className={`
+        <span
+          className={`
           ${severityClasses[severity].accent}
           font-medium
-        `}>
+        `}
+        >
           {severity === 'error' ? 'ERROR' : severity === 'warning' ? 'WARNING' : 'INFO'}:
         </span>
-        <span className={themeClasses.textSecondary}>
-          {message}
-        </span>
+        <span className={themeClasses.textSecondary}>{message}</span>
       </div>
       {details && (
-        <div className={`
+        <div
+          className={`
           mt-1 ml-6
           ${themeClasses.textXs}
           ${themeClasses.textMuted}
-        `}>
+        `}
+        >
           {details}
         </div>
       )}
       {action && (
-        <div className="mt-2 ml-6">
-          <span className={`
+        <div className='mt-2 ml-6'>
+          <span
+            className={`
             ${themeClasses.textTertiary}
             ${themeClasses.textXs}
-          `}>
+          `}
+          >
             Run:
           </span>
           <button
@@ -261,12 +273,13 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
   );
 
   const renderModal = () => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div 
-        className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
+    <div className='fixed inset-0 z-50 flex items-center justify-center p-4'>
+      <div
+        className='fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm'
         onClick={dismissible ? onDismiss : undefined}
       />
-      <div className={`
+      <div
+        className={`
         relative
         ${themeClasses.bgPrimary}
         ${themeClasses.textPrimary}
@@ -278,35 +291,43 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
         max-h-[80vh]
         overflow-y-auto
         ${className}
-      `}>
-        <div className="flex items-start gap-3">
-          <span className={`
+      `}
+      >
+        <div className='flex items-start gap-3'>
+          <span
+            className={`
             ${severityClasses[severity].accent}
             text-xl
             flex-shrink-0
             mt-1
-          `}>
+          `}
+          >
             {severityClasses[severity].icon}
           </span>
-          <div className="flex-1">
+          <div className='flex-1'>
             {title && (
-              <h3 className={`
+              <h3
+                className={`
                 ${severityClasses[severity].accent}
                 font-semibold
                 text-lg
                 mb-2
-              `}>
+              `}
+              >
                 {title}
               </h3>
             )}
-            <div className={`
+            <div
+              className={`
               ${themeClasses.textSecondary}
               mb-4
-            `}>
+            `}
+            >
               {message}
             </div>
             {details && (
-              <div className={`
+              <div
+                className={`
                 ${themeClasses.bgOverlay}
                 ${themeClasses.pSm}
                 ${themeClasses.radiusSm}
@@ -315,26 +336,19 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
                 ${themeClasses.textMuted}
                 mb-4
                 overflow-x-auto
-              `}>
+              `}
+              >
                 {details}
               </div>
             )}
-            <div className="flex justify-end gap-2">
+            <div className='flex justify-end gap-2'>
               {action && (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={action.onClick}
-                >
+                <Button variant='primary' size='sm' onClick={action.onClick}>
                   {action.label}
                 </Button>
               )}
               {dismissible && onDismiss && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={onDismiss}
-                >
+                <Button variant='secondary' size='sm' onClick={onDismiss}>
                   Close
                 </Button>
               )}
@@ -347,36 +361,40 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
 
   // Render based on variant
   switch (variant) {
-    case 'banner': return renderBanner();
-    case 'modal': return renderModal();
-    case 'terminal': return renderTerminal();
-    default: return renderInline();
+    case 'banner':
+      return renderBanner();
+    case 'modal':
+      return renderModal();
+    case 'terminal':
+      return renderTerminal();
+    default:
+      return renderInline();
   }
 };
 
 // Pre-configured error variants for common use cases
 export const ErrorMessage: React.FC<Omit<ErrorDisplayProps, 'variant' | 'severity'>> = (props) => (
-  <ErrorDisplay variant="inline" severity="error" {...props} />
+  <ErrorDisplay variant='inline' severity='error' {...props} />
 );
 
-export const WarningMessage: React.FC<Omit<ErrorDisplayProps, 'variant' | 'severity'>> = (props) => (
-  <ErrorDisplay variant="inline" severity="warning" {...props} />
-);
+export const WarningMessage: React.FC<Omit<ErrorDisplayProps, 'variant' | 'severity'>> = (
+  props,
+) => <ErrorDisplay variant='inline' severity='warning' {...props} />;
 
 export const InfoMessage: React.FC<Omit<ErrorDisplayProps, 'variant' | 'severity'>> = (props) => (
-  <ErrorDisplay variant="inline" severity="info" {...props} />
+  <ErrorDisplay variant='inline' severity='info' {...props} />
 );
 
 export const TerminalError: React.FC<Omit<ErrorDisplayProps, 'variant' | 'severity'>> = (props) => (
-  <ErrorDisplay variant="terminal" severity="error" {...props} />
+  <ErrorDisplay variant='terminal' severity='error' {...props} />
 );
 
 export const ErrorBanner: React.FC<Omit<ErrorDisplayProps, 'variant'>> = (props) => (
-  <ErrorDisplay variant="banner" {...props} />
+  <ErrorDisplay variant='banner' {...props} />
 );
 
 export const ErrorModal: React.FC<Omit<ErrorDisplayProps, 'variant'>> = (props) => (
-  <ErrorDisplay variant="modal" {...props} />
+  <ErrorDisplay variant='modal' {...props} />
 );
 
 // Error boundary wrapper component
@@ -393,13 +411,17 @@ export const ErrorBoundaryDisplay: React.FC<ErrorBoundaryDisplayProps> = ({
 }) => (
   <ErrorDisplay
     variant={variant}
-    severity="error"
-    title="Something went wrong"
+    severity='error'
+    title='Something went wrong'
     message={error.message || 'An unexpected error occurred'}
     details={error.stack}
-    action={resetError ? {
-      label: 'Try Again',
-      onClick: resetError,
-    } : undefined}
+    action={
+      resetError
+        ? {
+            label: 'Try Again',
+            onClick: resetError,
+          }
+        : undefined
+    }
   />
 );

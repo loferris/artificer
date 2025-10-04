@@ -1,6 +1,6 @@
 /**
  * Mock data factories for generating realistic test data
- * 
+ *
  * These factories create dynamic, customizable mock data for testing
  * while maintaining realistic relationships and data structures.
  */
@@ -44,12 +44,12 @@ export class MessageFactory {
    * Creates multiple mock messages
    */
   static createMany(count: number, baseOverrides: Partial<Message> = {}): Message[] {
-    return Array.from({ length: count }, (_, index) => 
+    return Array.from({ length: count }, (_, index) =>
       this.create({
         ...baseOverrides,
         content: `Test message ${index + 1}`,
         createdAt: new Date(Date.now() + index * 1000), // Sequential timestamps
-      })
+      }),
     );
   }
 
@@ -57,9 +57,9 @@ export class MessageFactory {
    * Creates a conversation thread (user message + assistant response)
    */
   static createThread(
-    conversationId: string, 
-    userContent = 'Hello', 
-    assistantContent = 'Hi there!'
+    conversationId: string,
+    userContent = 'Hello',
+    assistantContent = 'Hi there!',
   ): Message[] {
     const userMessage = this.create({
       conversationId,
@@ -70,7 +70,7 @@ export class MessageFactory {
 
     const assistantMessage = this.create({
       conversationId,
-      role: 'assistant', 
+      role: 'assistant',
       content: assistantContent,
       tokens: this.estimateTokens(assistantContent),
       createdAt: new Date(userMessage.createdAt.getTime() + 1000),
@@ -128,7 +128,9 @@ export class ConversationFactory {
   /**
    * Creates a single mock conversation with optional overrides
    */
-  static create(overrides: Partial<Conversation & { messages?: Message[] }> = {}): Conversation & { messages?: Message[] } {
+  static create(
+    overrides: Partial<Conversation & { messages?: Message[] }> = {},
+  ): Conversation & { messages?: Message[] } {
     const conversation = {
       id: generateId('conv'),
       ...this.defaults,
@@ -149,19 +151,24 @@ export class ConversationFactory {
    * Creates multiple mock conversations
    */
   static createMany(count: number, baseOverrides: Partial<Conversation> = {}): Conversation[] {
-    return Array.from({ length: count }, (_, index) => 
-      this.create({
-        ...baseOverrides,
-        title: `Test Conversation ${index + 1}`,
-        createdAt: new Date(Date.now() - (count - index) * 3600000), // Spread over hours
-      }) as Conversation
+    return Array.from(
+      { length: count },
+      (_, index) =>
+        this.create({
+          ...baseOverrides,
+          title: `Test Conversation ${index + 1}`,
+          createdAt: new Date(Date.now() - (count - index) * 3600000), // Spread over hours
+        }) as Conversation,
     );
   }
 
   /**
    * Creates a conversation with specific scenario
    */
-  static withScenario(scenario: ConversationScenario, overrides: Partial<Conversation> = {}): Conversation & { messages?: Message[] } {
+  static withScenario(
+    scenario: ConversationScenario,
+    overrides: Partial<Conversation> = {},
+  ): Conversation & { messages?: Message[] } {
     const scenarios = {
       empty: {
         title: 'Empty Conversation',
@@ -172,7 +179,7 @@ export class ConversationFactory {
         messages: MessageFactory.createThread(
           generateId('conv'),
           'Hello there',
-          'Hello! How can I help you today?'
+          'Hello! How can I help you today?',
         ),
       },
       complex: {
@@ -181,10 +188,12 @@ export class ConversationFactory {
           ...MessageFactory.createThread(
             generateId('conv'),
             'Can you help me with coding?',
-            'Of course! What programming language are you working with?'
+            'Of course! What programming language are you working with?',
           ),
-          MessageFactory.user('I\'m working with TypeScript'),
-          MessageFactory.assistant('Great choice! TypeScript adds excellent type safety. What specific help do you need?'),
+          MessageFactory.user("I'm working with TypeScript"),
+          MessageFactory.assistant(
+            'Great choice! TypeScript adds excellent type safety. What specific help do you need?',
+          ),
         ],
       },
       longHistory: {
@@ -195,10 +204,10 @@ export class ConversationFactory {
 
     const scenarioData = scenarios[scenario];
     const conversation = this.create({ ...scenarioData, ...overrides });
-    
+
     // Update conversation ID in messages
     if (conversation.messages) {
-      conversation.messages = conversation.messages.map(msg => ({
+      conversation.messages = conversation.messages.map((msg) => ({
         ...msg,
         conversationId: conversation.id,
       }));
@@ -289,9 +298,7 @@ export class DataScenarios {
    */
   static multipleConversations(count = 3) {
     const conversations = ConversationFactory.createMany(count);
-    const allMessages = conversations.flatMap(conv => 
-      MessageFactory.createThread(conv.id)
-    );
+    const allMessages = conversations.flatMap((conv) => MessageFactory.createThread(conv.id));
 
     return {
       conversations,
@@ -309,11 +316,11 @@ export class DataScenarios {
   static mixed() {
     const conversations = [
       ConversationFactory.withScenario('empty'),
-      ConversationFactory.withScenario('simple'), 
+      ConversationFactory.withScenario('simple'),
       ConversationFactory.withScenario('complex'),
     ];
 
-    const allMessages = conversations.flatMap(conv => conv.messages || []);
+    const allMessages = conversations.flatMap((conv) => conv.messages || []);
 
     return {
       conversations: conversations.map(({ messages, ...conv }) => conv),

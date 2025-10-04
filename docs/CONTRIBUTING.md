@@ -5,13 +5,15 @@ Thank you for your interest in contributing! This project is built in public as 
 ## Development Setup
 
 ### Prerequisites
-- Node.js 18+ 
+
+- Node.js 18+
 - Docker (for PostgreSQL)
 - Git
 
 ### Getting Started
 
 1. **Clone and install**
+
    ```bash
    git clone <repo-url>
    cd ai-workflow-engine
@@ -19,12 +21,14 @@ Thank you for your interest in contributing! This project is built in public as 
    ```
 
 2. **Environment setup**
+
    ```bash
    cp .env.example .env
    # Add your OPENROUTER_API_KEY and other configuration
    ```
 
 3. **Database setup**
+
    ```bash
    npm run db:up      # Start PostgreSQL with Docker
    npm run db:migrate # Apply database migrations
@@ -49,6 +53,7 @@ This is a headless API service with clean service layer architecture:
 ## Development Guidelines
 
 ### Code Quality
+
 ```bash
 npm run lint         # ESLint
 npm run format       # Prettier
@@ -57,6 +62,7 @@ npm run test:coverage # Coverage report
 ```
 
 ### Testing Strategy
+
 - **Unit tests**: Service layer and utilities
 - **Integration tests**: tRPC procedures and streaming
 - **Component tests**: Critical UI elements
@@ -65,6 +71,7 @@ npm run test:coverage # Coverage report
 Target: Maintain >50% coverage focusing on business-critical paths.
 
 ### Database Changes
+
 ```bash
 npm run db:migrate   # Apply migrations
 npm run db:studio    # GUI for development
@@ -99,23 +106,27 @@ See `SSE_STREAMING.md` for CLI usage examples.
 ## Areas for Contribution
 
 ### High Priority
+
 - UI/UX improvements for conversation management
 - Conversation branching UI implementation (backend ready)
 - Enhanced export format implementations
 - Performance optimizations
 
 ### Future Features
+
 - Advanced model routing logic
 - Context compression agents
 - Cross-session context preservation
 
 ### Medium Priority
+
 - Additional export formats
 - Enhanced error handling
 - Accessibility improvements
 - Mobile responsiveness
 
 ### Documentation
+
 - Usage examples
 - Integration guides
 - Architecture documentation

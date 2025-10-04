@@ -21,6 +21,21 @@ export interface AssistantStreamChunk {
   finished: boolean;
 }
 
+export interface ModelCapabilities {
+  maxTokens: number;
+  costPer1kTokens: number;
+  supportsStreaming: boolean;
+  contextWindow: number;
+}
+
+export interface ModelHealthCheck {
+  model: string;
+  isHealthy: boolean;
+  responseTime: number;
+  lastChecked: Date;
+  error?: string;
+}
+
 export interface Assistant {
   /**
    * Get a complete response from the AI assistant
@@ -45,6 +60,21 @@ export interface Assistant {
    * Get model usage statistics
    */
   getModelUsageStats(): Array<{ model: string; count: number; percentage: number }>;
+
+  /**
+   * Get model capabilities (optional - enhanced assistants only)
+   */
+  getModelCapabilities?(modelId?: string): ModelCapabilities | Map<string, ModelCapabilities>;
+
+  /**
+   * Get model health status (optional - enhanced assistants only)
+   */
+  getModelHealthStatus?(modelId?: string): ModelHealthCheck | Map<string, ModelHealthCheck>;
+
+  /**
+   * Check health of all available models (optional - enhanced assistants only)
+   */
+  checkAllModelsHealth?(): Promise<ModelHealthCheck[]>;
 }
 
 // Mock Assistant (for testing) - supports both streaming and non-streaming
@@ -142,9 +172,7 @@ export class MockAssistant implements Assistant {
   }
 
   getModelUsageStats(): Array<{ model: string; count: number; percentage: number }> {
-    return [
-      { model: 'mock-assistant', count: 100, percentage: 100 }
-    ];
+    return [{ model: 'mock-assistant', count: 100, percentage: 100 }];
   }
 }
 
@@ -327,9 +355,7 @@ export class OpenRouterAssistant implements Assistant {
 
   getModelUsageStats(): Array<{ model: string; count: number; percentage: number }> {
     // In a real implementation, this would track actual usage
-    return [
-      { model: this.model, count: 1, percentage: 100 }
-    ];
+    return [{ model: this.model, count: 1, percentage: 100 }];
   }
 }
 

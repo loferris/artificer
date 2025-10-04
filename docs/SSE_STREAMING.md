@@ -22,12 +22,14 @@ POST /api/stream/chat
 The endpoint returns a Server-Sent Events stream with the following event types:
 
 ### Connection Event
+
 ```
 event: connection
 data: {"type":"connected","timestamp":"2025-09-10T21:45:00.000Z"}
 ```
 
 ### Chunk Events (streaming response)
+
 ```
 event: chunk
 data: {"content":"Hello","finished":false}
@@ -40,12 +42,14 @@ data: {"content":"!","finished":true,"metadata":{"messageId":"msg-123","tokenCou
 ```
 
 ### Completion Event
+
 ```
 event: complete
 data: {"type":"completed","timestamp":"2025-09-10T21:45:05.000Z"}
 ```
 
 ### Error Events
+
 ```
 event: error
 data: {"type":"error","error":"Conversation not found","timestamp":"2025-09-10T21:45:01.000Z"}
@@ -54,6 +58,7 @@ data: {"type":"error","error":"Conversation not found","timestamp":"2025-09-10T2
 ## Usage Examples
 
 ### cURL
+
 ```bash
 curl -X POST http://localhost:3000/api/stream/chat \
   -H "Content-Type: application/json" \
@@ -66,6 +71,7 @@ curl -X POST http://localhost:3000/api/stream/chat \
 ```
 
 ### Node.js
+
 ```javascript
 import fetch from 'node-fetch';
 
@@ -73,12 +79,12 @@ const response = await fetch('http://localhost:3000/api/stream/chat', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'text/event-stream',
+    Accept: 'text/event-stream',
   },
   body: JSON.stringify({
     content: 'Hello, how are you?',
-    conversationId: 'conv-123'
-  })
+    conversationId: 'conv-123',
+  }),
 });
 
 const reader = response.body?.getReader();
@@ -87,10 +93,10 @@ const decoder = new TextDecoder();
 while (true) {
   const { done, value } = await reader.read();
   if (done) break;
-  
+
   const chunk = decoder.decode(value);
   const lines = chunk.split('\n');
-  
+
   for (const line of lines) {
     if (line.startsWith('data: ')) {
       const data = JSON.parse(line.slice(6));
@@ -101,6 +107,7 @@ while (true) {
 ```
 
 ### Python
+
 ```python
 import requests
 import json
@@ -115,7 +122,7 @@ def stream_chat(content, conversation_id):
         "content": content,
         "conversationId": conversation_id
     }
-    
+
     with requests.post(url, headers=headers, json=data, stream=True) as response:
         for line in response.iter_lines():
             if line:
@@ -129,6 +136,7 @@ stream_chat("Hello, how are you?", "conv-123")
 ```
 
 ### Bash Script
+
 ```bash
 #!/bin/bash
 
@@ -149,17 +157,20 @@ curl -X POST http://localhost:3000/api/stream/chat \
 ## Rate Limiting
 
 The endpoint uses the same rate limiting as the chat API:
+
 - Headers: `X-RateLimit-Remaining`, `X-RateLimit-Reset`
 - 429 status code when rate limit exceeded
 
 ## Error Handling
 
 ### Client Errors (4xx)
+
 - **400**: Invalid input (missing content, invalid conversationId)
 - **405**: Method not allowed (only POST supported)
 - **429**: Rate limit exceeded
 
 ### Server Errors (5xx)
+
 - **500**: Internal server error
 
 Errors during streaming are sent as SSE error events rather than HTTP status codes.
@@ -173,6 +184,7 @@ Errors during streaming are sent as SSE error events rather than HTTP status cod
 ## Authentication
 
 Currently uses session-based authentication via:
+
 - Browser sessions (cookies)
 - `x-session-id` header for API clients
 

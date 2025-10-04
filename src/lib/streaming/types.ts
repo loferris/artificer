@@ -4,14 +4,14 @@ export enum ContentType {
   LIST = 'list',
   CODE_BLOCK = 'code',
   HEADER = 'header',
-  UNKNOWN = 'unknown'
+  UNKNOWN = 'unknown',
 }
 
 // Streaming strategies for different content types
 export enum StreamingStrategy {
-  WORD_BY_WORD = 'word-by-word',     // Stream word by word for immediate feedback
-  BUFFERED = 'buffered',             // Buffer until complete, then display
-  IMMEDIATE = 'immediate'            // Display immediately when detected
+  WORD_BY_WORD = 'word-by-word', // Stream word by word for immediate feedback
+  BUFFERED = 'buffered', // Buffer until complete, then display
+  IMMEDIATE = 'immediate', // Display immediately when detected
 }
 
 // Configuration for how each content type should be streamed
@@ -28,16 +28,16 @@ export interface ContentSegment {
   content: string;
   isComplete: boolean;
   metadata?: {
-    language?: string;      // For code blocks
+    language?: string; // For code blocks
     listType?: 'ordered' | 'unordered'; // For lists
-    level?: number;         // For headers
+    level?: number; // For headers
   };
 }
 
 // A streaming chunk that may contain multiple content segments
 export interface ParsedStreamChunk {
   segments: ContentSegment[];
-  buffer: string;           // Unparsed content still in buffer
+  buffer: string; // Unparsed content still in buffer
   isComplete: boolean;
 }
 
@@ -46,26 +46,26 @@ export const DEFAULT_CONTENT_CONFIG: Record<ContentType, ContentTypeConfig> = {
   [ContentType.TEXT]: {
     strategy: StreamingStrategy.WORD_BY_WORD,
     bufferUntilComplete: false,
-    showLoadingPlaceholder: false
+    showLoadingPlaceholder: false,
   },
   [ContentType.LIST]: {
     strategy: StreamingStrategy.BUFFERED,
     bufferUntilComplete: true,
-    showLoadingPlaceholder: true
+    showLoadingPlaceholder: true,
   },
   [ContentType.CODE_BLOCK]: {
     strategy: StreamingStrategy.BUFFERED,
     bufferUntilComplete: true,
-    showLoadingPlaceholder: true
+    showLoadingPlaceholder: true,
   },
   [ContentType.HEADER]: {
     strategy: StreamingStrategy.IMMEDIATE,
     bufferUntilComplete: false,
-    showLoadingPlaceholder: false
+    showLoadingPlaceholder: false,
   },
   [ContentType.UNKNOWN]: {
     strategy: StreamingStrategy.WORD_BY_WORD,
     bufferUntilComplete: false,
-    showLoadingPlaceholder: false
-  }
+    showLoadingPlaceholder: false,
+  },
 };
