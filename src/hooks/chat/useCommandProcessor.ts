@@ -5,18 +5,32 @@ import { useExportManager } from '../../components/ExportManager';
 import { trpc } from '../../lib/trpc/client';
 
 const getManualContent = () => {
+  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true' ||
+                     (typeof window !== 'undefined' && 
+                      (window.location.hostname.includes('vercel.app') || 
+                       window.location.hostname.includes('demo')));
+
+  const demoHint = isDemoMode ? `
+
+🎯 DEMO MODE TIPS:
+- Try /list to see showcase conversations
+- Type a number (1, 2, 3) to explore different conversations
+- Switch between /view chat and /view terminal 
+- Try /theme amber or /theme light for different looks
+- Use /export-current to download conversations` : '';
+
   return `Available commands:
 - /man: Show this manual.
 - /clear: Clear conversation history.
 - /new: Create a new conversation.
-- /list: Show 10 most recent conversations.
+- /list: Show conversations (try this to see demo examples!)
 - /list-all: Show all conversations.
 - /export-current [format]: Export current conversation (formats: markdown, json; default: markdown)
 - /export-all [format]: Export all conversations (formats: markdown, json; default: markdown)
 - /theme [dark|amber|light]: Switch terminal theme (default: dark)
 - /view [chat|terminal]: Switch view mode (default: terminal)
 - /streaming [yes|no]: Toggle streaming mode (default: yes)
-- /reset: Reset the session.`;
+- /reset: Reset the session.${demoHint}`;
 };
 
 const formatList = (conversations: any[], limited: boolean) => {
@@ -24,16 +38,33 @@ const formatList = (conversations: any[], limited: boolean) => {
     return 'No conversations found.';
   }
 
-  const header = limited ? 'Last 10 conversations:' : 'All conversations:';
+  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true' ||
+                     (typeof window !== 'undefined' && 
+                      (window.location.hostname.includes('vercel.app') || 
+                       window.location.hostname.includes('demo')));
+
+  const header = limited ? 'Available conversations (last 10):' : 'All available conversations:';
+  
   const list = conversations
     .map((conv, index) => {
       const title = conv.title || 'Untitled';
-      const date = conv.createdAt ? new Date(conv.createdAt).toLocaleDateString() : 'Unknown date';
-      return `${index + 1}. ${title} (${date})`;
+      const messageCount = conv.messageCount || 0;
+      const preview = conv.lastMessagePreview ? ` - ${conv.lastMessagePreview.substring(0, 60)}...` : '';
+      
+      if (isDemoMode && title.includes('Demo')) {
+        return `${index + 1}. ✨ ${title} (${messageCount} messages)${preview}`;
+      } else {
+        const date = conv.createdAt ? new Date(conv.createdAt).toLocaleDateString() : 'Unknown date';
+        return `${index + 1}. ${title} (${date}, ${messageCount} messages)${preview}`;
+      }
     })
     .join('\n');
 
-  return `${header}\n${list}`;
+  const footer = isDemoMode 
+    ? '\n💡 Type a number (1, 2, 3) to explore that conversation!\n🎨 Try /theme or /view to switch interfaces!'
+    : '\nType a number to load a conversation.';
+
+  return `${header}\n${list}${footer}`;
 };
 
 export function useCommandProcessor() {

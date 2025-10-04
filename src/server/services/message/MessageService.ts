@@ -1,5 +1,6 @@
 import { TRPCError } from '@trpc/server';
 import type { PrismaClient } from '@prisma/client';
+import { DEMO_CONFIG } from '../../config/demo';
 
 export interface Message {
   id: string;
@@ -275,20 +276,29 @@ export class DemoMessageService implements MessageService {
   private conversationMessages = new Map<string, string[]>(); // conversationId -> messageIds[]
 
   constructor() {
-    // Initialize with sample message
-    const sampleMessage: Message = {
-      id: 'demo-msg-1',
-      role: 'assistant',
-      content:
-        'Welcome to this AI chat application! This is a showcase demo featuring real-time AI conversations, conversation management, export functionality, and more!',
-      tokens: 25,
-      createdAt: new Date(Date.now() - 3600000),
-      conversationId: 'demo-1',
-      parentId: null,
-    };
-
-    this.messages.set('demo-msg-1', sampleMessage);
-    this.conversationMessages.set('demo-1', ['demo-msg-1']);
+    // Initialize with demo conversation messages from config
+    
+    DEMO_CONFIG.SAMPLE_CONVERSATIONS.forEach((demoConv: any) => {
+      const messageIds: string[] = [];
+      
+      demoConv.messages.forEach((msg: any, index: number) => {
+        const messageId = `${demoConv.id}-msg-${index + 1}`;
+        const message: Message = {
+          id: messageId,
+          role: msg.role,
+          content: msg.content,
+          tokens: Math.ceil(msg.content.length / 4),
+          createdAt: msg.timestamp,
+          conversationId: demoConv.id,
+          parentId: null,
+        };
+        
+        this.messages.set(messageId, message);
+        messageIds.push(messageId);
+      });
+      
+      this.conversationMessages.set(demoConv.id, messageIds);
+    });
   }
 
   async create(input: CreateMessageInput): Promise<Message> {
