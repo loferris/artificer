@@ -64,7 +64,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document, onDelete }) => {
               Delete Document
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Are you sure you want to delete "{document.originalName}"? This action cannot be undone.
+              Are you sure you want to delete &quot;{document.originalName}&quot;? This action cannot be undone.
             </p>
             <div className="flex justify-end space-x-3">
               <button
@@ -194,7 +194,7 @@ const ProjectDetailPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-red-100 dark:bg-red-900 border border-red-400 text-red-700 dark:text-red-100 px-4 py-3 rounded">
             <p className="font-bold">Project not found</p>
-            <p>The project you're looking for doesn't exist or you don't have access to it.</p>
+            <p>The project you&apos;re looking for doesn&apos;t exist or you don&apos;t have access to it.</p>
           </div>
         </div>
       </div>

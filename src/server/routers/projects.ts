@@ -4,18 +4,28 @@ import { ProjectService } from '../services/project/ProjectService';
 import { DocumentService } from '../services/project/DocumentService';
 
 /**
+ * Helper to ensure database is available
+ */
+function ensureDatabase(ctx: any) {
+  if (!ctx.db) {
+    throw new Error('Database not available in demo mode - project features require database');
+  }
+  return ctx.db;
+}
+
+/**
  * Validation schemas for project operations
  */
 const ProjectCreateSchema = z.object({
-  name: z.string().min(1, 'Project name is required').max(100, 'Project name too long'),
-  description: z.string().max(500, 'Description too long').optional(),
-  settings: z.record(z.any()).optional(),
+  name: z.string().min(1, { message: 'Project name is required' }).max(100, { message: 'Project name too long' }),
+  description: z.string().max(500, { message: 'Description too long' }).optional(),
+  settings: z.record(z.string(), z.any()).optional(),
 });
 
 const ProjectUpdateSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   description: z.string().max(500).optional(),
-  settings: z.record(z.any()).optional(),
+  settings: z.record(z.string(), z.any()).optional(),
 });
 
 const DocumentUploadSchema = z.object({
@@ -36,7 +46,7 @@ export const projectsRouter = router({
     .input(ProjectCreateSchema)
     .mutation(async ({ ctx, input }) => {
       try {
-        const projectService = new ProjectService(ctx.db);
+        const projectService = new ProjectService(ensureDatabase(ctx));
         
         const project = await projectService.create({
           name: input.name,
@@ -65,7 +75,7 @@ export const projectsRouter = router({
    */
   list: publicProcedure.query(async ({ ctx }) => {
     try {
-      const projectService = new ProjectService(ctx.db);
+      const projectService = new ProjectService(ensureDatabase(ctx));
       
       // TODO: Filter by userId when authentication is implemented
       const projects = await projectService.findAll();
@@ -92,7 +102,7 @@ export const projectsRouter = router({
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
-        const projectService = new ProjectService(ctx.db);
+        const projectService = new ProjectService(ensureDatabase(ctx));
         const project = await projectService.findById(input.id);
 
         return {
@@ -120,7 +130,7 @@ export const projectsRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const projectService = new ProjectService(ctx.db);
+        const projectService = new ProjectService(ensureDatabase(ctx));
         const project = await projectService.update(input.id, input.data);
 
         return {
@@ -144,7 +154,7 @@ export const projectsRouter = router({
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const projectService = new ProjectService(ctx.db);
+        const projectService = new ProjectService(ensureDatabase(ctx));
         await projectService.delete(input.id);
 
         return {
@@ -170,7 +180,7 @@ export const projectsRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const projectService = new ProjectService(ctx.db);
+        const projectService = new ProjectService(ensureDatabase(ctx));
         const conversation = await projectService.associateConversation(
           input.projectId,
           input.conversationId
@@ -197,7 +207,7 @@ export const projectsRouter = router({
     .input(z.object({ projectId: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
-        const projectService = new ProjectService(ctx.db);
+        const projectService = new ProjectService(ensureDatabase(ctx));
         const conversations = await projectService.getProjectConversations(input.projectId);
 
         return {
@@ -222,7 +232,7 @@ export const projectsRouter = router({
     .input(DocumentUploadSchema)
     .mutation(async ({ ctx, input }) => {
       try {
-        const documentService = new DocumentService(ctx.db);
+        const documentService = new DocumentService(ensureDatabase(ctx));
         
         // Decode base64 content
         const buffer = Buffer.from(input.content, 'base64');
@@ -268,7 +278,7 @@ export const projectsRouter = router({
     .input(z.object({ projectId: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
-        const documentService = new DocumentService(ctx.db);
+        const documentService = new DocumentService(ensureDatabase(ctx));
         const documents = await documentService.findByProject(input.projectId);
 
         return {
@@ -297,7 +307,7 @@ export const projectsRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       try {
-        const documentService = new DocumentService(ctx.db);
+        const documentService = new DocumentService(ensureDatabase(ctx));
         const results = await documentService.searchContent(
           input.projectId,
           input.query,
@@ -328,7 +338,7 @@ export const projectsRouter = router({
     .input(z.object({ documentId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
-        const documentService = new DocumentService(ctx.db);
+        const documentService = new DocumentService(ensureDatabase(ctx));
         await documentService.delete(input.documentId);
 
         return {
@@ -351,7 +361,7 @@ export const projectsRouter = router({
     .input(z.object({ projectId: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
-        const documentService = new DocumentService(ctx.db);
+        const documentService = new DocumentService(ensureDatabase(ctx));
         const stats = await documentService.getProjectDocumentStats(input.projectId);
 
         return {

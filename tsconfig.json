@@ -27,6 +27,8 @@
     "**/*.test.tsx",
     "src/test/**/*",
     "vitest.config.ts",
-    "vitest.e2e.config.ts"
+    "vitest.e2e.config.ts",
+    "src/server/standalone.ts",
+    "src/server/openapi-spec.ts"
   ]
 }

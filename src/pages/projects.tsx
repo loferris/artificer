@@ -102,7 +102,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) => {
               Delete Project
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Are you sure you want to delete "{project.name}"? This will also delete all associated conversations, documents, and knowledge entities. This action cannot be undone.
+              Are you sure you want to delete &quot;{project.name}&quot;? This will also delete all associated conversations, documents, and knowledge entities. This action cannot be undone.
             </p>
             <div className="flex justify-end space-x-3">
               <button
@@ -306,10 +306,10 @@ const ProjectsPage: React.FC = () => {
                   </button>
                   <button
                     type="submit"
-                    disabled={!newProjectName.trim() || createProjectMutation.isLoading}
+                    disabled={!newProjectName.trim() || createProjectMutation.isPending}
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-md transition-colors"
                   >
-                    {createProjectMutation.isLoading ? 'Creating...' : 'Create Project'}
+                    {createProjectMutation.isPending ? 'Creating...' : 'Create Project'}
                   </button>
                 </div>
               </form>
