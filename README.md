@@ -38,6 +38,7 @@ The system is designed API-first with a distinct service layer, making it suitab
 - OpenRouter API integration supporting multiple AI models
 - Real-time streaming via WebSocket subscriptions and SSE endpoints
 - Type-safe API layer with tRPC
+- **Standalone orchestration server** for external integrations (Python, CLI tools, etc.)
 - Comprehensive rate limiting and session management
 - **390+ tests** with full test coverage for critical components
 
@@ -103,8 +104,11 @@ The service layer is designed for integration with external tools:
 - Context compression and conversation summarization
 - Enhanced PKM tool integrations (full Notion, Obsidian, Google Docs integrations)
 - Cross-session context preservation and conversation merging
+- Authentication for standalone server (API keys, JWT)
 
 ## Getting Started
+
+### Standard Next.js Application
 
 ```bash
 git clone https://github.com/yourusername/ai-workflow-engine.git
@@ -125,6 +129,25 @@ npm run dev
 # Optional: Open Prisma Studio database GUI
 npm run db:studio
 ```
+
+### Standalone Orchestration Server
+
+Run as a standalone API server for integration with external applications (Python, CLI tools, etc.):
+
+```bash
+# Development mode
+npm run dev:standalone
+
+# Production mode
+npm run start:standalone
+```
+
+**Documentation:**
+- [Standalone API Guide](./docs/STANDALONE_API.md) - Complete API reference with Python examples
+- [Implementation Status](./docs/internal/STANDALONE_STATUS.md) - Current capabilities and limitations
+- [Security Considerations](./SECURITY.md) - Authentication requirements for production
+
+**⚠️ Security Notice:** The standalone server currently has no authentication. See [SECURITY.md](./SECURITY.md) before deploying to production.
 
 ### Environment Configuration
 

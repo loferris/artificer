@@ -141,10 +141,10 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({
                 </button>
                 <button
                   type="submit"
-                  disabled={!newProjectName.trim() || createProjectMutation.isLoading}
+                  disabled={!newProjectName.trim() || createProjectMutation.isPending}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-md transition-colors"
                 >
-                  {createProjectMutation.isLoading ? 'Creating...' : 'Create Project'}
+                  {createProjectMutation.isPending ? 'Creating...' : 'Create Project'}
                 </button>
               </div>
             </form>
