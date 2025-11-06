@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { trpc } from '../lib/trpc/client';
+import { clientLogger } from '../utils/clientLogger';
 
 interface ProjectSelectorProps {
   currentProjectId?: string | null;
@@ -51,7 +52,7 @@ export const ProjectSelector: React.FC<ProjectSelectorProps> = ({
         refetch();
       }
     } catch (error) {
-      console.error('Failed to create project:', error);
+      clientLogger.error('Failed to create project', error as Error, {}, 'ProjectSelector');
     }
   };
 

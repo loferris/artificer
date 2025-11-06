@@ -77,7 +77,6 @@ export function InterfaceSwitcher({
   showModeToggle = true,
   onViewModeChange,
 }: InterfaceSwitcherProps) {
-  console.log('viewMode', viewMode);
   return (
     <div className="flex-1 flex flex-col">
       {/* View mode toggle */}

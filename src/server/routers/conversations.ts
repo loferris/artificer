@@ -27,7 +27,7 @@ function ensureDemoUser(ctx: any) {
   return user;
 }
 
-export const conversationsRouterRefactored = router({
+export const conversationsRouter = router({
   list: publicProcedure.query(async ({ ctx }) => {
     try {
       const user = ensureDemoUser(ctx);
