@@ -97,9 +97,10 @@ const ProjectDetailPage: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
 
+  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
   const projectId = typeof id === 'string' ? id : '';
 
-  const { data: projectData, isLoading: projectLoading, error: projectError } = 
+  const { data: projectData, isLoading: projectLoading, error: projectError } =
     trpc.projects.getById.useQuery(
       { id: projectId },
       { enabled: !!projectId }
@@ -175,6 +176,8 @@ const ProjectDetailPage: React.FC = () => {
     }
   };
 
+  const isDemoModeActive = projectData?.demoMode === true || isDemoMode;
+
   if (projectLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -183,6 +186,37 @@ const ProjectDetailPage: React.FC = () => {
             <div className="text-lg text-gray-600 dark:text-gray-400">
               Loading project...
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isDemoModeActive) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <Head>
+          <title>Projects - AI Workflow Engine</title>
+        </Head>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center space-x-4 mb-8">
+            <button
+              onClick={() => router.push('/')}
+              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              ← Back to Home
+            </button>
+          </div>
+
+          <div className="bg-blue-100 dark:bg-blue-900 border border-blue-400 text-blue-700 dark:text-blue-100 px-6 py-4 rounded-lg">
+            <h3 className="font-bold text-lg mb-2">📁 Demo Mode</h3>
+            <p className="mb-2">
+              Project features require a database and are not available in demo mode.
+            </p>
+            <p className="text-sm">
+              The project infrastructure allows you to organize conversations, upload documents, and build knowledge bases.
+              Deploy with a PostgreSQL database to use these features.
+            </p>
           </div>
         </div>
       </div>

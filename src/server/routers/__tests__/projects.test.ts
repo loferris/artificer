@@ -164,7 +164,7 @@ describe('Projects Router', () => {
       const result = await caller.create({ name: 'Test Project' });
 
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Database not available in demo mode');
+      expect(result.error).toContain('not available in demo mode');
     });
   });
 

@@ -4,11 +4,20 @@ import { ProjectService } from '../services/project/ProjectService';
 import { DocumentService } from '../services/project/DocumentService';
 
 /**
+ * Helper to check if demo mode is active
+ */
+function isDemoMode() {
+  return process.env.DEMO_MODE === 'true' ||
+         process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+}
+
+/**
  * Helper to ensure database is available
+ * Throws error if in demo mode
  */
 function ensureDatabase(ctx: any) {
   if (!ctx.db) {
-    throw new Error('Database not available in demo mode - project features require database');
+    throw new Error('DEMO_MODE');
   }
   return ctx.db;
 }
@@ -46,8 +55,9 @@ export const projectsRouter = router({
     .input(ProjectCreateSchema)
     .mutation(async ({ ctx, input }) => {
       try {
-        const projectService = new ProjectService(ensureDatabase(ctx));
-        
+        const db = ensureDatabase(ctx);
+        const projectService = new ProjectService(db);
+
         const project = await projectService.create({
           name: input.name,
           description: input.description,
@@ -62,6 +72,14 @@ export const projectsRouter = router({
           timestamp: new Date().toISOString(),
         };
       } catch (error) {
+        if (error instanceof Error && error.message === 'DEMO_MODE') {
+          return {
+            success: false,
+            error: 'Project features require a database and are not available in demo mode',
+            demoMode: true,
+            timestamp: new Date().toISOString(),
+          };
+        }
         return {
           success: false,
           error: error instanceof Error ? error.message : 'Failed to create project',
@@ -75,8 +93,9 @@ export const projectsRouter = router({
    */
   list: publicProcedure.query(async ({ ctx }) => {
     try {
-      const projectService = new ProjectService(ensureDatabase(ctx));
-      
+      const db = ensureDatabase(ctx);
+      const projectService = new ProjectService(db);
+
       // TODO: Filter by userId when authentication is implemented
       const projects = await projectService.findAll();
 
@@ -86,6 +105,15 @@ export const projectsRouter = router({
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
+      if (error instanceof Error && error.message === 'DEMO_MODE') {
+        return {
+          success: false,
+          projects: [],
+          error: 'Project features require a database and are not available in demo mode',
+          demoMode: true,
+          timestamp: new Date().toISOString(),
+        };
+      }
       return {
         success: false,
         projects: [],
@@ -102,7 +130,8 @@ export const projectsRouter = router({
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
-        const projectService = new ProjectService(ensureDatabase(ctx));
+        const db = ensureDatabase(ctx);
+        const projectService = new ProjectService(db);
         const project = await projectService.findById(input.id);
 
         return {
@@ -111,6 +140,15 @@ export const projectsRouter = router({
           timestamp: new Date().toISOString(),
         };
       } catch (error) {
+        if (error instanceof Error && error.message === 'DEMO_MODE') {
+          return {
+            success: false,
+            project: null,
+            error: 'Project features require a database and are not available in demo mode',
+            demoMode: true,
+            timestamp: new Date().toISOString(),
+          };
+        }
         return {
           success: false,
           project: null,
