@@ -28,12 +28,12 @@ function ensureDemoUser(ctx: any) {
 }
 
 /**
- * The refactored tRPC router for chat-related operations.
+ * The tRPC router for chat-related operations.
  *
  * This router handles sending messages and retrieving message history, leveraging
  * a service-oriented architecture for improved separation of concerns.
  */
-export const chatRouterRefactored = router({
+export const chatRouter = router({
   /**
    * Sends a message to a conversation and returns the assistant's response.
    *

@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/router';
 import { trpc } from '../../lib/trpc/client';
 import Head from 'next/head';
+import { clientLogger } from '../../utils/clientLogger';
 
 interface DocumentCardProps {
   document: {
@@ -151,14 +152,14 @@ const ProjectDetailPage: React.FC = () => {
             }
           }
         } catch (error) {
-          console.error('Failed to upload document:', error);
+          clientLogger.error('Failed to upload document', error as Error, { filename: file.name }, 'ProjectDetailPage');
         } finally {
           setIsUploading(false);
         }
       };
       reader.readAsDataURL(file);
     } catch (error) {
-      console.error('Failed to process file:', error);
+      clientLogger.error('Failed to process file', error as Error, {}, 'ProjectDetailPage');
       setIsUploading(false);
     }
   };
@@ -170,7 +171,7 @@ const ProjectDetailPage: React.FC = () => {
         refetchDocuments();
       }
     } catch (error) {
-      console.error('Failed to delete document:', error);
+      clientLogger.error('Failed to delete document', error as Error, { documentId }, 'ProjectDetailPage');
     }
   };
 

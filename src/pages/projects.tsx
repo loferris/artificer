@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { trpc } from '../lib/trpc/client';
 import Head from 'next/head';
+import { clientLogger } from '../utils/clientLogger';
 
 interface ProjectCardProps {
   project: {
@@ -154,7 +155,7 @@ const ProjectsPage: React.FC = () => {
         refetch();
       }
     } catch (error) {
-      console.error('Failed to create project:', error);
+      clientLogger.error('Failed to create project', error as Error, {}, 'ProjectsPage');
     }
   };
 
@@ -165,7 +166,7 @@ const ProjectsPage: React.FC = () => {
         refetch();
       }
     } catch (error) {
-      console.error('Failed to delete project:', error);
+      clientLogger.error('Failed to delete project', error as Error, { projectId }, 'ProjectsPage');
     }
   };
 

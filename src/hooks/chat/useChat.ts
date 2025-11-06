@@ -104,43 +104,43 @@ Type a message to start chatting, or explore the demo conversations!`,
   }, [store.selectableConversations, store.setCurrentConversation, displayMessage, store.setSelectableConversations]);
 
   const handleSendMessage = useCallback(async (content: string) => {
-    console.log('🚀 handleSendMessage called:', { content, streamingMode: store.streamingMode, conversationId: store.currentConversationId });
-    
+    clientLogger.debug('handleSendMessage called', { content, streamingMode: store.streamingMode, conversationId: store.currentConversationId }, 'useChat');
+
     if (store.streamingMode) {
         handleStreamingMessage(content, store.currentConversationId);
     } else {
         try {
             if (!store.currentConversationId) {
-                console.log('📝 Creating new conversation...');
+                clientLogger.debug('Creating new conversation', {}, 'useChat');
                 const newConversation = await createConversationMutation.mutateAsync({
                     projectId: store.currentProjectId || undefined,
                 });
                 if (newConversation?.id) {
-                    console.log('✅ New conversation created:', newConversation.id);
+                    clientLogger.debug('New conversation created', { conversationId: newConversation.id }, 'useChat');
                     store.setCurrentConversation(newConversation.id);
                     await sendMessageMutation.mutateAsync({ content, conversationId: newConversation.id });
                     messagesQuery.refetch();
                     store.setInput('');
-                    console.log('✅ Message sent to new conversation');
+                    clientLogger.debug('Message sent to new conversation', {}, 'useChat');
                 }
             } else {
-                console.log('📤 Sending to existing conversation:', store.currentConversationId);
+                clientLogger.debug('Sending to existing conversation', { conversationId: store.currentConversationId }, 'useChat');
                 await sendMessageMutation.mutateAsync({ content, conversationId: store.currentConversationId });
                 messagesQuery.refetch();
                 store.setInput('');
-                console.log('✅ Message sent to existing conversation');
+                clientLogger.debug('Message sent to existing conversation', {}, 'useChat');
             }
         } catch (error) {
-            console.error('❌ Error in handleSendMessage:', error);
+            clientLogger.error('Error in handleSendMessage', error as Error, {}, 'useChat');
         }
     }
   }, [store.streamingMode, store.currentConversationId, createConversationMutation, store.setCurrentConversation, sendMessageMutation]);
 
   const handleMessageSubmit = useCallback(async (content: string) => {
-    console.log('📨 handleMessageSubmit called:', { content });
+    clientLogger.debug('handleMessageSubmit called', { content }, 'useChat');
     const trimmedContent = content.trim();
     if (!trimmedContent) {
-      console.log('❌ Empty content, returning');
+      clientLogger.debug('Empty content, skipping', {}, 'useChat');
       return;
     }
 

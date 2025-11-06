@@ -40,7 +40,8 @@ The system is designed API-first with a distinct service layer, making it suitab
 - Type-safe API layer with tRPC
 - **Standalone orchestration server** for external integrations (Python, CLI tools, etc.)
 - Comprehensive rate limiting and session management
-- **390+ tests** with full test coverage for critical components
+- **469 tests** with full test coverage for critical components
+- **Project & document management** for organizing conversations and knowledge
 
 **User Interface**
 - **Dual Interface System**: Terminal mode with slash commands + traditional chat interface
@@ -48,6 +49,8 @@ The system is designed API-first with a distinct service layer, making it suitab
 - **Real-time Streaming**: Visual streaming indicators with typing effects in terminal mode
 - **Cost Tracking Widget**: Live usage monitoring with theme-responsive styling
 - **Export Functionality**: Markdown and JSON export with basic support for Notion/Obsidian formats
+- **Project Management**: Create projects, upload documents, search content, organize conversations
+- **Document Storage**: PostgreSQL-based document storage with text extraction and full-text search
 
 **Service Architecture**
 - Clean service layer with dependency injection for business logic
@@ -62,8 +65,9 @@ The system is designed API-first with a distinct service layer, making it suitab
 - **Frontend**: React 18.3 + Tailwind CSS 3.4 + Zustand state management
 - **Real-time**: WebSocket subscriptions + SSE endpoints with unified ChatService backend
 - **AI Integration**: OpenRouter API supporting multiple models (Claude, DeepSeek, Qwen, etc.)
-- **Testing**: Vitest with 390+ tests and comprehensive coverage
+- **Testing**: Vitest with 469 tests and comprehensive coverage
 - **Styling**: CSS custom properties with theme system and responsive design
+- **Logging**: Centralized clientLogger (frontend) + structured pino logger (backend)
 
 ## Architecture Design
 
@@ -86,13 +90,15 @@ The service layer is designed for integration with external tools:
 - Real-time streaming (WebSocket + SSE with unified backend)
 - Multi-model AI access via OpenRouter API
 - PostgreSQL conversation persistence with Prisma ORM
+- **Project & document management** (create projects, upload documents, full-text search)
 - Export system (Markdown, JSON)
 - Comprehensive rate limiting and session management
 - Type-safe API layer with tRPC and Zod validation
 - Dual UI system (terminal mode with slash commands + traditional chat)
 - Theme system (3 responsive themes with CSS custom properties)
 - Cost tracking widget with real-time usage monitoring
-- 390+ automated tests with comprehensive coverage
+- Professional logging (clientLogger + pino)
+- 469 automated tests with comprehensive coverage
 
 **🔄 Backend Complete, Frontend In Progress**
 - Conversation branching system (database schema and services ready)
@@ -100,6 +106,8 @@ The service layer is designed for integration with external tools:
 - Advanced export format support (services implemented, UI integration needed)
 
 **📋 Planned Enhancements**
+- **Vector embeddings & semantic search** (schema ready, needs OpenAI/Anthropic integration)
+- **RAG (Retrieval Augmented Generation)** with document context
 - Intelligent model routing based on cost and task complexity
 - Context compression and conversation summarization
 - Enhanced PKM tool integrations (full Notion, Obsidian, Google Docs integrations)
@@ -190,12 +198,14 @@ npm run test:ui
 npm test -- src/components/__tests__/CostTracker.test.tsx
 ```
 
-**Current Test Coverage**: 390+ tests across 42 test files covering:
+**Current Test Coverage**: 469 tests across 42 test files covering:
 - Component functionality and rendering
-- Service layer business logic 
+- Service layer business logic (70-100% coverage for core services)
 - API endpoints and error handling
 - Real-time streaming infrastructure
 - Theme system and responsive design
+- Project & document management services (100% coverage)
+- Logging infrastructure
 
 ## User Interface Features
 
@@ -234,6 +244,28 @@ The system provides two distinct interfaces optimized for different workflows:
 - **Amber-Forest**: Warm earth tones with amber accents
 - **Cyan-Rich**: Light theme with cyan highlights and clean typography
 - All themes include responsive design and watercolor visual effects
+
+### **Project Management** (New in this PR)
+**Available at `/projects` route:**
+- Create and organize projects by topic/workflow
+- Upload documents (text, markdown, JSON, CSV files)
+- Full-text search across document content and filenames
+- Associate conversations with projects
+- View project statistics (conversation count, document count, last activity)
+- Document metadata tracking (filename, size, upload date, content type)
+
+**Capabilities:**
+- PostgreSQL-based document storage with text extraction
+- Case-insensitive content search
+- Project-conversation associations
+- Document management (upload, view, delete)
+- Statistics and activity tracking
+
+**Limitations (Planned for Future PRs):**
+- No vector embeddings yet (schema ready, needs API integration)
+- No semantic/RAG search (text matching only)
+- Text files only (no PDF/Word/Excel parsing)
+- No file versioning
 
 ## API Integration
 

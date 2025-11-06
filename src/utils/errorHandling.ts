@@ -179,25 +179,31 @@ export class ErrorHandler {
   private logToConsole(errorWithContext: ErrorWithContext): void {
     const { error, context, timestamp } = errorWithContext;
 
-    console.group(`🚨 Error at ${timestamp.toISOString()}`);
-    console.error('Message:', error.message);
-    console.error('Stack:', error.stack);
-    if (context) {
-      console.error('Context:', context);
+    if (process.env.NODE_ENV !== 'production') {
+      console.group(`🚨 Error at ${timestamp.toISOString()}`);
+      console.error('Message:', error.message);
+      console.error('Stack:', error.stack);
+      if (context) {
+        console.error('Context:', context);
+      }
+      console.groupEnd();
     }
-    console.groupEnd();
   }
 
   private logToService(errorWithContext: ErrorWithContext): void {
     // Placeholder for external error reporting service
     // You can integrate with services like Sentry, LogRocket, etc.
-    console.log('Would send to error reporting service:', errorWithContext);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Would send to error reporting service:', errorWithContext);
+    }
   }
 
   private showUserMessage(message: string): void {
     // Placeholder for user notification system
     // You can integrate with toast notifications, modals, etc.
-    console.log('Would show user message:', message);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Would show user message:', message);
+    }
   }
 }
 
