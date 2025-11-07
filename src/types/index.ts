@@ -24,7 +24,7 @@ export interface DatabaseMessage extends Omit<Message, 'timestamp'> {
   tokens: number;
 }
 
-// Base conversation interface - canonical definition  
+// Base conversation interface - canonical definition
 export interface Conversation {
   id: string;
   title: string | null;

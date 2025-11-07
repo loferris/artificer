@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
-import { useTerminalTheme, useTerminalThemeClasses, TerminalTheme } from '../../contexts/TerminalThemeContext';
+import {
+  useTerminalTheme,
+  useTerminalThemeClasses,
+  TerminalTheme,
+} from '../../contexts/TerminalThemeContext';
 
 interface ThemeSelectorProps {
   className?: string;
   compact?: boolean;
 }
 
-export const ThemeSelector: React.FC<ThemeSelectorProps> = ({ 
-  className = '', 
-  compact = false 
+export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
+  className = '',
+  compact = false,
 }) => {
   const { theme, setTheme, availableThemes, getThemeDisplayName, toggleTheme } = useTerminalTheme();
   const classes = useTerminalThemeClasses();
@@ -67,7 +71,7 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
         `}
       >
         <span>{getThemeDisplayName(theme)}</span>
-        <span 
+        <span
           className={`
             ${classes.textMuted}
             transform
@@ -78,15 +82,15 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
           ▼
         </span>
       </button>
-      
+
       {isOpen && (
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 z-[var(--terminal-z-overlay)]"
+            className='fixed inset-0 z-[var(--terminal-z-overlay)]'
             onClick={() => setIsOpen(false)}
           />
-          
+
           {/* Dropdown Menu */}
           <div
             className={`
@@ -115,9 +119,10 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
                   ${classes.textSm}
                   ${classes.fontMono}
                   ${classes.transitionFast}
-                  ${themeName === theme 
-                    ? `${classes.bgConversationActive} ${classes.textPrimary}` 
-                    : `${classes.textSecondary} ${classes.hoverBg}`
+                  ${
+                    themeName === theme
+                      ? `${classes.bgConversationActive} ${classes.textPrimary}`
+                      : `${classes.textSecondary} ${classes.hoverBg}`
                   }
                   cursor-pointer
                   flex
@@ -126,14 +131,12 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
                 `}
               >
                 <span>{getThemeDisplayName(themeName)}</span>
-                {themeName === theme && (
-                  <span className={classes.accentSuccess}>●</span>
-                )}
+                {themeName === theme && <span className={classes.accentSuccess}>●</span>}
               </button>
             ))}
-            
+
             {/* Theme Preview */}
-            <div 
+            <div
               className={`
                 ${classes.bgTertiary}
                 ${classes.borderPrimary}
@@ -144,13 +147,11 @@ export const ThemeSelector: React.FC<ThemeSelectorProps> = ({
               `}
             >
               <div className={`${classes.textMuted} mb-1`}>Preview:</div>
-              <div className="flex items-center">
+              <div className='flex items-center'>
                 <span className={classes.accentPrompt}>$</span>
                 <span className={`${classes.textSecondary} ml-1`}>hello-world</span>
               </div>
-              <div className={`${classes.accentAssistant} mt-1`}>
-                AI response example
-              </div>
+              <div className={`${classes.accentAssistant} mt-1`}>AI response example</div>
             </div>
           </div>
         </>
@@ -168,18 +169,18 @@ export const useThemeTransition = () => {
     if (newTheme === theme) return;
 
     setIsTransitioning(true);
-    
+
     // Add transition class to root
     const root = document.documentElement;
     root.style.setProperty('--terminal-transition-theme', 'all 0.3s ease-in-out');
     root.classList.add('terminal-theme-transitioning');
-    
+
     // Small delay to ensure transition class is applied
-    await new Promise(resolve => setTimeout(resolve, 50));
-    
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
     // Change theme
     setTheme(newTheme);
-    
+
     // Remove transition class after animation
     setTimeout(() => {
       root.classList.remove('terminal-theme-transitioning');

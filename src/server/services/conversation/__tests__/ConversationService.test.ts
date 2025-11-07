@@ -28,7 +28,10 @@ describe('ConversationService', () => {
     let service: DatabaseConversationService;
 
     beforeEach(() => {
-      const { service: testService } = TestScenarios.serviceTest(DatabaseConversationService, mockClient);
+      const { service: testService } = TestScenarios.serviceTest(
+        DatabaseConversationService,
+        mockClient,
+      );
       service = testService;
     });
 
@@ -58,7 +61,9 @@ describe('ConversationService', () => {
         };
 
         mockClient.conversation.create = vi.fn().mockResolvedValue(mockCreatedConversation);
-        mockClient.conversation.findUnique = vi.fn().mockResolvedValue(mockConversationWithMessages);
+        mockClient.conversation.findUnique = vi
+          .fn()
+          .mockResolvedValue(mockConversationWithMessages);
 
         const result = await service.create();
 
@@ -121,7 +126,9 @@ describe('ConversationService', () => {
         };
 
         mockClient.conversation.create = vi.fn().mockResolvedValue(mockCreatedConversation);
-        mockClient.conversation.findUnique = vi.fn().mockResolvedValue(mockConversationWithMessages);
+        mockClient.conversation.findUnique = vi
+          .fn()
+          .mockResolvedValue(mockConversationWithMessages);
 
         const result = await service.create(input);
 
@@ -251,7 +258,9 @@ describe('ConversationService', () => {
         };
 
         mockClient.conversation.create = vi.fn().mockResolvedValue(mockCreatedConversation);
-        mockClient.conversation.findUnique = vi.fn().mockResolvedValue(mockConversationWithMessages);
+        mockClient.conversation.findUnique = vi
+          .fn()
+          .mockResolvedValue(mockConversationWithMessages);
 
         const result = await service.createConversation();
 

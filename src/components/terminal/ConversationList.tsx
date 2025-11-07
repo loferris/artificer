@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { format } from 'date-fns';
 import { useTerminalThemeClasses } from '../../contexts/TerminalThemeContext';
@@ -26,14 +25,14 @@ interface ConversationListProps {
 }
 
 // Terminal-style ExportButton component
-const TerminalExportButton: React.FC<{ onClick?: () => void; className?: string }> = ({ 
-  onClick, 
-  className = '' 
+const TerminalExportButton: React.FC<{ onClick?: () => void; className?: string }> = ({
+  onClick,
+  className = '',
 }) => {
   const themeClasses = useTerminalThemeClasses();
-  
+
   return (
-    <button 
+    <button
       onClick={onClick}
       className={`
         ${themeClasses.textTertiary}
@@ -47,7 +46,7 @@ const TerminalExportButton: React.FC<{ onClick?: () => void; className?: string 
         cursor-pointer
         ${className}
       `}
-      title="Export all conversations"
+      title='Export all conversations'
     >
       /export-all
     </button>
@@ -82,7 +81,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   };
 
   return (
-    <div 
+    <div
       className={`
         ${themeClasses.bgConversationList}
         ${themeClasses.textSecondary}
@@ -98,11 +97,11 @@ export const ConversationList: React.FC<ConversationListProps> = ({
       style={style}
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
+      <div className='flex items-center justify-between mb-3'>
         <h2 className={`${themeClasses.textTertiary} ${themeClasses.textXs} font-bold`}>
           SESSIONS ({conversations.length})
         </h2>
-        
+
         {/* Refresh Button */}
         <button
           onClick={onRefreshConversations}
@@ -119,18 +118,18 @@ export const ConversationList: React.FC<ConversationListProps> = ({
             cursor-pointer
             ${isLoading ? 'animate-spin' : ''}
           `}
-          title="Refresh conversations"
+          title='Refresh conversations'
         >
           ⟲
         </button>
       </div>
-      
+
       {/* Conversations List */}
-      <div className="flex-1 overflow-y-auto space-y-1">
+      <div className='flex-1 overflow-y-auto space-y-1'>
         {error ? (
           <div className={`${themeClasses.accentError} ${themeClasses.textXs} p-2`}>
-            <div className="flex items-center">
-              <span className="mr-1">!</span>
+            <div className='flex items-center'>
+              <span className='mr-1'>!</span>
               <span>failed-to-load</span>
             </div>
             <button
@@ -142,7 +141,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
           </div>
         ) : isLoading && conversations.length === 0 ? (
           <div className={`${themeClasses.textMuted} ${themeClasses.textXs} p-2`}>
-            <div className="flex items-center">
+            <div className='flex items-center'>
               <div className={`animate-spin mr-2 ${themeClasses.accentPrompt}`}>⟲</div>
               <span>loading-sessions...</span>
             </div>
@@ -150,12 +149,12 @@ export const ConversationList: React.FC<ConversationListProps> = ({
         ) : conversations.length === 0 ? (
           <div className={`${themeClasses.textMuted} ${themeClasses.textXs} p-2`}>
             <div>no-sessions-found</div>
-            <div className="mt-1">{/* create one with /new */}</div>
+            <div className='mt-1'>{/* create one with /new */}</div>
           </div>
         ) : (
           conversations.map((conv) => (
-            <div 
-              key={conv.id} 
+            <div
+              key={conv.id}
               onClick={() => onSelectConversation(conv.id)}
               onContextMenu={(e) => {
                 e.preventDefault();
@@ -168,15 +167,16 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 ${themeClasses.transitionFast}
                 group
                 relative
-                ${conv.id === currentConversationId 
-                  ? `${themeClasses.bgConversationActive} ${themeClasses.textPrimary}` 
-                  : `${themeClasses.hoverBg} ${themeClasses.textSecondary}`
+                ${
+                  conv.id === currentConversationId
+                    ? `${themeClasses.bgConversationActive} ${themeClasses.textPrimary}`
+                    : `${themeClasses.hoverBg} ${themeClasses.textSecondary}`
                 }
               `}
               title={`${conv.title || 'untitled-session'} - ${formatConversationTime(conv.updatedAt)}`}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex-1 min-w-0">
+              <div className='flex items-center justify-between'>
+                <div className='flex-1 min-w-0'>
                   <div className={`truncate ${themeClasses.textXs}`}>
                     {conv.title || 'untitled-session'}
                   </div>
@@ -184,7 +184,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                     {formatConversationTime(conv.updatedAt)}
                   </div>
                 </div>
-                
+
                 {/* Delete button on hover */}
                 <button
                   onClick={(e) => {
@@ -206,7 +206,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                     text-xs
                     ml-2
                   `}
-                  title="Delete session"
+                  title='Delete session'
                 >
                   ×
                 </button>
@@ -215,12 +215,12 @@ export const ConversationList: React.FC<ConversationListProps> = ({
           ))
         )}
       </div>
-      
+
       {/* Action Bar */}
       <div className={`pt-2 mt-2 ${themeClasses.borderMuted} border-t space-y-2`}>
-        <div className="flex items-center justify-between">
-          <button 
-            onClick={onNewConversation} 
+        <div className='flex items-center justify-between'>
+          <button
+            onClick={onNewConversation}
             disabled={isCreating}
             className={`
               ${themeClasses.textTertiary}
@@ -247,27 +247,18 @@ export const ConversationList: React.FC<ConversationListProps> = ({
               '/new'
             )}
           </button>
-          
-          {showExportButton && (
-            <TerminalExportButton 
-              onClick={onExportAll}
-            />
-          )}
+
+          {showExportButton && <TerminalExportButton onClick={onExportAll} />}
         </div>
-        
+
         {/* Status line */}
         <div className={`${themeClasses.textMuted} ${themeClasses.textXs} flex justify-between`}>
           <span>
-            {conversations.length > 0 
+            {conversations.length > 0
               ? `${conversations.length} session${conversations.length !== 1 ? 's' : ''}`
-              : 'no-sessions'
-            }
+              : 'no-sessions'}
           </span>
-          {currentConversationId && (
-            <span className={`${themeClasses.accentPrompt}`}>
-              ACTIVE
-            </span>
-          )}
+          {currentConversationId && <span className={`${themeClasses.accentPrompt}`}>ACTIVE</span>}
         </div>
       </div>
     </div>

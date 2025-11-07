@@ -91,7 +91,10 @@ describe('Database Initialization', () => {
       await expect(closeDatabase()).resolves.toBeUndefined();
 
       expect(prisma.$disconnect).toHaveBeenCalled();
-      expect(loggerErrorSpy).toHaveBeenCalledWith('Error closing database connection:', disconnectError);
+      expect(loggerErrorSpy).toHaveBeenCalledWith(
+        'Error closing database connection:',
+        disconnectError,
+      );
 
       loggerErrorSpy.mockRestore();
     });

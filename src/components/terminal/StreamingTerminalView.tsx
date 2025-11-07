@@ -61,7 +61,7 @@ export const StreamingTerminalView: React.FC<StreamingTerminalViewProps> = ({
   const themeClasses = useTerminalThemeClasses();
 
   return (
-    <div 
+    <div
       className={`
         flex 
         h-screen 
@@ -73,13 +73,11 @@ export const StreamingTerminalView: React.FC<StreamingTerminalViewProps> = ({
       `}
       style={style}
     >
-      <div className="flex-1 flex flex-col">
-        <TerminalHeader 
-          statusText={isStreaming ? 'STREAMING' : undefined}
-        />
-        
+      <div className='flex-1 flex flex-col'>
+        <TerminalHeader statusText={isStreaming ? 'STREAMING' : undefined} />
+
         {streamingError && (
-          <div 
+          <div
             className={`
               ${themeClasses.bgOverlay}
               ${themeClasses.accentError}
@@ -90,13 +88,13 @@ export const StreamingTerminalView: React.FC<StreamingTerminalViewProps> = ({
               border-[var(--terminal-accent-error)]
             `}
           >
-            <div className="flex items-center">
-              <span className="mr-2">!</span>
+            <div className='flex items-center'>
+              <span className='mr-2'>!</span>
               <span>stream-error: {streamingError}</span>
             </div>
           </div>
         )}
-        
+
         <StreamingChatDisplay
           messages={messages}
           isLoading={isLoading}
@@ -106,8 +104,8 @@ export const StreamingTerminalView: React.FC<StreamingTerminalViewProps> = ({
           messagesError={messagesError}
         />
 
-        <div className="flex items-center gap-2 px-2">
-          <div className="flex-1">
+        <div className='flex items-center gap-2 px-2'>
+          <div className='flex-1'>
             <ChatInput
               input={input}
               onInputChange={onInputChange}
@@ -134,7 +132,7 @@ export const StreamingTerminalView: React.FC<StreamingTerminalViewProps> = ({
                 hover:opacity-80
                 cursor-pointer
               `}
-              title="Cancel streaming"
+              title='Cancel streaming'
             >
               /cancel
             </button>

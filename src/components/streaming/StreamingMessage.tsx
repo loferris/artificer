@@ -15,14 +15,13 @@ interface StreamingMessageProps {
 export const StreamingMessage: React.FC<StreamingMessageProps> = ({
   content,
   isComplete,
-  className = ''
+  className = '',
 }) => {
   const [segments, setSegments] = useState<ContentSegment[]>([]);
   const parserRef = useRef(new StreamParser());
   const previousContentRef = useRef('');
 
   useEffect(() => {
-    
     if (isComplete) {
       // When complete, parse the entire content normally
       const parser = new StreamParser();
@@ -35,7 +34,7 @@ export const StreamingMessage: React.FC<StreamingMessageProps> = ({
       const streamingSegment = {
         type: 'text' as any,
         content,
-        isComplete: false
+        isComplete: false,
       };
       setSegments([streamingSegment]);
     }
@@ -61,7 +60,7 @@ export const StreamingMessage: React.FC<StreamingMessageProps> = ({
         />
       ))}
       {!isComplete && segments.length === 0 && (
-        <span className="animate-pulse text-gray-500">Thinking...</span>
+        <span className='animate-pulse text-gray-500'>Thinking...</span>
       )}
     </div>
   );

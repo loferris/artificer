@@ -24,7 +24,10 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
     res.status(200).json(conversation);
   } catch (error) {
-    logger.error('Error creating conversation:', error instanceof Error ? error : new Error(String(error)));
+    logger.error(
+      'Error creating conversation:',
+      error instanceof Error ? error : new Error(String(error)),
+    );
     res.status(500).json({
       message: 'Failed to create conversation',
       error: error instanceof Error ? error.message : 'Unknown error',

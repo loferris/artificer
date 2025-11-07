@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useTerminalTheme, useTerminalThemeClasses } from '../../contexts/TerminalThemeContext';
 import { ThemeSelector } from './ThemeSelector';
@@ -27,7 +26,7 @@ export const TerminalHeader: React.FC<TerminalHeaderProps> = ({
   };
 
   return (
-    <div 
+    <div
       className={`
         ${themeClasses.bgPrimary}
         ${themeClasses.borderMuted}
@@ -44,19 +43,15 @@ export const TerminalHeader: React.FC<TerminalHeaderProps> = ({
       `}
       style={style}
     >
-      <div className="flex items-center gap-4">
-        <span className={`${themeClasses.textSecondary} font-medium`}>
-          {title}
-        </span>
-        <span className={`${themeClasses.textMuted} text-xs`}>
-          {getStatusIndicator()}
-        </span>
+      <div className='flex items-center gap-4'>
+        <span className={`${themeClasses.textSecondary} font-medium`}>{title}</span>
+        <span className={`${themeClasses.textMuted} text-xs`}>{getStatusIndicator()}</span>
       </div>
-      
-      <div className="flex items-center gap-2">
+
+      <div className='flex items-center gap-2'>
         {/* System Status Indicators */}
-        <div className="flex items-center gap-1">
-          <div 
+        <div className='flex items-center gap-1'>
+          <div
             className={`
               w-2 
               h-2 
@@ -64,17 +59,13 @@ export const TerminalHeader: React.FC<TerminalHeaderProps> = ({
               ${themeClasses.accentSuccess}
               bg-current
             `}
-            title="System Online"
+            title='System Online'
           />
-          <span className={`${themeClasses.textMuted} text-xs`}>
-            READY
-          </span>
+          <span className={`${themeClasses.textMuted} text-xs`}>READY</span>
         </div>
-        
+
         {/* Theme Selector */}
-        {showThemeSelector && (
-          <ThemeSelector compact className="ml-2" />
-        )}
+        {showThemeSelector && <ThemeSelector compact className='ml-2' />}
       </div>
     </div>
   );

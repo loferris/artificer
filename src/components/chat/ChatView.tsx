@@ -97,8 +97,13 @@ export const ChatView: React.FC<ChatViewProps> = ({
   };
 
   return (
-    <div className={`flex h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50`} style={{ background: 'linear-gradient(to bottom right, rgb(253, 242, 248), rgb(250, 245, 255), rgb(238, 242, 255))' }}>
-
+    <div
+      className={`flex h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-indigo-50`}
+      style={{
+        background:
+          'linear-gradient(to bottom right, rgb(253, 242, 248), rgb(250, 245, 255), rgb(238, 242, 255))',
+      }}
+    >
       {/* Sidebar */}
       <div
         className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 bg-white/80 backdrop-blur-sm border-r border-pink-200 overflow-hidden flex flex-col`}
@@ -202,7 +207,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
               AI Chat (Classic View)
             </h1>
           </div>
-          
+
           <div className='flex items-center gap-3'>
             {/* Export buttons */}
             <div className='flex items-center gap-2'>
@@ -237,10 +242,11 @@ export const ChatView: React.FC<ChatViewProps> = ({
                 Export All JSON
               </button>
             </div>
-            
+
             <div className='text-sm text-gray-500'>
               {currentConversationId
-                ? conversations.find((c: any) => c.id === currentConversationId)?.title || 'Current Chat'
+                ? conversations.find((c: any) => c.id === currentConversationId)?.title ||
+                  'Current Chat'
                 : 'No conversation selected'}
             </div>
           </div>
@@ -248,22 +254,22 @@ export const ChatView: React.FC<ChatViewProps> = ({
 
         <div className='flex-1 overflow-y-auto p-6'>
           {isCreatingConversation ? (
-              <div className='text-center text-gray-500 py-12'>
-                <div className='text-6xl mb-4'>✨</div>
-                <p className='text-xl font-medium text-gray-700'>Creating your conversation...</p>
-              </div>
-            ) : messagesLoading ? (
-              <div className='text-center text-gray-500 py-12'>
-                <div className='animate-spin w-8 h-8 border-2 border-pink-500 border-t-transparent rounded-full mx-auto mb-4'></div>
-                <p className='text-xl font-medium text-gray-700'>Loading messages...</p>
-              </div>
-            ) : messagesError ? (
-              <div className='text-center text-red-500 py-12'>
-                <div className='text-6xl mb-4'>⚠️</div>
-                <p className='text-xl font-medium text-red-700'>Failed to load messages</p>
-                <p className='mt-2 text-red-500'>Please try refreshing the page</p>
-              </div>
-            ) : messages.length === 0 ? (
+            <div className='text-center text-gray-500 py-12'>
+              <div className='text-6xl mb-4'>✨</div>
+              <p className='text-xl font-medium text-gray-700'>Creating your conversation...</p>
+            </div>
+          ) : messagesLoading ? (
+            <div className='text-center text-gray-500 py-12'>
+              <div className='animate-spin w-8 h-8 border-2 border-pink-500 border-t-transparent rounded-full mx-auto mb-4'></div>
+              <p className='text-xl font-medium text-gray-700'>Loading messages...</p>
+            </div>
+          ) : messagesError ? (
+            <div className='text-center text-red-500 py-12'>
+              <div className='text-6xl mb-4'>⚠️</div>
+              <p className='text-xl font-medium text-red-700'>Failed to load messages</p>
+              <p className='mt-2 text-red-500'>Please try refreshing the page</p>
+            </div>
+          ) : messages.length === 0 ? (
             <div className='text-center text-gray-500 py-12'>
               <div className='text-6xl mb-4'>🌈</div>
               <p className='text-xl font-medium text-gray-700'>Welcome to your colorful chat!</p>
@@ -283,14 +289,17 @@ export const ChatView: React.FC<ChatViewProps> = ({
                         : 'text-gray-800 border border-purple-200'
                     }`}
                     style={{
-                      background: message.role === 'user' 
-                        ? 'linear-gradient(to right, rgb(236, 72, 153), rgb(147, 51, 234))' 
-                        : 'linear-gradient(to right, rgb(238, 242, 255), rgb(250, 245, 255))'
+                      background:
+                        message.role === 'user'
+                          ? 'linear-gradient(to right, rgb(236, 72, 153), rgb(147, 51, 234))'
+                          : 'linear-gradient(to right, rgb(238, 242, 255), rgb(250, 245, 255))',
                     }}
                   >
                     <div className='whitespace-pre-wrap leading-relaxed'>{message.content}</div>
                     <div className='flex justify-between items-center mt-2'>
-                      <div className={`text-xs ${message.role === 'user' ? 'text-pink-100' : 'text-purple-500'}`}>
+                      <div
+                        className={`text-xs ${message.role === 'user' ? 'text-pink-100' : 'text-purple-500'}`}
+                      >
                         {formatTime(message.timestamp)}
                       </div>
                     </div>
@@ -302,9 +311,18 @@ export const ChatView: React.FC<ChatViewProps> = ({
                   <div className='bg-gradient-to-r from-indigo-50 to-purple-50 border border-purple-200 px-4 py-3 rounded-2xl shadow-sm'>
                     <div className='flex items-center space-x-3'>
                       <div className='flex space-x-1'>
-                        <div className='w-2 h-2 bg-purple-500 rounded-full animate-bounce' style={{ animationDelay: '0ms' }}></div>
-                        <div className='w-2 h-2 bg-purple-500 rounded-full animate-bounce' style={{ animationDelay: '150ms' }}></div>
-                        <div className='w-2 h-2 bg-purple-500 rounded-full animate-bounce' style={{ animationDelay: '300ms' }}></div>
+                        <div
+                          className='w-2 h-2 bg-purple-500 rounded-full animate-bounce'
+                          style={{ animationDelay: '0ms' }}
+                        ></div>
+                        <div
+                          className='w-2 h-2 bg-purple-500 rounded-full animate-bounce'
+                          style={{ animationDelay: '150ms' }}
+                        ></div>
+                        <div
+                          className='w-2 h-2 bg-purple-500 rounded-full animate-bounce'
+                          style={{ animationDelay: '300ms' }}
+                        ></div>
                       </div>
                       <div className='flex flex-col'>
                         <span className='text-sm text-purple-600'>AI is thinking...</span>
@@ -327,7 +345,9 @@ export const ChatView: React.FC<ChatViewProps> = ({
               value={input}
               onChange={(e) => onInputChange(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder={isConversationReady ? 'Type your message...' : 'Creating conversation...'}
+              placeholder={
+                isConversationReady ? 'Type your message...' : 'Creating conversation...'
+              }
               disabled={!isConversationReady || isLoading}
               className='flex-1 px-4 py-3 border border-pink-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed placeholder-gray-400 bg-white/50'
             />
