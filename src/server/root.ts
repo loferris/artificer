@@ -7,6 +7,7 @@ import { usageRouter } from './routers/usage';
 import { exportRouter } from './routers/export';
 import { subscriptionsRouter } from './routers/subscriptions';
 import { projectsRouter } from './routers/projects';
+import { monitoringRouter } from './routers/monitoring';
 
 export const appRouter = router({
   chat: chatRouter,
@@ -16,6 +17,7 @@ export const appRouter = router({
   export: exportRouter,
   subscriptions: subscriptionsRouter,
   projects: projectsRouter,
+  monitoring: monitoringRouter,
 });
 
 export type AppRouter = typeof appRouter;
