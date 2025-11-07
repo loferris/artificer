@@ -1,6 +1,6 @@
 /**
  * AppShell - Main application layout and provider wrapper
- *
+ * 
  * Provides the core application structure with theme provider,
  * error boundaries, and layout composition. Acts as the main
  * container for the refactored application.
@@ -11,6 +11,8 @@ import { TerminalThemeProvider, useTerminalThemeClasses } from '../contexts/Term
 import { ErrorBoundary } from './ErrorBoundary';
 import { CostTracker } from './CostTracker';
 import { ErrorBoundaryDisplay, LoadingSpinner } from './ui';
+import { ProjectSelector } from './ProjectSelector';
+import { useChatStore } from '../stores/chatStore';
 import type { ViewMode } from '../types';
 
 export interface AppShellProps {
@@ -24,22 +26,22 @@ export interface AppShellProps {
 /**
  * Main application shell with providers and error boundaries
  */
-export function AppShell({
-  children,
+export function AppShell({ 
+  children, 
   showCostTracker = true,
   viewMode = 'terminal',
   onViewModeChange,
-  className = '',
+  className = '' 
 }: AppShellProps) {
   return (
     <div className={`min-h-screen ${className}`}>
       <TerminalThemeProvider>
         <ErrorBoundary>
-          <div className='relative h-screen flex flex-col'>
+          <div className="relative h-screen flex flex-col">
             {/* Cost tracker - positioned absolutely */}
             {/* Floating toolbar */}
             <div className={`absolute top-1/2 -translate-y-1/2 right-0 z-30`}>
-              <FloatingToolbar
+              <FloatingToolbar 
                 viewMode={viewMode}
                 onViewModeChange={onViewModeChange}
                 showCostTracker={showCostTracker}
@@ -47,7 +49,9 @@ export function AppShell({
             </div>
 
             {/* Main content area */}
-            <div className='flex-1 flex flex-col overflow-hidden'>{children}</div>
+            <div className="flex-1 flex flex-col overflow-hidden">
+              {children}
+            </div>
           </div>
         </ErrorBoundary>
       </TerminalThemeProvider>
@@ -73,16 +77,18 @@ export function InterfaceSwitcher({
   showModeToggle = true,
   onViewModeChange,
 }: InterfaceSwitcherProps) {
-  console.log('viewMode', viewMode);
   return (
-    <div className='flex-1 flex flex-col'>
+    <div className="flex-1 flex flex-col">
       {/* View mode toggle */}
       {showModeToggle && onViewModeChange && (
-        <ViewModeToggle currentMode={viewMode} onModeChange={onViewModeChange} />
+        <ViewModeToggle
+          currentMode={viewMode}
+          onModeChange={onViewModeChange}
+        />
       )}
 
       {/* Interface content */}
-      <div className='flex-1 overflow-hidden'>
+      <div className="flex-1 overflow-hidden">
         {viewMode === 'terminal' ? terminalInterface : chatInterface}
       </div>
     </div>
@@ -98,18 +104,29 @@ export interface ViewModeToggleProps {
   className?: string;
 }
 
-export function ViewModeToggle({ currentMode, onModeChange, className = '' }: ViewModeToggleProps) {
+export function ViewModeToggle({ 
+  currentMode, 
+  onModeChange, 
+  className = '' 
+}: ViewModeToggleProps) {
+  const { currentProjectId, setCurrentProject } = useChatStore();
+  
   return (
-    <div className={`flex items-center justify-center p-2 border-b border-gray-200 ${className}`}>
-      <div className='flex bg-gray-100 rounded-lg p-1'>
+    <div className={`flex items-center justify-between p-2 border-b border-gray-200 ${className}`}>
+      <ProjectSelector 
+        currentProjectId={currentProjectId}
+        onProjectChange={setCurrentProject}
+        className="flex-shrink-0"
+      />
+      
+      <div className="flex bg-gray-100 rounded-lg p-1">
         <button
           onClick={() => onModeChange('terminal')}
           className={`
             px-4 py-2 rounded-md text-sm font-medium transition-colors
-            ${
-              currentMode === 'terminal'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+            ${currentMode === 'terminal' 
+              ? 'bg-white text-gray-900 shadow-sm' 
+              : 'text-gray-600 hover:text-gray-900'
             }
           `}
         >
@@ -119,16 +136,17 @@ export function ViewModeToggle({ currentMode, onModeChange, className = '' }: Vi
           onClick={() => onModeChange('chat')}
           className={`
             px-4 py-2 rounded-md text-sm font-medium transition-colors
-            ${
-              currentMode === 'chat'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+            ${currentMode === 'chat' 
+              ? 'bg-white text-gray-900 shadow-sm' 
+              : 'text-gray-600 hover:text-gray-900'
             }
           `}
         >
           Chat
         </button>
       </div>
+      
+      <div className="flex-shrink-0 w-[200px]" /> {/* Spacer for balance */}
     </div>
   );
 }
@@ -141,12 +159,15 @@ export interface ViewModeSwitchButtonProps {
   onModeChange: (mode: ViewMode) => void;
 }
 
-export function ViewModeSwitchButton({ currentMode, onModeChange }: ViewModeSwitchButtonProps) {
+export function ViewModeSwitchButton({ 
+  currentMode, 
+  onModeChange 
+}: ViewModeSwitchButtonProps) {
   const themeClasses = useTerminalThemeClasses();
-
+  
   const targetMode = currentMode === 'terminal' ? 'chat' : 'terminal';
   const buttonText = currentMode === 'terminal' ? '→ CHAT' : '→ TERMINAL';
-
+  
   const isTerminal = currentMode === 'terminal';
   const buttonClass = isTerminal
     ? `
@@ -209,16 +230,16 @@ export interface FloatingToolbarProps {
   showCostTracker?: boolean;
 }
 
-export function FloatingToolbar({
-  viewMode,
-  onViewModeChange,
-  showCostTracker = true,
+export function FloatingToolbar({ 
+  viewMode, 
+  onViewModeChange, 
+  showCostTracker = true 
 }: FloatingToolbarProps) {
   const [isExpanded, setIsExpanded] = React.useState(false);
   const themeClasses = useTerminalThemeClasses();
-
+  
   const isTerminal = viewMode === 'terminal';
-
+  
   // Compact button styles
   const compactButtonClass = isTerminal
     ? `
@@ -255,18 +276,23 @@ export function FloatingToolbar({
       `;
 
   return (
-    <div className='flex items-center'>
+    <div className="flex items-center">
       {/* Expanded content - slides out from right */}
       {isExpanded && (
-        <div className='flex flex-col gap-2 items-end mr-2 animate-in fade-in slide-in-from-right-4 duration-200'>
-          {showCostTracker && <CostTracker viewMode={viewMode} />}
-
+        <div className="flex flex-col gap-2 items-end mr-2 animate-in fade-in slide-in-from-right-4 duration-200">
+          {showCostTracker && (
+            <CostTracker viewMode={viewMode} />
+          )}
+          
           {onViewModeChange && (
-            <ViewModeSwitchButton currentMode={viewMode} onModeChange={onViewModeChange} />
+            <ViewModeSwitchButton 
+              currentMode={viewMode} 
+              onModeChange={onViewModeChange}
+            />
           )}
         </div>
       )}
-
+      
       {/* Side tab toggle - always visible on screen edge */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
@@ -284,12 +310,10 @@ export function FloatingToolbar({
           text-xs
           font-mono
           transform ${isExpanded ? 'translate-x-0' : 'translate-x-0'}
-        `
-          .replace(/\s+/g, ' ')
-          .trim()}
+        `.replace(/\s+/g, ' ').trim()}
         title={isExpanded ? 'Hide controls' : 'Show controls'}
       >
-        <div className='transform rotate-90 whitespace-nowrap text-xs'>
+        <div className="transform rotate-90 whitespace-nowrap text-xs">
           {isExpanded ? '×' : '⋯'}
         </div>
       </button>
@@ -305,17 +329,22 @@ export interface LoadingShellProps {
   showSpinner?: boolean;
 }
 
-export function LoadingShell({ message = 'Loading...', showSpinner = true }: LoadingShellProps) {
+export function LoadingShell({ 
+  message = 'Loading...', 
+  showSpinner = true 
+}: LoadingShellProps) {
   return (
     <AppShell>
-      <div className='flex-1 flex items-center justify-center'>
-        <div className='text-center'>
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
           {showSpinner && (
-            <div className='mb-4'>
-              <LoadingSpinner size='lg' text={message} />
+            <div className="mb-4">
+              <LoadingSpinner size="lg" text={message} />
             </div>
           )}
-          {!showSpinner && <p className='text-gray-600'>{message}</p>}
+          {!showSpinner && (
+            <p className="text-gray-600">{message}</p>
+          )}
         </div>
       </div>
     </AppShell>
@@ -331,14 +360,18 @@ export interface ErrorShellProps {
   showRetryButton?: boolean;
 }
 
-export function ErrorShell({ error, onRetry, showRetryButton = true }: ErrorShellProps) {
+export function ErrorShell({ 
+  error, 
+  onRetry, 
+  showRetryButton = true 
+}: ErrorShellProps) {
   return (
     <AppShell showCostTracker={false}>
-      <div className='flex-1 flex items-center justify-center'>
+      <div className="flex-1 flex items-center justify-center">
         <ErrorBoundaryDisplay
           error={error}
           resetError={showRetryButton && onRetry ? onRetry : undefined}
-          variant='inline'
+          variant="inline"
         />
       </div>
     </AppShell>
@@ -356,11 +389,15 @@ export const LayoutUtils = {
     leftContent: React.ReactNode,
     rightContent: React.ReactNode,
     leftWidth = 'w-1/3',
-    rightWidth = 'w-2/3',
+    rightWidth = 'w-2/3'
   ) => (
-    <div className='flex h-full'>
-      <div className={`${leftWidth} border-r border-gray-200`}>{leftContent}</div>
-      <div className={`${rightWidth}`}>{rightContent}</div>
+    <div className="flex h-full">
+      <div className={`${leftWidth} border-r border-gray-200`}>
+        {leftContent}
+      </div>
+      <div className={`${rightWidth}`}>
+        {rightContent}
+      </div>
     </div>
   ),
 
@@ -371,21 +408,32 @@ export const LayoutUtils = {
     leftContent: React.ReactNode,
     centerContent: React.ReactNode,
     rightContent: React.ReactNode,
-    widths = { left: 'w-1/4', center: 'w-1/2', right: 'w-1/4' },
+    widths = { left: 'w-1/4', center: 'w-1/2', right: 'w-1/4' }
   ) => (
-    <div className='flex h-full'>
-      <div className={`${widths.left} border-r border-gray-200`}>{leftContent}</div>
-      <div className={`${widths.center} border-r border-gray-200`}>{centerContent}</div>
-      <div className={`${widths.right}`}>{rightContent}</div>
+    <div className="flex h-full">
+      <div className={`${widths.left} border-r border-gray-200`}>
+        {leftContent}
+      </div>
+      <div className={`${widths.center} border-r border-gray-200`}>
+        {centerContent}
+      </div>
+      <div className={`${widths.right}`}>
+        {rightContent}
+      </div>
     </div>
   ),
 
   /**
    * Creates a centered single-column layout
    */
-  createCenteredLayout: (content: React.ReactNode, maxWidth = 'max-w-4xl') => (
-    <div className='flex-1 flex justify-center'>
-      <div className={`${maxWidth} w-full px-4`}>{content}</div>
+  createCenteredLayout: (
+    content: React.ReactNode,
+    maxWidth = 'max-w-4xl'
+  ) => (
+    <div className="flex-1 flex justify-center">
+      <div className={`${maxWidth} w-full px-4`}>
+        {content}
+      </div>
     </div>
   ),
 
@@ -393,6 +441,8 @@ export const LayoutUtils = {
    * Creates a full-height scrollable layout
    */
   createScrollableLayout: (content: React.ReactNode) => (
-    <div className='flex-1 overflow-y-auto'>{content}</div>
+    <div className="flex-1 overflow-y-auto">
+      {content}
+    </div>
   ),
 };

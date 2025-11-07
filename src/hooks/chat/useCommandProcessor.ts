@@ -70,6 +70,7 @@ const formatList = (conversations: any[], limited: boolean) => {
 export function useCommandProcessor() {
   // Selectively subscribe to store values and methods
   const currentConversationId = useChatStore((state) => state.currentConversationId);
+  const currentProjectId = useChatStore((state) => state.currentProjectId);
   const viewMode = useChatStore((state) => state.viewMode);
   const streamingMode = useChatStore((state) => state.streamingMode);
 
@@ -128,7 +129,9 @@ export function useCommandProcessor() {
   });
 
   const handleNewConversation = async () => {
-    const newConversation = await createConversationMutation.mutateAsync({});
+    const newConversation = await createConversationMutation.mutateAsync({
+      projectId: currentProjectId || undefined,
+    });
     if (newConversation?.id) {
       setCurrentConversation(newConversation.id);
       conversationsQuery.refetch();

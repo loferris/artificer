@@ -71,6 +71,7 @@ describe('ConversationService', () => {
           data: {
             title: null,
             model: 'deepseek-chat',
+            projectId: null,
             systemPrompt: 'You are a helpful AI assistant.',
             temperature: 0.7,
             maxTokens: 1000,
@@ -135,6 +136,7 @@ describe('ConversationService', () => {
           data: {
             title: 'Custom Chat',
             model: 'claude-3-haiku',
+            projectId: null,
             systemPrompt: 'You are a creative assistant.',
             temperature: 0.9,
             maxTokens: 2000,

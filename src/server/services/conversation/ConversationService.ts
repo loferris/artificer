@@ -29,6 +29,7 @@ export interface CreateConversationInput {
   temperature?: number;
   maxTokens?: number;
   firstMessage?: string;
+  projectId?: string;
 }
 
 export interface UpdateConversationInput {
@@ -124,6 +125,7 @@ export class DatabaseConversationService implements ConversationService {
               ? process.env.OPENROUTER_DEFAULT_MODEL
               : null) ||
             'deepseek-chat',
+          projectId: conversationData.projectId ?? null,
           systemPrompt: conversationData.systemPrompt ?? 'You are a helpful AI assistant.',
           temperature: conversationData.temperature ?? 0.7,
           maxTokens: conversationData.maxTokens ?? 1000,

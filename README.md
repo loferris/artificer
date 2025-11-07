@@ -34,24 +34,25 @@ The system is designed API-first with a distinct service layer, making it suitab
 ## Current Features
 
 **Core Infrastructure**
-
 - PostgreSQL database with Prisma ORM for conversation persistence
 - OpenRouter API integration supporting multiple AI models
 - Real-time streaming via WebSocket subscriptions and SSE endpoints
 - Type-safe API layer with tRPC
+- **Standalone orchestration server** for external integrations (Python, CLI tools, etc.)
 - Comprehensive rate limiting and session management
-- **390+ tests** with full test coverage for critical components
+- **469 tests** with full test coverage for critical components
+- **Project & document management** for organizing conversations and knowledge
 
 **User Interface**
-
 - **Dual Interface System**: Terminal mode with slash commands + traditional chat interface
 - **Theme System**: Three responsive themes ("purple-rich" dark, "amber," and cyan-rich light) with CSS custom properties
 - **Real-time Streaming**: Visual streaming indicators with typing effects in terminal mode
 - **Cost Tracking Widget**: Live usage monitoring with theme-responsive styling
 - **Export Functionality**: Markdown and JSON export with basic support for Notion/Obsidian formats
+- **Project Management**: Create projects, upload documents, search content, organize conversations
+- **Document Storage**: PostgreSQL-based document storage with text extraction and full-text search
 
 **Service Architecture**
-
 - Clean service layer with dependency injection for business logic
 - Database scheme for conversation lifecycle management with branching support ready
 - Message operations with token tracking and cost calculation
@@ -64,13 +65,13 @@ The system is designed API-first with a distinct service layer, making it suitab
 - **Frontend**: React 18.3 + Tailwind CSS 3.4 + Zustand state management
 - **Real-time**: WebSocket subscriptions + SSE endpoints with unified ChatService backend
 - **AI Integration**: OpenRouter API supporting multiple models (Claude, DeepSeek, Qwen, etc.)
-- **Testing**: Vitest with 390+ tests and comprehensive coverage
+- **Testing**: Vitest with 469 tests and comprehensive coverage
 - **Styling**: CSS custom properties with theme system and responsive design
+- **Logging**: Centralized clientLogger (frontend) + structured pino logger (backend)
 
 ## Architecture Design
 
 **API-First Service Layer**
-
 - Strict separation between UI and business logic
 - Dependency injection for testable service architecture
 - Type-safe APIs with runtime validation using Zod schemas
@@ -78,7 +79,6 @@ The system is designed API-first with a distinct service layer, making it suitab
 
 **Integration Ready**
 The service layer is designed for integration with external tools:
-
 - **CLI tools** via SSE endpoints (`/api/stream/chat`)
 - **Browser extensions** via tRPC subscriptions
 - **Knowledge management tools** via structured export formats
@@ -87,32 +87,36 @@ The service layer is designed for integration with external tools:
 ## Feature Status
 
 **✅ Production Ready**
-
 - Real-time streaming (WebSocket + SSE with unified backend)
 - Multi-model AI access via OpenRouter API
 - PostgreSQL conversation persistence with Prisma ORM
+- **Project & document management** (create projects, upload documents, full-text search)
 - Export system (Markdown, JSON)
 - Comprehensive rate limiting and session management
 - Type-safe API layer with tRPC and Zod validation
 - Dual UI system (terminal mode with slash commands + traditional chat)
 - Theme system (3 responsive themes with CSS custom properties)
 - Cost tracking widget with real-time usage monitoring
-- 390+ automated tests with comprehensive coverage
+- Professional logging (clientLogger + pino)
+- 469 automated tests with comprehensive coverage
 
 **🔄 Backend Complete, Frontend In Progress**
-
 - Conversation branching system (database schema and services ready)
 - Message threading with `parentId` relationships (service layer complete)
 - Advanced export format support (services implemented, UI integration needed)
 
 **📋 Planned Enhancements**
-
+- **Vector embeddings & semantic search** (schema ready, needs OpenAI/Anthropic integration)
+- **RAG (Retrieval Augmented Generation)** with document context
 - Intelligent model routing based on cost and task complexity
 - Context compression and conversation summarization
 - Enhanced PKM tool integrations (full Notion, Obsidian, Google Docs integrations)
 - Cross-session context preservation and conversation merging
+- Authentication for standalone server (API keys, JWT)
 
 ## Getting Started
+
+### Standard Next.js Application
 
 ```bash
 git clone https://github.com/yourusername/ai-workflow-engine.git
@@ -134,10 +138,28 @@ npm run dev
 npm run db:studio
 ```
 
+### Standalone Orchestration Server
+
+Run as a standalone API server for integration with external applications (Python, CLI tools, etc.):
+
+```bash
+# Development mode
+npm run dev:standalone
+
+# Production mode
+npm run start:standalone
+```
+
+**Documentation:**
+- [Standalone API Guide](./docs/STANDALONE_API.md) - Complete API reference with Python examples
+- [Implementation Status](./docs/internal/STANDALONE_STATUS.md) - Current capabilities and limitations
+- [Security Considerations](./SECURITY.md) - Authentication requirements for production
+
+**⚠️ Security Notice:** The standalone server currently has no authentication. See [SECURITY.md](./SECURITY.md) before deploying to production.
+
 ### Environment Configuration
 
 Required environment variables in `.env`:
-
 ```bash
 DATABASE_URL="postgresql://postgres:password@localhost:5432/ai_workflow_engine"
 OPENROUTER_API_KEY="your_openrouter_api_key"
@@ -176,20 +198,20 @@ npm run test:ui
 npm test -- src/components/__tests__/CostTracker.test.tsx
 ```
 
-**Current Test Coverage**: 390+ tests across 42 test files covering:
-
+**Current Test Coverage**: 469 tests across 42 test files covering:
 - Component functionality and rendering
-- Service layer business logic
+- Service layer business logic (70-100% coverage for core services)
 - API endpoints and error handling
 - Real-time streaming infrastructure
 - Theme system and responsive design
+- Project & document management services (100% coverage)
+- Logging infrastructure
 
 ## User Interface Features
 
 The system provides two distinct interfaces optimized for different workflows:
 
 ### **Terminal Interface**
-
 - **Command-driven workflow** with slash commands (`/new`, `/list`, `/export`, `/theme`, etc.)
 - **Real-time streaming** with visual indicators and typing effects
 - **Theme system** with 3 responsive themes (Dark, Amber, Light)
@@ -197,7 +219,6 @@ The system provides two distinct interfaces optimized for different workflows:
 - **Session management** with conversation selection and welcome messages
 
 ### **Classic Chat Interface**
-
 - **Traditional chat experience** with conversation sidebar
 - **Standard messaging** (no streaming, optimized for reliability)
 - **Export functionality** with multiple format options
@@ -205,12 +226,11 @@ The system provides two distinct interfaces optimized for different workflows:
 - **Pink/purple gradient aesthetic** independent of terminal themes
 
 ### **Slash Commands (Terminal Mode)**
-
 ```bash
 /man                             # Show command manual
 /new                            # Create new conversation
 /list                           # Show 10 recent conversations
-/list-all                       # Show all conversations
+/list-all                       # Show all conversations  
 /export-current [markdown|json]  # Export current conversation
 /export-all [markdown|json]     # Export all conversations
 /theme [dark|amber|light]       # Switch terminal theme
@@ -220,29 +240,47 @@ The system provides two distinct interfaces optimized for different workflows:
 ```
 
 ### **Theme System**
-
 - **Purple-Rich**: Dark theme with purple gradients and rich contrast
 - **Amber-Forest**: Warm earth tones with amber accents
 - **Cyan-Rich**: Light theme with cyan highlights and clean typography
 - All themes include responsive design and watercolor visual effects
 
+### **Project Management** (New in this PR)
+**Available at `/projects` route:**
+- Create and organize projects by topic/workflow
+- Upload documents (text, markdown, JSON, CSV files)
+- Full-text search across document content and filenames
+- Associate conversations with projects
+- View project statistics (conversation count, document count, last activity)
+- Document metadata tracking (filename, size, upload date, content type)
+
+**Capabilities:**
+- PostgreSQL-based document storage with text extraction
+- Case-insensitive content search
+- Project-conversation associations
+- Document management (upload, view, delete)
+- Statistics and activity tracking
+
+**Limitations (Planned for Future PRs):**
+- No vector embeddings yet (schema ready, needs API integration)
+- No semantic/RAG search (text matching only)
+- Text files only (no PDF/Word/Excel parsing)
+- No file versioning
+
 ## API Integration
 
 ### Real-time Streaming
-
 The system provides multiple endpoints for real-time AI conversation streaming:
 
 **WebSocket Subscriptions** (Frontend)
-
 ```typescript
 const { data: streamData } = trpc.subscriptions.chatStream.useSubscription({
-  content: 'Your message',
-  conversationId: 'conv-123',
+  content: "Your message",
+  conversationId: "conv-123"
 });
 ```
 
 **Server-Sent Events** (CLI/Automation)
-
 ```bash
 curl -X POST http://localhost:3000/api/stream/chat \
   -H "Content-Type: application/json" \
@@ -251,7 +289,6 @@ curl -X POST http://localhost:3000/api/stream/chat \
 ```
 
 ### API Endpoints
-
 - `POST /api/stream/chat` - SSE streaming endpoint
 - `GET /api/trpc/[trpc]` - tRPC HTTP endpoint
 - `WS /api/trpc-ws` - WebSocket subscriptions

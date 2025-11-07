@@ -2,8 +2,8 @@
 
 Complete API documentation for integrating with the AI Workflow Engine.
 
-**Last Updated**: September 15, 2025  
-**API Status**: Production Ready (390+ tests passing, TypeScript strict mode)
+**Last Updated**: November 6, 2025
+**API Status**: Production Ready (469 tests passing, TypeScript strict mode)
 
 ## Base URL
 
@@ -139,6 +139,92 @@ const exported = await trpc.export.all.query({
 
 ```typescript
 const usage = await trpc.usage.stats.query();
+```
+
+### Project Management
+
+#### List Projects
+```typescript
+const projects = await trpc.projects.list.query();
+```
+
+#### Create Project
+```typescript
+const project = await trpc.projects.create.mutate({
+  name: "My Novel Project",
+  description: "A fantasy adventure story"
+});
+```
+
+#### Get Project by ID
+```typescript
+const project = await trpc.projects.getById.query({
+  id: "proj-123"
+});
+```
+
+#### Update Project
+```typescript
+const updated = await trpc.projects.update.mutate({
+  id: "proj-123",
+  name: "Updated Name",
+  description: "Updated description"
+});
+```
+
+#### Delete Project
+```typescript
+await trpc.projects.delete.mutate({
+  id: "proj-123"
+});
+```
+
+#### Upload Document
+```typescript
+const document = await trpc.projects.uploadDocument.mutate({
+  projectId: "proj-123",
+  filename: "notes.txt",
+  content: base64EncodedContent,
+  contentType: "text/plain"
+});
+```
+
+#### Search Documents
+```typescript
+const results = await trpc.projects.searchDocuments.query({
+  projectId: "proj-123",
+  query: "search term",
+  limit: 10
+});
+```
+
+#### Get Project Documents
+```typescript
+const documents = await trpc.projects.getDocuments.query({
+  projectId: "proj-123"
+});
+```
+
+#### Delete Document
+```typescript
+await trpc.projects.deleteDocument.mutate({
+  documentId: "doc-123"
+});
+```
+
+#### Associate Conversation with Project
+```typescript
+await trpc.projects.associateConversation.mutate({
+  projectId: "proj-123",
+  conversationId: "conv-456"
+});
+```
+
+#### Get Project Conversations
+```typescript
+const conversations = await trpc.projects.getConversations.query({
+  projectId: "proj-123"
+});
 ```
 
 ## HTTP Streaming (SSE)
@@ -311,6 +397,43 @@ interface Message {
   model?: string;
   cost?: number;
   tokens?: number;
+}
+```
+
+### Project
+```typescript
+interface Project {
+  id: string;
+  name: string;
+  description: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  _count?: {
+    conversations: number;
+    documents: number;
+    knowledgeEntities: number;
+  };
+  stats?: {
+    conversationCount: number;
+    documentCount: number;
+    knowledgeEntityCount: number;
+    lastActivity: Date | null;
+  };
+}
+```
+
+### Document
+```typescript
+interface Document {
+  id: string;
+  projectId: string;
+  filename: string;
+  originalName: string;
+  contentType: string;
+  size: number;
+  content: string;
+  metadata: Record<string, unknown>;
+  uploadedAt: Date;
 }
 ```
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { chatRouterRefactored as chatRouter } from '../chat-refactored';
+import { chatRouter } from '../chat';
 import { TRPCError } from '@trpc/server';
 import { ServiceFactory } from '../../services/ServiceFactory';
 

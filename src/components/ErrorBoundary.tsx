@@ -1,4 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { clientLogger } from '../utils/clientLogger';
 
 interface Props {
   children: ReactNode;
@@ -23,19 +24,20 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    // Log the error using clientLogger
+    clientLogger.error(
+      'ErrorBoundary caught an error',
+      error,
+      {
+        componentStack: errorInfo.componentStack,
+      },
+      'ErrorBoundary'
+    );
 
     // Call the onError callback if provided
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
     }
-
-    // Log to console for debugging
-    console.error('Error details:', {
-      message: error.message,
-      stack: error.stack,
-      componentStack: errorInfo.componentStack,
-    });
   }
 
   render() {
@@ -100,17 +102,14 @@ export class ErrorBoundary extends Component<Props, State> {
 // Hook for functional components to handle errors
 export function useErrorHandler() {
   return (error: Error, errorInfo?: ErrorInfo) => {
-    console.error('Error caught by useErrorHandler:', error, errorInfo);
-
-    // You can add additional error handling logic here
-    // For example, sending to an error reporting service
-
-    // Log to console for debugging
-    console.error('Error details:', {
-      message: error.message,
-      stack: error.stack,
-      componentStack: errorInfo?.componentStack,
-    });
+    clientLogger.error(
+      'Error caught by useErrorHandler',
+      error,
+      {
+        componentStack: errorInfo?.componentStack,
+      },
+      'useErrorHandler'
+    );
   };
 }
 

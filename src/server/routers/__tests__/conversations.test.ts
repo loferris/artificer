@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { conversationsRouterRefactored as conversationsRouter } from '../conversations-refactored';
+import { conversationsRouter } from '../conversations';
 import { ServiceFactory } from '../../services/ServiceFactory';
 
 // Mock the ServiceFactory

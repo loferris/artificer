@@ -27,7 +27,7 @@ function ensureDemoUser(ctx: any) {
   return user;
 }
 
-export const conversationsRouterRefactored = router({
+export const conversationsRouter = router({
   list: publicProcedure.query(async ({ ctx }) => {
     try {
       const user = ensureDemoUser(ctx);
@@ -54,6 +54,7 @@ export const conversationsRouterRefactored = router({
           systemPrompt: z.string().optional(),
           temperature: z.number().min(0).max(2).optional(),
           maxTokens: z.number().min(1).max(4000).optional(),
+          projectId: z.string().optional(),
         })
         .optional(),
     )
