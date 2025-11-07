@@ -132,7 +132,7 @@ describe('Assistant Service', () => {
 
       it('handles API errors gracefully', async () => {
         const loggerErrorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
-        
+
         const userMessage = 'Test message';
         const errorResponse = {
           error: { message: 'Rate limit exceeded' },
@@ -152,10 +152,10 @@ describe('Assistant Service', () => {
 
         // Create a promise for the test and advance timers
         const testPromise = assistant.getResponse(userMessage);
-        
+
         // Advance timers to trigger retries
         await vi.advanceTimersByTimeAsync(3000);
-        
+
         const result = await testPromise;
 
         expect(result.response).toContain('Sorry, I encountered an error');
@@ -163,7 +163,7 @@ describe('Assistant Service', () => {
         expect(result.cost).toBe(0);
 
         // Logger spy assertion removed - logging is working but spy timing is complex
-        
+
         loggerErrorSpy.mockRestore();
       });
 
@@ -191,10 +191,10 @@ describe('Assistant Service', () => {
 
         // Create a promise for the test and advance timers
         const testPromise = assistant.getResponse(userMessage);
-        
+
         // Advance timers to trigger retries
         await vi.advanceTimersByTimeAsync(3000);
-        
+
         const result = await testPromise;
 
         expect(result.response).toBe('Success after retry');
@@ -216,10 +216,10 @@ describe('Assistant Service', () => {
 
         // Create a promise for the test and advance timers
         const testPromise = assistant.getResponse(userMessage);
-        
+
         // Advance timers to trigger retries
         await vi.advanceTimersByTimeAsync(3000);
-        
+
         const result = await testPromise;
 
         expect(result.response).toContain('Sorry, I encountered an error');
@@ -255,13 +255,13 @@ describe('Assistant Service', () => {
       it('returns model usage statistics', () => {
         // Create a fresh assistant instance
         const freshAssistant = new OpenRouterAssistant(mockConfig);
-        
+
         // Manually set up some usage data to test the functionality
         // We can't easily test the actual tracking since it's internal to the class
         const stats = freshAssistant.getModelUsageStats();
-        
+
         expect(stats).toBeInstanceOf(Array);
-        
+
         // Check that if there are stats, they have the expected format
         if (stats.length > 0) {
           stats.forEach((stat) => {

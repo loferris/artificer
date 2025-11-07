@@ -44,16 +44,15 @@ class ClientLogger {
   constructor() {
     this.isProduction = process.env.NODE_ENV === 'production';
     this.sessionId = this.generateSessionId();
-    
+
     // In production, only log errors by default
     if (this.isProduction) {
       this.logLevel = ClientLogLevel.ERROR;
     } else {
       // In development, check for debug level override
-      const debugLevel = typeof window !== 'undefined' 
-        ? localStorage.getItem('DEBUG_LOG_LEVEL')
-        : null;
-      
+      const debugLevel =
+        typeof window !== 'undefined' ? localStorage.getItem('DEBUG_LOG_LEVEL') : null;
+
       switch (debugLevel?.toLowerCase()) {
         case 'trace':
           this.logLevel = ClientLogLevel.TRACE;
@@ -161,9 +160,7 @@ class ClientLogger {
     this.addToBuffer(logEntry);
 
     // Console output based on level
-    const consoleMessage = component 
-      ? `[${component}] ${message}` 
-      : message;
+    const consoleMessage = component ? `[${component}] ${message}` : message;
 
     const consoleData = {
       ...logEntry,
@@ -219,7 +216,12 @@ class ClientLogger {
         // First Input Delay
         new PerformanceObserver((list) => {
           for (const entry of list.getEntries()) {
-            this.performance('FID', (entry as any).processingStart - entry.startTime, 'ms', 'WebVitals');
+            this.performance(
+              'FID',
+              (entry as any).processingStart - entry.startTime,
+              'ms',
+              'WebVitals',
+            );
           }
         }).observe({ entryTypes: ['first-input'] });
 
@@ -278,11 +280,15 @@ class ClientLogger {
   }
 
   stateChange(stateName: string, oldValue: unknown, newValue: unknown, component?: string) {
-    this.debug('State changed', { 
-      state: stateName, 
-      old: oldValue, 
-      new: newValue 
-    }, component || 'Store');
+    this.debug(
+      'State changed',
+      {
+        state: stateName,
+        old: oldValue,
+        new: newValue,
+      },
+      component || 'Store',
+    );
   }
 
   userAction(action: string, meta?: Record<string, unknown>, component?: string) {
@@ -301,7 +307,7 @@ class ClientLogger {
       timestamp: new Date().toISOString(),
       component,
     };
-    
+
     this.addPerformanceMetric(perfMetric);
     this.debug('Performance metric', { metric, value, unit }, component || 'Performance');
   }
@@ -327,7 +333,7 @@ class ClientLogger {
 
   downloadLogs(): void {
     if (typeof window === 'undefined') return;
-    
+
     const data = {
       logs: this.logBuffer,
       performance: this.performanceBuffer,
@@ -377,23 +383,28 @@ class ClientLogger {
         console.error('Failed to report error:', reportingError);
       }
     }
-    
+
     // Always log locally too
     this.error('Reported error', error, context);
   }
 
   // React Error Boundary integration
   captureErrorBoundary(error: Error, errorInfo: { componentStack: string }) {
-    this.error('React Error Boundary caught error', error, {
-      componentStack: errorInfo.componentStack,
-      reactError: true,
-    }, 'ErrorBoundary');
-    
+    this.error(
+      'React Error Boundary caught error',
+      error,
+      {
+        componentStack: errorInfo.componentStack,
+        reactError: true,
+      },
+      'ErrorBoundary',
+    );
+
     // Report critical React errors in production
     if (this.isProduction) {
-      this.reportError(error, { 
+      this.reportError(error, {
         type: 'react-error-boundary',
-        componentStack: errorInfo.componentStack 
+        componentStack: errorInfo.componentStack,
       });
     }
   }
@@ -415,10 +426,8 @@ export function createComponentLogger(componentName: string) {
       clientLogger.debug(message, meta, componentName),
     trace: (message: string, meta?: Record<string, unknown>) =>
       clientLogger.trace(message, meta, componentName),
-    mount: (props?: Record<string, unknown>) =>
-      clientLogger.componentMount(componentName, props),
-    unmount: () =>
-      clientLogger.componentUnmount(componentName),
+    mount: (props?: Record<string, unknown>) => clientLogger.componentMount(componentName, props),
+    unmount: () => clientLogger.componentUnmount(componentName),
     stateChange: (stateName: string, oldValue: unknown, newValue: unknown) =>
       clientLogger.stateChange(stateName, oldValue, newValue, componentName),
     userAction: (action: string, meta?: Record<string, unknown>) =>

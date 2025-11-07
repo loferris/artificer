@@ -7,177 +7,176 @@
  */
 
 [data-terminal-theme='amber-forest'] {
-  
   /* ========================================================================== */
   /*                              FOUNDATION COLORS                            */
   /* ========================================================================== */
-  
+
   /* Core Background Hierarchy */
-  --terminal-bg-primary: #2d2a1e;              /* Main terminal background */
-  --terminal-bg-secondary: #3d3426;            /* Slightly different shade for depth */
-  --terminal-bg-tertiary: #4a4332;             /* Deeper background elements */
-  --terminal-bg-elevated: #5c5239;             /* Raised elements (modals, tooltips) */
-  --terminal-bg-sunken: #1f1c12;               /* Inset elements (input fields) */
-  
+  --terminal-bg-primary: #2d2a1e; /* Main terminal background */
+  --terminal-bg-secondary: #3d3426; /* Slightly different shade for depth */
+  --terminal-bg-tertiary: #4a4332; /* Deeper background elements */
+  --terminal-bg-elevated: #5c5239; /* Raised elements (modals, tooltips) */
+  --terminal-bg-sunken: #1f1c12; /* Inset elements (input fields) */
+
   /* Base Text Colors */
-  --terminal-text-primary: #f4e4bc;            /* Main readable text */
-  --terminal-text-secondary: #e6d3a3;          /* Secondary information */
-  --terminal-text-tertiary: #d4c5a9;           /* Muted/supporting text */
-  --terminal-text-muted: #c9a96e;              /* Dimmed text (timestamps, metadata) */
-  --terminal-text-disabled: #b8a082;           /* Disabled/inactive text */
-  --terminal-text-placeholder: #d4c5a9;        /* Input placeholder text */
-  
+  --terminal-text-primary: #f4e4bc; /* Main readable text */
+  --terminal-text-secondary: #e6d3a3; /* Secondary information */
+  --terminal-text-tertiary: #d4c5a9; /* Muted/supporting text */
+  --terminal-text-muted: #c9a96e; /* Dimmed text (timestamps, metadata) */
+  --terminal-text-disabled: #b8a082; /* Disabled/inactive text */
+  --terminal-text-placeholder: #d4c5a9; /* Input placeholder text */
+
   /* Border & Outline System */
-  --terminal-border-primary: rgba(218, 165, 32, 0.3);          /* Main borders */
-  --terminal-border-secondary: rgba(218, 165, 32, 0.2);        /* Subtle borders */
-  --terminal-border-muted: rgba(218, 165, 32, 0.1);            /* Very subtle dividers */
-  --terminal-border-accent: rgba(218, 165, 32, 0.5);           /* Highlighted borders */
-  --terminal-outline-focus: #daa520;           /* Keyboard focus indicator */
-  
+  --terminal-border-primary: rgba(218, 165, 32, 0.3); /* Main borders */
+  --terminal-border-secondary: rgba(218, 165, 32, 0.2); /* Subtle borders */
+  --terminal-border-muted: rgba(218, 165, 32, 0.1); /* Very subtle dividers */
+  --terminal-border-accent: rgba(218, 165, 32, 0.5); /* Highlighted borders */
+  --terminal-outline-focus: #daa520; /* Keyboard focus indicator */
+
   /* ========================================================================== */
   /*                            AI WORKFLOW SEMANTICS                          */
   /* ========================================================================== */
-  
+
   /* AI Model & Routing Colors */
-  --terminal-model-claude: #ff8c42;            /* Claude model indicator */
-  --terminal-model-deepseek: #3b82f6;          /* DeepSeek model indicator */
-  --terminal-model-local: #daa520;             /* Local model indicator */
-  --terminal-model-fallback: #cd853f;          /* Unknown/fallback model */
-  --terminal-routing-info: #9acd32;            /* AI routing messages */
-  --terminal-routing-bg: rgba(154, 205, 50, 0.1);              /* Background for routing info */
-  
+  --terminal-model-claude: #ff8c42; /* Claude model indicator */
+  --terminal-model-deepseek: #3b82f6; /* DeepSeek model indicator */
+  --terminal-model-local: #daa520; /* Local model indicator */
+  --terminal-model-fallback: #cd853f; /* Unknown/fallback model */
+  --terminal-routing-info: #9acd32; /* AI routing messages */
+  --terminal-routing-bg: rgba(154, 205, 50, 0.1); /* Background for routing info */
+
   /* Cost & Performance Indicators */
-  --terminal-cost-low: #8fb28f;                /* Low cost operations (green family) */
-  --terminal-cost-medium: #daa520;             /* Medium cost (yellow/orange family) */
-  --terminal-cost-high: #cc6666;               /* High cost (red family) */
-  --terminal-performance-fast: #9acd32;        /* Fast response times */
-  --terminal-performance-slow: #d2691e;        /* Slow response indicators */
-  
+  --terminal-cost-low: #8fb28f; /* Low cost operations (green family) */
+  --terminal-cost-medium: #daa520; /* Medium cost (yellow/orange family) */
+  --terminal-cost-high: #cc6666; /* High cost (red family) */
+  --terminal-performance-fast: #9acd32; /* Fast response times */
+  --terminal-performance-slow: #d2691e; /* Slow response indicators */
+
   /* Conversation Elements */
-  --terminal-prompt-user: #6ee7b7;             /* User prompt/input - mint green */
-  --terminal-prompt-system: #daa520;           /* System prompts */
-  --terminal-response-ai: #d4c5a9;             /* AI assistant responses */
-  --terminal-response-error: #cc6666;          /* Error responses */
-  --terminal-response-thinking: #cd853f;       /* AI "thinking" states */
-  
+  --terminal-prompt-user: #6ee7b7; /* User prompt/input - mint green */
+  --terminal-prompt-system: #daa520; /* System prompts */
+  --terminal-response-ai: #d4c5a9; /* AI assistant responses */
+  --terminal-response-error: #cc6666; /* Error responses */
+  --terminal-response-thinking: #cd853f; /* AI "thinking" states */
+
   /* Content Type Semantics */
-  --terminal-content-code: #8fbc8f;            /* Code blocks and syntax */
-  --terminal-content-quote: #f4e4bc;           /* Quoted text */
-  --terminal-content-link: #9acd32;            /* Links and references */
-  --terminal-content-metadata: #cd853f;        /* File info, timestamps */
-  --terminal-content-export: #fed7aa;          /* Export-ready content */
-  
+  --terminal-content-code: #8fbc8f; /* Code blocks and syntax */
+  --terminal-content-quote: #f4e4bc; /* Quoted text */
+  --terminal-content-link: #9acd32; /* Links and references */
+  --terminal-content-metadata: #cd853f; /* File info, timestamps */
+  --terminal-content-export: #fed7aa; /* Export-ready content */
+
   /* ========================================================================== */
   /*                           INTERACTIVE STATES                              */
   /* ========================================================================== */
-  
+
   /* Hover States */
-  --terminal-hover-bg: #5c5239;                /* General hover background */
-  --terminal-hover-text: #fed7aa;              /* Hover text color */
-  --terminal-hover-border: rgba(218, 165, 32, 0.4);           /* Hover border color */
-  --terminal-hover-conversation: #5c5239;      /* Conversation item hover */
-  --terminal-hover-menu: #4a4332;              /* Menu item hover */
-  --terminal-hover-button: #6b5b3d;            /* Button hover state */
-  
+  --terminal-hover-bg: #5c5239; /* General hover background */
+  --terminal-hover-text: #fed7aa; /* Hover text color */
+  --terminal-hover-border: rgba(218, 165, 32, 0.4); /* Hover border color */
+  --terminal-hover-conversation: #5c5239; /* Conversation item hover */
+  --terminal-hover-menu: #4a4332; /* Menu item hover */
+  --terminal-hover-button: #6b5b3d; /* Button hover state */
+
   /* Active/Selected States */
-  --terminal-active-bg: #daa520;               /* Active element background */
-  --terminal-active-text: #2d2a1e;             /* Active element text */
-  --terminal-active-border: #fed7aa;           /* Active element border */
-  --terminal-selected-conversation: #daa520;   /* Selected conversation */
-  --terminal-selected-text: rgba(218, 165, 32, 0.2);          /* Selected text background */
-  
+  --terminal-active-bg: #daa520; /* Active element background */
+  --terminal-active-text: #2d2a1e; /* Active element text */
+  --terminal-active-border: #fed7aa; /* Active element border */
+  --terminal-selected-conversation: #daa520; /* Selected conversation */
+  --terminal-selected-text: rgba(218, 165, 32, 0.2); /* Selected text background */
+
   /* Focus States */
-  --terminal-focus-bg: rgba(218, 165, 32, 0.1);               /* Focus background */
-  --terminal-focus-outline: #daa520;           /* Focus outline color */
-  --terminal-focus-shadow: rgba(218, 165, 32, 0.3);           /* Focus glow/shadow */
-  
+  --terminal-focus-bg: rgba(218, 165, 32, 0.1); /* Focus background */
+  --terminal-focus-outline: #daa520; /* Focus outline color */
+  --terminal-focus-shadow: rgba(218, 165, 32, 0.3); /* Focus glow/shadow */
+
   /* Disabled States */
-  --terminal-disabled-bg: #3d3426;             /* Disabled background */
-  --terminal-disabled-text: #b8a082;           /* Disabled text */
-  --terminal-disabled-border: rgba(218, 165, 32, 0.1);        /* Disabled border */
-  
+  --terminal-disabled-bg: #3d3426; /* Disabled background */
+  --terminal-disabled-text: #b8a082; /* Disabled text */
+  --terminal-disabled-border: rgba(218, 165, 32, 0.1); /* Disabled border */
+
   /* ========================================================================== */
   /*                              ACCENT SYSTEM                                */
   /* ========================================================================== */
-  
+
   /* Primary Accent Palette */
-  --terminal-accent-primary: #daa520;          /* Main brand/theme accent */
-  --terminal-accent-secondary: #9acd32;        /* Supporting accent */
-  --terminal-accent-tertiary: #ffb347;         /* Third accent color */
-  
+  --terminal-accent-primary: #daa520; /* Main brand/theme accent */
+  --terminal-accent-secondary: #9acd32; /* Supporting accent */
+  --terminal-accent-tertiary: #ffb347; /* Third accent color */
+
   /* Legacy accent mappings for compatibility */
-  --terminal-accent-prompt: #9acd32;           /* Terminal prompt color */
-  --terminal-accent-user: #6ee7b7;             /* User input color - mint green */
-  --terminal-accent-assistant: #d4c5a9;        /* Assistant response color */
-  --terminal-accent-error: #cc6666;            /* Error message color */
-  --terminal-accent-warning: #daa520;          /* Warning message color */
-  --terminal-accent-success: #9acd32;          /* Success message color */
-  
+  --terminal-accent-prompt: #9acd32; /* Terminal prompt color */
+  --terminal-accent-user: #6ee7b7; /* User input color - mint green */
+  --terminal-accent-assistant: #d4c5a9; /* Assistant response color */
+  --terminal-accent-error: #cc6666; /* Error message color */
+  --terminal-accent-warning: #daa520; /* Warning message color */
+  --terminal-accent-success: #9acd32; /* Success message color */
+
   /* Status & Feedback Colors */
-  --terminal-status-success: #9acd32;          /* Success states (green family) */
-  --terminal-status-warning: #daa520;          /* Warning states (yellow/orange) */
-  --terminal-status-error: #cc6666;            /* Error states (red family) */
-  --terminal-status-info: #8fbc8f;             /* Information (blue family) */
-  --terminal-status-neutral: #cd853f;          /* Neutral status */
-  
+  --terminal-status-success: #9acd32; /* Success states (green family) */
+  --terminal-status-warning: #daa520; /* Warning states (yellow/orange) */
+  --terminal-status-error: #cc6666; /* Error states (red family) */
+  --terminal-status-info: #8fbc8f; /* Information (blue family) */
+  --terminal-status-neutral: #cd853f; /* Neutral status */
+
   /* Streaming & Real-time Indicators */
-  --terminal-streaming-active: #9acd32;        /* Active streaming indicator */
-  --terminal-streaming-paused: #daa520;        /* Paused/buffering state */
-  --terminal-streaming-complete: #8fb28f;      /* Streaming complete */
-  --terminal-cursor-color: #daa520;            /* Text cursor */
-  --terminal-cursor-blink: rgba(218, 165, 32, 0.5);           /* Blinking cursor state */
-  
+  --terminal-streaming-active: #9acd32; /* Active streaming indicator */
+  --terminal-streaming-paused: #daa520; /* Paused/buffering state */
+  --terminal-streaming-complete: #8fb28f; /* Streaming complete */
+  --terminal-cursor-color: #daa520; /* Text cursor */
+  --terminal-cursor-blink: rgba(218, 165, 32, 0.5); /* Blinking cursor state */
+
   /* ========================================================================== */
   /*                            DESIGN SYSTEM                                  */
   /* ========================================================================== */
-  
+
   /* Typography Scale */
-  --terminal-text-size-xs: 0.75rem;           /* Very small text */
-  --terminal-text-size-sm: 0.875rem;          /* Small text */
-  --terminal-text-size-base: 1rem;            /* Base text size */
-  --terminal-text-size-lg: 1.125rem;          /* Large text */
-  --terminal-text-size-xl: 1.25rem;           /* Extra large */
-  --terminal-text-size-2xl: 1.5rem;           /* Headers */
-  
+  --terminal-text-size-xs: 0.75rem; /* Very small text */
+  --terminal-text-size-sm: 0.875rem; /* Small text */
+  --terminal-text-size-base: 1rem; /* Base text size */
+  --terminal-text-size-lg: 1.125rem; /* Large text */
+  --terminal-text-size-xl: 1.25rem; /* Extra large */
+  --terminal-text-size-2xl: 1.5rem; /* Headers */
+
   /* Line Heights */
-  --terminal-line-height-tight: 1.25;         /* Tight spacing */
-  --terminal-line-height-normal: 1.5;         /* Normal spacing */
-  --terminal-line-height-relaxed: 1.75;       /* Relaxed spacing */
-  
+  --terminal-line-height-tight: 1.25; /* Tight spacing */
+  --terminal-line-height-normal: 1.5; /* Normal spacing */
+  --terminal-line-height-relaxed: 1.75; /* Relaxed spacing */
+
   /* Font Weights */
   --terminal-font-weight-normal: 400;
   --terminal-font-weight-medium: 500;
   --terminal-font-weight-semibold: 600;
   --terminal-font-weight-bold: 700;
-  
+
   /* Spacing Scale */
-  --terminal-spacing-xs: 0.25rem;             /* 4px */
-  --terminal-spacing-sm: 0.5rem;              /* 8px */
-  --terminal-spacing-md: 1rem;                /* 16px */
-  --terminal-spacing-lg: 1.5rem;              /* 24px */
-  --terminal-spacing-xl: 2rem;                /* 32px */
-  --terminal-spacing-2xl: 2.5rem;             /* 40px */
-  --terminal-spacing-3xl: 3rem;               /* 48px */
-  
+  --terminal-spacing-xs: 0.25rem; /* 4px */
+  --terminal-spacing-sm: 0.5rem; /* 8px */
+  --terminal-spacing-md: 1rem; /* 16px */
+  --terminal-spacing-lg: 1.5rem; /* 24px */
+  --terminal-spacing-xl: 2rem; /* 32px */
+  --terminal-spacing-2xl: 2.5rem; /* 40px */
+  --terminal-spacing-3xl: 3rem; /* 48px */
+
   /* Border Radius Scale */
   --terminal-radius-none: 0;
-  --terminal-radius-sm: 0.125rem;             /* 2px */
-  --terminal-radius-base: 0.25rem;            /* 4px */
-  --terminal-radius-md: 0.375rem;             /* 6px */
-  --terminal-radius-lg: 0.5rem;               /* 8px */
-  --terminal-radius-xl: 0.75rem;              /* 12px */
-  --terminal-radius-full: 9999px;             /* Fully rounded */
-  
+  --terminal-radius-sm: 0.125rem; /* 2px */
+  --terminal-radius-base: 0.25rem; /* 4px */
+  --terminal-radius-md: 0.375rem; /* 6px */
+  --terminal-radius-lg: 0.5rem; /* 8px */
+  --terminal-radius-xl: 0.75rem; /* 12px */
+  --terminal-radius-full: 9999px; /* Fully rounded */
+
   /* ========================================================================== */
   /*                           EFFECTS & ANIMATIONS                            */
   /* ========================================================================== */
-  
+
   /* Transition Speeds */
   --terminal-transition-fast: 0.15s ease-out;
   --terminal-transition-normal: 0.3s ease-out;
   --terminal-transition-slow: 0.5s ease-out;
   --terminal-transition-bounce: 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  
+
   /* Opacity Levels */
   --terminal-opacity-0: 0;
   --terminal-opacity-10: 0.1;
@@ -190,7 +189,7 @@
   --terminal-opacity-80: 0.8;
   --terminal-opacity-90: 0.9;
   --terminal-opacity-100: 1;
-  
+
   /* Alpha Channel Backgrounds (for layering) */
   --terminal-alpha-white-5: rgba(255, 255, 255, 0.05);
   --terminal-alpha-white-10: rgba(255, 255, 255, 0.1);
@@ -198,52 +197,58 @@
   --terminal-alpha-black-5: rgba(0, 0, 0, 0.05);
   --terminal-alpha-black-10: rgba(0, 0, 0, 0.1);
   --terminal-alpha-black-20: rgba(0, 0, 0, 0.2);
-  
+
   /* Shadow System */
   --terminal-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
   --terminal-shadow-base: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
   --terminal-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.2);
   --terminal-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3), 0 4px 6px rgba(0, 0, 0, 0.25);
   --terminal-shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.4), 0 10px 10px rgba(0, 0, 0, 0.2);
-  
+
   /* Glow Effects */
-  --terminal-glow-color: #daa520;              /* Base glow color */
+  --terminal-glow-color: #daa520; /* Base glow color */
   --terminal-glow-sm: 0 0 5px var(--terminal-glow-color);
   --terminal-glow-md: 0 0 10px var(--terminal-glow-color);
   --terminal-glow-lg: 0 0 20px var(--terminal-glow-color);
-  
+
   /* ========================================================================== */
   /*                        COMPLEX BACKGROUND EFFECTS                         */
   /* ========================================================================== */
-  
+
   /* Gradient Overlays */
-  --terminal-gradient-primary: linear-gradient(135deg, 
-    rgba(218, 165, 32, 0.1) 0%, 
-    transparent 50%, 
-    rgba(218, 165, 32, 0.05) 100%);
-  
-  --terminal-gradient-accent: linear-gradient(90deg, 
-    transparent 0%, 
-    rgba(154, 205, 50, 0.1) 50%, 
-    transparent 100%);
-  
+  --terminal-gradient-primary: linear-gradient(
+    135deg,
+    rgba(218, 165, 32, 0.1) 0%,
+    transparent 50%,
+    rgba(218, 165, 32, 0.05) 100%
+  );
+
+  --terminal-gradient-accent: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(154, 205, 50, 0.1) 50%,
+    transparent 100%
+  );
+
   /* Watercolor-style Effects */
-  --terminal-watermark-primary: radial-gradient(ellipse 800px 400px at 20% 30%, 
-    rgba(218, 165, 32, 0.08) 0%, 
-    rgba(218, 165, 32, 0.03) 50%, 
-    transparent 80%);
-  
-  --terminal-watermark-secondary: radial-gradient(ellipse 600px 300px at 80% 70%, 
-    rgba(154, 205, 50, 0.06) 0%, 
-    rgba(154, 205, 50, 0.02) 45%, 
-    transparent 75%);
-  
+  --terminal-watermark-primary: radial-gradient(
+    ellipse 800px 400px at 20% 30%,
+    rgba(218, 165, 32, 0.08) 0%,
+    rgba(218, 165, 32, 0.03) 50%,
+    transparent 80%
+  );
+
+  --terminal-watermark-secondary: radial-gradient(
+    ellipse 600px 300px at 80% 70%,
+    rgba(154, 205, 50, 0.06) 0%,
+    rgba(154, 205, 50, 0.02) 45%,
+    transparent 75%
+  );
+
   /* Multiple Layer Backgrounds */
-  --terminal-bg-layered: 
-    var(--terminal-watermark-primary),
-    var(--terminal-watermark-secondary),
-    var(--terminal-gradient-primary),
-    var(--terminal-bg-primary);
+  --terminal-bg-layered:
+    var(--terminal-watermark-primary), var(--terminal-watermark-secondary),
+    var(--terminal-gradient-primary), var(--terminal-bg-primary);
 
   /* Legacy support variables */
   --terminal-bg-gradient: linear-gradient(135deg, #2d2a1e, #3d3426, #2d2a1e);
@@ -362,7 +367,7 @@
 }
 
 /* Legacy component compatibility */
-[data-terminal-theme="amber-forest"] .terminal-container {
+[data-terminal-theme='amber-forest'] .terminal-container {
   background: var(--terminal-bg-gradient);
   border: var(--terminal-border);
   border-radius: var(--terminal-border-radius);
@@ -370,84 +375,84 @@
 }
 
 /* Apply watercolor effects to main terminal view */
-[data-terminal-theme="amber-forest"] .flex.h-screen,
-[data-terminal-theme="amber-forest"] .terminal-main-bg {
+[data-terminal-theme='amber-forest'] .flex.h-screen,
+[data-terminal-theme='amber-forest'] .terminal-main-bg {
   background: var(--terminal-bg-layered);
 }
 
-[data-terminal-theme="amber-forest"] .terminal-header {
+[data-terminal-theme='amber-forest'] .terminal-header {
   background: var(--header-bg-gradient);
   color: var(--terminal-text-primary);
   border-bottom: var(--header-border);
 }
 
-[data-terminal-theme="amber-forest"] .terminal-content {
+[data-terminal-theme='amber-forest'] .terminal-content {
   background: var(--content-bg-gradient);
   color: var(--terminal-text-primary);
 }
 
-[data-terminal-theme="amber-forest"] .prompt-symbol {
+[data-terminal-theme='amber-forest'] .prompt-symbol {
   color: var(--terminal-accent-secondary);
   text-shadow: var(--terminal-glow-sm);
 }
 
-[data-terminal-theme="amber-forest"] .user-input {
+[data-terminal-theme='amber-forest'] .user-input {
   color: var(--terminal-prompt-user);
 }
 
-[data-terminal-theme="amber-forest"] .user-input-bold {
+[data-terminal-theme='amber-forest'] .user-input-bold {
   color: var(--terminal-accent-primary);
   font-weight: bold;
 }
 
-[data-terminal-theme="amber-forest"] .ai-response {
+[data-terminal-theme='amber-forest'] .ai-response {
   color: var(--terminal-response-ai);
 }
 
-[data-terminal-theme="amber-forest"] .ai-response-bold {
+[data-terminal-theme='amber-forest'] .ai-response-bold {
   color: var(--terminal-status-neutral);
   font-weight: bold;
 }
 
-[data-terminal-theme="amber-forest"] .model-name {
+[data-terminal-theme='amber-forest'] .model-name {
   color: var(--terminal-model-local);
 }
 
-[data-terminal-theme="amber-forest"] .cost-info {
+[data-terminal-theme='amber-forest'] .cost-info {
   color: var(--terminal-status-info);
 }
 
-[data-terminal-theme="amber-forest"] .terminal-dot:nth-child(1) { 
-  background: #ef4444; 
+[data-terminal-theme='amber-forest'] .terminal-dot:nth-child(1) {
+  background: #ef4444;
 }
 
-[data-terminal-theme="amber-forest"] .terminal-dot:nth-child(2) { 
-  background: #f59e0b; 
+[data-terminal-theme='amber-forest'] .terminal-dot:nth-child(2) {
+  background: #f59e0b;
 }
 
-[data-terminal-theme="amber-forest"] .terminal-dot:nth-child(3) { 
-  background: #10b981; 
+[data-terminal-theme='amber-forest'] .terminal-dot:nth-child(3) {
+  background: #10b981;
 }
 
-[data-terminal-theme="amber-forest"] .cursor {
+[data-terminal-theme='amber-forest'] .cursor {
   background: var(--terminal-cursor-color);
   box-shadow: var(--terminal-glow-md);
 }
 
-[data-terminal-theme="amber-forest"] .status-bar {
+[data-terminal-theme='amber-forest'] .status-bar {
   background: var(--terminal-bg-secondary);
   border-top: var(--terminal-border);
   color: var(--terminal-text-secondary);
 }
 
-[data-terminal-theme="amber-forest"] .accent-honey { 
-  color: var(--terminal-accent-tertiary); 
+[data-terminal-theme='amber-forest'] .accent-honey {
+  color: var(--terminal-accent-tertiary);
 }
 
-[data-terminal-theme="amber-forest"] .accent-sage { 
-  color: var(--terminal-accent-secondary); 
+[data-terminal-theme='amber-forest'] .accent-sage {
+  color: var(--terminal-accent-secondary);
 }
 
-[data-terminal-theme="amber-forest"] .accent-bark { 
-  color: var(--terminal-status-neutral); 
+[data-terminal-theme='amber-forest'] .accent-bark {
+  color: var(--terminal-status-neutral);
 }

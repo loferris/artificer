@@ -97,8 +97,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     try {
       // Create mock context for service factory
-      const isDemoMode = process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
-      
+      const isDemoMode =
+        process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+
       const mockContext = {
         req,
         res,
@@ -149,7 +150,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       // Send completion event
       writeSSEData(res, { type: 'completed', timestamp: new Date().toISOString() }, 'complete');
-
     } catch (error) {
       logger.error('SSE chat stream error', error as Error, {
         conversationId,
@@ -157,20 +157,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       });
 
       // Send error event
-      writeSSEData(res, {
-        type: 'error',
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-        timestamp: new Date().toISOString(),
-      }, 'error');
+      writeSSEData(
+        res,
+        {
+          type: 'error',
+          error: error instanceof Error ? error.message : 'Unknown error occurred',
+          timestamp: new Date().toISOString(),
+        },
+        'error',
+      );
     } finally {
       // Close the stream
       writeSSEComment(res, 'Stream ended');
       res.end();
     }
-
   } catch (error) {
     logger.error('SSE endpoint error', error as Error);
-    
+
     // If headers haven't been sent yet, send error response
     if (!res.headersSent) {
       return res.status(500).json({
@@ -178,14 +181,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         message: error instanceof Error ? error.message : 'Unknown error',
       });
     }
-    
+
     // If already streaming, send error event and close
     if (res.writable) {
-      writeSSEData(res, {
-        type: 'error',
-        error: 'Internal server error',
-        timestamp: new Date().toISOString(),
-      }, 'error');
+      writeSSEData(
+        res,
+        {
+          type: 'error',
+          error: 'Internal server error',
+          timestamp: new Date().toISOString(),
+        },
+        'error',
+      );
       res.end();
     }
   }

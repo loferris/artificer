@@ -1,6 +1,6 @@
 /**
  * Unified Chat Display Component
- * 
+ *
  * Merges ChatDisplay and StreamingChatDisplay into a single component
  * with smart streaming detection and enhanced scroll management.
  * Eliminates 85% code duplication between the original components.
@@ -8,7 +8,10 @@
 
 import React, { useEffect, useRef } from 'react';
 import { MessageListRenderer } from '../shared/MessageRenderer';
-import { useTerminalThemeClasses, useTerminalThemeProps } from '../../contexts/TerminalThemeContext';
+import {
+  useTerminalThemeClasses,
+  useTerminalThemeProps,
+} from '../../contexts/TerminalThemeContext';
 import { LoadingSpinner } from '../ui';
 import type { Message } from '../../types';
 
@@ -72,7 +75,7 @@ export const UnifiedChatDisplay: React.FC<UnifiedChatDisplayProps> = ({
   // Handle user scroll events (only active during streaming)
   const handleScroll = () => {
     if (!isStreaming) return;
-    
+
     if (!checkIfNearBottom()) {
       shouldAutoScrollRef.current = false;
     } else {
@@ -94,19 +97,15 @@ export const UnifiedChatDisplay: React.FC<UnifiedChatDisplayProps> = ({
   // Loading state
   if (messagesLoading || isCreatingConversation) {
     return (
-      <div 
-        className={`${baseContainerClasses} ${themeClasses.textTertiary}`}
-        style={style}
-      >
-        <div className="flex items-center">
+      <div className={`${baseContainerClasses} ${themeClasses.textTertiary}`} style={style}>
+        <div className='flex items-center'>
           <span className={`${themeClasses.accentPrompt} mr-2`}>$</span>
           <span className={`${themeClasses.textMuted}`}>
-            {isCreatingConversation 
-              ? 'initializing-session...' 
-              : isStreaming 
+            {isCreatingConversation
+              ? 'initializing-session...'
+              : isStreaming
                 ? 'loading-streaming-history...'
-                : 'loading-history...'
-            }
+                : 'loading-history...'}
           </span>
           <div className={`ml-2 animate-pulse ${themeClasses.accentPrompt}`}>_</div>
         </div>
@@ -118,11 +117,8 @@ export const UnifiedChatDisplay: React.FC<UnifiedChatDisplayProps> = ({
   if (messagesError || streamingError) {
     const error = messagesError || new Error(streamingError || 'Unknown streaming error');
     return (
-      <div 
-        className={`${baseContainerClasses} ${themeClasses.accentError}`}
-        style={style}
-      >
-        <div className="flex items-center">
+      <div className={`${baseContainerClasses} ${themeClasses.accentError}`} style={style}>
+        <div className='flex items-center'>
           <span className={`${themeClasses.accentError} mr-2`}>!</span>
           <span>error: {messagesError ? 'failed-to-load-messages' : 'streaming-error'}</span>
         </div>
@@ -136,22 +132,25 @@ export const UnifiedChatDisplay: React.FC<UnifiedChatDisplayProps> = ({
   // Empty state
   if (messages.length === 0 && !messagesLoading) {
     return (
-      <div 
-        className={`${baseContainerClasses} ${themeClasses.textSecondary}`}
-        style={style}
-      >
-        <div className="space-y-3">
-          <div className="flex items-center">
+      <div className={`${baseContainerClasses} ${themeClasses.textSecondary}`} style={style}>
+        <div className='space-y-3'>
+          <div className='flex items-center'>
             <span className={`${themeClasses.accentPrompt} mr-2 text-lg`}>$</span>
-            <span className="text-base">{isStreaming ? 'streaming-session-initialized' : 'session-initialized'}</span>
+            <span className='text-base'>
+              {isStreaming ? 'streaming-session-initialized' : 'session-initialized'}
+            </span>
           </div>
           <div className={`${themeClasses.textTertiary} text-sm ml-4`}>
-            {isStreaming ? '// Real-time streaming enabled' : '// Start typing to interact with the AI assistant'}
+            {isStreaming
+              ? '// Real-time streaming enabled'
+              : '// Start typing to interact with the AI assistant'}
           </div>
-          
-          <div className="ml-4 mt-4 space-y-2">
-            <div className={`${themeClasses.textSecondary} text-sm font-semibold`}>Available Commands:</div>
-            <div className="ml-2 space-y-1">
+
+          <div className='ml-4 mt-4 space-y-2'>
+            <div className={`${themeClasses.textSecondary} text-sm font-semibold`}>
+              Available Commands:
+            </div>
+            <div className='ml-2 space-y-1'>
               <div className={`${themeClasses.textTertiary} text-sm flex`}>
                 <span className={`${themeClasses.accentSuccess} w-20`}>/man</span>
                 <span>- Show this manual</span>
@@ -205,29 +204,25 @@ export const UnifiedChatDisplay: React.FC<UnifiedChatDisplayProps> = ({
 
   // Main content with messages
   return (
-    <div 
+    <div
       ref={scrollContainerRef}
       className={`${baseContainerClasses} ${themeClasses.textSecondary}`}
       style={style}
       onScroll={handleScroll}
     >
-      <MessageListRenderer
-        messages={messages}
-        isStreaming={isStreaming}
-        variant="terminal"
-      />
+      <MessageListRenderer messages={messages} isStreaming={isStreaming} variant='terminal' />
 
       {/* Loading indicator */}
       {isLoading && (
-        <div className="mt-4">
+        <div className='mt-4'>
           <LoadingSpinner
-            variant="thinking"
-            color="primary"
+            variant='thinking'
+            color='primary'
             text={isStreaming ? 'ai-streaming' : 'ai-thinking'}
           />
         </div>
       )}
-      
+
       <div ref={messagesEndRef} />
     </div>
   );

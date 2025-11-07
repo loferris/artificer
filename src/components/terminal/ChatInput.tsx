@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { useTerminalThemeClasses } from '../../contexts/TerminalThemeContext';
 
@@ -61,7 +60,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   return (
-    <div 
+    <div
       className={`
         ${themeClasses.bgPrimary}
         ${themeClasses.borderMuted}
@@ -72,10 +71,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       `}
       style={style}
     >
-      <div className="space-y-2">
+      <div className='space-y-2'>
         {/* Input Line */}
-        <div className="flex items-center">
-          <span 
+        <div className='flex items-center'>
+          <span
             className={`
               ${getPromptColor()} 
               ${themeClasses.fontMono}
@@ -87,9 +86,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             $
           </span>
           <input
-            id="chat-input"
+            id='chat-input'
             ref={inputRef}
-            type="text"
+            type='text'
             value={input}
             onChange={(e) => onInputChange(e.target.value)}
             onKeyPress={handleKeyPress}
@@ -109,12 +108,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               focus:outline-none
               ${isLoading ? 'cursor-not-allowed' : ''}
             `}
-            autoComplete="off"
+            autoComplete='off'
           />
-          
+
           {/* Cursor indicator when focused */}
           {isFocused && !isLoading && (
-            <div 
+            <div
               className={`
                 ml-1 
                 w-2 
@@ -126,21 +125,24 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             />
           )}
         </div>
-        
+
         {/* Status Line */}
-        <div className="flex items-center justify-between text-xs">
-          <div className="flex items-center gap-4">
-            <span 
+        <div className='flex items-center justify-between text-xs'>
+          <div className='flex items-center gap-4'>
+            <span
               className={`
                 ${themeClasses.textMuted}
                 ${themeClasses.fontMono}
               `}
             >
-              [{getInputStatus()}] {!canSendMessage && input.trim() && `(ready:${isConversationReady}, loading:${isLoading})`}
+              [{getInputStatus()}]{' '}
+              {!canSendMessage &&
+                input.trim() &&
+                `(ready:${isConversationReady}, loading:${isLoading})`}
             </span>
-            
+
             {input.trim() && (
-              <span 
+              <span
                 className={`
                   ${themeClasses.textTertiary}
                   ${themeClasses.fontMono}
@@ -150,26 +152,26 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               </span>
             )}
           </div>
-          
-          <div className="flex items-center gap-2">
+
+          <div className='flex items-center gap-2'>
             {/* Send Indicator */}
             {canSendMessage && input.trim() && (
-              <span 
+              <span
                 className={`
                   ${themeClasses.accentSuccess}
                   ${themeClasses.fontMono}
                   text-xs
                 `}
-                title="Press Enter to send"
+                title='Press Enter to send'
               >
                 ↵ SEND
               </span>
             )}
-            
+
             {/* Loading indicator */}
             {isLoading && (
-              <div className="flex items-center gap-1">
-                <div 
+              <div className='flex items-center gap-1'>
+                <div
                   className={`
                     w-1 
                     h-1 
@@ -179,7 +181,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                     animate-ping
                   `}
                 />
-                <span 
+                <span
                   className={`
                     ${themeClasses.accentWarning}
                     ${themeClasses.fontMono}

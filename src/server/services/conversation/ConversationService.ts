@@ -115,9 +115,15 @@ export class DatabaseConversationService implements ConversationService {
       const newConv = await prisma.conversation.create({
         data: {
           title: conversationData.title ?? null,
-          model: conversationData.model || 
-            (process.env.OPENROUTER_MODEL && process.env.OPENROUTER_MODEL.trim() !== '' ? process.env.OPENROUTER_MODEL : null) ||
-            (process.env.OPENROUTER_DEFAULT_MODEL && process.env.OPENROUTER_DEFAULT_MODEL.trim() !== '' ? process.env.OPENROUTER_DEFAULT_MODEL : null) ||
+          model:
+            conversationData.model ||
+            (process.env.OPENROUTER_MODEL && process.env.OPENROUTER_MODEL.trim() !== ''
+              ? process.env.OPENROUTER_MODEL
+              : null) ||
+            (process.env.OPENROUTER_DEFAULT_MODEL &&
+            process.env.OPENROUTER_DEFAULT_MODEL.trim() !== ''
+              ? process.env.OPENROUTER_DEFAULT_MODEL
+              : null) ||
             'deepseek-chat',
           projectId: conversationData.projectId ?? null,
           systemPrompt: conversationData.systemPrompt ?? 'You are a helpful AI assistant.',
@@ -140,7 +146,7 @@ export class DatabaseConversationService implements ConversationService {
     });
 
     // Refetch with messages to return the full object
-    return this.getById(conversation.id).then(c => {
+    return this.getById(conversation.id).then((c) => {
       if (!c) throw new Error('Failed to fetch newly created conversation');
       return c;
     });
@@ -228,7 +234,11 @@ export class DatabaseConversationService implements ConversationService {
     });
   }
 
-  async addMessage(input: { conversationId: string; role: 'user' | 'assistant'; content: string }): Promise<void> {
+  async addMessage(input: {
+    conversationId: string;
+    role: 'user' | 'assistant';
+    content: string;
+  }): Promise<void> {
     await this.db.message.create({
       data: {
         conversationId: input.conversationId,

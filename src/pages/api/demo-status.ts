@@ -34,7 +34,10 @@ export default async function handler(
 
     res.status(200).json(status);
   } catch (error) {
-    logger.error('Error in demo-status endpoint:', error instanceof Error ? error : new Error(String(error)));
+    logger.error(
+      'Error in demo-status endpoint:',
+      error instanceof Error ? error : new Error(String(error)),
+    );
     res.status(500).json({
       isDemoMode: false,
       isServerSideDemo: false,

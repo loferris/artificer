@@ -20,7 +20,7 @@ app.prepare().then(() => {
   // Create HTTP server
   const server = createServer(async (req, res) => {
     if (!req.url) return;
-    
+
     const parsedUrl = parse(req.url, true);
     await handle(req, res, parsedUrl);
   });

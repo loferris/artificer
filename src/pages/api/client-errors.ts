@@ -39,7 +39,7 @@ export default async function clientErrors(
   try {
     // Validate request body
     const errorReport: ClientErrorReport = req.body;
-    
+
     if (!errorReport || typeof errorReport !== 'object') {
       return res.status(400).json({
         success: false,
@@ -64,7 +64,7 @@ export default async function clientErrors(
 
     // Get user info from request
     const user = getUserFromRequest(req);
-    
+
     // Generate unique error ID for tracking
     const errorId = `client_error_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
 
@@ -86,12 +86,16 @@ export default async function clientErrors(
 
     // Log additional context if this is a React error
     if (errorReport.context?.type === 'react-error-boundary') {
-      logger.error('React Error Boundary triggered on client', new Error(errorReport.error.message), {
-        errorId,
-        componentStack: errorReport.context.componentStack,
-        sessionId: errorReport.session.sessionId,
-        userId: user?.id,
-      });
+      logger.error(
+        'React Error Boundary triggered on client',
+        new Error(errorReport.error.message),
+        {
+          errorId,
+          componentStack: errorReport.context.componentStack,
+          sessionId: errorReport.session.sessionId,
+          userId: user?.id,
+        },
+      );
     }
 
     // In production, you might want to:
@@ -120,7 +124,6 @@ export default async function clientErrors(
       errorId,
       message: 'Error report received and logged successfully.',
     });
-
   } catch (processingError) {
     // Log the error in processing the error report
     logger.error(
@@ -129,7 +132,7 @@ export default async function clientErrors(
       {
         requestBody: req.body,
         headers: req.headers,
-      }
+      },
     );
 
     res.status(500).json({

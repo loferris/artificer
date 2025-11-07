@@ -63,7 +63,10 @@ export default async function debug(req: NextApiRequest, res: NextApiResponse<De
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.status(200).json(response);
   } catch (error) {
-    logger.error('Debug endpoint failed:', error instanceof Error ? error : new Error(String(error)));
+    logger.error(
+      'Debug endpoint failed:',
+      error instanceof Error ? error : new Error(String(error)),
+    );
     res.status(500).json({
       environment: 'error',
       vercel: {},

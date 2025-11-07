@@ -23,7 +23,7 @@ export const subscriptionsRouter = router({
       return observable<ChatStreamChunk>((emit) => {
         // Create an AbortController for this subscription
         const controller = new AbortController();
-        
+
         // Start the streaming process
         const startStreaming = async () => {
           try {
@@ -79,7 +79,7 @@ export const subscriptionsRouter = router({
       return observable<{ type: 'update' | 'delete'; conversationId: string }>((emit) => {
         // Placeholder for conversation updates
         // This would typically listen to database changes or events
-        
+
         // For now, just emit a test message
         setTimeout(() => {
           emit.next({

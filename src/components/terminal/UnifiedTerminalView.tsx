@@ -1,6 +1,6 @@
 /**
  * Unified Terminal View Component
- * 
+ *
  * Merges TerminalView and StreamingTerminalView into a single component
  * with intelligent streaming detection and enhanced input handling.
  * Eliminates 95% code duplication between the original components.
@@ -42,7 +42,6 @@ export interface UnifiedTerminalViewProps {
   sidebarOpen?: boolean;
   onSidebarToggle?: () => void;
 
-
   // Theme props
   className?: string;
   style?: React.CSSProperties;
@@ -70,7 +69,7 @@ export const UnifiedTerminalView: React.FC<UnifiedTerminalViewProps> = ({
   const themeClasses = useTerminalThemeClasses();
 
   return (
-    <div 
+    <div
       className={`
         flex 
         h-screen 
@@ -82,15 +81,12 @@ export const UnifiedTerminalView: React.FC<UnifiedTerminalViewProps> = ({
       `}
       style={style}
     >
+      <div className='flex-1 flex flex-col'>
+        <TerminalHeader statusText={isStreaming ? 'STREAMING' : undefined} />
 
-      <div className="flex-1 flex flex-col">
-        <TerminalHeader 
-          statusText={isStreaming ? 'STREAMING' : undefined}
-        />
-        
         {/* Streaming error banner - only shows in streaming mode */}
         {streamingError && isStreaming && (
-          <div 
+          <div
             className={`
               ${themeClasses.bgOverlay}
               ${themeClasses.accentError}
@@ -101,13 +97,13 @@ export const UnifiedTerminalView: React.FC<UnifiedTerminalViewProps> = ({
               border-[var(--terminal-accent-error)]
             `}
           >
-            <div className="flex items-center">
-              <span className="mr-2">!</span>
+            <div className='flex items-center'>
+              <span className='mr-2'>!</span>
               <span>stream-error: {streamingError}</span>
             </div>
           </div>
         )}
-        
+
         {/* Unified chat display with streaming support */}
         <UnifiedChatDisplay
           messages={messages}
@@ -121,7 +117,7 @@ export const UnifiedTerminalView: React.FC<UnifiedTerminalViewProps> = ({
 
         {/* Input area with optional cancel button for streaming */}
         <div className={`flex items-center gap-2 ${isStreaming ? 'px-2' : ''}`}>
-          <div className="flex-1">
+          <div className='flex-1'>
             <ChatInput
               input={input}
               onInputChange={onInputChange}
@@ -132,14 +128,10 @@ export const UnifiedTerminalView: React.FC<UnifiedTerminalViewProps> = ({
               placeholder={undefined}
             />
           </div>
-          
+
           {/* Stream cancel button - only shows when streaming and cancellation is available */}
           {isStreaming && onCancelStream && (
-            <DangerButton
-              size="sm"
-              onClick={onCancelStream}
-              title="Cancel streaming"
-            >
+            <DangerButton size='sm' onClick={onCancelStream} title='Cancel streaming'>
               /cancel
             </DangerButton>
           )}
