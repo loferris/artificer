@@ -33,10 +33,12 @@ The AI Workflow Engine is a **production-ready conversation orchestration platfo
 
 #### **Data Persistence**
 - **PostgreSQL**: Production database with Prisma ORM
+- **Chroma Vector Database**: Semantic search and embeddings storage
 - **Conversation Management**: Full CRUD operations with metadata
 - **Message Threading**: Backend ready for conversation branching (parentId relationships)
 - **Export System**: Markdown and JSON export with basic Notion/Obsidian support
 - **Project & Document Management**: PostgreSQL-based project organization with document storage, full-text search, and conversation associations
+- **Vector Embeddings**: Automatic embedding generation with OpenAI text-embedding-3-small, document chunking, and semantic similarity search
 
 ### Technology Stack
 
@@ -46,6 +48,8 @@ The AI Workflow Engine is a **production-ready conversation orchestration platfo
 | **Language** | TypeScript | 5.7 |
 | **API Layer** | tRPC | 11.5 |
 | **Database** | PostgreSQL + Prisma | 6.15 |
+| **Vector DB** | Chroma | 3.1 |
+| **Embeddings** | OpenAI API | text-embedding-3-small |
 | **Frontend** | React + Tailwind CSS | 18.3 + 3.4 |
 | **State** | Zustand + React Context | 5.0 |
 | **Testing** | Vitest + React Testing Library | 3.2 |

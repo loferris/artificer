@@ -31,7 +31,10 @@ export class EmbeddingService {
       throw new Error('OpenAI API key is required for embedding generation');
     }
 
-    this.client = new OpenAI({ apiKey });
+    this.client = new OpenAI({
+      apiKey,
+      dangerouslyAllowBrowser: process.env.NODE_ENV === 'test', // Allow in test environment
+    });
     this.model = config.model || 'text-embedding-3-small';
     this.dimensions = config.dimensions || 1536;
     this.batchSize = config.batchSize || 100;

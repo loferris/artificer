@@ -227,6 +227,81 @@ const conversations = await trpc.projects.getConversations.query({
 });
 ```
 
+### Search Operations
+
+#### Semantic Search
+```typescript
+const results = await trpc.search.searchDocuments.mutation({
+  projectId: "proj-123",
+  query: "authentication setup",
+  limit: 10,
+  minScore: 0.7
+});
+```
+
+**Response:**
+```typescript
+{
+  query: string;
+  results: Array<{
+    documentId: string;
+    chunkId: string;
+    content: string;
+    score: number;
+    metadata: {
+      filename: string;
+      chunkIndex: number;
+      totalChunks: number;
+    };
+  }>;
+  count: number;
+}
+```
+
+#### Get Embedding Statistics
+```typescript
+const stats = await trpc.search.getEmbeddingStats.query({
+  projectId: "proj-123"
+});
+```
+
+**Response:**
+```typescript
+{
+  totalChunks: number;
+  totalDocuments: number;
+  indexedDocuments: number;
+  unindexedDocuments: number;
+  modelInfo: {
+    model: string;
+    dimensions: number;
+    maxTokens: number;
+    costPer1kTokens: number;
+  };
+}
+```
+
+#### Reindex Document
+```typescript
+await trpc.search.reindexDocument.mutation({
+  documentId: "doc-123"
+});
+```
+
+#### Health Check
+```typescript
+const health = await trpc.search.healthCheck.query();
+```
+
+**Response:**
+```typescript
+{
+  chroma: boolean;
+  embeddings: boolean;
+  overall: boolean;
+}
+```
+
 ## HTTP Streaming (SSE)
 
 ### Stream Chat Response
