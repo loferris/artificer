@@ -18,6 +18,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Public vs protected endpoint middleware (tRPC)
   - Test endpoints for authentication verification
   - Comprehensive documentation in `docs/AUTHENTICATION.md`
+- **Vector Database & Semantic Search**: Production-ready RAG architecture with Chroma and OpenAI
+  - Chroma vector database integration (Docker containerized)
+  - OpenAI text-embedding-3-small embeddings (1536 dimensions)
+  - Automatic embedding generation on document upload
+  - Document chunking service (1000 chars with 200 char overlap)
+  - Semantic search API endpoints via tRPC
+  - VectorService for collection management and similarity search
+  - EmbeddingService with batch processing and rate limiting
+  - Health check endpoints for Chroma and OpenAI connectivity
+  - Comprehensive unit tests for vector services
+  - Seed script for sample documents with embeddings
 - **Project & Document Management**: Complete project infrastructure for organizing conversations and knowledge
   - Project CRUD operations with statistics tracking
   - Document upload and storage (PostgreSQL-based with text extraction)
@@ -58,6 +69,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Zero direct console.* calls in frontend and auth services
 - PostgreSQL document storage with text extraction for text/plain, markdown, JSON, CSV
 - Prisma schema updated with User and ApiKey models
+- Chroma vector database with persistent storage via Docker volumes
+- OpenAI API integration with cost estimation and token tracking
+- Asynchronous embedding generation (non-blocking document uploads)
+- RAG-ready architecture with document chunking and semantic retrieval
 
 ## [2025-09-18] - Codebase Documentation and Review
 
