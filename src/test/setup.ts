@@ -2,6 +2,39 @@ import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeAll, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 
+// Setup jsdom globals
+if (typeof window !== 'undefined') {
+  // Mock window.navigator
+  Object.defineProperty(window, 'navigator', {
+    writable: true,
+    value: {
+      userAgent: 'node.js',
+      language: 'en-US',
+      onLine: true,
+    },
+  });
+
+  // Mock window.matchMedia
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: vi.fn().mockImplementation(query => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
+
+  // Mock HTMLIFrameElement if not present
+  if (typeof HTMLIFrameElement === 'undefined') {
+    (global as any).HTMLIFrameElement = class HTMLIFrameElement {};
+  }
+}
+
 // Set default environment variables for tests
 process.env.OPENROUTER_DEFAULT_MODEL = 'deepseek-chat';
 process.env.OPENROUTER_API_KEY = 'test-api-key';

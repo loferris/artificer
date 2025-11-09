@@ -9,6 +9,12 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     globals: true,
     css: true,
+    // Don't load .env files during tests (use test setup instead)
+    env: {
+      OPENROUTER_DEFAULT_MODEL: 'deepseek-chat',
+      OPENROUTER_API_KEY: 'test-api-key',
+      DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
+    },
     // Reduce memory usage in CI by limiting concurrency
     pool: 'forks',
     poolOptions: {
