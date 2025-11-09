@@ -226,9 +226,20 @@ async function seedProjects() {
   ];
 
   // Create documents and generate embeddings
-  const embeddingService = new EmbeddingService();
-  const chunkingService = new ChunkingService();
-  const vectorService = new VectorService(prisma);
+  const skipEmbeddings = process.env.SKIP_EMBEDDINGS === 'true';
+
+  let embeddingService: EmbeddingService | undefined;
+  let chunkingService: ChunkingService | undefined;
+  let vectorService: VectorService | undefined;
+
+  if (!skipEmbeddings) {
+    embeddingService = new EmbeddingService();
+    chunkingService = new ChunkingService();
+    vectorService = new VectorService(prisma);
+    console.log('🧠 Embeddings enabled - will generate and store in Chroma\n');
+  } else {
+    console.log('⏭️  Embeddings SKIPPED - only creating documents in PostgreSQL\n');
+  }
 
   let totalDocuments = 0;
   let totalChunks = 0;
@@ -253,55 +264,66 @@ async function seedProjects() {
 
       console.log(`  📄 Created document: ${docData.filename}`);
 
-      // Chunk the document
-      const chunks = chunkingService.chunkDocument(
-        document.id,
-        assignment.project.id,
-        docData.content,
-        docData.filename
-      );
+      // Only generate embeddings if not skipped
+      if (!skipEmbeddings && chunkingService && embeddingService && vectorService) {
+        // Chunk the document
+        const chunks = chunkingService.chunkDocument(
+          document.id,
+          assignment.project.id,
+          docData.content,
+          docData.filename
+        );
 
-      console.log(`    ✂️  Created ${chunks.length} chunks`);
+        console.log(`    ✂️  Created ${chunks.length} chunks`);
 
-      // Generate embeddings
-      console.log(`    🧠 Generating embeddings... (this may take 10-30 seconds)`);
-      let embeddings: number[][];
-      try {
-        embeddings = await Promise.race([
-          embeddingService.generateEmbeddings(chunks.map(c => c.content)),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Embedding generation timeout after 60s')), 60000)
-          )
-        ]) as number[][];
+        // Generate embeddings
+        console.log(`    🧠 Generating embeddings... (this may take 10-30 seconds)`);
+        let embeddings: number[][];
+        try {
+          embeddings = await Promise.race([
+            embeddingService.generateEmbeddings(chunks.map(c => c.content)),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error('Embedding generation timeout after 60s')), 60000)
+            )
+          ]) as number[][];
 
-        console.log(`    ✅ Generated ${embeddings.length} embeddings`);
-      } catch (error) {
-        console.error(`    ❌ Failed to generate embeddings:`, error);
-        throw error;
+          console.log(`    ✅ Generated ${embeddings.length} embeddings`);
+        } catch (error) {
+          console.error(`    ❌ Failed to generate embeddings:`, error);
+          throw error;
+        }
+
+        // Store in Chroma
+        await vectorService.storeDocumentChunks(
+          assignment.project.id,
+          chunks,
+          embeddings
+        );
+
+        console.log(`    ✅ Stored in Chroma`);
+
+        totalChunks += chunks.length;
       }
 
-      // Store in Chroma
-      await vectorService.storeDocumentChunks(
-        assignment.project.id,
-        chunks,
-        embeddings
-      );
-
-      console.log(`    ✅ Stored in Chroma`);
-
       totalDocuments++;
-      totalChunks += chunks.length;
     }
   }
 
   console.log('\n' + '='.repeat(50));
   console.log('✨ Seeding complete!');
-  console.log(`📊 Created ${totalDocuments} documents with ${totalChunks} total chunks`);
-  console.log('\n🔍 Try searching:');
-  console.log('  - "how to configure authentication"');
-  console.log('  - "vector database setup"');
-  console.log('  - "deployment to vercel"');
-  console.log('  - "troubleshooting database errors"');
+  console.log(`📊 Created ${totalDocuments} documents`);
+
+  if (!skipEmbeddings) {
+    console.log(`📊 Generated ${totalChunks} total chunks with embeddings`);
+    console.log('\n🔍 Try searching:');
+    console.log('  - "how to configure authentication"');
+    console.log('  - "vector database setup"');
+    console.log('  - "deployment to vercel"');
+    console.log('  - "troubleshooting database errors"');
+  } else {
+    console.log('ℹ️  Run again without SKIP_EMBEDDINGS=true to generate vector embeddings');
+  }
+
   console.log('='.repeat(50));
 }
 

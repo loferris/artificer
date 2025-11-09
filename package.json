@@ -30,6 +30,7 @@
     "db:admin": "docker compose --profile admin up pgadmin -d",
     "db:logs": "docker compose logs -f postgres",
     "db:seed": "node --env-file=.env --import tsx scripts/seed-vector-data.ts",
+    "db:seed:no-embeddings": "SKIP_EMBEDDINGS=true node --env-file=.env --import tsx scripts/seed-vector-data.ts",
     "generate-api-key": "node --env-file=.env --import tsx scripts/generate-api-key.ts",
     "list-api-keys": "node --env-file=.env --import tsx scripts/list-api-keys.ts",
     "revoke-api-key": "node --env-file=.env --import tsx scripts/revoke-api-key.ts"
