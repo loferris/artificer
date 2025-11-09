@@ -9,6 +9,13 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     globals: true,
     css: true,
+    // Reduce memory usage in CI by limiting concurrency
+    pool: 'forks',
+    poolOptions: {
+      forks: {
+        singleFork: process.env.CI === 'true',
+      },
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
