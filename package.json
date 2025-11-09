@@ -28,7 +28,10 @@
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "db:admin": "docker compose --profile admin up pgadmin -d",
-    "db:logs": "docker compose logs -f postgres"
+    "db:logs": "docker compose logs -f postgres",
+    "generate-api-key": "node --env-file=.env --import tsx scripts/generate-api-key.ts",
+    "list-api-keys": "node --env-file=.env --import tsx scripts/list-api-keys.ts",
+    "revoke-api-key": "node --env-file=.env --import tsx scripts/revoke-api-key.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.15.0",

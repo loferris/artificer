@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { router, publicProcedure } from '../../server/trpc';
+import { router, publicProcedure, protectedProcedure } from '../../server/trpc';
 import { TRPCError } from '@trpc/server';
 import { createServicesFromContext } from '../services/ServiceFactory';
 
@@ -28,7 +28,7 @@ function ensureDemoUser(ctx: any) {
 }
 
 export const conversationsRouter = router({
-  list: publicProcedure.query(async ({ ctx }) => {
+  list: protectedProcedure.query(async ({ ctx }) => {
     try {
       const user = ensureDemoUser(ctx);
       
@@ -45,7 +45,7 @@ export const conversationsRouter = router({
     }
   }),
 
-  create: publicProcedure
+  create: protectedProcedure
     .input(
       z
         .object({
@@ -72,7 +72,7 @@ export const conversationsRouter = router({
       }
     }),
 
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(z.string().min(1, 'Conversation ID is required'))
     .query(async ({ ctx, input: conversationId }) => {
       try {
@@ -93,7 +93,7 @@ export const conversationsRouter = router({
       }
     }),
 
-  update: publicProcedure
+  update: protectedProcedure
     .input(
       z.object({
         conversationId: z.string().min(1, 'Conversation ID is required'),
@@ -125,7 +125,7 @@ export const conversationsRouter = router({
       }
     }),
 
-  updateTitle: publicProcedure
+  updateTitle: protectedProcedure
     .input(
       z.object({
         conversationId: z.string().min(1, 'Conversation ID is required'),
@@ -149,7 +149,7 @@ export const conversationsRouter = router({
       }
     }),
 
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.string().min(1, 'Conversation ID is required'))
     .mutation(async ({ ctx, input: conversationId }) => {
       try {

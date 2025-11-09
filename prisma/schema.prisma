@@ -7,21 +7,60 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id        String   @id @default(cuid())
+  email     String?  @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  projects Project[]
+  apiKeys  ApiKey[]
+
+  @@map("users")
+}
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  userId      String
+  name        String    // Descriptive name (e.g., "LibreChat Production", "CLI Access")
+  keyHash     String    @unique // Hashed API key (never store plaintext)
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  // IP whitelist for this specific key (optional, overrides global whitelist)
+  ipWhitelist String[]  @default([])
+
+  // Permissions/scopes (future: fine-grained access control)
+  scopes      String[]  @default(["*"]) // "*" = full access
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("api_keys")
+  @@index([userId])
+  @@index([keyHash])
+}
+
 model Project {
   id          String   @id @default(cuid())
   name        String
   description String?
-  userId      String?  // Future: user authentication
+  userId      String?
   settings    Json?    // Custom instructions, model preferences, etc.
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
+  user             User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
   conversations    Conversation[]
   documents        Document[]
   knowledgeEntities KnowledgeEntity[]
 
   @@map("projects")
+  @@index([userId])
 }
 
 model Conversation {

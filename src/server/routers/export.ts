@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { router, publicProcedure } from '../trpc';
+import { router, publicProcedure, protectedProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
 import { createServicesFromContext } from '../services/ServiceFactory';
 import { ExportService, type ExportOptions } from '../services/export';
@@ -8,7 +8,7 @@ export const exportRouter = router({
   /**
    * Export all conversations to specified format
    */
-  exportAll: publicProcedure
+  exportAll: protectedProcedure
     .input(
       z.object({
         format: z.enum(['markdown', 'notion', 'obsidian', 'google-docs', 'json', 'html']),
@@ -109,7 +109,7 @@ export const exportRouter = router({
   /**
    * Export specific conversation to specified format
    */
-  exportConversation: publicProcedure
+  exportConversation: protectedProcedure
     .input(
       z.object({
         conversationId: z.string().min(1, 'Conversation ID is required'),
@@ -206,7 +206,7 @@ export const exportRouter = router({
   /**
    * Get available export formats
    */
-  getFormats: publicProcedure.query(() => {
+  getFormats: protectedProcedure.query(() => {
     return {
       formats: [
         {

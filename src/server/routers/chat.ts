@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { router, publicProcedure } from '../../server/trpc';
+import { router, publicProcedure, protectedProcedure } from '../../server/trpc';
 import { TRPCError } from '@trpc/server';
 import { createServicesFromContext } from '../services/ServiceFactory';
 
@@ -41,7 +41,7 @@ export const chatRouter = router({
    * session validation, calling the chat service, and returning the assistant's
    * reply with relevant metadata.
    */
-  sendMessage: publicProcedure
+  sendMessage: protectedProcedure
     .input(
       z.object({
         content: z

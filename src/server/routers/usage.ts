@@ -1,8 +1,8 @@
-import { router, publicProcedure } from '../../server/trpc';
+import { router, publicProcedure, protectedProcedure } from '../../server/trpc';
 import { createServicesFromContext } from '../services/ServiceFactory';
 
 export const usageRouter = router({
-  getSessionStats: publicProcedure.query(async ({ ctx }) => {
+  getSessionStats: protectedProcedure.query(async ({ ctx }) => {
     const { conversationService, messageService } = createServicesFromContext(ctx);
 
     const conversations = await conversationService.listConversations();
@@ -24,7 +24,7 @@ export const usageRouter = router({
     };
   }),
 
-  getModelUsage: publicProcedure.query(async ({ ctx }) => {
+  getModelUsage: protectedProcedure.query(async ({ ctx }) => {
     const { conversationService, messageService } = createServicesFromContext(ctx);
 
     const conversations = await conversationService.listConversations();

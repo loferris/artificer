@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { router, publicProcedure } from '../trpc';
+import { router, publicProcedure, protectedProcedure } from '../trpc';
 import { ProjectService } from '../services/project/ProjectService';
 import { DocumentService } from '../services/project/DocumentService';
 
@@ -51,7 +51,7 @@ export const projectsRouter = router({
   /**
    * Create a new project
    */
-  create: publicProcedure
+  create: protectedProcedure
     .input(ProjectCreateSchema)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -91,7 +91,7 @@ export const projectsRouter = router({
   /**
    * List all projects
    */
-  list: publicProcedure.query(async ({ ctx }) => {
+  list: protectedProcedure.query(async ({ ctx }) => {
     try {
       const db = ensureDatabase(ctx);
       const projectService = new ProjectService(db);
@@ -126,7 +126,7 @@ export const projectsRouter = router({
   /**
    * Get project by ID with detailed information
    */
-  getById: publicProcedure
+  getById: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
@@ -161,7 +161,7 @@ export const projectsRouter = router({
   /**
    * Update project
    */
-  update: publicProcedure
+  update: protectedProcedure
     .input(z.object({ 
       id: z.string(),
       data: ProjectUpdateSchema,
@@ -188,7 +188,7 @@ export const projectsRouter = router({
   /**
    * Delete project
    */
-  delete: publicProcedure
+  delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -211,7 +211,7 @@ export const projectsRouter = router({
   /**
    * Associate a conversation with a project
    */
-  associateConversation: publicProcedure
+  associateConversation: protectedProcedure
     .input(z.object({
       projectId: z.string(),
       conversationId: z.string(),
@@ -241,7 +241,7 @@ export const projectsRouter = router({
   /**
    * Get all conversations for a project
    */
-  getConversations: publicProcedure
+  getConversations: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
@@ -266,7 +266,7 @@ export const projectsRouter = router({
   /**
    * Upload a document to a project
    */
-  uploadDocument: publicProcedure
+  uploadDocument: protectedProcedure
     .input(DocumentUploadSchema)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -312,7 +312,7 @@ export const projectsRouter = router({
   /**
    * Get all documents for a project
    */
-  getDocuments: publicProcedure
+  getDocuments: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
@@ -337,7 +337,7 @@ export const projectsRouter = router({
   /**
    * Search documents within a project
    */
-  searchDocuments: publicProcedure
+  searchDocuments: protectedProcedure
     .input(z.object({
       projectId: z.string(),
       query: z.string().min(1, 'Search query is required'),
@@ -372,7 +372,7 @@ export const projectsRouter = router({
   /**
    * Delete a document
    */
-  deleteDocument: publicProcedure
+  deleteDocument: protectedProcedure
     .input(z.object({ documentId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -395,7 +395,7 @@ export const projectsRouter = router({
   /**
    * Get document statistics for a project
    */
-  getDocumentStats: publicProcedure
+  getDocumentStats: protectedProcedure
     .input(z.object({ projectId: z.string() }))
     .query(async ({ ctx, input }) => {
       try {

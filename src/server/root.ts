@@ -8,6 +8,7 @@ import { exportRouter } from './routers/export';
 import { subscriptionsRouter } from './routers/subscriptions';
 import { projectsRouter } from './routers/projects';
 import { monitoringRouter } from './routers/monitoring';
+import { authRouter } from './routers/auth';
 
 export const appRouter = router({
   chat: chatRouter,
@@ -18,6 +19,7 @@ export const appRouter = router({
   subscriptions: subscriptionsRouter,
   projects: projectsRouter,
   monitoring: monitoringRouter,
+  auth: authRouter,
 });
 
 export type AppRouter = typeof appRouter;
