@@ -34,12 +34,18 @@ jobs:
         run: npm run test:run
         env:
           NODE_OPTIONS: --max_old_space_size=4096
+          OPENROUTER_DEFAULT_MODEL: deepseek-chat
+          OPENROUTER_API_KEY: test-key
+          DATABASE_URL: postgresql://test:test@localhost:5432/test
         if: matrix.node-version != '20.x'
 
       - name: Run tests with coverage
         run: npm run test:coverage
         env:
           NODE_OPTIONS: --max_old_space_size=4096
+          OPENROUTER_DEFAULT_MODEL: deepseek-chat
+          OPENROUTER_API_KEY: test-key
+          DATABASE_URL: postgresql://test:test@localhost:5432/test
         if: matrix.node-version == '20.x'
 
       - name: Upload coverage reports

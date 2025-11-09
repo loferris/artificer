@@ -2,6 +2,11 @@ import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeAll, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 
+// Set default environment variables for tests
+process.env.OPENROUTER_DEFAULT_MODEL = 'deepseek-chat';
+process.env.OPENROUTER_API_KEY = 'test-api-key';
+process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
+
 vi.mock('./server/utils/logger', () => ({
   logger: {
     info: vi.fn(),
