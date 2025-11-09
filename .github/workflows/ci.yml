@@ -33,7 +33,7 @@ jobs:
       - name: Run tests
         run: npm run test:run
         env:
-          NODE_OPTIONS: --max_old_space_size=4096
+          NODE_OPTIONS: --max_old_space_size=6144
           OPENROUTER_DEFAULT_MODEL: deepseek-chat
           OPENROUTER_API_KEY: test-key
           DATABASE_URL: postgresql://test:test@localhost:5432/test
@@ -42,7 +42,7 @@ jobs:
       - name: Run tests with coverage
         run: npm run test:coverage
         env:
-          NODE_OPTIONS: --max_old_space_size=4096
+          NODE_OPTIONS: --max_old_space_size=6144
           OPENROUTER_DEFAULT_MODEL: deepseek-chat
           OPENROUTER_API_KEY: test-key
           DATABASE_URL: postgresql://test:test@localhost:5432/test
