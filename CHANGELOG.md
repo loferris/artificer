@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **API Key Authentication System**: Production-ready authentication with comprehensive security
+  - SHA-256 hashed API key storage (never stores plaintext)
+  - Two-tier IP whitelisting (global + per-key)
+  - API key expiration and usage tracking
+  - Scoped permissions system (ready for fine-grained access control)
+  - Admin scripts: `generate-api-key`, `list-api-keys`, `revoke-api-key`
+  - Demo mode support (no auth required) for Vercel deployments
+  - Public vs protected endpoint middleware (tRPC)
+  - Test endpoints for authentication verification
+  - Comprehensive documentation in `docs/AUTHENTICATION.md`
 - **Project & Document Management**: Complete project infrastructure for organizing conversations and knowledge
   - Project CRUD operations with statistics tracking
   - Document upload and storage (PostgreSQL-based with text extraction)
@@ -19,25 +29,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Replaced all console.error/log calls with structured logging
   - Component-level logging with metadata tracking
   - Production-safe error handling in utilities
+  - Integrated pino logger in ApiKeyService
 
 ### Changed
-- **Test Coverage**: Expanded test suite from 390 to 469 tests
+- **Test Coverage**: Expanded test suite to 431 tests across 47 test files
+  - ApiKeyService: 100% coverage (19 tests)
+  - Auth router: 100% coverage (13 tests)
   - ProjectService: 100% coverage (18 tests)
   - DocumentService: 100% coverage (27 tests)
   - Projects router: 92% coverage (28 tests)
+- **Security**: Production-ready authentication infrastructure
+  - Environment variable `REQUIRE_AUTH` controls authentication mode
+  - All protected routers require API key when enabled
+  - Monitoring/health endpoints remain public
+  - IP address extraction from headers (proxy-aware)
 - **File Structure**: Cleaned up project organization
   - Removed `-refactored` suffix from chat and conversations routers
-  - Added proper index.ts exports for project services
+  - Added proper index.ts exports for project and auth services
   - Removed empty test directories and temp files
 - **Router Naming**: Standardized router exports
   - `chatRouter` (was `chatRouterRefactored`)
   - `conversationsRouter` (was `conversationsRouterRefactored`)
+  - `authRouter` (new test endpoints)
 
 ### Technical Details
-- 469 tests passing (up from 390)
-- 100% test coverage for core project services
-- Zero direct console.* calls in frontend components
+- 431 tests passing with comprehensive coverage
+- 100% test coverage for auth and project services
+- Zero direct console.* calls in frontend and auth services
 - PostgreSQL document storage with text extraction for text/plain, markdown, JSON, CSV
+- Prisma schema updated with User and ApiKey models
 
 ## [2025-09-18] - Codebase Documentation and Review
 

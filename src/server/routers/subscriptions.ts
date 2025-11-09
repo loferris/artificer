@@ -1,13 +1,13 @@
 // src/server/routers/subscriptions.ts
 import { z } from 'zod';
-import { router, publicProcedure } from '../trpc';
+import { router, publicProcedure, protectedProcedure } from '../trpc';
 import { createServicesFromContext } from '../services/ServiceFactory';
 import { observable } from '@trpc/server/observable';
 import type { ChatStreamChunk } from '../services/chat/ChatService';
 
 export const subscriptionsRouter = router({
   // Subscription for streaming chat messages
-  chatStream: publicProcedure
+  chatStream: protectedProcedure
     .input(
       z.object({
         content: z

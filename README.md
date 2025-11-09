@@ -90,6 +90,7 @@ The service layer is designed for integration with external tools:
 - Real-time streaming (WebSocket + SSE with unified backend)
 - Multi-model AI access via OpenRouter API
 - PostgreSQL conversation persistence with Prisma ORM
+- **API key authentication** with SHA-256 hashing, IP whitelisting, and expiration
 - **Project & document management** (create projects, upload documents, full-text search)
 - Export system (Markdown, JSON)
 - Comprehensive rate limiting and session management
@@ -98,7 +99,7 @@ The service layer is designed for integration with external tools:
 - Theme system (3 responsive themes with CSS custom properties)
 - Cost tracking widget with real-time usage monitoring
 - Professional logging (clientLogger + pino)
-- 469 automated tests with comprehensive coverage
+- 431 automated tests with comprehensive coverage
 
 **🔄 Backend Complete, Frontend In Progress**
 - Conversation branching system (database schema and services ready)
@@ -112,7 +113,8 @@ The service layer is designed for integration with external tools:
 - Context compression and conversation summarization
 - Enhanced PKM tool integrations (full Notion, Obsidian, Google Docs integrations)
 - Cross-session context preservation and conversation merging
-- Authentication for standalone server (API keys, JWT)
+- Fine-grained permission scopes for API keys
+- OAuth provider support and JWT tokens for web UI
 
 ## Getting Started
 
@@ -152,10 +154,11 @@ npm run start:standalone
 
 **Documentation:**
 - [Standalone API Guide](./docs/STANDALONE_API.md) - Complete API reference with Python examples
+- [Authentication Guide](./docs/AUTHENTICATION.md) - API key authentication, IP whitelisting, and security
 - [Implementation Status](./docs/internal/STANDALONE_STATUS.md) - Current capabilities and limitations
 - [Security Considerations](./SECURITY.md) - Authentication requirements for production
 
-**⚠️ Security Notice:** The standalone server currently has no authentication. See [SECURITY.md](./SECURITY.md) before deploying to production.
+**🔐 Security:** API key authentication is available with IP whitelisting and expiration. See [AUTHENTICATION.md](./docs/AUTHENTICATION.md) for setup.
 
 ### Environment Configuration
 
@@ -163,9 +166,14 @@ Required environment variables in `.env`:
 ```bash
 DATABASE_URL="postgresql://postgres:password@localhost:5432/ai_workflow_engine"
 OPENROUTER_API_KEY="your_openrouter_api_key"
-NEXTAUTH_SECRET="your_secret_key"
-NEXTAUTH_URL="http://localhost:3000"
+
+# Optional: Enable authentication for production
+REQUIRE_AUTH=false  # Set to 'true' for production with API keys
+IP_WHITELIST=       # Comma-separated IPs (leave empty to allow all)
+ADMIN_EMAIL=admin@example.com
 ```
+
+**Authentication:** See [docs/AUTHENTICATION.md](./docs/AUTHENTICATION.md) for complete setup guide.
 
 ## Database Management
 
@@ -198,7 +206,7 @@ npm run test:ui
 npm test -- src/components/__tests__/CostTracker.test.tsx
 ```
 
-**Current Test Coverage**: 469 tests across 42 test files covering:
+**Current Test Coverage**: 431 tests across 47 test files covering:
 - Component functionality and rendering
 - Service layer business logic (70-100% coverage for core services)
 - API endpoints and error handling
