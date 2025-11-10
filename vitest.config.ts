@@ -9,6 +9,13 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     globals: true,
     css: true,
+    // CRITICAL: Set env vars for all test workers
+    env: {
+      OPENROUTER_DEFAULT_MODEL: 'deepseek-chat',
+      OPENROUTER_API_KEY: 'test-api-key',
+      DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
+      NODE_ENV: 'test',
+    },
     // Reduce memory usage in CI
     pool: process.env.CI === 'true' ? 'forks' : 'threads',
     poolOptions: {
