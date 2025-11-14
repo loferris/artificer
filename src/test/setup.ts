@@ -1,6 +1,5 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeAll, beforeEach, vi } from 'vitest';
-import { cleanup } from '@testing-library/react';
 
 // CRITICAL: Set env vars FIRST before any imports that might use them
 process.env.OPENROUTER_DEFAULT_MODEL = 'deepseek-chat';
@@ -159,13 +158,21 @@ vi.mock('../server/db/client', () => ({
   },
 }));
 
-import { rateLimiter } from '../server/middleware/rateLimiter';
-
 // Run cleanup after each test case
-afterEach(() => {
-  cleanup();
-  // Clear rate limits to ensure tests are isolated
-  (rateLimiter as any).limits.clear();
+afterEach(async () => {
+  // Only import cleanup for React component tests
+  if (typeof window !== 'undefined' && document.body.children.length > 0) {
+    const { cleanup } = await import('@testing-library/react');
+    cleanup();
+  }
+
+  // Lazy load rateLimiter only when needed
+  try {
+    const { rateLimiter } = await import('../server/middleware/rateLimiter');
+    (rateLimiter as any).limits?.clear();
+  } catch {
+    // rateLimiter not available in all test contexts
+  }
 
   // Clear localStorage/sessionStorage between tests (only if methods exist)
   if (typeof window !== 'undefined') {

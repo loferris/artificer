@@ -5,7 +5,19 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   test: {
-    environment: 'jsdom',
+    // Use node environment for server tests, jsdom for components/client
+    environmentMatchGlobs: [
+      ['src/server/**/*.test.ts', 'node'],
+      ['src/test/api/**/*.test.ts', 'node'],
+      ['src/utils/**/*.test.ts', 'node'],
+      // Everything else uses jsdom (components, hooks, lib/trpc which tests browser behavior)
+      ['**/*.test.tsx', 'jsdom'],
+      ['src/components/**/*.test.ts', 'jsdom'],
+      ['src/hooks/**/*.test.ts', 'jsdom'],
+      ['src/stores/**/*.test.ts', 'jsdom'],
+      ['src/contexts/**/*.test.ts', 'jsdom'],
+      ['src/lib/**/*.test.ts', 'jsdom'],
+    ],
     setupFiles: ['./src/test/setup.ts'],
     globals: true,
     css: true,
@@ -19,14 +31,14 @@ export default defineConfig({
       DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
       NODE_ENV: 'test',
     },
-    // Use appropriate pool based on context
-    pool: process.env.COVERAGE === 'true' ? undefined : 'threads',
+    // Use threads for better memory sharing
+    pool: 'threads',
     poolOptions: {
       forks: {
         singleFork: true,
         isolate: false, // Share module cache between tests
         maxForks: 1, // Limit to 1 fork to reduce memory usage
-        execArgv: ['--max-old-space-size=4096'], // Set memory limit for worker processes
+        execArgv: ['--max-old-space-size=5120'], // Set memory limit for worker processes (5GB for coverage)
       },
       threads: {
         singleThread: process.env.COVERAGE === 'true',
@@ -41,8 +53,8 @@ export default defineConfig({
     // Skip slow tests in CI if needed
     testTimeout: 10000,
     coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      provider: 'istanbul', // More memory-efficient than v8
+      reporter: ['text', 'json', 'html', 'lcov'],
       exclude: [
         'node_modules/',
         'src/test/',

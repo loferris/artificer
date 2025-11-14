@@ -2,8 +2,6 @@ import { AssistantService, Message } from './types';
 
 export class MockAssistant implements AssistantService {
   async getResponse(userMessage: string, _conversationHistory?: Message[]): Promise<string> {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
     const responses = [
       `I understand you said: "${userMessage}". What else would you like to discuss?`,
       `Regarding "${userMessage}", I'd suggest considering multiple perspectives.`,
