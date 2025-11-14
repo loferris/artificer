@@ -31,7 +31,8 @@ export const DEMO_MESSAGES = DEMO_CONFIG.SAMPLE_CONVERSATIONS.flatMap(conv =>
 export const isStaticDemo = (): boolean => {
   return (
     process.env.NEXT_PUBLIC_DEMO_MODE === 'true' ||
-    (typeof window !== 'undefined' && window.location.hostname.includes('vercel.app'))
+    (typeof window !== 'undefined' && window.location?.hostname?.includes('vercel.app')) ||
+    false
   );
 };
 
