@@ -8,28 +8,44 @@ process.env.OPENROUTER_API_KEY = 'test-api-key';
 process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
 process.env.NODE_ENV = 'test';
 
+// Silence console noise during tests (only show errors)
+const originalConsole = {
+  log: console.log,
+  info: console.info,
+  warn: console.warn,
+  debug: console.debug,
+};
+
+beforeAll(() => {
+  console.log = vi.fn();
+  console.info = vi.fn();
+  console.warn = vi.fn();
+  console.debug = vi.fn();
+  // Keep console.error for actual errors
+});
+
 // Setup jsdom globals
 if (typeof window !== 'undefined') {
   // Mock localStorage
-  const localStorageMock = (() => {
+  const createStorageMock = () => {
     let store: Record<string, string> = {};
     return {
-      getItem: (key: string) => store[key] || null,
-      setItem: (key: string, value: string) => { store[key] = value.toString(); },
-      removeItem: (key: string) => { delete store[key]; },
-      clear: () => { store = {}; },
-      key: (index: number) => Object.keys(store)[index] || null,
+      getItem: function(key: string) { return store[key] || null; },
+      setItem: function(key: string, value: string) { store[key] = value.toString(); },
+      removeItem: function(key: string) { delete store[key]; },
+      clear: function() { store = {}; },
+      key: function(index: number) { return Object.keys(store)[index] || null; },
       get length() { return Object.keys(store).length; },
     };
-  })();
+  };
 
   Object.defineProperty(window, 'localStorage', {
-    value: localStorageMock,
+    value: createStorageMock(),
     writable: true,
   });
 
   Object.defineProperty(window, 'sessionStorage', {
-    value: localStorageMock,
+    value: createStorageMock(),
     writable: true,
   });
 
@@ -82,6 +98,7 @@ if (typeof window !== 'undefined') {
   };
 }
 
+// Mock logger to silence pino JSON output during tests
 vi.mock('./server/utils/logger', () => ({
   logger: {
     info: vi.fn(),
@@ -89,6 +106,12 @@ vi.mock('./server/utils/logger', () => ({
     warn: vi.fn(),
     debug: vi.fn(),
     rateLimitHit: vi.fn(),
+    child: vi.fn(() => ({
+      info: vi.fn(),
+      error: vi.fn(),
+      warn: vi.fn(),
+      debug: vi.fn(),
+    })),
   },
 }));
 
@@ -143,5 +166,17 @@ afterEach(() => {
   cleanup();
   // Clear rate limits to ensure tests are isolated
   (rateLimiter as any).limits.clear();
+
+  // Clear localStorage/sessionStorage between tests (only if methods exist)
+  if (typeof window !== 'undefined') {
+    if (window.localStorage && typeof window.localStorage.clear === 'function') {
+      window.localStorage.clear();
+    }
+    if (window.sessionStorage && typeof window.sessionStorage.clear === 'function') {
+      window.sessionStorage.clear();
+    }
+  }
+
   vi.restoreAllMocks();
+  vi.clearAllMocks();
 });

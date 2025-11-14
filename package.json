@@ -16,7 +16,7 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage",
+    "test:coverage": "COVERAGE=true NODE_OPTIONS='--max-old-space-size=6144' vitest run --coverage",
     "test:watch": "vitest --watch",
     "test:e2e": "vitest --config vitest.e2e.config.ts",
     "test:e2e:run": "vitest run --config vitest.e2e.config.ts",

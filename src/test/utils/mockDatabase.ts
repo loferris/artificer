@@ -27,6 +27,24 @@ export interface MockPrismaClient {
     deleteMany: MockInstance;
     groupBy: MockInstance;
   };
+  project: {
+    create: MockInstance;
+    findUnique: MockInstance;
+    findMany: MockInstance;
+    update: MockInstance;
+    delete: MockInstance;
+    count: MockInstance;
+    deleteMany: MockInstance;
+  };
+  document: {
+    create: MockInstance;
+    findUnique: MockInstance;
+    findMany: MockInstance;
+    update: MockInstance;
+    delete: MockInstance;
+    count: MockInstance;
+    deleteMany: MockInstance;
+  };
   $transaction: MockInstance;
   $connect: MockInstance;
   $disconnect: MockInstance;
@@ -55,6 +73,24 @@ export function createMockPrismaClient(): MockPrismaClient {
       delete: vi.fn(),
       deleteMany: vi.fn(),
       groupBy: vi.fn(),
+    },
+    project: {
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      count: vi.fn(),
+      deleteMany: vi.fn(),
+    },
+    document: {
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      count: vi.fn(),
+      deleteMany: vi.fn(),
     },
     $transaction: vi.fn(),
     $connect: vi.fn(),
@@ -224,6 +260,26 @@ export const MockResponses = {
 };
 
 /**
+ * Shared mock instances for tests
+ */
+export const mockPrismaClient = createMockPrismaClient();
+
+export const mockUser = {
+  sessionId: 'test-session-id',
+  id: 'test-user-id',
+};
+
+export const mockRequest = {
+  headers: {
+    'user-agent': 'test-agent',
+  },
+} as any;
+
+export const mockResponse = {
+  setHeader: vi.fn(),
+} as any;
+
+/**
  * Database operation mock helpers
  */
 export const DatabaseMocks = {
@@ -232,7 +288,7 @@ export const DatabaseMocks = {
    */
   mockCreate: (
     mockClient: MockPrismaClient,
-    entity: 'conversation' | 'message',
+    entity: 'conversation' | 'message' | 'project' | 'document',
     returnValue: any,
   ) => {
     mockClient[entity].create.mockResolvedValue(returnValue);
@@ -243,7 +299,7 @@ export const DatabaseMocks = {
    */
   mockFind: (
     mockClient: MockPrismaClient,
-    entity: 'conversation' | 'message',
+    entity: 'conversation' | 'message' | 'project' | 'document',
     returnValue: any,
   ) => {
     mockClient[entity].findMany.mockResolvedValue(returnValue);
@@ -255,7 +311,7 @@ export const DatabaseMocks = {
   /**
    * Mock a not found scenario
    */
-  mockNotFound: (mockClient: MockPrismaClient, entity: 'conversation' | 'message') => {
+  mockNotFound: (mockClient: MockPrismaClient, entity: 'conversation' | 'message' | 'project' | 'document') => {
     mockClient[entity].findUnique.mockResolvedValue(null);
     mockClient[entity].findMany.mockResolvedValue([]);
   },
@@ -265,7 +321,7 @@ export const DatabaseMocks = {
    */
   mockError: (
     mockClient: MockPrismaClient,
-    entity: 'conversation' | 'message',
+    entity: 'conversation' | 'message' | 'project' | 'document',
     operation: string,
     error: string,
   ) => {
@@ -278,7 +334,7 @@ export const DatabaseMocks = {
    */
   mockCrudScenario: (
     mockClient: MockPrismaClient,
-    entity: 'conversation' | 'message',
+    entity: 'conversation' | 'message' | 'project' | 'document',
     scenario: 'success' | 'notFound' | 'error',
     data?: any,
   ) => {
