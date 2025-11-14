@@ -9,7 +9,6 @@ dist/
 build/
 *.tsbuildinfo
 .next/
-prisma/migrations/
 
 
 # Environment variables

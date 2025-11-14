@@ -21,6 +21,24 @@ services:
       retries: 5
     restart: unless-stopped
 
+  # Chroma vector database for embeddings and semantic search
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: chatapp-chroma
+    ports:
+      - '8000:8000'
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - ANONYMIZED_TELEMETRY=FALSE
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8000/api/v1']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   # Optional: pgAdmin for database management UI
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -39,4 +57,6 @@ services:
 
 volumes:
   postgres_data:
+    driver: local
+  chroma_data:
     driver: local

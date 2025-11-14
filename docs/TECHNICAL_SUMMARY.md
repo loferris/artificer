@@ -6,7 +6,7 @@
 The AI Workflow Engine is a **production-ready conversation orchestration platform** that provides structured AI interactions through multiple interfaces. The system treats AI conversations as structured data for export to knowledge management workflows.
 
 ### Technical Status
-- **✅ Production Ready**: 469 tests passing, TypeScript strict mode, ESLint clean
+- **✅ Production Ready**: 529 tests passing, TypeScript strict mode, ESLint clean
 - **✅ Type Safe**: Comprehensive type safety with tRPC, Zod validation, and strict TypeScript
 - **✅ Well Tested**: 45 test files covering components, services, APIs, and streaming
 - **✅ Architecture Clean**: Service layer separation, dependency injection, error handling
@@ -33,10 +33,12 @@ The AI Workflow Engine is a **production-ready conversation orchestration platfo
 
 #### **Data Persistence**
 - **PostgreSQL**: Production database with Prisma ORM
+- **Chroma Vector Database**: Semantic search and embeddings storage
 - **Conversation Management**: Full CRUD operations with metadata
 - **Message Threading**: Backend ready for conversation branching (parentId relationships)
 - **Export System**: Markdown and JSON export with basic Notion/Obsidian support
 - **Project & Document Management**: PostgreSQL-based project organization with document storage, full-text search, and conversation associations
+- **Vector Embeddings**: Automatic embedding generation with OpenAI text-embedding-3-small, document chunking, and semantic similarity search
 
 ### Technology Stack
 
@@ -46,6 +48,8 @@ The AI Workflow Engine is a **production-ready conversation orchestration platfo
 | **Language** | TypeScript | 5.7 |
 | **API Layer** | tRPC | 11.5 |
 | **Database** | PostgreSQL + Prisma | 6.15 |
+| **Vector DB** | Chroma | 3.1 |
+| **Embeddings** | OpenAI API | text-embedding-3-small |
 | **Frontend** | React + Tailwind CSS | 18.3 + 3.4 |
 | **State** | Zustand + React Context | 5.0 |
 | **Testing** | Vitest + React Testing Library | 3.2 |
@@ -82,7 +86,7 @@ HTTP/WebSocket → tRPC Router → Service Layer → Database/External APIs
 - Enhanced React error boundary type safety
 
 #### **Test Suite Expansion**
-- All 469 tests now pass consistently (expanded from 390)
+- All 529 tests now pass consistently (expanded from 390)
 - ProjectService: 100% coverage (18 tests)
 - DocumentService: 100% coverage (27 tests)
 - Projects router: 92% coverage (28 tests)

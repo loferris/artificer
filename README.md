@@ -35,12 +35,14 @@ The system is designed API-first with a distinct service layer, making it suitab
 
 **Core Infrastructure**
 - PostgreSQL database with Prisma ORM for conversation persistence
+- **Chroma vector database** for semantic search and embeddings storage
+- **OpenAI API integration** for embedding generation (text-embedding-3-small)
 - OpenRouter API integration supporting multiple AI models
 - Real-time streaming via WebSocket subscriptions and SSE endpoints
 - Type-safe API layer with tRPC
 - **Standalone orchestration server** for external integrations (Python, CLI tools, etc.)
 - Comprehensive rate limiting and session management
-- **469 tests** with full test coverage for critical components
+- **529 tests** with full test coverage for critical components
 - **Project & document management** for organizing conversations and knowledge
 
 **User Interface**
@@ -62,10 +64,11 @@ The system is designed API-first with a distinct service layer, making it suitab
 
 - **Backend**: Next.js 15.5 + Custom WebSocket Server + tRPC 11.5 for type-safe APIs
 - **Database**: PostgreSQL with Prisma 6.15 ORM
+- **Vector Database**: Chroma 3.1 for embeddings and semantic search
 - **Frontend**: React 18.3 + Tailwind CSS 3.4 + Zustand state management
 - **Real-time**: WebSocket subscriptions + SSE endpoints with unified ChatService backend
-- **AI Integration**: OpenRouter API supporting multiple models (Claude, DeepSeek, Qwen, etc.)
-- **Testing**: Vitest with 469 tests and comprehensive coverage
+- **AI Integration**: OpenRouter API supporting multiple models (Claude, DeepSeek, Qwen, etc.) + OpenAI for embeddings
+- **Testing**: Vitest with 529 tests and comprehensive coverage
 - **Styling**: CSS custom properties with theme system and responsive design
 - **Logging**: Centralized clientLogger (frontend) + structured pino logger (backend)
 
@@ -92,6 +95,8 @@ The service layer is designed for integration with external tools:
 - PostgreSQL conversation persistence with Prisma ORM
 - **API key authentication** with SHA-256 hashing, IP whitelisting, and expiration
 - **Project & document management** (create projects, upload documents, full-text search)
+- **Vector embeddings & semantic search** (Chroma vector database + OpenAI embeddings)
+- **RAG-ready architecture** with document chunking and similarity search
 - Export system (Markdown, JSON)
 - Comprehensive rate limiting and session management
 - Type-safe API layer with tRPC and Zod validation
@@ -99,7 +104,7 @@ The service layer is designed for integration with external tools:
 - Theme system (3 responsive themes with CSS custom properties)
 - Cost tracking widget with real-time usage monitoring
 - Professional logging (clientLogger + pino)
-- 431 automated tests with comprehensive coverage
+- 529 automated tests with comprehensive coverage
 
 **🔄 Backend Complete, Frontend In Progress**
 - Conversation branching system (database schema and services ready)
@@ -107,8 +112,6 @@ The service layer is designed for integration with external tools:
 - Advanced export format support (services implemented, UI integration needed)
 
 **📋 Planned Enhancements**
-- **Vector embeddings & semantic search** (schema ready, needs OpenAI/Anthropic integration)
-- **RAG (Retrieval Augmented Generation)** with document context
 - Intelligent model routing based on cost and task complexity
 - Context compression and conversation summarization
 - Enhanced PKM tool integrations (full Notion, Obsidian, Google Docs integrations)
@@ -127,11 +130,14 @@ npm install
 cp .env.example .env
 # Configure OPENROUTER_API_KEY and DATABASE_URL in .env
 
-# Start PostgreSQL database (Docker)
+# Start PostgreSQL and Chroma databases (Docker)
 npm run db:up
 
 # Run database migrations
 npm run db:migrate
+
+# Seed database with sample projects and documents (optional)
+npm run db:seed
 
 # Start development server with WebSocket support
 npm run dev
@@ -171,6 +177,12 @@ OPENROUTER_API_KEY="your_openrouter_api_key"
 REQUIRE_AUTH=false  # Set to 'true' for production with API keys
 IP_WHITELIST=       # Comma-separated IPs (leave empty to allow all)
 ADMIN_EMAIL=admin@example.com
+
+# Vector Database & Embeddings
+CHROMA_URL="http://localhost:8000"
+OPENAI_API_KEY="your_openai_api_key"
+EMBEDDING_MODEL="text-embedding-3-small"
+EMBEDDING_DIMENSIONS="1536"
 ```
 
 **Authentication:** See [docs/AUTHENTICATION.md](./docs/AUTHENTICATION.md) for complete setup guide.
@@ -206,7 +218,7 @@ npm run test:ui
 npm test -- src/components/__tests__/CostTracker.test.tsx
 ```
 
-**Current Test Coverage**: 431 tests across 47 test files covering:
+**Current Test Coverage**: 529 tests across 45 test files covering:
 - Component functionality and rendering
 - Service layer business logic (70-100% coverage for core services)
 - API endpoints and error handling
@@ -264,16 +276,19 @@ The system provides two distinct interfaces optimized for different workflows:
 
 **Capabilities:**
 - PostgreSQL-based document storage with text extraction
+- **Vector embeddings with Chroma database** (automatic on upload)
+- **Semantic search** using OpenAI text-embedding-3-small (1536 dimensions)
+- **Document chunking** (1000 chars with 200 char overlap)
 - Case-insensitive content search
 - Project-conversation associations
 - Document management (upload, view, delete)
 - Statistics and activity tracking
+- **RAG-ready architecture** for context-aware AI responses
 
 **Limitations (Planned for Future PRs):**
-- No vector embeddings yet (schema ready, needs API integration)
-- No semantic/RAG search (text matching only)
 - Text files only (no PDF/Word/Excel parsing)
 - No file versioning
+- Frontend UI for semantic search not yet implemented
 
 ## API Integration
 

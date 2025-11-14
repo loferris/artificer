@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { logger } from '../../utils/logger';
+import { VectorService, ChunkingService, EmbeddingService } from '../vector';
 
 export interface DocumentCreateInput {
   projectId: string;
@@ -24,16 +25,13 @@ export class DocumentService {
 
   async create(input: DocumentCreateInput) {
     try {
-      logger.info('Creating new document', { 
-        projectId: input.projectId, 
+      logger.info('Creating new document', {
+        projectId: input.projectId,
         filename: input.filename,
-        size: input.size 
+        size: input.size
       });
 
-      // TODO: Generate embedding for the content
-      // For now, we'll use an empty array and implement embeddings later
-      const embedding: number[] = [];
-      
+      // Create document in PostgreSQL
       const document = await this.prisma.document.create({
         data: {
           projectId: input.projectId,
@@ -42,20 +40,95 @@ export class DocumentService {
           contentType: input.contentType,
           content: input.content,
           size: input.size,
-          embedding,
+          embedding: [], // Legacy field, keeping for schema compatibility
           metadata: input.metadata || {},
         },
       });
 
-      logger.info('Document created successfully', { 
+      logger.info('Document created successfully', {
         documentId: document.id,
-        projectId: input.projectId 
+        projectId: input.projectId
       });
-      
+
+      // Generate embeddings asynchronously (don't block document creation)
+      this.generateEmbeddingsAsync(document.id, input.projectId, input.content, input.filename)
+        .catch(error => {
+          logger.error('Failed to generate embeddings for document', error, {
+            documentId: document.id,
+            projectId: input.projectId,
+          });
+        });
+
       return document;
     } catch (error) {
       logger.error('Failed to create document', error, { input });
       throw new Error('Failed to create document');
+    }
+  }
+
+  /**
+   * Generate embeddings for a document asynchronously
+   */
+  private async generateEmbeddingsAsync(
+    documentId: string,
+    projectId: string,
+    content: string,
+    filename: string
+  ): Promise<void> {
+    try {
+      // Check if OpenAI API key is configured
+      if (!process.env.OPENAI_API_KEY) {
+        logger.warn('OpenAI API key not configured, skipping embedding generation', {
+          documentId,
+        });
+        return;
+      }
+
+      logger.info('Generating embeddings for document', { documentId, projectId });
+
+      // Extract text content if available
+      const textContent = content || '';
+      if (!textContent.trim()) {
+        logger.warn('No text content to embed', { documentId });
+        return;
+      }
+
+      // Chunk the document
+      const chunkingService = new ChunkingService();
+      const chunks = chunkingService.chunkDocument(
+        documentId,
+        projectId,
+        textContent,
+        filename
+      );
+
+      if (chunks.length === 0) {
+        logger.warn('No chunks created from document', { documentId });
+        return;
+      }
+
+      logger.info('Document chunked', { documentId, chunkCount: chunks.length });
+
+      // Generate embeddings
+      const embeddingService = new EmbeddingService();
+      const embeddings = await embeddingService.generateEmbeddings(
+        chunks.map(c => c.content)
+      );
+
+      logger.info('Embeddings generated', { documentId, embeddingCount: embeddings.length });
+
+      // Store in Chroma
+      const vectorService = new VectorService(this.prisma);
+      await vectorService.storeDocumentChunks(projectId, chunks, embeddings);
+
+      logger.info('Embeddings stored successfully', {
+        documentId,
+        projectId,
+        chunkCount: chunks.length
+      });
+    } catch (error) {
+      logger.error('Failed to generate embeddings', error, { documentId, projectId });
+      throw error;
     }
   }
 

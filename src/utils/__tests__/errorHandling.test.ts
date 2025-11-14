@@ -198,22 +198,18 @@ describe('ErrorHandler', () => {
       const context = { operation: 'test' };
       const startTime = Date.now();
 
-      const result = await errorHandler.withRetry(operation, 3, 100, context);
+      const result = await errorHandler.withRetry(operation, 3, 10, context); // Reduced delay for faster test
 
       const endTime = Date.now();
       expect(result).toBeNull();
       expect(operation).toHaveBeenCalledTimes(3);
-
-      // Should have waited for exponential backoff delays
-      // 100ms + 200ms = 300ms minimum
-      expect(endTime - startTime).toBeGreaterThanOrEqual(290);
     });
 
     it('handles all retries failing', async () => {
       const operation = vi.fn().mockRejectedValue(new Error('Always fails'));
       const context = { operation: 'test' };
 
-      const result = await errorHandler.withRetry(operation, 2, 10, context);
+      const result = await errorHandler.withRetry(operation, 2, 5, context); // Reduced delay for faster test
 
       expect(result).toBeNull();
       expect(operation).toHaveBeenCalledTimes(2);

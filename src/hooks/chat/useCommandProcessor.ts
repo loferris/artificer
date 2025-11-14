@@ -6,8 +6,8 @@ import { trpc } from '../../lib/trpc/client';
 
 const getManualContent = () => {
   const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true' ||
-                     (typeof window !== 'undefined' && 
-                      (window.location.hostname.includes('vercel.app') || 
+                     (typeof window !== 'undefined' && window.location?.hostname &&
+                      (window.location.hostname.includes('vercel.app') ||
                        window.location.hostname.includes('demo')));
 
   const demoHint = isDemoMode ? `
@@ -39,8 +39,8 @@ const formatList = (conversations: any[], limited: boolean) => {
   }
 
   const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true' ||
-                     (typeof window !== 'undefined' && 
-                      (window.location.hostname.includes('vercel.app') || 
+                     (typeof window !== 'undefined' && window.location?.hostname &&
+                      (window.location.hostname.includes('vercel.app') ||
                        window.location.hostname.includes('demo')));
 
   const header = limited ? 'Available conversations (last 10):' : 'All available conversations:';

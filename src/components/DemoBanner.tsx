@@ -6,13 +6,13 @@ export const DemoBanner: React.FC = () => {
 
   useEffect(() => {
     setIsClient(true);
-    
+
     // Check demo mode on client side only to avoid hydration mismatch
+    const hostname = typeof window !== 'undefined' ? window.location?.hostname : undefined;
     const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true' ||
-                       window.location.hostname.includes('vercel.app') || 
-                       window.location.hostname.includes('demo');
-    
-    setShowBanner(isDemoMode);
+                       (hostname && (hostname.includes('vercel.app') || hostname.includes('demo')));
+
+    setShowBanner(Boolean(isDemoMode));
   }, []);
 
   // Don't render anything on server side or if not demo mode
