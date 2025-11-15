@@ -12,6 +12,9 @@ import {
 import { ChatService, DatabaseChatService, DemoChatService } from './chat/ChatService';
 import { createAssistant, type Assistant } from './assistant';
 import { isServerSideDemo } from '../../utils/demo';
+import { VectorService } from './vector/VectorService';
+import { EmbeddingService } from './vector/EmbeddingService';
+import { DefaultRAGService, NoOpRAGService, type RAGService } from './rag/RAGService';
 
 export interface ServiceContainer {
   conversationService: ConversationService;
@@ -74,7 +77,22 @@ export class ServiceFactory {
       // Create database services
       conversationService = new DatabaseConversationService(db!);
       messageService = new DatabaseMessageService(db!);
-      chatService = new DatabaseChatService(conversationService, messageService, assistant);
+
+      // Create RAG service if enabled
+      let ragService: RAGService | undefined;
+      if (process.env.ENABLE_RAG === 'true') {
+        try {
+          const vectorService = new VectorService(db);
+          const embeddingService = new EmbeddingService();
+          ragService = new DefaultRAGService(vectorService, embeddingService);
+        } catch (error) {
+          // Fall back to no-op if RAG setup fails
+          console.warn('Failed to initialize RAG service, using no-op:', error);
+          ragService = new NoOpRAGService();
+        }
+      }
+
+      chatService = new DatabaseChatService(conversationService, messageService, assistant, ragService);
     }
 
     return {

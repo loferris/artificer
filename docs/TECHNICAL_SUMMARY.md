@@ -1,6 +1,6 @@
 # Technical Summary
 
-## AI Workflow Engine - Current State (September 15, 2025)
+## AI Workflow Engine - Current State (November 15, 2025)
 
 ### Project Overview
 The AI Workflow Engine is a **production-ready conversation orchestration platform** that provides structured AI interactions through multiple interfaces. The system treats AI conversations as structured data for export to knowledge management workflows.
@@ -33,12 +33,13 @@ The AI Workflow Engine is a **production-ready conversation orchestration platfo
 
 #### **Data Persistence**
 - **PostgreSQL**: Production database with Prisma ORM
-- **Chroma Vector Database**: Semantic search and embeddings storage
+- **Chroma Vector Database**: Semantic search and embeddings storage with cosine distance
 - **Conversation Management**: Full CRUD operations with metadata
 - **Message Threading**: Backend ready for conversation branching (parentId relationships)
 - **Export System**: Markdown and JSON export with basic Notion/Obsidian support
 - **Project & Document Management**: PostgreSQL-based project organization with document storage, full-text search, and conversation associations
 - **Vector Embeddings**: Automatic embedding generation with OpenAI text-embedding-3-small, document chunking, and semantic similarity search
+- **RAG (Retrieval-Augmented Generation)**: Automatic context retrieval for project-linked conversations with configurable similarity thresholds
 
 ### Technology Stack
 
@@ -125,7 +126,9 @@ src/
 │   ├── services/        # Business logic services
 │   │   ├── project/     # ProjectService, DocumentService
 │   │   ├── conversation/
-│   │   └── chat/
+│   │   ├── chat/        # ChatService with RAG integration
+│   │   ├── rag/         # RAGService for context retrieval
+│   │   └── vector/      # VectorService, EmbeddingService, ChunkingService
 │   └── utils/           # Server utilities
 ├── styles/              # CSS and theme files
 ├── types/               # TypeScript type definitions

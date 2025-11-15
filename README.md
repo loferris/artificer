@@ -96,7 +96,7 @@ The service layer is designed for integration with external tools:
 - **API key authentication** with SHA-256 hashing, IP whitelisting, and expiration
 - **Project & document management** (create projects, upload documents, full-text search)
 - **Vector embeddings & semantic search** (Chroma vector database + OpenAI embeddings)
-- **RAG-ready architecture** with document chunking and similarity search
+- **RAG (Retrieval-Augmented Generation)** - Automatic context retrieval for project-linked conversations
 - Export system (Markdown, JSON)
 - Comprehensive rate limiting and session management
 - Type-safe API layer with tRPC and Zod validation
@@ -183,6 +183,10 @@ CHROMA_URL="http://localhost:8000"
 OPENAI_API_KEY="your_openai_api_key"
 EMBEDDING_MODEL="text-embedding-3-small"
 EMBEDDING_DIMENSIONS="1536"
+
+# Enable RAG (Retrieval-Augmented Generation)
+# When enabled, conversations linked to projects automatically retrieve context
+ENABLE_RAG=true
 ```
 
 **Authentication:** See [docs/AUTHENTICATION.md](./docs/AUTHENTICATION.md) for complete setup guide.
@@ -279,16 +283,16 @@ The system provides two distinct interfaces optimized for different workflows:
 - **Vector embeddings with Chroma database** (automatic on upload)
 - **Semantic search** using OpenAI text-embedding-3-small (1536 dimensions)
 - **Document chunking** (1000 chars with 200 char overlap)
+- **RAG (Retrieval-Augmented Generation)** - Conversations linked to projects automatically retrieve relevant context
 - Case-insensitive content search
 - Project-conversation associations
 - Document management (upload, view, delete)
 - Statistics and activity tracking
-- **RAG-ready architecture** for context-aware AI responses
 
 **Limitations (Planned for Future PRs):**
 - Text files only (no PDF/Word/Excel parsing)
 - No file versioning
-- Frontend UI for semantic search not yet implemented
+- Frontend UI for manual semantic search and RAG settings not yet implemented
 
 ## API Integration
 

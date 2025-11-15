@@ -8,14 +8,19 @@ This system uses **Chroma** for vector storage and **OpenAI** for embedding gene
 Document Upload → Text Extraction → Chunking → Embedding Generation → Chroma Storage
                                                                               ↓
 User Query → Embedding Generation → Semantic Search ← Chroma Vector DB
+                                            ↓
+                            RAG Context Injection (if ENABLE_RAG=true)
+                                            ↓
+                                    AI Response with Context
 ```
 
 ### Components
 
 1. **ChunkingService**: Splits documents into overlapping chunks (1000 chars, 200 char overlap)
 2. **EmbeddingService**: Generates embeddings using OpenAI `text-embedding-3-small`
-3. **VectorService**: Manages Chroma collections and semantic search
+3. **VectorService**: Manages Chroma collections and semantic search (uses cosine distance)
 4. **DocumentService**: Automatically generates embeddings on document upload
+5. **RAGService**: Retrieves relevant context for AI conversations (when ENABLE_RAG=true)
 
 ## Quick Start
 
@@ -43,6 +48,9 @@ OPENAI_API_KEY=sk-your-openai-api-key
 # Optional: Customize embedding model
 EMBEDDING_MODEL=text-embedding-3-small
 EMBEDDING_DIMENSIONS=1536
+
+# Enable RAG (Retrieval-Augmented Generation)
+ENABLE_RAG=true
 ```
 
 ### 3. Upload Documents
@@ -79,6 +87,82 @@ curl -X POST http://localhost:3000/api/trpc/search.searchDocuments \
     "limit": 10
   }'
 ```
+
+## RAG (Retrieval-Augmented Generation)
+
+The system includes automatic RAG integration that enriches AI conversations with relevant context from project documents.
+
+### How It Works
+
+When `ENABLE_RAG=true` and a conversation is linked to a project:
+
+1. **User sends a message** to a project-linked conversation
+2. **Query embedding** is generated using OpenAI (same as document embeddings)
+3. **Semantic search** finds relevant document chunks from the project
+4. **Context injection** adds relevant chunks as a system message before the user's query
+5. **AI responds** with project-specific knowledge
+
+```
+User Query → Embedding → Vector Search → Context Retrieval → AI Response
+                                               ↓
+                                     [Source: deployment-guide.md]
+                                     Vercel deployment steps...
+```
+
+### Configuration
+
+**Default Settings** (in `RAGService.ts`):
+```typescript
+maxChunks: 5          // Maximum document chunks to retrieve
+minScore: 0.3         // Minimum cosine similarity (0-1)
+```
+
+**Similarity Threshold Guidance:**
+- `0.3` (default): Permissive - good for broad context
+- `0.5`: Moderate - balanced relevance
+- `0.7`: Strict - only high-confidence matches
+
+### Example
+
+**Without RAG:**
+```
+User: "How do I deploy this application?"
+AI: <generic deployment advice>
+```
+
+**With RAG enabled:**
+```
+User: "How do I deploy this application?"
+
+[System retrieves context from deployment-guide.md, score: 0.45]
+
+AI: "Based on the deployment guide, you have two options:
+1. Vercel Deployment: Connect GitHub, configure env vars, set up PostgreSQL...
+2. Docker Deployment: Use docker-compose.yml with PostgreSQL, Chroma, Redis..."
+```
+
+### Logging
+
+RAG activities are logged with structured logging:
+
+```typescript
+// Successful context retrieval
+logger.info('RAG context retrieved', {
+  projectId: 'project-123',
+  chunkCount: 2,
+  avgScore: 0.45
+});
+
+// No relevant context found
+logger.debug('No relevant context found for RAG', {
+  projectId: 'project-123',
+  query: 'how to deploy...'
+});
+```
+
+### Disabling RAG
+
+Set `ENABLE_RAG=false` in `.env` to disable automatic context retrieval. Conversations will work normally without RAG enhancement.
 
 ## API Reference
 
@@ -299,10 +383,11 @@ await trpc.search.reindexDocument.mutate({
 
 ### Poor search results
 
-1. **Check similarity scores**: If all scores < 0.5, query may be off-topic
+1. **Check similarity scores**: If all scores < 0.3, query may be off-topic
 2. **Try different queries**: Rephrase to match document language
-3. **Adjust minScore**: Lower threshold to see more results
+3. **Adjust minScore**: Lower threshold to see more results (default: 0.3 for RAG, 0.7 for manual search examples)
 4. **Review chunks**: Use `getEmbeddingStats` to verify document indexing
+5. **Check RAG logs**: Look for `logger.info('RAG context retrieved')` to see what context was found
 
 ## Future Enhancements
 

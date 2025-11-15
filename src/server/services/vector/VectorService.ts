@@ -61,7 +61,14 @@ export class VectorService {
     try {
       return await this.client.getOrCreateCollection({
         name: collectionName,
-        metadata: { projectId },
+        metadata: {
+          projectId,
+          // @ts-ignore - chromadb types don't include this but it works
+          'hnsw:space': 'cosine', // Use cosine distance for semantic similarity
+        },
+        // Explicitly set to null - we provide our own embeddings via OpenAI
+        // @ts-ignore - chromadb types don't allow null but it works
+        embeddingFunction: null,
       });
     } catch (error) {
       throw new Error(`Failed to get/create collection for project ${projectId}: ${error}`);
