@@ -5,6 +5,7 @@ import { TRPCError } from '@trpc/server';
 import type { ConversationService } from '../conversation/ConversationService';
 import type { MessageService } from '../message/MessageService';
 import type { Assistant, AssistantResponse } from '../assistant';
+import type { RAGService } from '../rag/RAGService';
 import { generateDemoResponse } from '../../../utils/staticDemo';
 
 export interface ChatMessage {
@@ -83,6 +84,7 @@ export class DatabaseChatService implements ChatService {
     private conversationService: ConversationService,
     private messageService: MessageService,
     private assistant: Assistant,
+    private ragService?: RAGService, // Optional - for easy toggling
   ) {}
 
   // Existing sendMessage method remains the same
@@ -102,7 +104,14 @@ export class DatabaseChatService implements ChatService {
       const conversation = await this.conversationService.validateAccess(conversationId, userId);
 
       // Get conversation history for AI context
-      const conversationHistory = await this.messageService.getConversationHistory(conversationId);
+      let conversationHistory = await this.messageService.getConversationHistory(conversationId);
+
+      // Enrich with RAG context if project is linked
+      conversationHistory = await this.enrichWithRAGContext(
+        conversationHistory,
+        content,
+        conversation.projectId || undefined
+      );
 
       // Check if cancelled before AI call
       if (signal?.aborted) {
@@ -191,7 +200,14 @@ export class DatabaseChatService implements ChatService {
       });
 
       // Get conversation history for AI context
-      const conversationHistory = await this.messageService.getConversationHistory(conversationId);
+      let conversationHistory = await this.messageService.getConversationHistory(conversationId);
+
+      // Enrich with RAG context if project is linked
+      conversationHistory = await this.enrichWithRAGContext(
+        conversationHistory,
+        content,
+        conversation.projectId || undefined
+      );
 
       // Check if cancelled before AI call
       if (signal?.aborted) {
@@ -380,6 +396,45 @@ export class DatabaseChatService implements ChatService {
       cost: message.cost,
       tokens: message.tokens,
     };
+  }
+
+  /**
+   * Enrich conversation history with RAG context if available
+   * Returns modified history with context prepended as system message
+   */
+  private async enrichWithRAGContext(
+    conversationHistory: any[],
+    userQuery: string,
+    projectId?: string,
+  ): Promise<any[]> {
+    if (!this.ragService || !projectId) {
+      return conversationHistory;
+    }
+
+    try {
+      const ragContext = await this.ragService.retrieveContext({
+        projectId,
+        query: userQuery,
+      });
+
+      if (!ragContext) {
+        return conversationHistory;
+      }
+
+      // Prepend RAG context as a system message
+      const contextMessage = {
+        role: 'system',
+        content: ragContext.systemMessage,
+      };
+
+      return [contextMessage, ...conversationHistory];
+    } catch (error) {
+      logger.warn('Failed to enrich with RAG context, continuing without it', {
+        error: error instanceof Error ? error.message : String(error),
+        projectId,
+      });
+      return conversationHistory;
+    }
   }
 }
 

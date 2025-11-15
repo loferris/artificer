@@ -10,6 +10,7 @@ export interface ConversationWithMessages {
   systemPrompt: string | null;
   temperature: number | null;
   maxTokens: number | null;
+  projectId: string | null;
   createdAt: Date;
   updatedAt: Date;
   messages: Array<{
@@ -340,6 +341,7 @@ export class DatabaseConversationService implements ConversationService {
       systemPrompt: conversation.systemPrompt,
       temperature: conversation.temperature,
       maxTokens: conversation.maxTokens,
+      projectId: conversation.projectId,
       createdAt: conversation.createdAt,
       updatedAt: conversation.updatedAt,
       messages: conversation.messages.map((msg: any) => ({
@@ -371,6 +373,7 @@ export class DemoConversationService implements ConversationService {
         systemPrompt: 'You are a helpful AI assistant showcasing demo features.',
         temperature: 0.7,
         maxTokens: 1000,
+        projectId: null,
         createdAt: new Date(Date.now() - Math.random() * 86400000), // Random times in last 24h
         updatedAt: new Date(Date.now() - Math.random() * 3600000), // Random times in last hour
         messages: demoConv.messages.map((msg: any, index: number) => ({
@@ -395,6 +398,7 @@ export class DemoConversationService implements ConversationService {
       systemPrompt: input.systemPrompt ?? 'You are a helpful AI assistant.',
       temperature: input.temperature ?? 0.7,
       maxTokens: input.maxTokens ?? 1000,
+      projectId: input.projectId ?? null,
       createdAt: new Date(),
       updatedAt: new Date(),
       messages: [],
