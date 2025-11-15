@@ -3,8 +3,9 @@
 # Test Authentication System
 # This script tests both public and protected endpoints
 
+# Replace this with your actual API key from: npm run generate-api-key
 API_KEY="${AI_WORKFLOW_API_KEY:-your_api_key_here}"
-BASE_URL="http://localhost:3000"
+BASE_URL="${BASE_URL:-http://localhost:3000}"
 
 echo "🧪 Testing Authentication System"
 echo "=================================="
