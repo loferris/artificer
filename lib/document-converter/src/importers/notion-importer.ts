@@ -16,7 +16,6 @@ import {
   createSpan,
   createCodeBlock,
   createImageBlock,
-  createListItem,
   createTableBlock,
   createCalloutBlock,
   generateKey,
@@ -46,7 +45,7 @@ export class NotionImporter implements ImporterPlugin {
 
   async import(
     input: string,
-    options?: ImportOptions
+    _options?: ImportOptions
   ): Promise<ConvertedDocument> {
     let data: any;
 
@@ -62,12 +61,12 @@ export class NotionImporter implements ImporterPlugin {
 
     // Determine format and convert
     if (data.object === 'page') {
-      return this.importNotionPage(data, options);
+      return this.importNotionPage(data);
     } else if (Array.isArray(data)) {
-      return this.importNotionBlocks(data, options);
+      return this.importNotionBlocks(data);
     } else if (data.type) {
       // Single Notion block
-      return this.importNotionBlocks([data], options);
+      return this.importNotionBlocks([data]);
     } else {
       throw new ConversionError(
         'Unrecognized Notion format',
@@ -77,8 +76,7 @@ export class NotionImporter implements ImporterPlugin {
   }
 
   private async importNotionPage(
-    page: NotionPage,
-    options?: ImportOptions
+    page: NotionPage
   ): Promise<ConvertedDocument> {
     const blocks: PortableTextBlock[] = [];
 
@@ -115,8 +113,7 @@ export class NotionImporter implements ImporterPlugin {
   }
 
   private async importNotionBlocks(
-    blocks: NotionBlock[],
-    options?: ImportOptions
+    blocks: NotionBlock[]
   ): Promise<ConvertedDocument> {
     const portableBlocks: PortableTextBlock[] = [];
 
@@ -177,7 +174,7 @@ export class NotionImporter implements ImporterPlugin {
       case 'image':
         return this.convertImage(content);
       case 'table':
-        return this.convertTable(content, block);
+        return this.convertTable(content);
       case 'bookmark':
         return this.convertBookmark(content);
       default:
@@ -284,7 +281,7 @@ export class NotionImporter implements ImporterPlugin {
     return createImageBlock(url, caption, caption);
   }
 
-  private convertTable(content: any, block: NotionBlock): PortableTextBlock {
+  private convertTable(content: any): any {
     // Notion tables require fetching child blocks
     // For now, create a placeholder
     const width = content.table_width || 0;
@@ -339,7 +336,7 @@ export class NotionImporter implements ImporterPlugin {
 
   private extractTitle(properties: Record<string, any>): string | undefined {
     // Look for title property
-    for (const [key, value] of Object.entries(properties)) {
+    for (const [_key, value] of Object.entries(properties)) {
       if (value.type === 'title' && value.title) {
         return this.extractPlainText(value.title);
       }

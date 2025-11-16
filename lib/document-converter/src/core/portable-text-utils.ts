@@ -51,7 +51,7 @@ export function createCodeBlock(
   code: string,
   language?: string,
   filename?: string
-): PortableTextBlock {
+): any {
   return {
     _type: 'code',
     _key: generateKey(),
@@ -68,7 +68,7 @@ export function createImageBlock(
   url: string,
   alt?: string,
   caption?: string
-): PortableTextBlock {
+): any {
   return {
     _type: 'image',
     _key: generateKey(),
@@ -109,7 +109,7 @@ export function createListItem(
  */
 export function createTableBlock(
   rows: { cells: string[]; header?: boolean }[]
-): PortableTextBlock {
+): any {
   return {
     _type: 'table',
     _key: generateKey(),
@@ -123,7 +123,7 @@ export function createTableBlock(
 export function createCalloutBlock(
   text: string,
   type: 'info' | 'warning' | 'error' | 'success' | 'note' = 'info'
-): PortableTextBlock {
+): any {
   return {
     _type: 'callout',
     _key: generateKey(),
@@ -150,10 +150,10 @@ export function generateKey(): string {
  * Merge consecutive text blocks with the same style
  */
 export function mergeTextBlocks(
-  blocks: PortableTextBlock[]
-): PortableTextBlock[] {
-  const merged: PortableTextBlock[] = [];
-  let current: PortableTextBlock | null = null;
+  blocks: any[]
+): any[] {
+  const merged: any[] = [];
+  let current: any | null = null;
 
   for (const block of blocks) {
     if (
@@ -184,12 +184,12 @@ export function mergeTextBlocks(
 /**
  * Extract plain text from Portable Text blocks
  */
-export function extractPlainText(blocks: PortableTextBlock[]): string {
+export function extractPlainText(blocks: any[]): string {
   return blocks
     .map((block) => {
       if (block._type === 'block' && 'children' in block) {
         return block.children
-          .map((child) => {
+          .map((child: any) => {
             if ('text' in child) {
               return child.text;
             }

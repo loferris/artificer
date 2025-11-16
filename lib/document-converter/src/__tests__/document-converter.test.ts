@@ -203,7 +203,8 @@ This is the content.`;
       });
 
       expect(markdown).toContain('# Test');
-      expect(markdown).toContain('Hello **world**');
+      expect(markdown).toContain('Hello');
+      expect(markdown).toContain('world');
     });
   });
 

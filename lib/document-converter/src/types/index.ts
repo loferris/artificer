@@ -4,10 +4,11 @@
 
 import type {
   PortableTextBlock,
-  ArbitraryTypedObject,
   PortableTextMarkDefinition,
   PortableTextSpan,
 } from '@portabletext/types';
+
+export type { ArbitraryTypedObject } from '@portabletext/types';
 
 /**
  * Extended Portable Text types with custom marks and blocks
@@ -25,7 +26,7 @@ export interface DocumentMetadata {
 }
 
 export interface ConvertedDocument {
-  content: PortableTextBlock[];
+  content: (PortableTextBlock | CodeBlock | ImageBlock | CalloutBlock | EmbedBlock | TableBlock)[];
   metadata: DocumentMetadata;
 }
 
@@ -52,15 +53,17 @@ export interface WikiLinkMark extends PortableTextMarkDefinition {
 /**
  * Custom block types
  */
-export interface CodeBlock extends PortableTextBlock {
+export interface CodeBlock {
   _type: 'code';
+  _key: string;
   language?: string;
   code: string;
   filename?: string;
 }
 
-export interface ImageBlock extends PortableTextBlock {
+export interface ImageBlock {
   _type: 'image';
+  _key: string;
   url: string;
   alt?: string;
   caption?: string;
@@ -68,21 +71,24 @@ export interface ImageBlock extends PortableTextBlock {
   height?: number;
 }
 
-export interface CalloutBlock extends PortableTextBlock {
+export interface CalloutBlock {
   _type: 'callout';
+  _key: string;
   calloutType: 'info' | 'warning' | 'error' | 'success' | 'note';
   children: PortableTextSpan[];
 }
 
-export interface EmbedBlock extends PortableTextBlock {
+export interface EmbedBlock {
   _type: 'embed';
+  _key: string;
   url: string;
   provider?: string;
   title?: string;
 }
 
-export interface TableBlock extends PortableTextBlock {
+export interface TableBlock {
   _type: 'table';
+  _key: string;
   rows: {
     cells: string[];
     header?: boolean;

@@ -19,7 +19,6 @@ import {
   createSpan,
   createCodeBlock,
   createImageBlock,
-  createListItem,
   createTableBlock,
   createCalloutBlock,
   generateKey,
@@ -50,7 +49,7 @@ export class MarkdownImporter implements ImporterPlugin {
 
   async import(
     input: string,
-    options?: ImportOptions
+    _options?: ImportOptions
   ): Promise<ConvertedDocument> {
     const sanitized = sanitizeText(input);
 
@@ -70,7 +69,7 @@ export class MarkdownImporter implements ImporterPlugin {
     const blocks: PortableTextBlock[] = [];
 
     for (const node of tree.children) {
-      if (node.type === 'yaml' || node.type === 'toml') {
+      if (node.type === 'yaml') {
         // Skip frontmatter nodes
         continue;
       }
@@ -108,7 +107,7 @@ export class MarkdownImporter implements ImporterPlugin {
             if (key === 'tags') {
               frontmatter.tags = value
                 .split(',')
-                .map((t) => t.trim())
+                .map((t: string) => t.trim())
                 .filter(Boolean);
             } else {
               (frontmatter as any)[key] = value.trim();

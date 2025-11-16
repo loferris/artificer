@@ -7,7 +7,7 @@ import type {
   ConvertedDocument,
   ExportOptions,
 } from '../types/index.js';
-import type { PortableTextBlock, PortableTextSpan } from '@portabletext/types';
+import type { PortableTextSpan } from '@portabletext/types';
 
 export class MarkdownExporter implements ExporterPlugin {
   name = 'markdown';
@@ -69,7 +69,7 @@ export class MarkdownExporter implements ExporterPlugin {
     return lines.join('\n');
   }
 
-  private convertBlock(block: PortableTextBlock): string {
+  private convertBlock(block: any): string {
     switch (block._type) {
       case 'block':
         return this.convertTextBlock(block);

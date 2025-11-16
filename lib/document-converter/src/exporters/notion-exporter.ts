@@ -8,7 +8,7 @@ import type {
   ConvertedDocument,
   ExportOptions,
 } from '../types/index.js';
-import type { PortableTextBlock, PortableTextSpan } from '@portabletext/types';
+import type { PortableTextSpan } from '@portabletext/types';
 
 export class NotionExporter implements ExporterPlugin {
   name = 'notion';
@@ -34,7 +34,7 @@ export class NotionExporter implements ExporterPlugin {
     );
   }
 
-  private convertBlock(block: PortableTextBlock): any {
+  private convertBlock(block: any): any {
     const baseBlock = {
       object: 'block',
       type: '',

@@ -50,7 +50,7 @@ export class RoamImporter implements ImporterPlugin {
 
   async import(
     input: string,
-    options?: ImportOptions
+    _options?: ImportOptions
   ): Promise<ConvertedDocument> {
     let data: any;
 
@@ -73,15 +73,14 @@ export class RoamImporter implements ImporterPlugin {
           'EMPTY_EXPORT'
         );
       }
-      return this.importRoamPage(data[0], options);
+      return this.importRoamPage(data[0]);
     } else {
-      return this.importRoamPage(data, options);
+      return this.importRoamPage(data);
     }
   }
 
   private async importRoamPage(
-    page: RoamPage,
-    options?: ImportOptions
+    page: RoamPage
   ): Promise<ConvertedDocument> {
     const blocks: PortableTextBlock[] = [];
 
@@ -222,7 +221,6 @@ export class RoamImporter implements ImporterPlugin {
     const markDefs: any[] = [];
 
     // Simple regex-based parsing
-    let currentPos = 0;
     const patterns = [
       { regex: /\*\*(.+?)\*\*/g, mark: 'strong' }, // Bold
       { regex: /__(.+?)__/g, mark: 'strong' }, // Bold alternative
@@ -239,9 +237,8 @@ export class RoamImporter implements ImporterPlugin {
     // Handle Roam-style links: [[Page Name]]
     const linkPattern = /\[\[([^\]]+)\]\]/g;
     let lastIndex = 0;
-    let match;
 
-    const processedText = text.replace(linkPattern, (match, linkText) => {
+    const processedText = text.replace(linkPattern, (_match, linkText) => {
       // Convert to wiki link mark
       return linkText; // Simplified - in production, handle as proper mark
     });
@@ -249,7 +246,6 @@ export class RoamImporter implements ImporterPlugin {
     // Handle markdown links: [text](url)
     const mdLinkPattern = /\[([^\]]+)\]\(([^)]+)\)/g;
     const segments: Array<{ text: string; marks: string[]; href?: string }> = [];
-    let remaining = processedText;
     let mdMatch;
 
     while ((mdMatch = mdLinkPattern.exec(processedText)) !== null) {
@@ -282,7 +278,6 @@ export class RoamImporter implements ImporterPlugin {
     // Convert segments to spans, applying marks
     for (const segment of segments) {
       let segmentText = segment.text;
-      const baseMar = segment.marks;
 
       // Apply formatting marks
       for (const pattern of patterns) {

@@ -7,7 +7,7 @@ import type {
   ConvertedDocument,
   ExportOptions,
 } from '../types/index.js';
-import type { PortableTextBlock, PortableTextSpan } from '@portabletext/types';
+import type { PortableTextSpan } from '@portabletext/types';
 
 export class RoamExporter implements ExporterPlugin {
   name = 'roam';
@@ -61,7 +61,7 @@ export class RoamExporter implements ExporterPlugin {
     );
   }
 
-  private convertBlock(block: PortableTextBlock): any | any[] | null {
+  private convertBlock(block: any): any | any[] | null {
     switch (block._type) {
       case 'block':
         return this.convertTextBlock(block);
@@ -182,7 +182,7 @@ export class RoamExporter implements ExporterPlugin {
     }));
   }
 
-  private extractText(block: PortableTextBlock): string {
+  private extractText(block: any): string {
     if (block._type === 'block' && 'children' in block) {
       return (block.children as any[])
         .map((child) => {
