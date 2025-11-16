@@ -30,9 +30,9 @@ export const DemoBanner: React.FC = () => {
         </div>
         <div className='hidden sm:block w-px h-4 bg-white/30'></div>
         <span className='font-medium text-xs sm:text-sm'>
-          <span className='hidden lg:inline'>Try dual interfaces • </span>
-          <span className='hidden md:inline'>Use /commands • </span>
-          Switch themes • Export conversations
+          <span className='hidden lg:inline'>RAG-powered conversations • </span>
+          <span className='hidden md:inline'>Project organization • </span>
+          Export & share conversations
         </span>
         <div className='flex items-center space-x-1 text-xs bg-white/20 rounded-full px-2 py-1'>
           <span>⌘</span>

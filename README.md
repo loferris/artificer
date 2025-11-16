@@ -8,15 +8,14 @@ A structured conversation system for AI models that transforms scattered chat se
 
 The **live demo** showcases all major features without requiring API keys or database setup:
 
-- **🎨 Dual Interface System**: Switch between Terminal mode (command-line style) and Chat mode (modern bubbles)
-- **⌨️ Command Processing**: Try `/help`, `/themes`, `/export`, `/cost`, and other slash commands
-- **🖼️ Theme Switching**: Three beautiful themes (Purple Rich, Amber Forest, Cyan Light) with instant switching
+- **🎨 Modern Chat UI**: Clean, focused interface optimized for research and writing workflows
+- **📁 Project Organization**: Projects displayed in sidebar with conversations grouped by project
+- **🔍 RAG Transparency**: Inline source attribution showing which documents informed AI responses
 - **📱 Responsive Design**: Works seamlessly across desktop, tablet, and mobile devices
-- **💾 Export Functionality**: Download conversations in Markdown, JSON, or plain text formats
-- **📊 Cost Tracking**: Real-time usage monitoring with detailed breakdowns (demo data)
-- **✨ Floating Toolbar**: Quick access to controls and interface switching
+- **💾 Export Functionality**: Download conversations in Markdown or JSON formats
+- **📚 Document Management**: Upload and organize documents within projects for context-aware conversations
 
-**Try the demo**: Use the floating toolbar (→) to explore features, switch interfaces, change themes, or export conversations!
+**Try the demo**: Explore project-based conversations and see how RAG enhances AI responses with document context!
 
 ## What This System Does
 
@@ -24,12 +23,13 @@ This is a **conversation orchestration platform** that treats AI interactions as
 
 - **Unified multi-model access** through OpenRouter API integration
 - **Real-time streaming** with WebSocket and SSE endpoints
-- **Dual interface modes** (terminal with slash commands + traditional chat)
+- **Project-based organization** for grouping related conversations and documents
+- **RAG (Retrieval-Augmented Generation)** with transparent source attribution
 - **Structured export system** for knowledge management workflows
-- **Theme system** with multiple responsive designs
+- **Document management** with vector search and semantic retrieval
 - **Cost tracking** and usage monitoring
 
-The system is designed API-first with a distinct service layer, making it suitable for integration with CLI tools, Obsidian plugins, and other knowledge management workflows.
+The system is designed API-first with a clean service layer, making it suitable for integration with CLI tools, Obsidian plugins, and other knowledge management workflows.
 
 ## Current Features
 
@@ -42,17 +42,17 @@ The system is designed API-first with a distinct service layer, making it suitab
 - Type-safe API layer with tRPC
 - **Standalone orchestration server** for external integrations (Python, CLI tools, etc.)
 - Comprehensive rate limiting and session management
-- **529 tests** with full test coverage for critical components
+- **546 tests** with full test coverage for critical components
 - **Project & document management** for organizing conversations and knowledge
 
 **User Interface**
-- **Dual Interface System**: Terminal mode with slash commands + traditional chat interface
-- **Theme System**: Three responsive themes ("purple-rich" dark, "amber," and cyan-rich light) with CSS custom properties
-- **Real-time Streaming**: Visual streaming indicators with typing effects in terminal mode
-- **Cost Tracking Widget**: Live usage monitoring with theme-responsive styling
-- **Export Functionality**: Markdown and JSON export with basic support for Notion/Obsidian formats
+- **Modern Simplified UI**: Single focused interface optimized for research and writing workflows
+- **Project-First Navigation**: Left sidebar with projects and conversations organized hierarchically
+- **RAG Source Attribution**: Inline display of document sources with expandable context view
+- **Real-time Streaming**: Visual streaming indicators for AI responses
+- **Export Functionality**: Markdown and JSON export from dropdown menu
 - **Project Management**: Create projects, upload documents, search content, organize conversations
-- **Document Storage**: PostgreSQL-based document storage with text extraction and full-text search
+- **Document Storage**: PostgreSQL-based document storage with vector embeddings and semantic search
 
 **Service Architecture**
 - Clean service layer with dependency injection for business logic
@@ -69,8 +69,8 @@ The system is designed API-first with a distinct service layer, making it suitab
 - **Real-time**: WebSocket subscriptions + SSE endpoints with unified ChatService backend
 - **AI Integration**: OpenRouter API supporting multiple models (Claude, DeepSeek, Qwen, etc.) + OpenAI for embeddings
 - **Token Management**: tiktoken for accurate token counting and context window management
-- **Testing**: Vitest with 563 tests and comprehensive coverage
-- **Styling**: CSS custom properties with theme system and responsive design
+- **Testing**: Vitest with 546 tests and comprehensive coverage
+- **Styling**: Tailwind CSS 3.4 with responsive design
 - **Logging**: Centralized clientLogger (frontend) + structured pino logger (backend)
 
 ## Architecture Design
@@ -102,9 +102,9 @@ The service layer is designed for integration with external tools:
 - Export system (Markdown, JSON)
 - Comprehensive rate limiting and session management
 - Type-safe API layer with tRPC and Zod validation
-- Dual UI system (terminal mode with slash commands + traditional chat)
-- Theme system (3 responsive themes with CSS custom properties)
-- Cost tracking widget with real-time usage monitoring
+- Modern simplified chat UI with RAG source attribution
+- Project-first conversation organization
+- Cost tracking with real-time usage monitoring
 - Professional logging (clientLogger + pino)
 - 563 automated tests with comprehensive coverage
 
@@ -223,7 +223,7 @@ npm run test:ui
 npm test -- src/components/__tests__/CostTracker.test.tsx
 ```
 
-**Current Test Coverage**: 529 tests across 45 test files covering:
+**Current Test Coverage**: 546 tests across 44 test files covering:
 - Component functionality and rendering
 - Service layer business logic (70-100% coverage for core services)
 - API endpoints and error handling
@@ -234,43 +234,30 @@ npm test -- src/components/__tests__/CostTracker.test.tsx
 
 ## User Interface Features
 
-The system provides two distinct interfaces optimized for different workflows:
+The system provides a **modern, simplified interface** optimized for research and writing workflows:
 
-### **Terminal Interface**
-- **Command-driven workflow** with slash commands (`/new`, `/list`, `/export`, `/theme`, etc.)
-- **Real-time streaming** with visual indicators and typing effects
-- **Theme system** with 3 responsive themes (Dark, Amber, Light)
-- **Integrated cost tracking** with live usage monitoring
-- **Session management** with conversation selection and welcome messages
+### **Main Chat Interface**
+- **Project-First Navigation**: Left sidebar displays all projects with active indicator
+- **Conversation Organization**: Conversations automatically grouped by their associated project
+- **Real-time Streaming**: Visual streaming indicators with smooth message rendering
+- **Clean Message Display**: User and assistant messages with clear visual distinction
+- **Responsive Design**: Adapts seamlessly to desktop, tablet, and mobile screens
 
-### **Classic Chat Interface**
-- **Traditional chat experience** with conversation sidebar
-- **Standard messaging** (no streaming, optimized for reliability)
-- **Export functionality** with multiple format options
-- **Visual conversation management** with conversation cards and timestamps
-- **Pink/purple gradient aesthetic** independent of terminal themes
+### **RAG Transparency**
+- **Inline Source Attribution**: Each AI response shows which documents were used
+- **Expandable Context View**: Click to see the actual retrieved text chunks
+- **Relevance Scores**: View similarity scores for each source document
+- **Source Filenames**: Clear indication of which files provided context
+- **Multiple Sources**: Display all contributing documents with their content
 
-### **Slash Commands (Terminal Mode)**
-```bash
-/man                             # Show command manual
-/new                            # Create new conversation
-/list                           # Show 10 recent conversations
-/list-all                       # Show all conversations  
-/export-current [markdown|json]  # Export current conversation
-/export-all [markdown|json]     # Export all conversations
-/theme [dark|amber|light]       # Switch terminal theme
-/view [chat|terminal]           # Switch interface mode
-/streaming [yes|no]             # Toggle streaming (terminal only)
-/reset                          # Reset session
-```
+### **Export Functionality**
+From the header dropdown menu:
+- **Export Current**: Save active conversation as Markdown or JSON
+- **Export All**: Download all conversations in selected format
+- **Format Options**: Markdown (.md) or JSON (.json)
+- **Include Metadata**: Option to include RAG sources in exports
 
-### **Theme System**
-- **Purple-Rich**: Dark theme with purple gradients and rich contrast
-- **Amber-Forest**: Warm earth tones with amber accents
-- **Cyan-Rich**: Light theme with cyan highlights and clean typography
-- All themes include responsive design and watercolor visual effects
-
-### **Project Management** (New in this PR)
+### **Project Management**
 **Available at `/projects` route:**
 - Create and organize projects by topic/workflow
 - Upload documents (text, markdown, JSON, CSV files)
@@ -290,10 +277,16 @@ The system provides two distinct interfaces optimized for different workflows:
 - Document management (upload, view, delete)
 - Statistics and activity tracking
 
-**Limitations (Planned for Future PRs):**
+**Current Capabilities:**
+- Automatic RAG context retrieval for project-linked conversations
+- Inline source attribution showing which documents were used
+- Document upload and management through project panel
+- Vector embeddings and semantic search via Chroma
+
+**Limitations (Planned for Future):**
 - Text files only (no PDF/Word/Excel parsing)
 - No file versioning
-- Frontend UI for manual semantic search and RAG settings not yet implemented
+- Manual RAG parameter tuning (currently uses defaults: 5 chunks max, 0.3 min score)
 
 ## API Integration
 

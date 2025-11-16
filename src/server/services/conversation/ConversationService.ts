@@ -48,6 +48,7 @@ export interface ConversationListItem {
   systemPrompt: string | null;
   temperature: number | null;
   maxTokens: number | null;
+  projectId: string | null;
   createdAt: Date;
   updatedAt: Date;
   messageCount: number;
@@ -187,6 +188,7 @@ export class DatabaseConversationService implements ConversationService {
       systemPrompt: conv.systemPrompt,
       temperature: conv.temperature,
       maxTokens: conv.maxTokens,
+      projectId: conv.projectId,
       createdAt: conv.createdAt,
       updatedAt: conv.updatedAt,
       messageCount: conv._count.messages,
@@ -420,6 +422,7 @@ export class DemoConversationService implements ConversationService {
       systemPrompt: conv.systemPrompt,
       temperature: conv.temperature,
       maxTokens: conv.maxTokens,
+      projectId: conv.projectId,
       createdAt: conv.createdAt,
       updatedAt: conv.updatedAt,
       messageCount: conv.messages.length,

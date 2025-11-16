@@ -45,3 +45,34 @@ export const shouldUseDemoFallback = (error: any): boolean => {
     errorMessage.includes('enoent')
   );
 };
+
+/**
+ * Generate a simple demo response for demo mode
+ */
+export const generateDemoResponse = (userMessage: string): { content: string; model: string; cost: number } => {
+  const lowerMessage = userMessage.toLowerCase();
+
+  // Simple keyword-based responses for demo mode
+  if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
+    return {
+      content: "Hello! I'm running in demo mode. This is a simulated conversation to showcase the AI Workflow Engine interface. Try asking me questions or exploring the features!",
+      model: 'demo-assistant-v1',
+      cost: 0.001,
+    };
+  }
+
+  if (lowerMessage.includes('what') || lowerMessage.includes('how') || lowerMessage.includes('?')) {
+    return {
+      content: `That's a great question! In demo mode, I provide simulated responses to help you explore the interface. The AI Workflow Engine supports RAG-powered conversations, project organization, and conversation export. Deploy with a database and API keys to unlock full AI capabilities.`,
+      model: 'demo-assistant-v1',
+      cost: 0.001,
+    };
+  }
+
+  // Default response
+  return {
+    content: `I hear you! This is a demo response to "${userMessage}". To experience real AI-powered conversations with RAG support, deploy the application with your own API keys and database. Explore the UI to see project management, conversation history, and export features!`,
+    model: 'demo-assistant-v1',
+    cost: 0.001,
+  };
+};

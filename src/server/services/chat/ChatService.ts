@@ -7,7 +7,7 @@ import type { MessageService } from '../message/MessageService';
 import type { Assistant, AssistantResponse } from '../assistant';
 import type { RAGService } from '../rag/RAGService';
 import type { ConversationSummarizationService } from '../summarization/ConversationSummarizationService';
-import { generateDemoResponse } from '../../../utils/staticDemo';
+import { generateDemoResponse } from '../../../utils/demo';
 
 export interface ChatMessage {
   id: string;
@@ -17,6 +17,11 @@ export interface ChatMessage {
   model?: string;
   cost?: number;
   tokens?: number;
+  ragSources?: Array<{
+    filename: string;
+    content: string;
+    score: number;
+  }>;
 }
 
 export interface SendMessageInput {
@@ -41,6 +46,11 @@ export interface ChatStreamChunk {
     model?: string;
     cost?: number;
     messageId?: string;
+    ragSources?: Array<{
+      filename: string;
+      content: string;
+      score: number;
+    }>;
   };
 }
 
@@ -106,10 +116,10 @@ export class DatabaseChatService implements ChatService {
       const conversation = await this.conversationService.validateAccess(conversationId, userId);
 
       // Get conversation history for AI context
-      let conversationHistory = await this.messageService.getConversationHistory(conversationId);
+      const conversationHistory = await this.messageService.getConversationHistory(conversationId);
 
       // Enrich with RAG context if project is linked
-      conversationHistory = await this.enrichWithRAGContext(
+      const { history: enrichedHistory, ragContext } = await this.enrichWithRAGContext(
         conversationHistory,
         content,
         conversation.projectId || undefined
@@ -121,7 +131,7 @@ export class DatabaseChatService implements ChatService {
       }
 
       // Get AI response with abort signal
-      const aiResponse = await this.assistant.getResponse(content, conversationHistory, { signal });
+      const aiResponse = await this.assistant.getResponse(content, enrichedHistory, { signal });
       const response = typeof aiResponse === 'string' ? aiResponse : aiResponse.response;
       const model = typeof aiResponse === 'string' ? 'unknown' : aiResponse.model;
       const cost = typeof aiResponse === 'string' ? 0 : aiResponse.cost;
@@ -163,7 +173,14 @@ export class DatabaseChatService implements ChatService {
 
       return {
         userMessage: this.formatChatMessage(userMessage),
-        assistantMessage: this.formatChatMessage(assistantMessage),
+        assistantMessage: {
+          ...this.formatChatMessage(assistantMessage),
+          ragSources: ragContext ? ragContext.map((chunk: any) => ({
+            filename: chunk.source,
+            content: chunk.content,
+            score: chunk.score,
+          })) : undefined,
+        },
         conversationTitle,
       };
     } catch (error) {
@@ -205,10 +222,10 @@ export class DatabaseChatService implements ChatService {
       });
 
       // Get conversation history for AI context
-      let conversationHistory = await this.messageService.getConversationHistory(conversationId);
+      const conversationHistory = await this.messageService.getConversationHistory(conversationId);
 
       // Enrich with RAG context if project is linked
-      conversationHistory = await this.enrichWithRAGContext(
+      const { history: enrichedHistory, ragContext } = await this.enrichWithRAGContext(
         conversationHistory,
         content,
         conversation.projectId || undefined
@@ -229,7 +246,7 @@ export class DatabaseChatService implements ChatService {
         let totalCost = 0;
 
         if (this.assistant.createResponseStream) {
-          const stream = this.assistant.createResponseStream(content, conversationHistory, {
+          const stream = this.assistant.createResponseStream(content, enrichedHistory, {
             signal,
           });
 
@@ -284,12 +301,17 @@ export class DatabaseChatService implements ChatService {
               model,
               cost: totalCost,
               messageId: assistantMessage.id,
+              ragSources: ragContext ? ragContext.map((chunk: any) => ({
+                filename: chunk.source,
+                content: chunk.content,
+                score: chunk.score,
+              })) : undefined,
             },
           };
         }
       } else {
         // Fallback: simulate streaming for non-streaming assistants
-        const aiResponse = await this.assistant.getResponse(content, conversationHistory, {
+        const aiResponse = await this.assistant.getResponse(content, enrichedHistory, {
           signal,
         });
         const response = typeof aiResponse === 'string' ? aiResponse : aiResponse.response;
@@ -336,6 +358,11 @@ export class DatabaseChatService implements ChatService {
             model,
             cost,
             messageId: assistantMessage.id,
+            ragSources: ragContext ? ragContext.map((chunk: any) => ({
+              filename: chunk.source,
+              content: chunk.content,
+              score: chunk.score,
+            })) : undefined,
           },
         };
       }
@@ -411,15 +438,15 @@ export class DatabaseChatService implements ChatService {
 
   /**
    * Enrich conversation history with RAG context if available
-   * Returns modified history with context prepended as system message
+   * Returns modified history with context prepended as system message and the RAG context
    */
   private async enrichWithRAGContext(
     conversationHistory: any[],
     userQuery: string,
     projectId?: string,
-  ): Promise<any[]> {
+  ): Promise<{ history: any[]; ragContext?: any }> {
     if (!this.ragService || !projectId) {
-      return conversationHistory;
+      return { history: conversationHistory };
     }
 
     try {
@@ -429,7 +456,7 @@ export class DatabaseChatService implements ChatService {
       });
 
       if (!ragContext) {
-        return conversationHistory;
+        return { history: conversationHistory };
       }
 
       // Prepend RAG context as a system message
@@ -438,13 +465,16 @@ export class DatabaseChatService implements ChatService {
         content: ragContext.systemMessage,
       };
 
-      return [contextMessage, ...conversationHistory];
+      return {
+        history: [contextMessage, ...conversationHistory],
+        ragContext: ragContext.chunks, // Return the chunks for frontend display
+      };
     } catch (error) {
       logger.warn('Failed to enrich with RAG context, continuing without it', {
         error: error instanceof Error ? error.message : String(error),
         projectId,
       });
-      return conversationHistory;
+      return { history: conversationHistory };
     }
   }
 
