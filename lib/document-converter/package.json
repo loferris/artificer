@@ -1,0 +1,55 @@
+{
+  "name": "@ai-workflow/document-converter",
+  "version": "0.1.0",
+  "description": "A format-agnostic document conversion library using Portable Text as the intermediate format. Supports Obsidian, Notion, Roam, and more.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest",
+    "test:watch": "vitest --watch"
+  },
+  "keywords": [
+    "document",
+    "converter",
+    "markdown",
+    "notion",
+    "obsidian",
+    "roam",
+    "portable-text",
+    "pandoc",
+    "format-converter"
+  ],
+  "author": "",
+  "license": "MIT",
+  "peerDependencies": {
+    "remark": "^15.0.0",
+    "remark-frontmatter": "^5.0.0",
+    "remark-gfm": "^4.0.0",
+    "remark-parse": "^11.0.0",
+    "remark-stringify": "^11.0.0",
+    "unified": "^11.0.0"
+  },
+  "dependencies": {
+    "@portabletext/types": "^2.0.13",
+    "@types/js-yaml": "^4.0.9",
+    "js-yaml": "^4.1.1",
+    "mdast-util-from-markdown": "^2.0.2",
+    "mdast-util-frontmatter": "^2.0.1",
+    "mdast-util-to-markdown": "^2.1.2",
+    "unist-builder": "^4.0.0",
+    "unist-util-visit": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^3.0.0"
+  }
+}

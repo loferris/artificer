@@ -3,6 +3,84 @@ import { router, publicProcedure, protectedProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
 import { createServicesFromContext } from '../services/ServiceFactory';
 import { ExportService, type ExportOptions } from '../services/export';
+import { DocumentConverter } from '../../../lib/document-converter/src/index.js';
+import type { ConvertedDocument } from '../../../lib/document-converter/src/types/index.js';
+
+const converter = new DocumentConverter();
+
+/**
+ * Convert conversation messages to Portable Text format
+ */
+function convertConversationToPortableText(conversation: any): ConvertedDocument {
+  const blocks: any[] = [];
+
+  // Add conversation title as heading
+  if (conversation.title) {
+    blocks.push({
+      _type: 'block',
+      _key: `title-${conversation.id}`,
+      style: 'h1',
+      children: [{
+        _type: 'span',
+        _key: `title-span-${conversation.id}`,
+        text: conversation.title,
+        marks: [],
+      }],
+      markDefs: [],
+    });
+  }
+
+  // Add messages
+  for (const message of conversation.messages) {
+    // Add message role as heading
+    blocks.push({
+      _type: 'block',
+      _key: `role-${message.id}`,
+      style: 'h3',
+      children: [{
+        _type: 'span',
+        _key: `role-span-${message.id}`,
+        text: message.role === 'user' ? '👤 User' : '🤖 Assistant',
+        marks: [],
+      }],
+      markDefs: [],
+    });
+
+    // Add message content as paragraph(s)
+    const paragraphs = message.content.split('\n\n');
+    for (const paragraph of paragraphs) {
+      if (paragraph.trim()) {
+        blocks.push({
+          _type: 'block',
+          _key: `msg-${message.id}-${Math.random()}`,
+          style: 'normal',
+          children: [{
+            _type: 'span',
+            _key: `msg-span-${message.id}-${Math.random()}`,
+            text: paragraph.trim(),
+            marks: [],
+          }],
+          markDefs: [],
+        });
+      }
+    }
+  }
+
+  return {
+    content: blocks,
+    metadata: {
+      title: conversation.title || 'Untitled Conversation',
+      createdAt: conversation.createdAt?.toISOString() || new Date().toISOString(),
+      updatedAt: conversation.updatedAt?.toISOString() || new Date().toISOString(),
+      source: 'ai-workflow-engine',
+      conversationId: conversation.id,
+      totalMessages: conversation.messages.length,
+      totalTokens: conversation.metadata?.totalTokens,
+      totalCost: conversation.metadata?.totalCost,
+      model: conversation.model,
+    },
+  };
+}
 
 export const exportRouter = router({
   /**
@@ -76,6 +154,25 @@ export const exportRouter = router({
           break;
         case 'json':
           result = await ExportService.exportToJSON(conversationsWithMessages, options);
+          break;
+        case 'html':
+          // Use document converter for HTML export - combine all conversations
+          const allPortableText = conversationsWithMessages.map(convertConversationToPortableText);
+          // Combine all blocks from all conversations
+          const combinedBlocks = allPortableText.flatMap(doc => doc.content);
+          const combinedDoc: ConvertedDocument = {
+            content: combinedBlocks,
+            metadata: {
+              title: 'All Conversations',
+              source: 'ai-workflow-engine',
+              exportDate: new Date().toISOString(),
+              totalConversations: conversationsWithMessages.length,
+            },
+          };
+          result = await converter.export(combinedDoc, 'html', {
+            includeMetadata: input.includeMetadata,
+            includeStyles: true,
+          });
           break;
         default:
           throw new TRPCError({
@@ -182,6 +279,14 @@ export const exportRouter = router({
         case 'json':
           result = await ExportService.exportToJSON([conversationWithMessages], options);
           break;
+        case 'html':
+          // Use document converter for HTML export
+          const portableText = convertConversationToPortableText(conversationWithMessages);
+          result = await converter.export(portableText, 'html', {
+            includeMetadata: input.includeMetadata,
+            includeStyles: true,
+          });
+          break;
         default:
           throw new TRPCError({
             code: 'BAD_REQUEST',
@@ -231,6 +336,12 @@ export const exportRouter = router({
           id: 'google-docs',
           name: 'Google Docs',
           description: 'HTML format for Google Docs API',
+          extensions: ['.html'],
+        },
+        {
+          id: 'html',
+          name: 'HTML',
+          description: 'Styled HTML document for viewing in browser',
           extensions: ['.html'],
         },
         {
