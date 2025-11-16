@@ -122,3 +122,52 @@ export interface ChainContext {
   config: ChainConfig;
   signal?: AbortSignal;
 }
+
+/**
+ * Streaming event types
+ */
+export type StreamEventType =
+  | 'analyzing'
+  | 'routing'
+  | 'executing'
+  | 'validating'
+  | 'retrying'
+  | 'complete'
+  | 'error';
+
+/**
+ * Streaming progress event
+ */
+export interface StreamEvent {
+  type: StreamEventType;
+  stage: string;
+  message: string;
+  progress: number; // 0-1
+  metadata?: {
+    analysis?: AnalysisResult;
+    routingPlan?: RoutingPlan;
+    model?: string;
+    retryCount?: number;
+    content?: string; // Partial content during execution
+    finished?: boolean;
+  };
+}
+
+/**
+ * Cache key for routing decisions
+ */
+export interface RouteCacheKey {
+  messageHash: string; // Hash of message content
+  complexity: number;
+  category: TaskCategory;
+}
+
+/**
+ * Cached routing decision
+ */
+export interface CachedRoute {
+  key: RouteCacheKey;
+  routingPlan: RoutingPlan;
+  timestamp: Date;
+  hitCount: number;
+}

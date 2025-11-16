@@ -11,7 +11,11 @@ import {
   AnalysisResult,
   RoutingPlan,
   ValidationResult,
+  StreamEvent,
+  CachedRoute,
+  RouteCacheKey,
 } from './types';
+import crypto from 'crypto';
 import { Assistant, AssistantResponse } from '../assistant';
 import { logger } from '../../utils/logger';
 
@@ -30,6 +34,8 @@ export class ChainOrchestrator {
   private validator: ValidatorAgent;
   private assistant: Assistant;
   private db?: PrismaClient;
+  private routeCache: Map<string, CachedRoute> = new Map();
+  private readonly CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
   constructor(
     private config: ChainConfig,
@@ -426,5 +432,323 @@ export class ChainOrchestrator {
   private estimateTokens(text: string): number {
     // Rough estimate: ~4 characters per token
     return Math.ceil(text.length / 4);
+  }
+
+  /**
+   * Streaming orchestration - yields progress events as chain executes
+   * Reduces perceived latency with real-time updates
+   */
+  async *orchestrateStream(context: ChainContext): AsyncGenerator<StreamEvent, ChainResult, undefined> {
+    const startTime = Date.now();
+    let retryCount = 0;
+    let lastError: Error | undefined;
+
+    try {
+      // Stage 1: Analyze (with parallel cache check)
+      yield {
+        type: 'analyzing',
+        stage: 'analysis',
+        message: '🔍 Analyzing your query...',
+        progress: 0.1,
+      };
+
+      const analysisPromise = this.analyzeQuery(context);
+      const cacheKey = this.generateCacheKey(context.userMessage);
+
+      const analysis = await analysisPromise;
+
+      yield {
+        type: 'analyzing',
+        stage: 'analysis',
+        message: `📊 Complexity: ${analysis.complexity}/10 (${analysis.category})`,
+        progress: 0.2,
+        metadata: { analysis },
+      };
+
+      // Check if complexity meets threshold
+      if (analysis.complexity < context.config.minComplexityForChain) {
+        yield {
+          type: 'routing',
+          stage: 'simple-route',
+          message: '⚡ Simple query detected, using fast path...',
+          progress: 0.3,
+        };
+
+        const result = await this.simpleExecution(context, analysis);
+
+        yield {
+          type: 'complete',
+          stage: 'complete',
+          message: '✅ Done!',
+          progress: 1.0,
+          metadata: { finished: true },
+        };
+
+        return result;
+      }
+
+      // Stage 2: Route (with cache check)
+      yield {
+        type: 'routing',
+        stage: 'routing',
+        message: '🧭 Selecting optimal model...',
+        progress: 0.3,
+      };
+
+      let routingPlan: RoutingPlan;
+      const cachedRoute = this.getCachedRoute(cacheKey, analysis);
+
+      if (cachedRoute) {
+        routingPlan = cachedRoute.routingPlan;
+        yield {
+          type: 'routing',
+          stage: 'routing',
+          message: `💾 Using cached routing (${routingPlan.primaryModel})`,
+          progress: 0.4,
+          metadata: { routingPlan },
+        };
+      } else {
+        routingPlan = await this.routeQuery(analysis, context);
+        this.cacheRoute(cacheKey, analysis, routingPlan);
+
+        yield {
+          type: 'routing',
+          stage: 'routing',
+          message: `🎯 Routed to ${routingPlan.primaryModel}`,
+          progress: 0.4,
+          metadata: { routingPlan },
+        };
+      }
+
+      // Stage 3: Execute (with streaming if supported)
+      let execution: ExecutionResult;
+      let validation: ValidationResult | undefined;
+      let finalModel = routingPlan.primaryModel;
+
+      while (retryCount <= context.config.maxRetries) {
+        try {
+          yield {
+            type: 'executing',
+            stage: 'execution',
+            message: retryCount === 0
+              ? `🤖 Generating response with ${finalModel}...`
+              : `🔄 Retry ${retryCount}: Using ${finalModel}...`,
+            progress: 0.5 + (retryCount * 0.1),
+            metadata: { model: finalModel, retryCount },
+          };
+
+          execution = await this.executeQuery(context, finalModel);
+
+          yield {
+            type: 'executing',
+            stage: 'execution',
+            message: `✨ Response generated (${execution.tokens} tokens, $${execution.cost.toFixed(6)})`,
+            progress: 0.7,
+            metadata: {
+              content: execution.content.substring(0, 100) + '...',
+              model: execution.model,
+            },
+          };
+
+          // Stage 4: Validate if needed
+          if (context.config.validationEnabled && routingPlan.shouldValidate) {
+            yield {
+              type: 'validating',
+              stage: 'validation',
+              message: '🔬 Validating response quality...',
+              progress: 0.8,
+            };
+
+            validation = await this.validateResponse(context, analysis, execution);
+
+            if (validation.shouldRetry && retryCount < context.config.maxRetries) {
+              retryCount++;
+
+              yield {
+                type: 'retrying',
+                stage: 'retry',
+                message: `⚠️ Quality check failed (score: ${validation.score}/10). Retrying with better model...`,
+                progress: 0.5 + (retryCount * 0.1),
+                metadata: { retryCount },
+              };
+
+              // Select retry model
+              if (validation.suggestedModel) {
+                finalModel = validation.suggestedModel;
+              } else if (routingPlan.fallbackModels && routingPlan.fallbackModels.length > 0) {
+                finalModel = routingPlan.fallbackModels[retryCount - 1] || routingPlan.primaryModel;
+              }
+
+              continue; // Retry loop
+            }
+
+            yield {
+              type: 'validating',
+              stage: 'validation',
+              message: validation.isValid
+                ? `✅ Quality verified (score: ${validation.score}/10)`
+                : `⚠️ Validation complete (score: ${validation.score}/10)`,
+              progress: 0.9,
+            };
+          }
+
+          // Success - build result
+          const result = this.buildChainResult(
+            analysis,
+            routingPlan,
+            execution,
+            validation,
+            retryCount,
+            Date.now() - startTime,
+            context.conversationId
+          );
+
+          // Store decision (don't wait)
+          this.storeRoutingDecision(result).catch(err =>
+            logger.error('[ChainOrchestrator] Failed to store decision', err)
+          );
+
+          yield {
+            type: 'complete',
+            stage: 'complete',
+            message: `✅ Complete! (${(result.totalLatency / 1000).toFixed(1)}s)`,
+            progress: 1.0,
+            metadata: { finished: true },
+          };
+
+          return result;
+
+        } catch (execError) {
+          lastError = execError instanceof Error ? execError : new Error(String(execError));
+
+          if (retryCount < context.config.maxRetries &&
+              routingPlan.fallbackModels &&
+              routingPlan.fallbackModels.length > retryCount) {
+            retryCount++;
+            finalModel = routingPlan.fallbackModels[retryCount - 1];
+
+            yield {
+              type: 'retrying',
+              stage: 'retry',
+              message: `⚠️ Model error. Trying fallback: ${finalModel}...`,
+              progress: 0.5 + (retryCount * 0.1),
+              metadata: { retryCount },
+            };
+
+            continue;
+          }
+
+          throw lastError;
+        }
+      }
+
+      throw new Error(`Max retries exceeded: ${lastError?.message}`);
+
+    } catch (error) {
+      logger.error('[ChainOrchestrator] Stream orchestration failed', error);
+
+      yield {
+        type: 'error',
+        stage: 'error',
+        message: `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        progress: 0,
+      };
+
+      throw error;
+    }
+  }
+
+  /**
+   * Cache management methods
+   */
+
+  private generateCacheKey(message: string): string {
+    // Simple hash of message content
+    return crypto.createHash('md5').update(message.toLowerCase().trim()).digest('hex');
+  }
+
+  private getCachedRoute(
+    messageHash: string,
+    analysis: AnalysisResult
+  ): CachedRoute | null {
+    const cacheKey = `${messageHash}-${analysis.complexity}-${analysis.category}`;
+    const cached = this.routeCache.get(cacheKey);
+
+    if (!cached) return null;
+
+    // Check if cache is still valid
+    const age = Date.now() - cached.timestamp.getTime();
+    if (age > this.CACHE_TTL_MS) {
+      this.routeCache.delete(cacheKey);
+      return null;
+    }
+
+    // Increment hit count
+    cached.hitCount++;
+    logger.info('[ChainOrchestrator] Cache hit', {
+      cacheKey: cacheKey.substring(0, 16) + '...',
+      hitCount: cached.hitCount,
+      model: cached.routingPlan.primaryModel,
+    });
+
+    return cached;
+  }
+
+  private cacheRoute(
+    messageHash: string,
+    analysis: AnalysisResult,
+    routingPlan: RoutingPlan
+  ): void {
+    const cacheKey = `${messageHash}-${analysis.complexity}-${analysis.category}`;
+
+    this.routeCache.set(cacheKey, {
+      key: {
+        messageHash,
+        complexity: analysis.complexity,
+        category: analysis.category,
+      },
+      routingPlan,
+      timestamp: new Date(),
+      hitCount: 0,
+    });
+
+    logger.info('[ChainOrchestrator] Route cached', {
+      cacheKey: cacheKey.substring(0, 16) + '...',
+      model: routingPlan.primaryModel,
+    });
+
+    // Cleanup old cache entries (keep last 100)
+    if (this.routeCache.size > 100) {
+      const oldestKey = Array.from(this.routeCache.keys())[0];
+      this.routeCache.delete(oldestKey);
+    }
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getCacheStats(): { size: number; totalHits: number; entries: Array<{ model: string; hits: number }> } {
+    const entries = Array.from(this.routeCache.values())
+      .map(cached => ({
+        model: cached.routingPlan.primaryModel,
+        hits: cached.hitCount,
+      }))
+      .sort((a, b) => b.hits - a.hits);
+
+    const totalHits = entries.reduce((sum, e) => sum + e.hits, 0);
+
+    return {
+      size: this.routeCache.size,
+      totalHits,
+      entries,
+    };
+  }
+
+  /**
+   * Clear the routing cache
+   */
+  clearCache(): void {
+    this.routeCache.clear();
+    logger.info('[ChainOrchestrator] Cache cleared');
   }
 }
