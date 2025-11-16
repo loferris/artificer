@@ -2,7 +2,6 @@ import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createTRPCReact, httpBatchLink } from '@trpc/react-query';
 import type { AppRouter } from '../../server/root';
-import { TerminalThemeProvider } from '../../contexts/TerminalThemeContext';
 
 export const trpc = createTRPCReact<AppRouter>();
 
@@ -31,7 +30,7 @@ export const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <TerminalThemeProvider>{children}</TerminalThemeProvider>
+        {children}
       </QueryClientProvider>
     </trpc.Provider>
   );

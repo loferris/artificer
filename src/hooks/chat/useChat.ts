@@ -5,7 +5,6 @@ import { useExportManager } from '../../components/ExportManager';
 import { useStreamingChat } from '../useStreamingChat';
 import { clientLogger } from '../../utils/clientLogger';
 import type { Message } from '../../types';
-import { useCommandProcessor } from './useCommandProcessor';
 
 /**
  * A comprehensive hook for managing chat functionality.
@@ -18,7 +17,6 @@ import { useCommandProcessor } from './useCommandProcessor';
  */
 export function useChat() {
   const store = useChatStore();
-  const [invalidAttempts, setInvalidAttempts] = useState(0);
 
   // tRPC queries and mutations
   const conversationsQuery = trpc.conversations.list.useQuery();
@@ -34,7 +32,6 @@ export function useChat() {
   const sendMessageMutation = trpc.chat.sendMessage.useMutation();
 
   const streamingChat = useStreamingChat();
-  const { processCommand } = useCommandProcessor();
 
   // Effects to sync tRPC data with the store
   useEffect(() => {
@@ -43,65 +40,9 @@ export function useChat() {
     }
   }, [messagesQuery.data, store.setMessages]);
 
-  // Show demo welcome message in terminal mode
-  useEffect(() => {
-    const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true' ||
-                       (typeof window !== 'undefined' && 
-                        (window.location.hostname.includes('vercel.app') || 
-                         window.location.hostname.includes('demo')));
-    
-    const hasShownWelcome = localStorage.getItem('demo-welcome-shown');
-    
-    if (isDemoMode && store.viewMode === 'terminal' && !hasShownWelcome && !store.currentConversationId) {
-      const welcomeMessage = {
-        id: `welcome-${Date.now()}`,
-        role: 'assistant' as const,
-        content: `🚀 Welcome to the AI Workflow Engine Terminal Demo!
-
-Try these commands to explore:
-• /list - See showcase conversations with different features
-• /man - View all available commands  
-• /theme amber - Switch to different terminal themes
-• /view chat - Try the modern chat interface
-
-Type a message to start chatting, or explore the demo conversations!`,
-        timestamp: new Date(),
-      };
-      
-      store.addLocalMessage(welcomeMessage);
-      localStorage.setItem('demo-welcome-shown', 'true');
-    }
-  }, [store.viewMode, store.currentConversationId, store.addLocalMessage]);
-
-  const displayMessage = useCallback((content: string) => {
-    const localMessage: Message = {
-      id: `local-cmd-${Date.now()}`,
-      role: 'assistant',
-      content: content.trim(),
-      timestamp: new Date(),
-    };
-
-    if (!store.currentConversationId) {
-      store.addLocalMessage(localMessage);
-    } else {
-        store.addMessage(localMessage);
-    }
-  }, [store.currentConversationId, store.addLocalMessage, store.addMessage]);
-
   const exportManager = useExportManager({
     currentConversationId: store.currentConversationId,
-    onStatusMessage: displayMessage,
   });
-
-  const handleConversationSelect = useCallback((index: number) => {
-    const conversation = store.selectableConversations[index];
-    if (conversation) {
-      store.setCurrentConversation(conversation.id);
-      displayMessage(`Switched to: ${conversation.title || 'Untitled conversation'}`);
-      store.setSelectableConversations([]);
-      setInvalidAttempts(0);
-    }
-  }, [store.selectableConversations, store.setCurrentConversation, displayMessage, store.setSelectableConversations]);
 
   const handleSendMessage = useCallback(async (content: string) => {
     clientLogger.debug('handleSendMessage called', { content, streamingMode: store.streamingMode, conversationId: store.currentConversationId }, 'useChat');
@@ -144,49 +85,8 @@ Type a message to start chatting, or explore the demo conversations!`,
       return;
     }
 
-    if (trimmedContent.startsWith('/')) {
-      const processed = processCommand(trimmedContent);
-      if (processed) {
-        store.setInput(''); // Clear the input after processing command
-        return;
-      }
-    }
-
-    if (store.selectableConversations.length > 0) {
-      const num = parseInt(trimmedContent);
-      if (!isNaN(num) && num > 0 && num <= store.selectableConversations.length) {
-        handleConversationSelect(num - 1);
-        return;
-      } else if (/^\d+$/.test(trimmedContent)) {
-        setInvalidAttempts(prev => prev + 1);
-        const maxAttempts = 3;
-        
-        if (invalidAttempts + 1 >= maxAttempts) {
-          displayMessage('Too many invalid attempts. Clearing conversation list.');
-          store.setSelectableConversations([]);
-          setInvalidAttempts(0);
-        } else {
-          displayMessage(`Invalid selection. Please choose a number between 1 and ${store.selectableConversations.length}.`);
-        }
-        return;
-      }
-    }
-
     await handleSendMessage(trimmedContent);
-
-    if (store.selectableConversations.length > 0) {
-      store.setSelectableConversations([]);
-      setInvalidAttempts(0);
-    }
-  }, [
-    processCommand,
-    store.selectableConversations,
-    invalidAttempts,
-    handleConversationSelect,
-    handleSendMessage,
-    displayMessage,
-    store.setSelectableConversations,
-  ]);
+  }, [handleSendMessage]);
 
   const handleStreamingMessage = useCallback(async (content: string, conversationId: string | null): Promise<void> => {
     if (!conversationId) {
