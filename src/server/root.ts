@@ -10,6 +10,7 @@ import { monitoringRouter } from './routers/monitoring';
 import { authRouter } from './routers/auth';
 import { searchRouter } from './routers/search';
 import { orchestrationRouter } from './routers/orchestration';
+import { artifactsRouter } from './routers/artifacts';
 
 export const appRouter = router({
   chat: chatRouter,
@@ -22,6 +23,7 @@ export const appRouter = router({
   auth: authRouter,
   search: searchRouter,
   orchestration: orchestrationRouter,
+  artifacts: artifactsRouter,
 });
 
 export type AppRouter = typeof appRouter;

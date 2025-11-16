@@ -76,6 +76,7 @@ model Conversation {
 
   messages  Message[]
   summaries ConversationSummary[]
+  artifacts Artifact[]
 
   // Conversation settings
   systemPrompt String?
@@ -99,6 +100,9 @@ model Message {
   parentId String?
   parent   Message? @relation("MessageTree", fields: [parentId], references: [id])
   children Message[] @relation("MessageTree")
+
+  // Artifacts created in this message
+  artifacts Artifact[]
 
   @@map("messages")
 }
@@ -183,4 +187,54 @@ model RoutingDecision {
   @@index([executedModel])
   @@index([successful])
   @@index([createdAt])
+}
+
+model Artifact {
+  id             String   @id @default(cuid())
+  type           String   // "code", "markdown", "mermaid", "html", "svg", "json", "yaml", etc.
+  content        String   // The artifact content
+  title          String?
+  description    String?
+  language       String?  // Programming language for code artifacts
+  fileExtension  String?  // e.g., "ts", "md", "svg"
+  filename       String?  // Suggested filename
+  version        Int      @default(1)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Associations
+  conversationId String?
+  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  messageId      String?
+  message        Message?      @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  // Additional metadata
+  metadata       Json?
+
+  // Version history
+  versions       ArtifactVersion[]
+
+  @@map("artifacts")
+  @@index([conversationId])
+  @@index([messageId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model ArtifactVersion {
+  id                String   @id @default(cuid())
+  artifactId        String
+  artifact          Artifact @relation(fields: [artifactId], references: [id], onDelete: Cascade)
+
+  version           Int      // Version number
+  content           String   // Content at this version
+  changeDescription String?  // Description of what changed
+  createdAt         DateTime @default(now())
+
+  messageId         String?  // Message that created this version
+
+  @@map("artifact_versions")
+  @@index([artifactId])
+  @@index([artifactId, version])
 }
