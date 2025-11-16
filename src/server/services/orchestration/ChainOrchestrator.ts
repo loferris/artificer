@@ -48,6 +48,12 @@ export class ChainOrchestrator {
   private routeCache: Map<string, CachedRoute> = new Map();
   private readonly CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
+  // Default timeouts (in milliseconds)
+  private readonly DEFAULT_ANALYZER_TIMEOUT = 30000;    // 30 seconds
+  private readonly DEFAULT_ROUTER_TIMEOUT = 30000;      // 30 seconds
+  private readonly DEFAULT_EXECUTION_TIMEOUT = 120000;  // 2 minutes
+  private readonly DEFAULT_VALIDATOR_TIMEOUT = 30000;   // 30 seconds
+
   constructor(
     private config: ChainConfig,
     assistant: Assistant,
@@ -208,10 +214,16 @@ export class ChainOrchestrator {
    */
   private async analyzeQuery(context: ChainContext): Promise<AnalysisResult> {
     try {
-      return await this.analyzer.analyze(
-        context.userMessage,
-        context.conversationHistory || [],
-        this.createOpenRouterFetch(context.signal)
+      const timeout = context.config.analyzerTimeout || this.DEFAULT_ANALYZER_TIMEOUT;
+
+      return await this.withTimeout(
+        this.analyzer.analyze(
+          context.userMessage,
+          context.conversationHistory || [],
+          this.createOpenRouterFetch(context.signal)
+        ),
+        timeout,
+        'Analysis'
       );
     } catch (error) {
       logger.error('[ChainOrchestrator] Analysis failed, using fallback', error);
@@ -228,10 +240,16 @@ export class ChainOrchestrator {
     context: ChainContext
   ): Promise<RoutingPlan> {
     try {
-      return await this.router.route(
-        analysis,
-        this.createOpenRouterFetch(context.signal),
-        context.config.preferCheapModels || false
+      const timeout = context.config.routerTimeout || this.DEFAULT_ROUTER_TIMEOUT;
+
+      return await this.withTimeout(
+        this.router.route(
+          analysis,
+          this.createOpenRouterFetch(context.signal),
+          context.config.preferCheapModels || false
+        ),
+        timeout,
+        'Routing'
       );
     } catch (error) {
       logger.error('[ChainOrchestrator] Routing failed, using fallback', error);
@@ -288,13 +306,19 @@ export class ChainOrchestrator {
       }
 
       // Use the assistant's getResponse method with specific model
-      const response = await this.assistant.getResponse(
-        finalMessage,
-        conversationHistory,
-        {
-          signal: context.signal,
-          model: model  // Pass the selected model from orchestration
-        }
+      const timeout = context.config.executionTimeout || this.DEFAULT_EXECUTION_TIMEOUT;
+
+      const response = await this.withTimeout(
+        this.assistant.getResponse(
+          finalMessage,
+          conversationHistory,
+          {
+            signal: context.signal,
+            model: model  // Pass the selected model from orchestration
+          }
+        ),
+        timeout,
+        `Execution with ${model}`
       );
 
       const latency = Date.now() - startTime;
@@ -339,12 +363,18 @@ export class ChainOrchestrator {
       }
 
       // Full validation for complex tasks
-      return await this.validator.validate(
-        context.userMessage,
-        analysis,
-        execution,
-        this.config.availableModels,
-        this.createOpenRouterFetch(context.signal)
+      const timeout = context.config.validatorTimeout || this.DEFAULT_VALIDATOR_TIMEOUT;
+
+      return await this.withTimeout(
+        this.validator.validate(
+          context.userMessage,
+          analysis,
+          execution,
+          this.config.availableModels,
+          this.createOpenRouterFetch(context.signal)
+        ),
+        timeout,
+        'Validation'
       );
     } catch (error) {
       logger.error('[ChainOrchestrator] Validation failed, using fallback', error);
@@ -487,6 +517,26 @@ export class ChainOrchestrator {
    */
   private estimateTokens(text: string, model: string = 'gpt-4'): number {
     return countMessageTokens(text, model);
+  }
+
+  /**
+   * Wraps a promise with a timeout to prevent hanging operations
+   * @param promise The promise to wrap
+   * @param timeoutMs Timeout in milliseconds
+   * @param operationName Name of the operation for error messages
+   */
+  private async withTimeout<T>(
+    promise: Promise<T>,
+    timeoutMs: number,
+    operationName: string
+  ): Promise<T> {
+    const timeoutPromise = new Promise<T>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`${operationName} timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+    });
+
+    return Promise.race([promise, timeoutPromise]);
   }
 
   /**

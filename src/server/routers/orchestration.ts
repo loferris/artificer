@@ -75,6 +75,12 @@ function buildChainConfig(): ChainConfig {
   const validationEnabled = process.env.VALIDATION_ENABLED !== 'false'; // Default true
   const preferCheapModels = process.env.PREFER_CHEAP_MODELS === 'true';
 
+  // Timeout configuration (in milliseconds)
+  const analyzerTimeout = parseInt(process.env.ANALYZER_TIMEOUT || '30000', 10);    // 30s
+  const routerTimeout = parseInt(process.env.ROUTER_TIMEOUT || '30000', 10);        // 30s
+  const executionTimeout = parseInt(process.env.EXECUTION_TIMEOUT || '120000', 10); // 2min
+  const validatorTimeout = parseInt(process.env.VALIDATOR_TIMEOUT || '30000', 10);  // 30s
+
   return {
     analyzerModel,
     routerModel,
@@ -84,6 +90,10 @@ function buildChainConfig(): ChainConfig {
     maxRetries,
     validationEnabled,
     preferCheapModels,
+    analyzerTimeout,
+    routerTimeout,
+    executionTimeout,
+    validatorTimeout,
   };
 }
 

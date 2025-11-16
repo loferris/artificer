@@ -84,7 +84,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const sessionId = user?.sessionId || 'anonymous';
     const identifier = `${userAgent}-${sessionId}`;
 
-    const rateLimit = createRateLimitMiddleware('CHAT');
+    const rateLimit = createRateLimitMiddleware('ORCHESTRATION');
     const rateLimitResult = rateLimit(identifier);
 
     if (!rateLimitResult.allowed) {

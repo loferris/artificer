@@ -116,6 +116,12 @@ export interface ChainConfig {
   maxRetries: number;
   validationEnabled: boolean;
 
+  // Timeouts (in milliseconds)
+  analyzerTimeout?: number;    // Default: 30000 (30s)
+  routerTimeout?: number;      // Default: 30000 (30s)
+  executionTimeout?: number;   // Default: 120000 (2min)
+  validatorTimeout?: number;   // Default: 30000 (30s)
+
   // Cost settings
   maxCostPerRequest?: number;
   preferCheapModels?: boolean;
