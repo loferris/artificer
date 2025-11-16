@@ -162,13 +162,13 @@ export class RoamImporter implements ImporterPlugin {
     if (block.heading) {
       const headingLevel = Math.min(block.heading, 6) as 1 | 2 | 3 | 4 | 5 | 6;
       const style = `h${headingLevel}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
-      const children = this.parseInlineText(text);
+      const { children, markDefs } = this.parseInlineText(text);
       blocks.push({
         _type: 'block',
         _key: generateKey(),
         style,
         children,
-        markDefs: [],
+        markDefs,
       });
       return blocks;
     }
@@ -190,7 +190,7 @@ export class RoamImporter implements ImporterPlugin {
     }
 
     // Regular paragraph or list item
-    const children = this.parseInlineText(text);
+    const { children, markDefs } = this.parseInlineText(text);
 
     // Determine if it's a list item based on nesting
     if (level > 1 || text.match(/^[\-\*]\s/)) {
@@ -201,7 +201,7 @@ export class RoamImporter implements ImporterPlugin {
         listItem: 'bullet',
         level: Math.max(1, level - 1),
         children,
-        markDefs: [],
+        markDefs,
       });
     } else {
       blocks.push({
@@ -209,90 +209,237 @@ export class RoamImporter implements ImporterPlugin {
         _key: generateKey(),
         style: 'normal',
         children,
-        markDefs: [],
+        markDefs,
       });
     }
 
     return blocks;
   }
 
-  private parseInlineText(text: string): PortableTextSpan[] {
+  private parseInlineText(text: string): { children: PortableTextSpan[]; markDefs: any[] } {
     const spans: PortableTextSpan[] = [];
     const markDefs: any[] = [];
 
-    // Simple regex-based parsing
-    const patterns = [
-      { regex: /\*\*(.+?)\*\*/g, mark: 'strong' }, // Bold
-      { regex: /__(.+?)__/g, mark: 'strong' }, // Bold alternative
-      { regex: /\*(.+?)\*/g, mark: 'em' }, // Italic
-      { regex: /_(.+?)_/g, mark: 'em' }, // Italic alternative
-      { regex: /~~(.+?)~~/g, mark: 'strike' }, // Strikethrough
-      { regex: /`(.+?)`/g, mark: 'code' }, // Inline code
-      { regex: /\^\^(.+?)\^\^/g, mark: 'highlight' }, // Highlight
-    ];
+    // Remove TODO/DONE markers but preserve them in the text
+    const todoMatch = text.match(/^{{(\[DONE\]|TODO)}}\s*/);
+    let workingText = text;
+    let todoPrefix = '';
 
-    // For simplicity, we'll process the text as-is and handle basic formatting
-    // A more robust solution would use a proper parser
-
-    // Handle Roam-style links: [[Page Name]]
-    const linkPattern = /\[\[([^\]]+)\]\]/g;
-    let lastIndex = 0;
-
-    const processedText = text.replace(linkPattern, (_match, linkText) => {
-      // Convert to wiki link mark
-      return linkText; // Simplified - in production, handle as proper mark
-    });
-
-    // Handle markdown links: [text](url)
-    const mdLinkPattern = /\[([^\]]+)\]\(([^)]+)\)/g;
-    const segments: Array<{ text: string; marks: string[]; href?: string }> = [];
-    let mdMatch;
-
-    while ((mdMatch = mdLinkPattern.exec(processedText)) !== null) {
-      const beforeLink = processedText.substring(lastIndex, mdMatch.index);
-      if (beforeLink) {
-        segments.push({ text: beforeLink, marks: [] });
-      }
-
-      const markKey = generateKey();
-      markDefs.push({
-        _type: 'link',
-        _key: markKey,
-        href: mdMatch[2],
-      });
-      segments.push({ text: mdMatch[1], marks: [markKey] });
-
-      lastIndex = mdMatch.index + mdMatch[0].length;
+    if (todoMatch) {
+      todoPrefix = todoMatch[1] === 'TODO' ? '☐ ' : '☑ ';
+      workingText = text.substring(todoMatch[0].length);
     }
 
-    // Add remaining text
-    if (lastIndex < processedText.length) {
-      segments.push({ text: processedText.substring(lastIndex), marks: [] });
-    }
+    // Parse Roam-specific syntax
+    const tokens = this.tokenizeRoamText(workingText);
 
-    // If no segments, just create a simple span
-    if (segments.length === 0) {
-      segments.push({ text: processedText, marks: [] });
-    }
+    for (const token of tokens) {
+      switch (token.type) {
+        case 'text':
+          spans.push(createSpan((todoPrefix || '') + token.value));
+          todoPrefix = ''; // Only add once
+          break;
 
-    // Convert segments to spans, applying marks
-    for (const segment of segments) {
-      let segmentText = segment.text;
-
-      // Apply formatting marks
-      for (const pattern of patterns) {
-        const regex = new RegExp(pattern.regex);
-        if (regex.test(segmentText)) {
-          // For simplicity, just strip the markers and add the mark
-          // A proper implementation would split into multiple spans
-          segmentText = segmentText.replace(regex, '$1');
-          segment.marks.push(pattern.mark);
+        case 'page-reference': {
+          const markKey = generateKey();
+          markDefs.push({
+            _type: 'wikiLink',
+            _key: markKey,
+            target: token.target,
+            alias: token.alias,
+          });
+          spans.push(createSpan(token.display || token.target, [markKey]));
+          break;
         }
-      }
 
-      spans.push(createSpan(segmentText, segment.marks));
+        case 'block-reference': {
+          const markKey = generateKey();
+          markDefs.push({
+            _type: 'blockReference',
+            _key: markKey,
+            blockUid: token.uid,
+          });
+          spans.push(createSpan(`((${token.uid}))`, [markKey]));
+          break;
+        }
+
+        case 'attribute': {
+          const markKey = generateKey();
+          markDefs.push({
+            _type: 'attribute',
+            _key: markKey,
+            name: token.name,
+            value: token.value,
+          });
+          spans.push(createSpan(`${token.name}:: ${token.value}`, [markKey]));
+          break;
+        }
+
+        case 'link': {
+          const markKey = generateKey();
+          markDefs.push({
+            _type: 'link',
+            _key: markKey,
+            href: token.url,
+          });
+          spans.push(createSpan(token.text, [markKey]));
+          break;
+        }
+
+        case 'bold':
+          spans.push(createSpan(token.value, ['strong']));
+          break;
+
+        case 'italic':
+          spans.push(createSpan(token.value, ['em']));
+          break;
+
+        case 'code':
+          spans.push(createSpan(token.value, ['code']));
+          break;
+
+        case 'strikethrough':
+          spans.push(createSpan(token.value, ['strike']));
+          break;
+
+        case 'highlight':
+          spans.push(createSpan(token.value, ['highlight']));
+          break;
+      }
     }
 
-    return spans.length > 0 ? spans : [createSpan(text)];
+    return {
+      children: spans.length > 0 ? spans : [createSpan(text)],
+      markDefs,
+    };
+  }
+
+  private tokenizeRoamText(text: string): Array<any> {
+    const tokens: any[] = [];
+    let pos = 0;
+
+    while (pos < text.length) {
+      // Block reference: ((uid))
+      const blockRefMatch = text.substring(pos).match(/^\(\(([a-zA-Z0-9_-]+)\)\)/);
+      if (blockRefMatch) {
+        tokens.push({
+          type: 'block-reference',
+          uid: blockRefMatch[1],
+        });
+        pos += blockRefMatch[0].length;
+        continue;
+      }
+
+      // Page reference: [[Page Name]] or [[Page Name|Alias]]
+      const pageRefMatch = text.substring(pos).match(/^\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/);
+      if (pageRefMatch) {
+        tokens.push({
+          type: 'page-reference',
+          target: pageRefMatch[1],
+          alias: pageRefMatch[2],
+          display: pageRefMatch[2] || pageRefMatch[1],
+        });
+        pos += pageRefMatch[0].length;
+        continue;
+      }
+
+      // Attribute: name:: value
+      const attrMatch = text.substring(pos).match(/^([a-zA-Z][a-zA-Z0-9-]*)::\s*(.+?)(?=\s|$|\[\[|\(\()/);
+      if (attrMatch && (pos === 0 || text[pos - 1] === ' ')) {
+        tokens.push({
+          type: 'attribute',
+          name: attrMatch[1],
+          value: attrMatch[2].trim(),
+        });
+        pos += attrMatch[0].length;
+        continue;
+      }
+
+      // Markdown link: [text](url)
+      const linkMatch = text.substring(pos).match(/^\[([^\]]+)\]\(([^)]+)\)/);
+      if (linkMatch) {
+        tokens.push({
+          type: 'link',
+          text: linkMatch[1],
+          url: linkMatch[2],
+        });
+        pos += linkMatch[0].length;
+        continue;
+      }
+
+      // Bold: **text** or __text__
+      const boldMatch = text.substring(pos).match(/^(\*\*|__)(.+?)\1/);
+      if (boldMatch) {
+        tokens.push({
+          type: 'bold',
+          value: boldMatch[2],
+        });
+        pos += boldMatch[0].length;
+        continue;
+      }
+
+      // Italic: *text* or _text_
+      const italicMatch = text.substring(pos).match(/^(\*|_)(.+?)\1/);
+      if (italicMatch) {
+        tokens.push({
+          type: 'italic',
+          value: italicMatch[2],
+        });
+        pos += italicMatch[0].length;
+        continue;
+      }
+
+      // Code: `text`
+      const codeMatch = text.substring(pos).match(/^`([^`]+)`/);
+      if (codeMatch) {
+        tokens.push({
+          type: 'code',
+          value: codeMatch[1],
+        });
+        pos += codeMatch[0].length;
+        continue;
+      }
+
+      // Strikethrough: ~~text~~
+      const strikeMatch = text.substring(pos).match(/^~~(.+?)~~/);
+      if (strikeMatch) {
+        tokens.push({
+          type: 'strikethrough',
+          value: strikeMatch[1],
+        });
+        pos += strikeMatch[0].length;
+        continue;
+      }
+
+      // Highlight: ^^text^^
+      const highlightMatch = text.substring(pos).match(/^\^\^(.+?)\^\^/);
+      if (highlightMatch) {
+        tokens.push({
+          type: 'highlight',
+          value: highlightMatch[1],
+        });
+        pos += highlightMatch[0].length;
+        continue;
+      }
+
+      // Regular text - consume until next special character
+      const textMatch = text.substring(pos).match(/^([^*_`~^\[(]+)/);
+      if (textMatch) {
+        tokens.push({
+          type: 'text',
+          value: textMatch[1],
+        });
+        pos += textMatch[0].length;
+      } else {
+        // Single character that didn't match anything
+        tokens.push({
+          type: 'text',
+          value: text[pos],
+        });
+        pos++;
+      }
+    }
+
+    return tokens;
   }
 }

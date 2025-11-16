@@ -7,6 +7,7 @@ import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
 import remarkFrontmatter from 'remark-frontmatter';
 import { visit } from 'unist-util-visit';
+import YAML from 'yaml';
 import type { Root, Content, PhrasingContent, Text } from 'mdast';
 import type {
   ImporterPlugin,
@@ -30,6 +31,8 @@ import type { PortableTextBlock, PortableTextSpan } from '@portabletext/types';
 export class MarkdownImporter implements ImporterPlugin {
   name = 'markdown';
   supportedFormats = ['md', 'markdown', 'mdx'];
+  private sourceMapEntries: any[] = [];
+  private includeSourceMap = false;
 
   detect(input: string | Buffer): boolean {
     const content = Buffer.isBuffer(input) ? input.toString('utf-8') : input;
@@ -49,8 +52,14 @@ export class MarkdownImporter implements ImporterPlugin {
 
   async import(
     input: string,
-    _options?: ImportOptions
+    options?: ImportOptions
   ): Promise<ConvertedDocument> {
+    // Reset source map state
+    this.sourceMapEntries = [];
+    this.includeSourceMap = options?.includeSourceMap ?? false;
+
+    const strictMode = options?.strictMode ?? true;
+    const onError = options?.onError;
     const sanitized = sanitizeText(input);
 
     // Parse markdown to AST
@@ -68,29 +77,58 @@ export class MarkdownImporter implements ImporterPlugin {
     // Convert to Portable Text
     const blocks: PortableTextBlock[] = [];
 
-    for (const node of tree.children) {
+    for (let i = 0; i < tree.children.length; i++) {
+      const node = tree.children[i];
       if (node.type === 'yaml') {
         // Skip frontmatter nodes
         continue;
       }
 
-      const converted = this.convertNode(node);
-      if (converted) {
-        if (Array.isArray(converted)) {
-          blocks.push(...converted);
+      try {
+        const converted = this.convertNode(node);
+        if (converted) {
+          if (Array.isArray(converted)) {
+            blocks.push(...converted);
+          } else {
+            blocks.push(converted);
+          }
+        }
+      } catch (error) {
+        const conversionError = error instanceof Error ? error : new Error(String(error));
+
+        if (strictMode) {
+          // In strict mode, re-throw the error
+          throw conversionError;
         } else {
-          blocks.push(converted);
+          // In non-strict mode, call error handler and continue
+          if (onError) {
+            onError(conversionError, { blockIndex: i, block: node });
+          }
+          // Skip this block and continue
+          continue;
         }
       }
     }
 
-    return {
+    const result: ConvertedDocument = {
       content: blocks,
       metadata: createMetadata({
         source: 'markdown',
         ...frontmatter,
       }),
     };
+
+    // Add source map if requested
+    if (this.includeSourceMap && this.sourceMapEntries.length > 0) {
+      result.sourceMap = {
+        version: 1,
+        mappings: this.sourceMapEntries,
+        sources: ['markdown'],
+        sourcesContent: [input],
+      };
+    }
+
+    return result;
   }
 
   private extractFrontmatter(tree: Root): Partial<ObsidianFrontmatter> {
@@ -98,19 +136,18 @@ export class MarkdownImporter implements ImporterPlugin {
 
     visit(tree, 'yaml', (node: any) => {
       try {
-        // Simple YAML parsing (you might want to use a proper YAML library)
-        const lines = node.value.split('\n');
-        for (const line of lines) {
-          const match = line.match(/^(\w+):\s*(.+)$/);
-          if (match) {
-            const [, key, value] = match;
-            if (key === 'tags') {
-              frontmatter.tags = value
-                .split(',')
-                .map((t: string) => t.trim())
-                .filter(Boolean);
-            } else {
-              (frontmatter as any)[key] = value.trim();
+        const parsed = YAML.parse(node.value);
+        if (parsed && typeof parsed === 'object') {
+          // Merge parsed YAML into frontmatter
+          Object.assign(frontmatter, parsed);
+
+          // Normalize tags to array format
+          if (frontmatter.tags !== undefined) {
+            const tags: unknown = frontmatter.tags;
+            if (typeof tags === 'string') {
+              frontmatter.tags = tags.split(',').map((t: string) => t.trim()).filter(Boolean);
+            } else if (!Array.isArray(tags)) {
+              frontmatter.tags = [String(tags)];
             }
           }
         }
@@ -120,6 +157,22 @@ export class MarkdownImporter implements ImporterPlugin {
     });
 
     return frontmatter;
+  }
+
+  private recordSourceMap(blockKey: string, node: any): void {
+    if (!this.includeSourceMap || !node.position) {
+      return;
+    }
+
+    const pos = node.position;
+    this.sourceMapEntries.push({
+      blockKey,
+      line: pos.start.line,
+      column: pos.start.column - 1, // Convert to 0-indexed
+      length: pos.end.offset - pos.start.offset,
+      source: 'markdown',
+      originalType: node.type,
+    });
   }
 
   private convertNode(
@@ -150,10 +203,13 @@ export class MarkdownImporter implements ImporterPlugin {
   private convertHeading(node: any): PortableTextBlock {
     const style = `h${node.depth}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
     const children = this.convertInlineNodes(node.children);
+    const key = generateKey();
+
+    this.recordSourceMap(key, node);
 
     return {
       _type: 'block',
-      _key: generateKey(),
+      _key: key,
       style,
       children,
       markDefs: [],
@@ -170,18 +226,23 @@ export class MarkdownImporter implements ImporterPlugin {
       const match = firstChild.value.match(/^\[!(note|info|warning|error|success)\]\s*(.*)$/);
       if (match) {
         const [, type, text] = match;
-        return createCalloutBlock(
+        const block = createCalloutBlock(
           text + this.extractTextFromNodes(node.children.slice(1)),
           type as any
         );
+        this.recordSourceMap(block._key, node);
+        return block;
       }
     }
 
     const children = this.convertInlineNodes(node.children);
+    const key = generateKey();
+
+    this.recordSourceMap(key, node);
 
     return {
       _type: 'block',
-      _key: generateKey(),
+      _key: key,
       style: 'normal',
       children,
       markDefs: [],
@@ -189,7 +250,9 @@ export class MarkdownImporter implements ImporterPlugin {
   }
 
   private convertCode(node: any): PortableTextBlock {
-    return createCodeBlock(node.value, node.lang, node.meta);
+    const block = createCodeBlock(node.value, node.lang, node.meta);
+    this.recordSourceMap(block._key, node);
+    return block;
   }
 
   private convertList(node: any): PortableTextBlock[] {
@@ -296,7 +359,7 @@ export class MarkdownImporter implements ImporterPlugin {
   ): PortableTextSpan | PortableTextSpan[] | null {
     switch (node.type) {
       case 'text':
-        return this.convertText(node);
+        return this.convertText(node, markDefs);
       case 'strong':
         return this.convertWithMark(node.children, 'strong', markDefs);
       case 'emphasis':
@@ -314,15 +377,43 @@ export class MarkdownImporter implements ImporterPlugin {
     }
   }
 
-  private convertText(node: Text): PortableTextSpan {
+  private convertText(node: Text, markDefs: any[]): PortableTextSpan | PortableTextSpan[] {
     // Check for Obsidian wiki links [[Page Name]] or [[Page Name|Alias]]
     const wikiLinkPattern = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g;
     const text = node.value;
 
     if (wikiLinkPattern.test(text)) {
-      // TODO: Split into multiple spans for wiki links
-      // For now, preserve as-is
-      return createSpan(text);
+      // Split text into spans with wiki links
+      const spans: PortableTextSpan[] = [];
+      let lastIndex = 0;
+      wikiLinkPattern.lastIndex = 0; // Reset regex state
+
+      let match;
+      while ((match = wikiLinkPattern.exec(text)) !== null) {
+        // Add text before the link
+        if (match.index > lastIndex) {
+          spans.push(createSpan(text.substring(lastIndex, match.index)));
+        }
+
+        // Add wiki link
+        const markKey = generateKey();
+        markDefs.push({
+          _type: 'wikiLink',
+          _key: markKey,
+          target: match[1],
+          alias: match[2],
+        });
+        spans.push(createSpan(match[2] || match[1], [markKey]));
+
+        lastIndex = wikiLinkPattern.lastIndex;
+      }
+
+      // Add remaining text
+      if (lastIndex < text.length) {
+        spans.push(createSpan(text.substring(lastIndex)));
+      }
+
+      return spans;
     }
 
     return createSpan(text);

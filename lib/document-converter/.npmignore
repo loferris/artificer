@@ -1,0 +1,33 @@
+# Source files
+src/
+tsconfig.json
+vitest.config.ts
+
+# Tests
+**/*.test.ts
+**/*.spec.ts
+**/__tests__/
+
+# Build artifacts
+*.tsbuildinfo
+*.log
+
+# Development files
+.vitest
+coverage/
+node_modules/
+.DS_Store
+
+# Git
+.git
+.gitignore
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# CI
+.github/

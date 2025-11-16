@@ -1,5 +1,10 @@
 # Document Converter
 
+[![npm version](https://img.shields.io/npm/v/@ai-workflow/document-converter.svg)](https://www.npmjs.com/package/@ai-workflow/document-converter)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js->=18-green.svg)](https://nodejs.org/)
+
 A format-agnostic document conversion library with **pluggable intermediate formats**. Think of it as a lightweight, extensible Pandoc alternative specifically designed for knowledge management tools.
 
 ## Features
@@ -8,21 +13,37 @@ A format-agnostic document conversion library with **pluggable intermediate form
 - 📝 **Pluggable Formats**: Uses Portable Text by default, but swap to ProseMirror, Slate, or your own AST
 - 🔌 **Extensible**: Easy plugin system for adding new formats
 - 🎯 **Type Safe**: Full TypeScript support with generics
-- 🧪 **Well Tested**: Comprehensive test coverage
+- 🧪 **Well Tested**: Comprehensive test coverage with 47+ test cases
 - 📦 **Zero Config**: Works out of the box with sensible defaults
 - 🔁 **Zero Breaking Changes**: Swap intermediate formats without rewriting importers/exporters
+- 🗺️ **Source Maps**: Track blocks back to original document positions
+- 🛡️ **Error Recovery**: Graceful handling with strict and non-strict modes
 
 ## Supported Formats
 
 ### Importers
-- **Markdown** - Full CommonMark + GFM support, Obsidian-compatible (wiki links, callouts, frontmatter)
+- **Markdown** - Full CommonMark + GFM support, Obsidian-compatible
+  - Wiki links: `[[Page Name]]` and `[[Page Name|Alias]]`
+  - Callouts: `> [!info]`, `> [!warning]`, etc.
+  - Frontmatter: YAML metadata
+  - Nested lists with arbitrary depth
+  - Source map tracking
 - **Notion** - Notion API format and export format
+  - Extended block types: embed, file, video, audio, columns
+  - Column layouts and child pages
+  - Table of contents and link previews
+  - Nested lists with proper hierarchy
 - **Roam Research** - Roam JSON export format
+  - Page references: `[[Page Name]]` and `[[Page|Alias]]`
+  - Block references: `((uid))`
+  - Attributes: `key:: value`
+  - TODO markers: `{{TODO}}` and `{{[DONE]}}`
+  - Full formatting: bold, italic, code, strikethrough, highlight
 
 ### Exporters
 - **Markdown** - GitHub Flavored Markdown with Obsidian extensions
-- **Notion** - Notion API format
-- **Roam Research** - Roam JSON format
+- **Notion** - Notion API format with extended block types
+- **Roam Research** - Roam JSON format with full feature support
 
 ## Installation
 
@@ -136,19 +157,33 @@ const doc = await converter.import(JSON.stringify(notionPage), {
 ### Working with Roam Research
 
 ```typescript
-// Import Roam page
+// Import Roam page with advanced features
 const roamPage = {
   title: 'My Page',
   children: [
     {
-      string: 'First block with **bold** text',
+      string: 'Link to [[Another Page]] or [[Page|Custom Alias]]',
       uid: 'abc123',
-      children: [
-        {
-          string: 'Nested block',
-          uid: 'def456',
-        },
-      ],
+    },
+    {
+      string: 'Reference block ((def456)) here',
+      uid: 'ghi789',
+    },
+    {
+      string: 'author:: John Doe and status:: completed',
+      uid: 'jkl012',
+    },
+    {
+      string: '{{TODO}} Task to complete',
+      uid: 'mno345',
+    },
+    {
+      string: '{{[DONE]}} Completed task',
+      uid: 'pqr678',
+    },
+    {
+      string: '**Bold** and *italic* with `code` and ~~strike~~ and ^^highlight^^',
+      uid: 'stu901',
     },
   ],
 };
@@ -156,6 +191,65 @@ const roamPage = {
 const doc = await converter.import(JSON.stringify(roamPage), {
   format: 'roam',
 });
+```
+
+### Source Maps
+
+Track the origin of each block in the converted document:
+
+```typescript
+// Import with source map
+const markdown = `# Hello World
+
+This is a paragraph.
+
+## Section
+
+Another paragraph here.`;
+
+const doc = await converter.import(markdown, {
+  includeSourceMap: true,
+});
+
+// Access source map
+if (doc.sourceMap) {
+  console.log('Source map version:', doc.sourceMap.version);
+  console.log('Mappings:', doc.sourceMap.mappings);
+
+  // Find original position of a block
+  const block = doc.content[1]; // Second block
+  const mapping = doc.sourceMap.mappings.find(m => m.blockKey === block._key);
+
+  if (mapping) {
+    console.log(`Block originated at line ${mapping.line}, column ${mapping.column}`);
+    console.log(`Original type: ${mapping.originalType}`);
+  }
+}
+```
+
+### Error Recovery
+
+Handle conversion errors gracefully:
+
+```typescript
+// Strict mode (default) - fails on first error
+try {
+  const doc = await converter.import(malformedInput);
+} catch (error) {
+  console.error('Conversion failed:', error.message);
+}
+
+// Non-strict mode - continues on errors
+const errors: Error[] = [];
+const doc = await converter.import(malformedInput, {
+  strictMode: false,
+  onError: (error, context) => {
+    errors.push(error);
+    console.warn(`Skipped block ${context.blockIndex}:`, error.message);
+  },
+});
+
+console.log(`Converted with ${errors.length} errors`);
 ```
 
 ## Pluggable Intermediate Formats
@@ -296,8 +390,14 @@ converter.registerExporter(new CustomExporter());
 - `import(input: string, options?: ImportOptions)` - Import a document (auto-detects format)
 - `export(document: ConvertedDocument, format: string, options?: ExportOptions)` - Export to a specific format
 - `convert(input: string, targetFormat: string, options?)` - Convert directly between formats
-- `registerImporter(plugin: ImporterPlugin)` - Register a custom importer
-- `registerExporter(plugin: ExporterPlugin)` - Register a custom exporter
+- `registerImporter(plugin: ImporterPlugin, options?: PluginRegistrationOptions)` - Register a custom importer
+- `registerExporter(plugin: ExporterPlugin, options?: PluginRegistrationOptions)` - Register a custom exporter
+- `registerImporterAsync(plugin: ImporterPlugin, options?: PluginRegistrationOptions)` - Register importer with async safety
+- `registerExporterAsync(plugin: ExporterPlugin, options?: PluginRegistrationOptions)` - Register exporter with async safety
+- `unregisterImporter(name: string)` - Remove an importer plugin
+- `unregisterExporter(name: string)` - Remove an exporter plugin
+- `hasImporter(name: string)` - Check if importer exists
+- `hasExporter(name: string)` - Check if exporter exists
 - `listImporters()` - List available importers
 - `listExporters()` - List available exporters
 
@@ -308,8 +408,10 @@ converter.registerExporter(new CustomExporter());
 {
   preserveUnknownBlocks?: boolean;  // Keep unrecognized blocks
   preserveMetadata?: boolean;        // Preserve all metadata
-  includeSourceMap?: boolean;        // Include source mapping info
-  strictMode?: boolean;              // Fail on unknown elements
+  includeSourceMap?: boolean;        // Include source mapping info (default: false)
+  strictMode?: boolean;              // Throw on first error (default: true)
+  onError?: (error: Error, context?: { blockIndex?: number; block?: any }) => void;
+                                      // Error handler for non-strict mode
 }
 ```
 
@@ -320,6 +422,13 @@ converter.registerExporter(new CustomExporter());
   preserveCustomMarks?: boolean;     // Keep custom formatting
   includeMetadata?: boolean;         // Include frontmatter/metadata
   prettyPrint?: boolean;             // Format JSON output
+}
+```
+
+**PluginRegistrationOptions**
+```typescript
+{
+  allowOverwrite?: boolean;          // Allow replacing existing plugin (default: false)
 }
 ```
 
