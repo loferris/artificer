@@ -79,21 +79,65 @@ export class RepositoryService {
     token: string,
     owner: string,
     repo: string
-  ): Promise<{ valid: boolean; error?: string }> {
+  ): Promise<{
+    valid: boolean;
+    error?: string;
+    scopes?: string[];
+    isPrivate?: boolean;
+    permissions?: {
+      pull: boolean;
+      push: boolean;
+      admin: boolean;
+    };
+  }> {
     try {
       const octokit = new Octokit({ auth: token });
 
-      // Try to get repository info
-      await octokit.rest.repos.get({ owner, repo });
+      // Check token scopes by making an authenticated request
+      const { headers } = await octokit.request('GET /user');
+      const scopes = headers['x-oauth-scopes']?.split(',').map((s: string) => s.trim()) || [];
 
-      return { valid: true };
+      // Try to get repository info
+      const { data: repoData } = await octokit.rest.repos.get({ owner, repo });
+
+      // Check if we have read permissions (minimum required)
+      const hasReadAccess = scopes.includes('repo') || scopes.includes('public_repo') || scopes.length === 0; // PATs might not expose scopes
+
+      if (!hasReadAccess && repoData.private) {
+        return {
+          valid: false,
+          error: 'Token does not have required "repo" scope for private repositories. Please create a new token with "repo" scope.'
+        };
+      }
+
+      return {
+        valid: true,
+        scopes,
+        isPrivate: repoData.private,
+        permissions: {
+          pull: repoData.permissions?.pull || false,
+          push: repoData.permissions?.push || false,
+          admin: repoData.permissions?.admin || false,
+        }
+      };
     } catch (error: any) {
       if (error.status === 401) {
-        return { valid: false, error: 'Invalid access token' };
+        return {
+          valid: false,
+          error: 'Invalid access token. Please check that your token is correct and has not expired.'
+        };
       } else if (error.status === 404) {
-        return { valid: false, error: 'Repository not found or no access' };
+        return {
+          valid: false,
+          error: 'Repository not found or access denied. Please verify the repository URL and ensure your token has access to this repository.'
+        };
+      } else if (error.status === 403) {
+        return {
+          valid: false,
+          error: 'Access forbidden. This might be due to: 1) Repository requires additional permissions, 2) Your IP is blocked, or 3) Rate limit exceeded.'
+        };
       } else {
-        return { valid: false, error: error.message || 'Unknown error' };
+        return { valid: false, error: `Connection failed: ${error.message || 'Unknown error'}` };
       }
     }
   }
@@ -102,23 +146,129 @@ export class RepositoryService {
     token: string,
     owner: string,
     repo: string
-  ): Promise<{ valid: boolean; error?: string }> {
+  ): Promise<{
+    valid: boolean;
+    error?: string;
+    scopes?: string[];
+    isPrivate?: boolean;
+    permissions?: {
+      pull: boolean;
+      push: boolean;
+      admin: boolean;
+    };
+  }> {
     try {
       const gitlab = new Gitlab({ token });
 
-      // Get project (GitLab uses "namespace/repo" format)
-      await gitlab.Projects.show(`${owner}/${repo}`);
+      // Check current user and token scopes
+      const currentUser = await gitlab.Users.showCurrentUser();
+      const tokenInfo = await gitlab.PersonalAccessTokens.show(currentUser.id);
 
-      return { valid: true };
+      // Get project (GitLab uses "namespace/repo" format)
+      const project = await gitlab.Projects.show(`${owner}/${repo}`);
+
+      // Check permissions
+      const hasReadAccess = project.permissions?.project_access?.access_level >= 10 || // Guest level minimum
+                           project.permissions?.group_access?.access_level >= 10;
+
+      if (!hasReadAccess) {
+        return {
+          valid: false,
+          error: 'Token does not have read access to this repository. Please ensure you have at least Guest level access.'
+        };
+      }
+
+      // Map GitLab access levels (10=Guest, 20=Reporter, 30=Developer, 40=Maintainer, 50=Owner)
+      const accessLevel = Math.max(
+        project.permissions?.project_access?.access_level || 0,
+        project.permissions?.group_access?.access_level || 0
+      );
+
+      return {
+        valid: true,
+        scopes: tokenInfo.scopes || [],
+        isPrivate: project.visibility !== 'public',
+        permissions: {
+          pull: accessLevel >= 10, // Guest can pull
+          push: accessLevel >= 30, // Developer can push
+          admin: accessLevel >= 40, // Maintainer is admin
+        }
+      };
     } catch (error: any) {
-      if (error.response?.status === 401) {
-        return { valid: false, error: 'Invalid access token' };
-      } else if (error.response?.status === 404) {
-        return { valid: false, error: 'Repository not found or no access' };
+      const status = error.response?.status || error.status;
+
+      if (status === 401) {
+        return {
+          valid: false,
+          error: 'Invalid access token. Please check that your token is correct and has not expired.'
+        };
+      } else if (status === 404) {
+        return {
+          valid: false,
+          error: 'Repository not found or access denied. Please verify the repository URL and ensure your token has access to this repository.'
+        };
+      } else if (status === 403) {
+        return {
+          valid: false,
+          error: 'Access forbidden. Your token may not have the required "read_repository" scope.'
+        };
       } else {
-        return { valid: false, error: error.message || 'Unknown error' };
+        return { valid: false, error: `Connection failed: ${error.message || 'Unknown error'}` };
       }
     }
+  }
+
+  /**
+   * Test repository connection without saving
+   * Returns detailed validation info for UI feedback
+   */
+  async testConnection(params: {
+    provider: RepositoryProvider;
+    repoUrl: string;
+    accessToken: string;
+  }) {
+    const { provider, repoUrl, accessToken } = params;
+
+    // Parse repository URL
+    const parsed = this.parseRepoUrl(repoUrl);
+    if (!parsed) {
+      return {
+        success: false,
+        error: 'Invalid repository URL format. Expected format: https://github.com/owner/repo',
+        details: null,
+      };
+    }
+
+    const { owner, repo } = parsed;
+
+    // Validate access
+    const validation =
+      provider === 'github'
+        ? await this.validateGitHubAccess(accessToken, owner, repo)
+        : await this.validateGitLabAccess(accessToken, owner, repo);
+
+    if (!validation.valid) {
+      return {
+        success: false,
+        error: validation.error || 'Repository validation failed',
+        details: null,
+      };
+    }
+
+    return {
+      success: true,
+      error: null,
+      details: {
+        owner,
+        repo,
+        isPrivate: validation.isPrivate,
+        scopes: validation.scopes,
+        permissions: validation.permissions,
+        message: validation.isPrivate
+          ? `Successfully connected to private repository ${owner}/${repo}`
+          : `Successfully connected to public repository ${owner}/${repo}`,
+      },
+    };
   }
 
   /**

@@ -58,7 +58,41 @@ const updateRepositorySchema = z.object({
   branch: z.string().optional(),
 });
 
+const testConnectionSchema = z.object({
+  provider: z.enum(['github', 'gitlab']),
+  repoUrl: z.string(),
+  accessToken: z.string().min(1),
+});
+
 export const repositoriesRouter = router({
+  /**
+   * Test repository connection without saving
+   */
+  testConnection: protectedProcedure
+    .input(testConnectionSchema)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const db = ensureDatabase(ctx);
+        const repositoryService = new RepositoryService(db);
+
+        const result = await repositoryService.testConnection(input);
+
+        return result;
+      } catch (error) {
+        if (error instanceof Error && error.message === 'DEMO_MODE') {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Repository connections are not available in demo mode',
+          });
+        }
+
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error instanceof Error ? error.message : 'Failed to test connection',
+        });
+      }
+    }),
+
   /**
    * Connect a new repository to a project
    */
