@@ -2,23 +2,17 @@
 import React, { Component } from 'react';
 import type { AppProps } from 'next/app';
 import { trpc } from '../lib/trpc/client';
-import { TerminalThemeProvider } from '../contexts/TerminalThemeContext';
 import { DemoBanner } from '../components/DemoBanner';
 import { clientLogger } from '../utils/clientLogger';
 import '../styles/index.css';
-import '../styles/themes/purple-rich.css';
-import '../styles/themes/amber-forest.css';
-import '../styles/themes/cyan-light.css';
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
     <ErrorBoundary>
-      <TerminalThemeProvider>
-        <div className="min-h-screen">
-          <DemoBanner />
-          <Component {...pageProps} />
-        </div>
-      </TerminalThemeProvider>
+      <div className="min-h-screen">
+        <DemoBanner />
+        <Component {...pageProps} />
+      </div>
     </ErrorBoundary>
   );
 }
@@ -81,56 +75,21 @@ class ErrorBoundary extends Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div
-          style={{
-            padding: '2rem',
-            textAlign: 'center',
-            fontFamily: 'monospace',
-            backgroundColor: 'var(--terminal-bg-primary, #1a1a1a)',
-            color: 'var(--terminal-text-primary, #ffffff)',
-            minHeight: '100vh',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <h1 style={{ color: 'var(--terminal-accent-error, #ff6b6b)', marginBottom: '1rem' }}>
+        <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white p-8 text-center">
+          <h1 className="text-red-500 text-3xl font-bold mb-4">
             Application Error
           </h1>
-          <p style={{ marginBottom: '1.5rem', color: 'var(--terminal-text-secondary, #aaaaaa)' }}>
+          <p className="text-gray-400 mb-6">
             Something went wrong. The error has been logged for investigation.
           </p>
           {this.state.errorId && (
-            <p
-              style={{
-                fontSize: '0.875rem',
-                color: 'var(--terminal-text-muted, #666666)',
-                marginBottom: '1.5rem',
-                fontFamily: 'monospace',
-              }}
-            >
+            <p className="text-gray-600 text-sm font-mono mb-6">
               Error ID: {this.state.errorId}
             </p>
           )}
           <button
             onClick={this.handleRefresh}
-            style={{
-              padding: '0.75rem 1.5rem',
-              backgroundColor: 'var(--terminal-accent-prompt, #8b5cf6)',
-              color: 'var(--terminal-bg-primary, #ffffff)',
-              border: 'none',
-              borderRadius: '0.375rem',
-              fontFamily: 'monospace',
-              cursor: 'pointer',
-              fontSize: '1rem',
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.opacity = '0.8';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.opacity = '1';
-            }}
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
           >
             Refresh Application
           </button>

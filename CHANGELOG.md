@@ -8,6 +8,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Modern Simplified Chat UI**: Complete frontend overhaul optimized for research and writing workflows
+  - New `SimplifiedChatView` component as main container
+  - `ProjectSidebar` with project-first navigation and conversation grouping
+  - `MessageList` with inline RAG source attribution and expandable context view
+  - `MessageInput` with auto-resizing textarea and keyboard shortcuts
+  - `ProjectPanel` slide-out for document management and project settings
+  - 40 comprehensive unit tests for new components (MessageInput, MessageList, ProjectSidebar)
+- **RAG Transparency Features**: Users can now see exactly how RAG enhances responses
+  - Inline source attribution showing which documents were used
+  - Expandable context view with actual retrieved text chunks
+  - Relevance scores displayed for each source document
+  - Support for multiple sources with clear visual distinction
+- **Enhanced ChatService**: Backend now returns RAG metadata with responses
+  - `ragSources` field added to assistant messages (filename, content, score)
+  - Works with both regular `sendMessage()` and streaming `createMessageStream()`
+  - Graceful fallback when RAG retrieval fails
+
+### Changed
+- **Simplified Architecture**: ~50% codebase reduction by removing complexity
+  - Removed dual interface system (terminal mode + chat mode)
+  - Removed slash command processor (`useCommandProcessor`)
+  - Removed theme system (3 terminal themes with CSS custom properties)
+  - Removed 35 files (~8,000 lines of code)
+  - Updated `useChat` hook to remove command processing logic
+  - Simplified `_app.tsx` to remove theme providers
+- **Updated Documentation**: Comprehensive docs refresh
+  - README.md updated to reflect new modern UI
+  - TECHNICAL_SUMMARY.md updated with current architecture
+  - THEMING.md removed (obsolete after theme system removal)
+  - All references to terminal mode and slash commands removed
+- **Code Quality**: Consistent logging and error handling
+  - Replaced `console.error` with `clientLogger` in ProjectPanel
+  - Removed unused state (invalidAttempts, selectableConversations)
+  - Simplified error boundaries to use Tailwind classes
+
+### Removed
+- **Terminal Mode Components** (12 files)
+  - UnifiedTerminalView, ChatDisplay, StreamingChatDisplay
+  - TerminalHeader, TerminalView, ChatInput
+  - ConversationList, ThemeSelector
+- **Old Chat Components**
+  - ChatView.tsx (purple gradient version)
+  - Chat.test.tsx
+- **UI Component Library** (6 files)
+  - Button, Input, LoadingSpinner
+  - ErrorDisplay, MessageBubble
+- **Theme System** (6 files)
+  - TerminalThemeContext and tests
+  - 5 theme CSS files (purple-rich, amber-forest, cyan-light, terminal, blank-template)
+- **Slash Command System** (2 files)
+  - useCommandProcessor hook and tests
+- **Shared/Utils Components** (3 files)
+  - MessageRenderer, styleHelpers
+- **AppShell & FloatingToolbar**
+  - Dual interface switching system
+  - CostTracker (terminal version)
+
+### Technical Details
+- Single focused UI instead of dual interface
+- Project-first conversation organization
+- RAG sources visible with inline attribution
+- Export functionality moved to dropdown menu
+- Comprehensive test coverage maintained
+- All components use clientLogger for consistency
+
+### Previous Additions
 - **API Key Authentication System**: Production-ready authentication with comprehensive security
   - SHA-256 hashed API key storage (never stores plaintext)
   - Two-tier IP whitelisting (global + per-key)
