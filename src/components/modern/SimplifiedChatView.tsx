@@ -5,6 +5,20 @@ import { MessageInput } from './MessageInput';
 import { ProjectPanel } from './ProjectPanel';
 import type { Message } from './MessageList';
 
+interface OrchestrationState {
+  stage: 'analyzing' | 'routing' | 'executing' | 'validating' | 'retrying' | 'complete' | 'idle';
+  message: string;
+  progress: number;
+  metadata?: {
+    complexity?: number;
+    category?: string;
+    model?: string;
+    cacheHit?: boolean;
+    retryCount?: number;
+    estimatedCost?: number;
+  };
+}
+
 interface SimplifiedChatViewProps {
   // Project state
   currentProjectId: string | null;
@@ -25,6 +39,7 @@ interface SimplifiedChatViewProps {
   // Loading states
   isLoading?: boolean;
   isCreatingConversation?: boolean;
+  orchestrationState?: OrchestrationState | null;
 
   // Export
   onExport?: (format: 'markdown' | 'json', scope: 'current' | 'all') => void;
@@ -43,6 +58,7 @@ export const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   onSendMessage,
   isLoading = false,
   isCreatingConversation = false,
+  orchestrationState = null,
   onExport,
 }) => {
   const [selectedProjectForPanel, setSelectedProjectForPanel] = useState<string | null>(null);
@@ -198,7 +214,11 @@ export const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
               </div>
             </div>
           ) : (
-            <MessageList messages={messages} isLoading={isLoading} />
+            <MessageList
+              messages={messages}
+              isLoading={isLoading}
+              orchestrationState={orchestrationState}
+            />
           )}
         </div>
 
