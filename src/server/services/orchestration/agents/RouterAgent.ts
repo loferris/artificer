@@ -1,4 +1,4 @@
-import { AnalysisResult, RoutingPlan, RoutingStrategy } from '../types';
+import { AnalysisResult, RoutingPlan, RoutingStrategy, AnalysisResultWithTools } from '../types';
 
 /**
  * Model capability metadata for routing decisions
@@ -9,6 +9,8 @@ interface ModelMetadata {
   strengths: string[];
   costPer1kTokens: number;
   maxTokens: number;
+  toolUseScore?: number;      // 0-10 rating for tool/function calling capability (MCP ready)
+  supportedToolTypes?: string[]; // Tool types this model excels at (future)
 }
 
 /**
@@ -170,15 +172,24 @@ Respond ONLY with valid JSON. No additional text.`;
   /**
    * Provides fallback routing if the router fails
    * Uses rule-based logic to select appropriate model
+   * Future: Will support tool-aware routing for MCP integration
    */
   private getFallbackRouting(analysis: AnalysisResult, preferCheap: boolean): RoutingPlan {
-    const { complexity, category, estimatedTokens } = analysis;
+    const { complexity, category, estimatedTokens, capabilities } = analysis;
+
+    // Check if tool-use is required (MCP integration)
+    const requiresToolUse = capabilities.includes('tool-use') || capabilities.includes('multi-tool');
 
     // Rule-based model selection
     let primaryModel: string;
     let tier: 'cheap' | 'mid' | 'expensive';
 
-    if (preferCheap || complexity <= 3) {
+    if (requiresToolUse) {
+      // Future MCP integration: Prefer models with high tool-use scores
+      // For now, default to mid-tier models which have better tool support
+      tier = complexity >= 7 ? 'expensive' : 'mid';
+      primaryModel = this.selectModelByTier(tier, category);
+    } else if (preferCheap || complexity <= 3) {
       // Use cheapest model for simple tasks
       tier = 'cheap';
       primaryModel = this.selectModelByTier('cheap', category);
@@ -260,21 +271,24 @@ Respond ONLY with valid JSON. No additional text.`;
         tier: 'cheap',
         strengths: ['code', 'analysis', 'speed'],
         costPer1kTokens: 0.00014,
-        maxTokens: 8000
+        maxTokens: 8000,
+        toolUseScore: 5, // Basic tool use
       },
       {
         id: 'anthropic/claude-3-haiku',
         tier: 'cheap',
         strengths: ['chat', 'speed', 'analysis'],
         costPer1kTokens: 0.00025,
-        maxTokens: 4096
+        maxTokens: 4096,
+        toolUseScore: 7, // Good tool use for cheap model
       },
       {
         id: 'openai/gpt-4o-mini',
         tier: 'cheap',
         strengths: ['chat', 'analysis', 'speed'],
         costPer1kTokens: 0.00015,
-        maxTokens: 16000
+        maxTokens: 16000,
+        toolUseScore: 7, // Good tool use
       },
 
       // Mid tier
@@ -283,14 +297,18 @@ Respond ONLY with valid JSON. No additional text.`;
         tier: 'mid',
         strengths: ['code', 'reasoning', 'analysis', 'creative'],
         costPer1kTokens: 0.003,
-        maxTokens: 8000
+        maxTokens: 8000,
+        toolUseScore: 9, // Excellent tool use, MCP native
+        supportedToolTypes: ['filesystem', 'search', 'git', 'code-analysis', 'browser'],
       },
       {
         id: 'openai/gpt-4o',
         tier: 'mid',
         strengths: ['code', 'reasoning', 'creative'],
         costPer1kTokens: 0.0025,
-        maxTokens: 16000
+        maxTokens: 16000,
+        toolUseScore: 9, // Excellent tool use
+        supportedToolTypes: ['search', 'database', 'api', 'calculator'],
       },
 
       // Expensive tier
@@ -299,14 +317,17 @@ Respond ONLY with valid JSON. No additional text.`;
         tier: 'expensive',
         strengths: ['reasoning', 'research', 'creative', 'analysis'],
         costPer1kTokens: 0.015,
-        maxTokens: 4096
+        maxTokens: 4096,
+        toolUseScore: 9, // Excellent tool use
+        supportedToolTypes: ['filesystem', 'search', 'database', 'git', 'code-analysis'],
       },
       {
         id: 'openai/o1-preview',
         tier: 'expensive',
         strengths: ['reasoning', 'analysis', 'research'],
         costPer1kTokens: 0.015,
-        maxTokens: 32000
+        maxTokens: 32000,
+        toolUseScore: 8, // Good tool use but optimized for reasoning
       }
     ];
 

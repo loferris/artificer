@@ -13,7 +13,9 @@ export type RequiredCapability =
   | 'reasoning'
   | 'speed'
   | 'knowledge'
-  | 'creativity';
+  | 'creativity'
+  | 'tool-use'        // Requires tool/function calling
+  | 'multi-tool';     // Requires orchestrating multiple tools
 
 export type RoutingStrategy =
   | 'single'        // Use single model
@@ -170,4 +172,81 @@ export interface CachedRoute {
   routingPlan: RoutingPlan;
   timestamp: Date;
   hitCount: number;
+}
+
+// ============================================================================
+// MCP (Model Context Protocol) Integration Types
+// ============================================================================
+
+/**
+ * MCP tool types - common tool categories
+ */
+export type MCPToolType =
+  | 'filesystem'      // File system operations (read, write, list)
+  | 'search'          // Web search (Brave, Google, etc.)
+  | 'database'        // Database queries
+  | 'api'             // External API calls
+  | 'git'             // Git operations
+  | 'shell'           // Shell command execution
+  | 'browser'         // Browser automation
+  | 'code-analysis'   // Code parsing and analysis
+  | 'calculator'      // Mathematical computations
+  | 'custom';         // Custom/unknown tools
+
+/**
+ * MCP tool capability definition
+ */
+export interface MCPToolCapability {
+  type: MCPToolType;
+  name: string;                   // Tool name (e.g., 'brave-search')
+  description: string;            // What the tool does
+  requiredParams?: string[];      // Required parameters
+  cost?: number;                  // Cost per invocation (if applicable)
+  latency?: number;               // Expected latency in ms
+}
+
+/**
+ * MCP server configuration
+ */
+export interface MCPServer {
+  id: string;                     // Unique server ID
+  name: string;                   // Display name
+  enabled: boolean;               // Whether server is active
+  tools: MCPToolCapability[];     // Available tools
+  healthStatus?: 'healthy' | 'degraded' | 'down';
+  lastHealthCheck?: Date;
+}
+
+/**
+ * MCP context - available tools and servers
+ */
+export interface MCPContext {
+  servers: MCPServer[];           // Available MCP servers
+  enabledTools: MCPToolType[];    // Currently enabled tool types
+  toolPreferences?: {             // Preferences for tool selection
+    preferredSearch?: string;     // e.g., 'brave-search' over 'google'
+    maxCostPerTool?: number;      // Cost limit per tool call
+    timeoutMs?: number;           // Tool invocation timeout
+  };
+}
+
+/**
+ * Tool requirement detected in query
+ */
+export interface ToolRequirement {
+  toolType: MCPToolType;
+  confidence: number;             // 0-1 confidence score
+  reasoning: string;              // Why this tool is needed
+  priority: 'required' | 'optional' | 'nice-to-have';
+  estimatedCalls?: number;        // Expected number of tool calls
+}
+
+/**
+ * Extended analysis result with MCP tool detection
+ * Backward compatible - all MCP fields are optional
+ */
+export interface AnalysisResultWithTools extends AnalysisResult {
+  toolRequirements?: ToolRequirement[];   // Detected tool needs
+  requiresMCP?: boolean;                   // Whether MCP is needed
+  toolComplexity?: number;                 // 1-10 scale for tool orchestration complexity
 }
