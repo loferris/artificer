@@ -173,10 +173,25 @@ export { PortableTextAdapter, portableTextAdapter } from './adapters/portable-te
 export { MarkdownImporter } from './importers/markdown-importer.js';
 export { NotionImporter } from './importers/notion-importer.js';
 export { RoamImporter } from './importers/roam-importer.js';
+export { PdfImporter } from './importers/pdf-importer.js';
 export { MarkdownExporter } from './exporters/markdown-exporter.js';
 export { NotionExporter } from './exporters/notion-exporter.js';
 export { RoamExporter } from './exporters/roam-exporter.js';
 export { HtmlExporter } from './exporters/html-exporter.js';
+
+// Export extractors
+export { PdfExtractor } from './extractors/pdf-extractor.js';
+export { ImageExtractor } from './extractors/image-extractor.js';
+
+// Export PDF and image types
+export type {
+  PdfMetadata,
+  PdfExtractionResult,
+  ImageMetadata,
+  OCRProvider,
+  OCRResult,
+  PdfImportOptions,
+} from './types/pdf.js';
 
 // Default export
 export default DocumentConverter;

@@ -15,8 +15,9 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  projects Project[]
-  apiKeys  ApiKey[]
+  projects        Project[]
+  apiKeys         ApiKey[]
+  generatedImages GeneratedImage[]
 
   @@map("users")
 }
@@ -54,10 +55,11 @@ model Project {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  user             User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
-  conversations    Conversation[]
-  documents        Document[]
+  user              User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  conversations     Conversation[]
+  documents         Document[]
   knowledgeEntities KnowledgeEntity[]
+  generatedImages   GeneratedImage[]
 
   @@map("projects")
   @@index([userId])
@@ -74,8 +76,9 @@ model Conversation {
   projectId String?
   project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
-  messages  Message[]
-  summaries ConversationSummary[]
+  messages        Message[]
+  summaries       ConversationSummary[]
+  generatedImages GeneratedImage[]
 
   // Conversation settings
   systemPrompt String?
@@ -97,8 +100,11 @@ model Message {
 
   // Future: message branching support
   parentId String?
-  parent   Message? @relation("MessageTree", fields: [parentId], references: [id])
+  parent   Message?  @relation("MessageTree", fields: [parentId], references: [id])
   children Message[] @relation("MessageTree")
+
+  // Image generation support
+  generatedImages GeneratedImage[]
 
   @@map("messages")
 }
@@ -109,12 +115,15 @@ model Document {
   filename    String
   originalName String  // Keep original filename for display
   contentType String   // MIME type
-  content     String   // Extracted text content
+  content     String   // Extracted text content (OCR text for images)
   size        Int      // File size in bytes
   embedding   Float[]  // Vector embedding for semantic search
-  metadata    Json?    // Additional metadata (page count, etc.)
+  metadata    Json?    // Additional metadata (OCR confidence, page count, image dimensions, etc.)
   uploadedAt  DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  // Optional: Store original image data for preview/thumbnails
+  imageData   Bytes?   // Binary image data (for images only)
 
   // Relations
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -198,4 +207,39 @@ model RoutingDecision {
   @@index([complexity])
   @@index([category])
   @@index([expiresAt]) // For efficient cleanup queries
+}
+
+model GeneratedImage {
+  id             String   @id @default(cuid())
+  userId         String?
+  user           User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  projectId      String?
+  project        Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  conversationId String?
+  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  messageId      String?
+  message        Message? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  // Generation details
+  prompt         String   @db.Text  // User's original prompt
+  revisedPrompt  String?  @db.Text  // DALL-E 3 may revise the prompt
+  model          String              // dall-e-3, dall-e-2, stable-diffusion-xl, etc.
+
+  // Storage options (one of these should be populated)
+  imageUrl       String?             // External URL (S3, CDN, or OpenAI temporary URL)
+  imageData      Bytes?              // Binary storage in PostgreSQL
+  base64Data     String?  @db.Text   // Base64 string (for smaller images)
+
+  // Generation parameters and metadata
+  parameters     Json                // Size, quality, style, n, etc.
+  metadata       Json?               // Cost, generation time, provider info, etc.
+
+  createdAt      DateTime @default(now())
+
+  @@map("generated_images")
+  @@index([userId])
+  @@index([projectId])
+  @@index([conversationId])
+  @@index([messageId])
+  @@index([createdAt])
 }

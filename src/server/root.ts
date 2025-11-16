@@ -10,6 +10,7 @@ import { monitoringRouter } from './routers/monitoring';
 import { authRouter } from './routers/auth';
 import { searchRouter } from './routers/search';
 import { orchestrationRouter } from './routers/orchestration';
+import { imagesRouter } from './routers/images';
 
 export const appRouter = router({
   chat: chatRouter,
@@ -22,6 +23,7 @@ export const appRouter = router({
   auth: authRouter,
   search: searchRouter,
   orchestration: orchestrationRouter,
+  images: imagesRouter,
 });
 
 export type AppRouter = typeof appRouter;
