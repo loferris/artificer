@@ -4,7 +4,30 @@ import { TRPCError } from '@trpc/server';
 import { createServicesFromContext } from '../services/ServiceFactory';
 import { ChainOrchestrator } from '../services/orchestration/ChainOrchestrator';
 import { ChainConfig } from '../services/orchestration/types';
+import { ModelRegistry } from '../services/orchestration/ModelRegistry';
 import { logger } from '../utils/logger';
+
+// Global model registry singleton (initialized lazily)
+let globalModelRegistry: ModelRegistry | null = null;
+
+/**
+ * Get or create the global model registry
+ * The registry is initialized on first use
+ */
+async function getModelRegistry(): Promise<ModelRegistry> {
+  if (!globalModelRegistry) {
+    globalModelRegistry = new ModelRegistry();
+
+    // Initialize in background (non-blocking)
+    globalModelRegistry.initialize().catch(error => {
+      logger.warn('[orchestrationRouter] Model registry initialization failed, using fallback', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    });
+  }
+
+  return globalModelRegistry;
+}
 
 // Helper function to ensure user exists in demo mode
 function ensureDemoUser(ctx: any) {
@@ -119,8 +142,11 @@ export const orchestrationRouter = router({
         // Build chain config
         const config = buildChainConfig();
 
+        // Get global model registry
+        const registry = await getModelRegistry();
+
         // Create chain orchestrator
-        const orchestrator = new ChainOrchestrator(config, assistant, ctx.db);
+        const orchestrator = new ChainOrchestrator(config, assistant, ctx.db, registry);
 
         // Run the chain orchestration
         const chainResult = await orchestrator.orchestrate({

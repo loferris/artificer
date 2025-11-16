@@ -1,15 +1,5 @@
 import { AnalysisResult, RoutingPlan, RoutingStrategy } from '../types';
-
-/**
- * Model capability metadata for routing decisions
- */
-interface ModelMetadata {
-  id: string;
-  tier: 'cheap' | 'mid' | 'expensive';
-  strengths: string[];
-  costPer1kTokens: number;
-  maxTokens: number;
-}
+import { ModelRegistry, ModelMetadata } from '../ModelRegistry';
 
 /**
  * RouterAgent - Decides which model(s) to use based on analysis
@@ -20,9 +10,10 @@ export class RouterAgent {
 
   constructor(
     private modelId: string,
-    private availableModels: string[]
+    private availableModels: string[],
+    private registry: ModelRegistry
   ) {
-    this.modelMetadata = this.initializeModelMetadata();
+    this.modelMetadata = this.registry.getMetadataMap(this.availableModels);
   }
 
   /**
@@ -246,90 +237,4 @@ Respond ONLY with valid JSON. No additional text.`;
     return fallbacks;
   }
 
-  /**
-   * Initializes model metadata for routing decisions
-   */
-  private initializeModelMetadata(): Map<string, ModelMetadata> {
-    const metadata = new Map<string, ModelMetadata>();
-
-    // Define known models - this should be expanded based on your available models
-    const knownModels: ModelMetadata[] = [
-      // Cheap tier
-      {
-        id: 'deepseek/deepseek-chat',
-        tier: 'cheap',
-        strengths: ['code', 'analysis', 'speed'],
-        costPer1kTokens: 0.00014,
-        maxTokens: 8000
-      },
-      {
-        id: 'anthropic/claude-3-haiku',
-        tier: 'cheap',
-        strengths: ['chat', 'speed', 'analysis'],
-        costPer1kTokens: 0.00025,
-        maxTokens: 4096
-      },
-      {
-        id: 'openai/gpt-4o-mini',
-        tier: 'cheap',
-        strengths: ['chat', 'analysis', 'speed'],
-        costPer1kTokens: 0.00015,
-        maxTokens: 16000
-      },
-
-      // Mid tier
-      {
-        id: 'anthropic/claude-3-5-sonnet',
-        tier: 'mid',
-        strengths: ['code', 'reasoning', 'analysis', 'creative'],
-        costPer1kTokens: 0.003,
-        maxTokens: 8000
-      },
-      {
-        id: 'openai/gpt-4o',
-        tier: 'mid',
-        strengths: ['code', 'reasoning', 'creative'],
-        costPer1kTokens: 0.0025,
-        maxTokens: 16000
-      },
-
-      // Expensive tier
-      {
-        id: 'anthropic/claude-3-opus',
-        tier: 'expensive',
-        strengths: ['reasoning', 'research', 'creative', 'analysis'],
-        costPer1kTokens: 0.015,
-        maxTokens: 4096
-      },
-      {
-        id: 'openai/o1-preview',
-        tier: 'expensive',
-        strengths: ['reasoning', 'analysis', 'research'],
-        costPer1kTokens: 0.015,
-        maxTokens: 32000
-      }
-    ];
-
-    // Only add models that are in availableModels
-    for (const model of knownModels) {
-      if (this.availableModels.some(m => m.toLowerCase() === model.id.toLowerCase())) {
-        metadata.set(model.id, model);
-      }
-    }
-
-    // Add unknown models with default metadata
-    for (const modelId of this.availableModels) {
-      if (!metadata.has(modelId)) {
-        metadata.set(modelId, {
-          id: modelId,
-          tier: 'mid',
-          strengths: ['chat'],
-          costPer1kTokens: 0.001,
-          maxTokens: 4096
-        });
-      }
-    }
-
-    return metadata;
-  }
 }

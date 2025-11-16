@@ -3,6 +3,7 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { AnalyzerAgent } from './agents/AnalyzerAgent';
 import { RouterAgent } from './agents/RouterAgent';
 import { ValidatorAgent } from './agents/ValidatorAgent';
+import { ModelRegistry } from './ModelRegistry';
 import {
   ChainConfig,
   ChainContext,
@@ -34,20 +35,25 @@ export class ChainOrchestrator {
   private validator: ValidatorAgent;
   private assistant: Assistant;
   private db?: PrismaClient;
+  private registry: ModelRegistry;
   private routeCache: Map<string, CachedRoute> = new Map();
   private readonly CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
   constructor(
     private config: ChainConfig,
     assistant: Assistant,
-    db?: PrismaClient
+    db?: PrismaClient,
+    registry?: ModelRegistry
   ) {
     this.assistant = assistant;
     this.db = db;
 
+    // Initialize or use provided model registry
+    this.registry = registry || new ModelRegistry();
+
     // Initialize agents
     this.analyzer = new AnalyzerAgent(config.analyzerModel);
-    this.router = new RouterAgent(config.routerModel, config.availableModels);
+    this.router = new RouterAgent(config.routerModel, config.availableModels, this.registry);
     this.validator = new ValidatorAgent(config.validatorModel);
 
     logger.info('[ChainOrchestrator] Initialized', {
