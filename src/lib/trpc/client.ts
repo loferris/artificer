@@ -1,4 +1,4 @@
-import { httpBatchLink, wsLink, splitLink, createWSClient } from '@trpc/client';
+import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import type { AppRouter } from '../../server/root';
 import superjson from 'superjson';
@@ -7,14 +7,6 @@ function getBaseUrl() {
   if (typeof window !== 'undefined') return '';
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
   return 'http://localhost:3000';
-}
-
-function getWsUrl() {
-  if (typeof window !== 'undefined') {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${protocol}//${window.location.host}/api/trpc-ws`;
-  }
-  return 'ws://localhost:3000/api/trpc-ws';
 }
 
 function getSessionId() {
