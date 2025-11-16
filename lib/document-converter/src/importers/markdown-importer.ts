@@ -7,6 +7,7 @@ import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
 import remarkFrontmatter from 'remark-frontmatter';
 import { visit } from 'unist-util-visit';
+import yaml from 'js-yaml';
 import type { Root, Content, PhrasingContent, Text } from 'mdast';
 import type {
   ImporterPlugin,
@@ -98,24 +99,33 @@ export class MarkdownImporter implements ImporterPlugin {
 
     visit(tree, 'yaml', (node: any) => {
       try {
-        // Simple YAML parsing (you might want to use a proper YAML library)
-        const lines = node.value.split('\n');
-        for (const line of lines) {
-          const match = line.match(/^(\w+):\s*(.+)$/);
-          if (match) {
-            const [, key, value] = match;
-            if (key === 'tags') {
-              frontmatter.tags = value
+        // Use proper YAML parsing
+        const parsed = yaml.load(node.value) as Record<string, any>;
+
+        if (parsed && typeof parsed === 'object') {
+          // Handle tags specially - ensure it's an array
+          if (parsed.tags) {
+            if (Array.isArray(parsed.tags)) {
+              frontmatter.tags = parsed.tags.map(String);
+            } else if (typeof parsed.tags === 'string') {
+              // Support comma-separated tags
+              frontmatter.tags = parsed.tags
                 .split(',')
                 .map((t: string) => t.trim())
                 .filter(Boolean);
-            } else {
-              (frontmatter as any)[key] = value.trim();
             }
           }
+
+          // Copy other fields
+          Object.keys(parsed).forEach((key) => {
+            if (key !== 'tags') {
+              (frontmatter as any)[key] = parsed[key];
+            }
+          });
         }
       } catch (error) {
-        // Ignore frontmatter parsing errors
+        // Ignore frontmatter parsing errors but log for debugging
+        console.warn('Failed to parse YAML frontmatter:', error);
       }
     });
 
@@ -149,14 +159,15 @@ export class MarkdownImporter implements ImporterPlugin {
 
   private convertHeading(node: any): PortableTextBlock {
     const style = `h${node.depth}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
-    const children = this.convertInlineNodes(node.children);
+    const markDefs: any[] = [];
+    const children = this.convertInlineNodes(node.children, markDefs);
 
     return {
       _type: 'block',
       _key: generateKey(),
       style,
       children,
-      markDefs: [],
+      markDefs,
     };
   }
 
@@ -177,14 +188,15 @@ export class MarkdownImporter implements ImporterPlugin {
       }
     }
 
-    const children = this.convertInlineNodes(node.children);
+    const markDefs: any[] = [];
+    const children = this.convertInlineNodes(node.children, markDefs);
 
     return {
       _type: 'block',
       _key: generateKey(),
       style: 'normal',
       children,
-      markDefs: [],
+      markDefs,
     };
   }
 
@@ -214,7 +226,8 @@ export class MarkdownImporter implements ImporterPlugin {
 
     for (const child of node.children) {
       if (child.type === 'paragraph') {
-        const children = this.convertInlineNodes(child.children);
+        const markDefs: any[] = [];
+        const children = this.convertInlineNodes(child.children, markDefs);
         blocks.push({
           _type: 'block',
           _key: generateKey(),
@@ -222,7 +235,7 @@ export class MarkdownImporter implements ImporterPlugin {
           listItem: listType,
           level,
           children,
-          markDefs: [],
+          markDefs,
         });
       } else if (child.type === 'list') {
         // Nested list
@@ -243,13 +256,14 @@ export class MarkdownImporter implements ImporterPlugin {
 
     for (const child of node.children) {
       if (child.type === 'paragraph') {
-        const children = this.convertInlineNodes(child.children);
+        const markDefs: any[] = [];
+        const children = this.convertInlineNodes(child.children, markDefs);
         blocks.push({
           _type: 'block',
           _key: generateKey(),
           style: 'blockquote',
           children,
-          markDefs: [],
+          markDefs,
         });
       }
     }
@@ -272,16 +286,40 @@ export class MarkdownImporter implements ImporterPlugin {
     return createImageBlock(node.url, node.alt, node.title);
   }
 
-  private convertInlineNodes(nodes: PhrasingContent[]): PortableTextSpan[] {
+  private convertInlineNodes(nodes: PhrasingContent[], markDefs: any[] = []): PortableTextSpan[] {
     const spans: PortableTextSpan[] = [];
-    const markDefs: any[] = [];
 
     for (const node of nodes) {
       const result = this.convertInlineNode(node, markDefs);
       if (result) {
         if (Array.isArray(result)) {
-          spans.push(...result);
+          // Handle wiki links in the result
+          for (const span of result) {
+            if ((span as any)._wikiLink) {
+              const wikiInfo = (span as any)._wikiLink;
+              // Add wiki link to markDefs
+              markDefs.push({
+                _type: 'wikiLink',
+                _key: wikiInfo.markKey,
+                target: wikiInfo.target,
+                alias: wikiInfo.alias,
+              });
+              // Remove temporary property
+              delete (span as any)._wikiLink;
+            }
+            spans.push(span);
+          }
         } else {
+          if ((result as any)._wikiLink) {
+            const wikiInfo = (result as any)._wikiLink;
+            markDefs.push({
+              _type: 'wikiLink',
+              _key: wikiInfo.markKey,
+              target: wikiInfo.target,
+              alias: wikiInfo.alias,
+            });
+            delete (result as any)._wikiLink;
+          }
           spans.push(result);
         }
       }
@@ -314,18 +352,57 @@ export class MarkdownImporter implements ImporterPlugin {
     }
   }
 
-  private convertText(node: Text): PortableTextSpan {
+  private convertText(node: Text): PortableTextSpan | PortableTextSpan[] {
     // Check for Obsidian wiki links [[Page Name]] or [[Page Name|Alias]]
     const wikiLinkPattern = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g;
     const text = node.value;
 
+    // Check if text contains wiki links
     if (wikiLinkPattern.test(text)) {
-      // TODO: Split into multiple spans for wiki links
-      // For now, preserve as-is
-      return createSpan(text);
+      return this.convertTextWithWikiLinks(text);
     }
 
     return createSpan(text);
+  }
+
+  private convertTextWithWikiLinks(text: string): PortableTextSpan[] {
+    const wikiLinkPattern = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g;
+    const spans: PortableTextSpan[] = [];
+    const markDefs: any[] = [];
+    let lastIndex = 0;
+
+    // Find all wiki links
+    let match;
+    wikiLinkPattern.lastIndex = 0; // Reset regex state
+    while ((match = wikiLinkPattern.exec(text)) !== null) {
+      // Add text before link
+      if (match.index > lastIndex) {
+        spans.push(createSpan(text.slice(lastIndex, match.index)));
+      }
+
+      // Add wiki link as a span with mark
+      const [, target, alias] = match;
+      const markKey = generateKey();
+
+      // Store mark definition (will be handled by calling function)
+      spans.push({
+        _type: 'span',
+        _key: generateKey(),
+        text: alias || target,
+        marks: [markKey],
+        // Store wiki link info temporarily
+        _wikiLink: { target, alias, markKey },
+      } as any);
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+      spans.push(createSpan(text.slice(lastIndex)));
+    }
+
+    return spans;
   }
 
   private convertWithMark(

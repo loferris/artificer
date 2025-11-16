@@ -32,6 +32,7 @@ import { RoamImporter } from './importers/roam-importer.js';
 import { MarkdownExporter } from './exporters/markdown-exporter.js';
 import { NotionExporter } from './exporters/notion-exporter.js';
 import { RoamExporter } from './exporters/roam-exporter.js';
+import { HtmlExporter } from './exporters/html-exporter.js';
 import { portableTextAdapter } from './adapters/portable-text-adapter.js';
 
 import type {
@@ -74,6 +75,7 @@ export class DocumentConverter {
     this.registry.registerExporter(new MarkdownExporter());
     this.registry.registerExporter(new NotionExporter());
     this.registry.registerExporter(new RoamExporter());
+    this.registry.registerExporter(new HtmlExporter());
   }
 
   /**
@@ -174,6 +176,7 @@ export { RoamImporter } from './importers/roam-importer.js';
 export { MarkdownExporter } from './exporters/markdown-exporter.js';
 export { NotionExporter } from './exporters/notion-exporter.js';
 export { RoamExporter } from './exporters/roam-exporter.js';
+export { HtmlExporter } from './exporters/html-exporter.js';
 
 // Default export
 export default DocumentConverter;

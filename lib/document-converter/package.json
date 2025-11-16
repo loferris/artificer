@@ -30,20 +30,22 @@
   "author": "",
   "license": "MIT",
   "peerDependencies": {
-    "unified": "^11.0.0",
     "remark": "^15.0.0",
+    "remark-frontmatter": "^5.0.0",
+    "remark-gfm": "^4.0.0",
     "remark-parse": "^11.0.0",
     "remark-stringify": "^11.0.0",
-    "remark-gfm": "^4.0.0",
-    "remark-frontmatter": "^5.0.0"
+    "unified": "^11.0.0"
   },
   "dependencies": {
     "@portabletext/types": "^2.0.13",
+    "@types/js-yaml": "^4.0.9",
+    "js-yaml": "^4.1.1",
     "mdast-util-from-markdown": "^2.0.2",
-    "mdast-util-to-markdown": "^2.1.2",
     "mdast-util-frontmatter": "^2.0.1",
-    "unist-util-visit": "^5.0.0",
-    "unist-builder": "^4.0.0"
+    "mdast-util-to-markdown": "^2.1.2",
+    "unist-builder": "^4.0.0",
+    "unist-util-visit": "^5.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
