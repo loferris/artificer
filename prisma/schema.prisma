@@ -143,3 +143,23 @@ model KnowledgeEntity {
   @@index([type])
   @@index([projectId, type])
 }
+
+model RoutingDecision {
+  id               String   @id @default(cuid())
+  prompt           String   // Original user prompt
+  analysis         Json     // Analyzer agent output: complexity, category, capabilities, tokens
+  routingPlan      Json     // Router agent output: selected model(s), strategy (single/ensemble/speculative)
+  executedModel    String   // The model that was actually used
+  validationResult Json?    // Validator agent output: accuracy, completeness, retry decision
+  totalCost        Decimal  @db.Decimal(10, 6) // Total cost in USD
+  successful       Boolean  // Whether the final response was successful
+  retryCount       Int      @default(0) // Number of retries attempted
+  conversationId   String?  // Link to conversation if applicable
+  createdAt        DateTime @default(now())
+
+  @@map("routing_decisions")
+  @@index([conversationId])
+  @@index([executedModel])
+  @@index([successful])
+  @@index([createdAt])
+}
