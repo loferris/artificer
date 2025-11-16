@@ -20,6 +20,7 @@ export function useArtifacts(conversationId?: string) {
   const updateMutation = trpc.artifacts.update.useMutation();
   const deleteMutation = trpc.artifacts.delete.useMutation();
   const extractMutation = trpc.artifacts.extract.useMutation();
+  const promoteToProjectMutation = trpc.artifacts.promoteToProject.useMutation();
 
   const artifacts = artifactsData?.artifacts || [];
   const selectedArtifact = artifacts.find((a) => a.id === selectedArtifactId) || null;
@@ -131,17 +132,39 @@ export function useArtifacts(conversationId?: string) {
     setSelectedArtifactId(artifactId);
   }, []);
 
+  /**
+   * Promote artifact to project knowledge (make it searchable in RAG)
+   */
+  const promoteToProject = useCallback(
+    async (artifactId: string, projectId: string) => {
+      const result = await promoteToProjectMutation.mutateAsync({
+        artifactId,
+        projectId,
+      });
+
+      if (result.success) {
+        await refetchArtifacts();
+        return true;
+      }
+
+      return false;
+    },
+    [promoteToProjectMutation, refetchArtifacts]
+  );
+
   return {
     artifacts,
     selectedArtifact,
     selectedArtifactId,
     isLoading: createMutation.isLoading || updateMutation.isLoading || deleteMutation.isLoading,
     isExtracting: extractMutation.isLoading,
+    isPromoting: promoteToProjectMutation.isLoading,
     createArtifact,
     updateArtifact,
     deleteArtifact,
     extractArtifacts,
     selectArtifact,
+    promoteToProject,
     refetchArtifacts,
   };
 }

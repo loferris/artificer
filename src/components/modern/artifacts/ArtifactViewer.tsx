@@ -11,6 +11,8 @@ interface ArtifactViewerProps {
   artifact: Artifact;
   onEdit?: (content: string) => void;
   onClose?: () => void;
+  onPromoteToProject?: () => void;
+  hasProject?: boolean;
   readOnly?: boolean;
 }
 
@@ -18,6 +20,8 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({
   artifact,
   onEdit,
   onClose,
+  onPromoteToProject,
+  hasProject = false,
   readOnly = false,
 }) => {
   const renderViewer = () => {
@@ -154,15 +158,26 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 text-xs text-gray-500">
+      <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 text-xs">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 text-gray-500">
             <span>Type: {artifact.type}</span>
             <span>Version: {artifact.version}</span>
             <span>Created: {new Date(artifact.createdAt).toLocaleDateString()}</span>
+            {artifact.metadata && Object.keys(artifact.metadata).length > 0 && (
+              <span className="text-gray-400">Has metadata</span>
+            )}
           </div>
-          {artifact.metadata && Object.keys(artifact.metadata).length > 0 && (
-            <span className="text-gray-400">Has metadata</span>
+          {hasProject && onPromoteToProject && (
+            <button
+              onClick={onPromoteToProject}
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium transition-colors flex items-center space-x-1"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span>Add to Project Knowledge</span>
+            </button>
           )}
         </div>
       </div>

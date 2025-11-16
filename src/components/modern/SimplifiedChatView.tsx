@@ -64,6 +64,7 @@ interface SimplifiedChatViewProps {
   artifacts?: Artifact[];
   onUpdateArtifact?: (artifactId: string, content: string) => void;
   onDeleteArtifact?: (artifactId: string) => void;
+  onPromoteToProject?: (artifactId: string) => void;
 }
 
 export const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
@@ -86,6 +87,7 @@ export const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   artifacts = [],
   onUpdateArtifact,
   onDeleteArtifact,
+  onPromoteToProject,
 }) => {
   const [selectedProjectForPanel, setSelectedProjectForPanel] = useState<string | null>(null);
   const [showExportMenu, setShowExportMenu] = useState(false);
@@ -390,6 +392,8 @@ export const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
         onClose={() => setShowArtifactPanel(false)}
         onUpdateArtifact={onUpdateArtifact}
         onDeleteArtifact={onDeleteArtifact}
+        onPromoteToProject={onPromoteToProject}
+        hasProject={!!currentProjectId}
       />
     </div>
   );

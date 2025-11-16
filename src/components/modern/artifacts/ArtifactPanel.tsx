@@ -12,6 +12,8 @@ interface ArtifactPanelProps {
   onClose: () => void;
   onUpdateArtifact?: (artifactId: string, content: string) => void;
   onDeleteArtifact?: (artifactId: string) => void;
+  onPromoteToProject?: (artifactId: string) => void;
+  hasProject?: boolean;
 }
 
 export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({
@@ -20,6 +22,8 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({
   onClose,
   onUpdateArtifact,
   onDeleteArtifact,
+  onPromoteToProject,
+  hasProject = false,
 }) => {
   const [selectedArtifactId, setSelectedArtifactId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -144,6 +148,12 @@ export const ArtifactPanel: React.FC<ArtifactPanelProps> = ({
                   : undefined
               }
               onClose={() => setSelectedArtifactId(null)}
+              onPromoteToProject={
+                onPromoteToProject
+                  ? () => onPromoteToProject(selectedArtifact.id)
+                  : undefined
+              }
+              hasProject={hasProject}
             />
           </div>
         ) : (

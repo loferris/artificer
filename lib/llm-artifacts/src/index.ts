@@ -31,3 +31,8 @@ export {
   buildArtifactCreationPrompt,
   buildArtifactUpdatePrompt,
 } from './prompts/templates';
+
+// Storage adapters
+export { ArtifactOnlyStorage } from './storage/artifact-only';
+export { UnifiedDocumentStorage } from './storage/unified-document';
+export type { UnifiedDocumentStorageOptions } from './storage/unified-document';

@@ -1,5 +1,7 @@
 /**
- * Database storage adapter for artifacts using Prisma
+ * Storage adapter for artifacts using separate Artifact table
+ *
+ * Use this pattern when you want LLM-generated artifacts separate from project documents.
  */
 
 import type { PrismaClient } from '@prisma/client';
@@ -11,9 +13,10 @@ import type {
 } from '../core/types';
 
 /**
- * Database storage adapter using Prisma
+ * Artifact-only storage adapter using Prisma
+ * Stores artifacts in a dedicated "artifacts" table
  */
-export class DatabaseArtifactStorage implements ArtifactStorageAdapter {
+export class ArtifactOnlyStorage implements ArtifactStorageAdapter {
   constructor(private prisma: PrismaClient | any) {}
 
   /**

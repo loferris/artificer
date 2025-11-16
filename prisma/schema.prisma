@@ -77,6 +77,7 @@ model Conversation {
   messages  Message[]
   summaries ConversationSummary[]
   artifacts Artifact[]
+  documents Document[]
 
   // Conversation settings
   systemPrompt String?
@@ -103,29 +104,84 @@ model Message {
 
   // Artifacts created in this message
   artifacts Artifact[]
+  documents Document[]
 
   @@map("messages")
 }
 
 model Document {
   id          String   @id @default(cuid())
-  projectId   String
-  filename    String
-  originalName String  // Keep original filename for display
-  contentType String   // MIME type
-  content     String   // Extracted text content
-  size        Int      // File size in bytes
-  embedding   Float[]  // Vector embedding for semantic search
-  metadata    Json?    // Additional metadata (page count, etc.)
-  uploadedAt  DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 
-  // Relations
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  // Core content
+  type        String   @default("text") // "code", "markdown", "mermaid", "html", "svg", "json", "yaml", "text", "csv"
+  content     String   // Document/artifact content
+  filename    String
+  title       String?  // Display title
+  description String?  // Brief description
+
+  // For code artifacts
+  language       String?  // Programming language
+  fileExtension  String?  // e.g., "ts", "md", "svg"
+
+  // Legacy fields (for backward compatibility with uploaded files)
+  originalName String?  // Keep original filename for display
+  contentType  String   @default("text/plain") // MIME type
+  size         Int      @default(0) // File size in bytes
+
+  // Source tracking
+  source      String   @default("uploaded") // "uploaded", "generated", "updated", "manual"
+
+  // Associations (all optional for flexibility)
+  projectId      String?
+  project        Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  conversationId String?
+  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  messageId      String?
+  message        Message? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  // RAG/Search control
+  indexed     Boolean  @default(true)  // Include in RAG search?
+  embedding   Float[]  @default([])    // Vector embedding (empty if not indexed)
+
+  // Versioning
+  version     Int      @default(1)
+  versions    DocumentVersion[]
+
+  // Additional metadata
+  metadata    Json?
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  uploadedAt  DateTime @default(now()) // Legacy, same as createdAt
 
   @@map("documents")
   @@index([projectId])
+  @@index([conversationId])
+  @@index([messageId])
+  @@index([type])
+  @@index([source])
+  @@index([indexed])
   @@index([contentType])
+}
+
+model DocumentVersion {
+  id                String   @id @default(cuid())
+  documentId        String
+  document          Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  version           Int      // Version number
+  content           String   // Content at this version
+  changeDescription String?  // Description of what changed
+  createdAt         DateTime @default(now())
+
+  messageId         String?  // Message that created this version
+
+  @@map("document_versions")
+  @@index([documentId])
+  @@index([documentId, version])
 }
 
 model KnowledgeEntity {

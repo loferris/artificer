@@ -63,6 +63,11 @@ function HomePage() {
       artifacts={artifacts.artifacts}
       onUpdateArtifact={artifacts.updateArtifact}
       onDeleteArtifact={artifacts.deleteArtifact}
+      onPromoteToProject={(artifactId) => {
+        if (chat.currentProjectId) {
+          artifacts.promoteToProject(artifactId, chat.currentProjectId);
+        }
+      }}
     />
   );
 }

@@ -1,10 +1,10 @@
 /**
- * tRPC router for artifact operations
+ * tRPC router for artifact operations (using unified document storage)
  */
 
 import { z } from 'zod';
 import { router, protectedProcedure } from '../trpc';
-import { DatabaseArtifactStorage } from '../../../lib/llm-artifacts/src/storage/database';
+import { UnifiedDocumentStorage } from '../../../lib/llm-artifacts/src';
 import { ArtifactDetector, ArtifactExtractor } from '../../../lib/llm-artifacts/src';
 import { ensureDatabase } from '../middleware/database';
 import type { ArtifactType, CodeLanguage } from '../../../lib/llm-artifacts/src/core/types';
@@ -23,7 +23,7 @@ export const artifactsRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
-      const storage = new DatabaseArtifactStorage(ensureDatabase(ctx));
+      const storage = new UnifiedDocumentStorage(ensureDatabase(ctx));
       const artifacts = await storage.listByConversation(input.conversationId);
 
       return {
@@ -43,7 +43,7 @@ export const artifactsRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
-      const storage = new DatabaseArtifactStorage(ensureDatabase(ctx));
+      const storage = new UnifiedDocumentStorage(ensureDatabase(ctx));
       const artifact = await storage.get(input.artifactId);
 
       if (!artifact) {
@@ -75,7 +75,7 @@ export const artifactsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const storage = new DatabaseArtifactStorage(ensureDatabase(ctx));
+      const storage = new UnifiedDocumentStorage(ensureDatabase(ctx));
 
       // Infer file extension if not provided
       const fileExtension = input.filename
@@ -124,7 +124,7 @@ export const artifactsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const storage = new DatabaseArtifactStorage(ensureDatabase(ctx));
+      const storage = new UnifiedDocumentStorage(ensureDatabase(ctx));
 
       const artifact = await storage.update(input.artifactId, {
         content: input.content,
@@ -153,7 +153,7 @@ export const artifactsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const storage = new DatabaseArtifactStorage(ensureDatabase(ctx));
+      const storage = new UnifiedDocumentStorage(ensureDatabase(ctx));
       const success = await storage.delete(input.artifactId);
 
       return {
@@ -172,7 +172,7 @@ export const artifactsRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
-      const storage = new DatabaseArtifactStorage(ensureDatabase(ctx));
+      const storage = new UnifiedDocumentStorage(ensureDatabase(ctx));
       const versions = await storage.getVersions(input.artifactId);
 
       return {
@@ -221,7 +221,7 @@ export const artifactsRouter = router({
       });
 
       // Save extracted artifacts
-      const storage = new DatabaseArtifactStorage(ensureDatabase(ctx));
+      const storage = new UnifiedDocumentStorage(ensureDatabase(ctx));
       const savedArtifacts = await Promise.all(
         artifacts.map((artifact) => storage.save(artifact))
       );
@@ -230,6 +230,51 @@ export const artifactsRouter = router({
         success: true,
         artifacts: savedArtifacts,
         count: savedArtifacts.length,
+        timestamp: new Date().toISOString(),
+      };
+    }),
+
+  /**
+   * Promote artifact to project knowledge (make it searchable in RAG)
+   */
+  promoteToProject: protectedProcedure
+    .input(
+      z.object({
+        artifactId: z.string().min(1, 'Artifact ID is required'),
+        projectId: z.string().min(1, 'Project ID is required'),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const db = ensureDatabase(ctx);
+
+      // Get the artifact/document
+      const doc = await db.document.findUnique({
+        where: { id: input.artifactId },
+      });
+
+      if (!doc) {
+        throw new Error('Artifact not found');
+      }
+
+      // Generate embedding (would use actual embedding service in production)
+      // For now, just mark as indexed and associate with project
+      const updated = await db.document.update({
+        where: { id: input.artifactId },
+        data: {
+          indexed: true,
+          projectId: input.projectId,
+          source: 'generated', // Keep as generated, but now indexed
+        },
+      });
+
+      return {
+        success: true,
+        document: {
+          id: updated.id,
+          filename: updated.filename,
+          indexed: updated.indexed,
+          projectId: updated.projectId,
+        },
         timestamp: new Date().toISOString(),
       };
     }),
