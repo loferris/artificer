@@ -1,0 +1,188 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database for Highlight metadata
+  highlight-postgres:
+    image: postgres:15-alpine
+    container_name: highlight-postgres
+    environment:
+      POSTGRES_USER: highlight
+      POSTGRES_PASSWORD: highlight
+      POSTGRES_DB: highlight
+    ports:
+      - "5433:5432"  # Use 5433 to avoid conflict with main app postgres
+    volumes:
+      - highlight-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U highlight"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - highlight-network
+
+  # ClickHouse for storing traces and logs
+  highlight-clickhouse:
+    image: clickhouse/clickhouse-server:23-alpine
+    container_name: highlight-clickhouse
+    environment:
+      CLICKHOUSE_DB: highlight
+      CLICKHOUSE_USER: highlight
+      CLICKHOUSE_PASSWORD: highlight
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    ports:
+      - "9000:9000"  # Native protocol
+      - "8123:8123"  # HTTP interface
+    volumes:
+      - highlight-clickhouse-data:/var/lib/clickhouse
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - highlight-network
+
+  # Redis for caching and session management
+  highlight-redis:
+    image: redis:7-alpine
+    container_name: highlight-redis
+    ports:
+      - "6380:6379"  # Use 6380 to avoid conflict with main app redis
+    volumes:
+      - highlight-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - highlight-network
+
+  # OpenSearch for full-text search
+  highlight-opensearch:
+    image: opensearchproject/opensearch:2.11.0
+    container_name: highlight-opensearch
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "DISABLE_INSTALL_DEMO_CONFIG=true"
+      - "DISABLE_SECURITY_PLUGIN=true"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - "9201:9200"  # Use 9201 to avoid conflicts
+      - "9601:9600"
+    volumes:
+      - highlight-opensearch-data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - highlight-network
+
+  # Highlight backend service
+  highlight-backend:
+    image: ghcr.io/highlight/highlight/backend:latest
+    container_name: highlight-backend
+    depends_on:
+      highlight-postgres:
+        condition: service_healthy
+      highlight-clickhouse:
+        condition: service_healthy
+      highlight-redis:
+        condition: service_healthy
+      highlight-opensearch:
+        condition: service_healthy
+    environment:
+      # Database connections
+      POSTGRES_HOST: highlight-postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: highlight
+      POSTGRES_PASSWORD: highlight
+      POSTGRES_DB: highlight
+
+      # ClickHouse
+      CLICKHOUSE_ADDRESS: highlight-clickhouse:9000
+      CLICKHOUSE_DATABASE: highlight
+      CLICKHOUSE_USERNAME: highlight
+      CLICKHOUSE_PASSWORD: highlight
+
+      # Redis
+      REDIS_ADDRESS: highlight-redis:6379
+
+      # OpenSearch
+      OPENSEARCH_URI: http://highlight-opensearch:9200
+
+      # Backend configuration
+      ENVIRONMENT: development
+      REACT_APP_FRONTEND_URI: http://localhost:3001
+      REACT_APP_PRIVATE_GRAPH_URI: http://localhost:8082/private
+      REACT_APP_PUBLIC_GRAPH_URI: http://localhost:8082/public
+
+      # Auth (use simple auth for local dev)
+      AUTH_MODE: simple
+      ADMIN_EMAIL: admin@highlight.local
+      ADMIN_PASSWORD: admin
+
+      # SSL/TLS (disabled for local)
+      SSL: "false"
+
+      # OTLP endpoint for traces
+      OTLP_ENDPOINT: 0.0.0.0:4318
+    ports:
+      - "8082:8082"  # GraphQL API
+      - "4318:4318"  # OTLP HTTP
+      - "4317:4317"  # OTLP gRPC
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8082/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - highlight-network
+
+  # Highlight frontend/dashboard
+  highlight-frontend:
+    image: ghcr.io/highlight/highlight/frontend:latest
+    container_name: highlight-frontend
+    depends_on:
+      highlight-backend:
+        condition: service_healthy
+    environment:
+      REACT_APP_AUTH_MODE: simple
+      REACT_APP_PRIVATE_GRAPH_URI: http://localhost:8082/private
+      REACT_APP_PUBLIC_GRAPH_URI: http://localhost:8082/public
+      REACT_APP_FRONTEND_URI: http://localhost:3001
+    ports:
+      - "3001:3000"  # Use 3001 to avoid conflict with main app
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - highlight-network
+
+networks:
+  highlight-network:
+    driver: bridge
+
+volumes:
+  highlight-postgres-data:
+    driver: local
+  highlight-clickhouse-data:
+    driver: local
+  highlight-redis-data:
+    driver: local
+  highlight-opensearch-data:
+    driver: local
