@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
 import type { Message as BaseMessage } from '../../types';
 import { highlightCode } from '../../utils/shiki';
+import { OrchestrationProgress } from './OrchestrationProgress';
 
 export interface RAGSource {
   filename: string;
@@ -15,9 +16,24 @@ export interface Message extends Omit<BaseMessage, 'timestamp'> {
   ragSources?: RAGSource[];
 }
 
+interface OrchestrationState {
+  stage: 'analyzing' | 'routing' | 'executing' | 'validating' | 'retrying' | 'complete' | 'idle';
+  message: string;
+  progress: number;
+  metadata?: {
+    complexity?: number;
+    category?: string;
+    model?: string;
+    cacheHit?: boolean;
+    retryCount?: number;
+    estimatedCost?: number;
+  };
+}
+
 interface MessageListProps {
   messages: Message[];
   isLoading?: boolean;
+  orchestrationState?: OrchestrationState | null;
   className?: string;
 }
 
@@ -200,13 +216,14 @@ const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
 export const MessageList: React.FC<MessageListProps> = ({
   messages,
   isLoading = false,
+  orchestrationState = null,
   className = '',
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, orchestrationState]);
 
   if (messages.length === 0 && !isLoading) {
     return (
@@ -230,18 +247,27 @@ export const MessageList: React.FC<MessageListProps> = ({
 
       {/* Loading indicator */}
       {isLoading && (
-        <div className="flex justify-start mb-4">
-          <div className="bg-white border border-gray-200 px-4 py-3 rounded-2xl shadow-sm">
-            <div className="flex items-center space-x-3">
-              <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+        orchestrationState ? (
+          <OrchestrationProgress
+            stage={orchestrationState.stage}
+            message={orchestrationState.message}
+            progress={orchestrationState.progress}
+            metadata={orchestrationState.metadata}
+          />
+        ) : (
+          <div className="flex justify-start mb-4">
+            <div className="bg-white border border-gray-200 px-4 py-3 rounded-2xl shadow-sm">
+              <div className="flex items-center space-x-3">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                </div>
+                <span className="text-sm text-gray-600">AI is thinking...</span>
               </div>
-              <span className="text-sm text-gray-600">AI is thinking...</span>
             </div>
           </div>
-        </div>
+        )
       )}
 
       <div ref={messagesEndRef} />

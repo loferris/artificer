@@ -76,6 +76,8 @@ model Conversation {
 
   messages  Message[]
   summaries ConversationSummary[]
+  artifacts Artifact[]
+  documents Document[]
 
   // Conversation settings
   systemPrompt String?
@@ -100,28 +102,86 @@ model Message {
   parent   Message? @relation("MessageTree", fields: [parentId], references: [id])
   children Message[] @relation("MessageTree")
 
+  // Artifacts created in this message
+  artifacts Artifact[]
+  documents Document[]
+
   @@map("messages")
 }
 
 model Document {
   id          String   @id @default(cuid())
-  projectId   String
-  filename    String
-  originalName String  // Keep original filename for display
-  contentType String   // MIME type
-  content     String   // Extracted text content
-  size        Int      // File size in bytes
-  embedding   Float[]  // Vector embedding for semantic search
-  metadata    Json?    // Additional metadata (page count, etc.)
-  uploadedAt  DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 
-  // Relations
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  // Core content
+  type        String   @default("text") // "code", "markdown", "mermaid", "html", "svg", "json", "yaml", "text", "csv"
+  content     String   // Document/artifact content
+  filename    String
+  title       String?  // Display title
+  description String?  // Brief description
+
+  // For code artifacts
+  language       String?  // Programming language
+  fileExtension  String?  // e.g., "ts", "md", "svg"
+
+  // Legacy fields (for backward compatibility with uploaded files)
+  originalName String?  // Keep original filename for display
+  contentType  String   @default("text/plain") // MIME type
+  size         Int      @default(0) // File size in bytes
+
+  // Source tracking
+  source      String   @default("uploaded") // "uploaded", "generated", "updated", "manual"
+
+  // Associations (all optional for flexibility)
+  projectId      String?
+  project        Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  conversationId String?
+  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  messageId      String?
+  message        Message? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  // RAG/Search control
+  indexed     Boolean  @default(true)  // Include in RAG search?
+  embedding   Float[]  @default([])    // Vector embedding (empty if not indexed)
+
+  // Versioning
+  version     Int      @default(1)
+  versions    DocumentVersion[]
+
+  // Additional metadata
+  metadata    Json?
+
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  uploadedAt  DateTime @default(now()) // Legacy, same as createdAt
 
   @@map("documents")
   @@index([projectId])
+  @@index([conversationId])
+  @@index([messageId])
+  @@index([type])
+  @@index([source])
+  @@index([indexed])
   @@index([contentType])
+}
+
+model DocumentVersion {
+  id                String   @id @default(cuid())
+  documentId        String
+  document          Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  version           Int      // Version number
+  content           String   // Content at this version
+  changeDescription String?  // Description of what changed
+  createdAt         DateTime @default(now())
+
+  messageId         String?  // Message that created this version
+
+  @@map("document_versions")
+  @@index([documentId])
+  @@index([documentId, version])
 }
 
 model KnowledgeEntity {
@@ -163,4 +223,74 @@ model ConversationSummary {
   @@map("conversation_summaries")
   @@index([conversationId])
   @@index([conversationId, supersededBy])
+}
+
+model RoutingDecision {
+  id               String   @id @default(cuid())
+  prompt           String   // Original user prompt
+  analysis         Json     // Analyzer agent output: complexity, category, capabilities, tokens
+  routingPlan      Json     // Router agent output: selected model(s), strategy (single/ensemble/speculative)
+  executedModel    String   // The model that was actually used
+  validationResult Json?    // Validator agent output: accuracy, completeness, retry decision
+  totalCost        Decimal  @db.Decimal(10, 6) // Total cost in USD
+  successful       Boolean  // Whether the final response was successful
+  retryCount       Int      @default(0) // Number of retries attempted
+  conversationId   String?  // Link to conversation if applicable
+  createdAt        DateTime @default(now())
+
+  @@map("routing_decisions")
+  @@index([conversationId])
+  @@index([executedModel])
+  @@index([successful])
+  @@index([createdAt])
+}
+
+model Artifact {
+  id             String   @id @default(cuid())
+  type           String   // "code", "markdown", "mermaid", "html", "svg", "json", "yaml", etc.
+  content        String   // The artifact content
+  title          String?
+  description    String?
+  language       String?  // Programming language for code artifacts
+  fileExtension  String?  // e.g., "ts", "md", "svg"
+  filename       String?  // Suggested filename
+  version        Int      @default(1)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Associations
+  conversationId String?
+  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  messageId      String?
+  message        Message?      @relation(fields: [messageId], references: [id], onDelete: SetNull)
+
+  // Additional metadata
+  metadata       Json?
+
+  // Version history
+  versions       ArtifactVersion[]
+
+  @@map("artifacts")
+  @@index([conversationId])
+  @@index([messageId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model ArtifactVersion {
+  id                String   @id @default(cuid())
+  artifactId        String
+  artifact          Artifact @relation(fields: [artifactId], references: [id], onDelete: Cascade)
+
+  version           Int      // Version number
+  content           String   // Content at this version
+  changeDescription String?  // Description of what changed
+  createdAt         DateTime @default(now())
+
+  messageId         String?  // Message that created this version
+
+  @@map("artifact_versions")
+  @@index([artifactId])
+  @@index([artifactId, version])
 }

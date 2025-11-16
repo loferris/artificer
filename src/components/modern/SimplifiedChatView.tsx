@@ -1,9 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ProjectSidebar } from './ProjectSidebar';
 import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
 import { ProjectPanel } from './ProjectPanel';
+import { DocumentUpdateProposalBanner } from './DocumentUpdateProposalBanner';
+import { ArtifactPanel } from './artifacts/ArtifactPanel';
 import type { Message } from './MessageList';
+import type { DocumentUpdateProposal } from '../../hooks/useDocumentUpdate';
+import type { Artifact } from '../../../lib/llm-artifacts/src/core/types';
+
+interface OrchestrationState {
+  stage: 'analyzing' | 'routing' | 'executing' | 'validating' | 'retrying' | 'complete' | 'idle';
+  message: string;
+  progress: number;
+  metadata?: {
+    complexity?: number;
+    category?: string;
+    model?: string;
+    cacheHit?: boolean;
+    retryCount?: number;
+    estimatedCost?: number;
+  };
+}
 
 interface SimplifiedChatViewProps {
   // Project state
@@ -25,9 +43,28 @@ interface SimplifiedChatViewProps {
   // Loading states
   isLoading?: boolean;
   isCreatingConversation?: boolean;
+  orchestrationState?: OrchestrationState | null;
 
   // Export
   onExport?: (format: 'markdown' | 'json', scope: 'current' | 'all') => void;
+
+  // Document Update
+  documentUpdate?: {
+    currentProposal: DocumentUpdateProposal | null;
+    isGenerating: boolean;
+    isApplying: boolean;
+    proposeUpdate: (documentId: string, conversationContext: string, userRequest: string) => Promise<DocumentUpdateProposal | null>;
+    applyProposal: () => Promise<boolean>;
+    rejectProposal: () => void;
+    shouldSuggestUpdate: (message: string) => boolean;
+  };
+  projectDocuments?: Array<{ id: string; filename: string; content: string }>;
+
+  // Artifacts
+  artifacts?: Artifact[];
+  onUpdateArtifact?: (artifactId: string, content: string) => void;
+  onDeleteArtifact?: (artifactId: string) => void;
+  onPromoteToProject?: (artifactId: string) => void;
 }
 
 export const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
@@ -43,10 +80,19 @@ export const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   onSendMessage,
   isLoading = false,
   isCreatingConversation = false,
+  orchestrationState = null,
   onExport,
+  documentUpdate,
+  projectDocuments,
+  artifacts = [],
+  onUpdateArtifact,
+  onDeleteArtifact,
+  onPromoteToProject,
 }) => {
   const [selectedProjectForPanel, setSelectedProjectForPanel] = useState<string | null>(null);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showArtifactPanel, setShowArtifactPanel] = useState(false);
+  const [lastMessageContent, setLastMessageContent] = useState<string>('');
 
   const handleProjectManage = (projectId: string) => {
     setSelectedProjectForPanel(projectId);
@@ -56,6 +102,64 @@ export const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     onExport?.(format, scope);
     setShowExportMenu(false);
   };
+
+  // Smart document selection: find the most relevant document based on message content
+  const findRelevantDocument = (message: string, docs: Array<{ id: string; filename: string; content: string }>) => {
+    const lowerMessage = message.toLowerCase();
+
+    // Try to find explicit file references
+    for (const doc of docs) {
+      const filename = doc.filename.toLowerCase();
+      if (lowerMessage.includes(filename) || lowerMessage.includes(filename.replace(/\.[^/.]+$/, ''))) {
+        return doc;
+      }
+    }
+
+    // Look for document type keywords
+    if (lowerMessage.includes('readme')) {
+      const readme = docs.find(d => d.filename.toLowerCase().includes('readme'));
+      if (readme) return readme;
+    }
+
+    // Default to first document if available
+    return docs[0];
+  };
+
+  // Check for document update opportunities after messages
+  useEffect(() => {
+    if (!documentUpdate || !projectDocuments || projectDocuments.length === 0) {
+      return;
+    }
+
+    // Get the last user message
+    const lastUserMessage = messages.filter(m => m.role === 'user').slice(-1)[0];
+    if (!lastUserMessage || lastUserMessage.content === lastMessageContent) {
+      return; // No new user message
+    }
+
+    // Update tracking
+    setLastMessageContent(lastUserMessage.content);
+
+    // Check if this message suggests updating a document
+    if (documentUpdate.shouldSuggestUpdate(lastUserMessage.content)) {
+      const targetDoc = findRelevantDocument(lastUserMessage.content, projectDocuments);
+
+      if (targetDoc) {
+        // Get recent conversation context (last 5 messages)
+        const recentMessages = messages.slice(-5);
+        const conversationContext = recentMessages
+          .map(m => `${m.role}: ${m.content}`)
+          .join('\n\n');
+
+        // Propose the update
+        documentUpdate.proposeUpdate(
+          targetDoc.id,
+          conversationContext,
+          lastUserMessage.content
+        );
+      }
+    }
+  }, [messages, documentUpdate, projectDocuments, lastMessageContent]);
 
   // Get current conversation title
   const currentConversationTitle = currentConversationId
@@ -174,6 +278,24 @@ export const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
                 </div>
               )}
 
+              {/* Artifacts Button */}
+              {artifacts && (
+                <button
+                  onClick={() => setShowArtifactPanel(true)}
+                  className="relative px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                  <span>Artifacts</span>
+                  {artifacts.length > 0 && (
+                    <span className="ml-1 px-2 py-0.5 text-xs bg-blue-600 text-white rounded-full">
+                      {artifacts.length}
+                    </span>
+                  )}
+                </button>
+              )}
+
               {/* Settings Button */}
               <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -186,7 +308,7 @@ export const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-hidden bg-white">
+        <div className="flex-1 overflow-hidden bg-white flex flex-col">
           {isCreatingConversation ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
@@ -198,7 +320,44 @@ export const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
               </div>
             </div>
           ) : (
-            <MessageList messages={messages} isLoading={isLoading} />
+            <>
+              {/* Document Update Proposal Banner */}
+              {documentUpdate?.currentProposal && (
+                <div className="p-4 border-b border-gray-200 bg-gray-50">
+                  <DocumentUpdateProposalBanner
+                    proposal={documentUpdate.currentProposal}
+                    onApply={async () => {
+                      const success = await documentUpdate.applyProposal();
+                      if (success) {
+                        // Success feedback is handled by the hook
+                      }
+                    }}
+                    onReject={documentUpdate.rejectProposal}
+                    isApplying={documentUpdate.isApplying}
+                  />
+                </div>
+              )}
+
+              {/* Loading State for Document Update Generation */}
+              {documentUpdate?.isGenerating && (
+                <div className="p-4 bg-blue-50 border-b border-blue-200">
+                  <div className="flex items-center space-x-3">
+                    <div className="animate-spin w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                    <span className="text-blue-800">
+                      Analyzing conversation and generating document update...
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex-1 overflow-hidden">
+                <MessageList
+                  messages={messages}
+                  isLoading={isLoading}
+                  orchestrationState={orchestrationState}
+                />
+              </div>
+            </>
           )}
         </div>
 
@@ -225,6 +384,17 @@ export const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
           onClose={() => setSelectedProjectForPanel(null)}
         />
       )}
+
+      {/* Artifact Panel */}
+      <ArtifactPanel
+        artifacts={artifacts}
+        isOpen={showArtifactPanel}
+        onClose={() => setShowArtifactPanel(false)}
+        onUpdateArtifact={onUpdateArtifact}
+        onDeleteArtifact={onDeleteArtifact}
+        onPromoteToProject={onPromoteToProject}
+        hasProject={!!currentProjectId}
+      />
     </div>
   );
 };
