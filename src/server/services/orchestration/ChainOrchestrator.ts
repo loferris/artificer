@@ -19,6 +19,7 @@ import {
 import crypto from 'crypto';
 import { Assistant, AssistantResponse } from '../assistant';
 import { logger } from '../../utils/logger';
+import { countMessageTokens } from '../../utils/tokenCounter';
 import { StructuredQueryService } from '../security/StructuredQueryService';
 import type { ConversationService } from '../conversation/ConversationService';
 import type { MessageService } from '../message/MessageService';
@@ -210,7 +211,7 @@ export class ChainOrchestrator {
       return await this.analyzer.analyze(
         context.userMessage,
         context.conversationHistory || [],
-        this.createOpenRouterFetch()
+        this.createOpenRouterFetch(context.signal)
       );
     } catch (error) {
       logger.error('[ChainOrchestrator] Analysis failed, using fallback', error);
@@ -229,7 +230,7 @@ export class ChainOrchestrator {
     try {
       return await this.router.route(
         analysis,
-        this.createOpenRouterFetch(),
+        this.createOpenRouterFetch(context.signal),
         context.config.preferCheapModels || false
       );
     } catch (error) {
@@ -290,7 +291,10 @@ export class ChainOrchestrator {
       const response = await this.assistant.getResponse(
         finalMessage,
         conversationHistory,
-        { signal: context.signal }
+        {
+          signal: context.signal,
+          model: model  // Pass the selected model from orchestration
+        }
       );
 
       const latency = Date.now() - startTime;
@@ -300,7 +304,7 @@ export class ChainOrchestrator {
         return {
           content: response,
           model: model,
-          tokens: this.estimateTokens(response),
+          tokens: this.estimateTokens(response, model),
           cost: 0,
           latency,
         };
@@ -309,7 +313,7 @@ export class ChainOrchestrator {
         return {
           content: assistantResponse.response,
           model: assistantResponse.model || model,
-          tokens: this.estimateTokens(assistantResponse.response),
+          tokens: this.estimateTokens(assistantResponse.response, assistantResponse.model || model),
           cost: assistantResponse.cost || 0,
           latency,
         };
@@ -340,7 +344,7 @@ export class ChainOrchestrator {
         analysis,
         execution,
         this.config.availableModels,
-        this.createOpenRouterFetch()
+        this.createOpenRouterFetch(context.signal)
       );
     } catch (error) {
       logger.error('[ChainOrchestrator] Validation failed, using fallback', error);
@@ -454,8 +458,9 @@ export class ChainOrchestrator {
 
   /**
    * Creates a wrapper function for OpenRouter API calls
+   * @param signal Optional AbortSignal for cancellation support
    */
-  private createOpenRouterFetch() {
+  private createOpenRouterFetch(signal?: AbortSignal) {
     return async (
       model: string,
       messages: Array<{ role: string; content: string }>
@@ -464,7 +469,10 @@ export class ChainOrchestrator {
       const userMessage = messages[messages.length - 1]?.content || '';
       const history = messages.slice(0, -1);
 
-      const response = await this.assistant.getResponse(userMessage, history);
+      const response = await this.assistant.getResponse(userMessage, history, {
+        model,
+        signal,
+      });
 
       if (typeof response === 'string') {
         return { content: response };
@@ -475,11 +483,10 @@ export class ChainOrchestrator {
   }
 
   /**
-   * Estimates token count from text (rough approximation)
+   * Counts tokens in text using tiktoken (accurate)
    */
-  private estimateTokens(text: string): number {
-    // Rough estimate: ~4 characters per token
-    return Math.ceil(text.length / 4);
+  private estimateTokens(text: string, model: string = 'gpt-4'): number {
+    return countMessageTokens(text, model);
   }
 
   /**
@@ -501,7 +508,7 @@ export class ChainOrchestrator {
       };
 
       const analysisPromise = this.analyzeQuery(context);
-      const cacheKey = this.generateCacheKey(context.userMessage);
+      const cacheKey = this.generateCacheKey(context.userMessage, context.sessionId);
 
       const analysis = await analysisPromise;
 
@@ -710,9 +717,11 @@ export class ChainOrchestrator {
    * Cache management methods
    */
 
-  private generateCacheKey(message: string): string {
-    // Simple hash of message content
-    return crypto.createHash('md5').update(message.toLowerCase().trim()).digest('hex');
+  private generateCacheKey(message: string, sessionId?: string): string {
+    // Hash message + sessionId to prevent cache collisions between users
+    // Use SHA-256 for better security than MD5
+    const input = `${sessionId || 'anon'}:${message.toLowerCase().trim()}`;
+    return crypto.createHash('sha256').update(input).digest('hex');
   }
 
   private getCachedRoute(
