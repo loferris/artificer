@@ -27,6 +27,15 @@ export interface MockPrismaClient {
     deleteMany: MockInstance;
     groupBy: MockInstance;
   };
+  conversationSummary: {
+    create: MockInstance;
+    findUnique: MockInstance;
+    findMany: MockInstance;
+    update: MockInstance;
+    delete: MockInstance;
+    count: MockInstance;
+    deleteMany: MockInstance;
+  };
   project: {
     create: MockInstance;
     findUnique: MockInstance;
@@ -73,6 +82,15 @@ export function createMockPrismaClient(): MockPrismaClient {
       delete: vi.fn(),
       deleteMany: vi.fn(),
       groupBy: vi.fn(),
+    },
+    conversationSummary: {
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      findMany: vi.fn().mockResolvedValue([]), // Default to empty summaries
+      update: vi.fn(),
+      delete: vi.fn(),
+      count: vi.fn(),
+      deleteMany: vi.fn(),
     },
     project: {
       create: vi.fn(),

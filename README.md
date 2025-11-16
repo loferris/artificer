@@ -68,7 +68,8 @@ The system is designed API-first with a clean service layer, making it suitable 
 - **Frontend**: React 18.3 + Tailwind CSS 3.4 + Zustand state management
 - **Real-time**: WebSocket subscriptions + SSE endpoints with unified ChatService backend
 - **AI Integration**: OpenRouter API supporting multiple models (Claude, DeepSeek, Qwen, etc.) + OpenAI for embeddings
-- **Testing**: Vitest with comprehensive test coverage
+- **Token Management**: tiktoken for accurate token counting and context window management
+- **Testing**: Vitest with 563 tests and comprehensive coverage
 - **Styling**: Tailwind CSS 3.4 with responsive design
 - **Logging**: Centralized clientLogger (frontend) + structured pino logger (backend)
 
@@ -97,6 +98,7 @@ The service layer is designed for integration with external tools:
 - **Project & document management** (create projects, upload documents, full-text search)
 - **Vector embeddings & semantic search** (Chroma vector database + OpenAI embeddings)
 - **RAG (Retrieval-Augmented Generation)** - Automatic context retrieval for project-linked conversations
+- **Context compression & summarization** - AI-powered rolling summaries for unlimited conversation length
 - Export system (Markdown, JSON)
 - Comprehensive rate limiting and session management
 - Type-safe API layer with tRPC and Zod validation
@@ -104,7 +106,7 @@ The service layer is designed for integration with external tools:
 - Project-first conversation organization
 - Cost tracking with real-time usage monitoring
 - Professional logging (clientLogger + pino)
-- Comprehensive automated tests with full coverage
+- 563 automated tests with comprehensive coverage
 
 **🔄 Backend Complete, Frontend In Progress**
 - Conversation branching system (database schema and services ready)
@@ -113,7 +115,6 @@ The service layer is designed for integration with external tools:
 
 **📋 Planned Enhancements**
 - Intelligent model routing based on cost and task complexity
-- Context compression and conversation summarization
 - Enhanced PKM tool integrations (full Notion, Obsidian, Google Docs integrations)
 - Cross-session context preservation and conversation merging
 - Fine-grained permission scopes for API keys
