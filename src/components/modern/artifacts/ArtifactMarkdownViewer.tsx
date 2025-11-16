@@ -2,8 +2,12 @@
  * Markdown artifact viewer with rendered preview
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import type { Components } from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import type { Artifact } from '../../../../lib/llm-artifacts/src/core/types';
+import { highlightCode } from '../../../utils/shiki';
 
 interface ArtifactMarkdownViewerProps {
   artifact: Artifact;
@@ -44,43 +48,50 @@ export const ArtifactMarkdownViewer: React.FC<ArtifactMarkdownViewerProps> = ({
     URL.revokeObjectURL(url);
   };
 
-  // Simple markdown rendering (basic support)
-  const renderMarkdown = (markdown: string) => {
-    let html = markdown;
+  // Custom code block component with Shiki highlighting
+  const CodeBlock: Components['code'] = (props) => {
+    const { children, className, node, ...rest } = props;
+    const [html, setHtml] = useState('');
+    const match = /language-(\w+)/.exec(className || '');
+    const lang = match ? match[1] : 'text';
+    const code = String(children).replace(/\n$/, '');
+    const isInline = !match;
 
-    // Headers
-    html = html.replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>');
-    html = html.replace(/^## (.*$)/gim, '<h2 class="text-xl font-semibold mt-6 mb-3">$1</h2>');
-    html = html.replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-8 mb-4">$1</h1>');
-
-    // Bold
-    html = html.replace(/\*\*(.*?)\*\*/gim, '<strong class="font-semibold">$1</strong>');
-
-    // Italic
-    html = html.replace(/\*(.*?)\*/gim, '<em class="italic">$1</em>');
-
-    // Code blocks
-    html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre class="bg-gray-100 p-3 rounded my-2 overflow-x-auto"><code class="text-sm font-mono">$2</code></pre>');
-
-    // Inline code
-    html = html.replace(/`([^`]+)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">$1</code>');
-
-    // Links
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">$1</a>');
-
-    // Lists
-    html = html.replace(/^\* (.*$)/gim, '<li class="ml-4">$1</li>');
-    html = html.replace(/^- (.*$)/gim, '<li class="ml-4">$1</li>');
-
-    // Paragraphs
-    html = html.split('\n\n').map(para => {
-      if (para.trim() && !para.match(/^<(h[123]|pre|li)/)) {
-        return `<p class="mb-3">${para}</p>`;
+    useEffect(() => {
+      if (!isInline && lang) {
+        highlightCode(code, lang)
+          .then(setHtml)
+          .catch(err => {
+            console.error('Error highlighting code in markdown:', err);
+          });
       }
-      return para;
-    }).join('\n');
+    }, [code, lang, isInline]);
 
-    return html;
+    if (isInline) {
+      return (
+        <code
+          className="px-1.5 py-0.5 bg-gray-100 text-gray-800 rounded text-sm font-mono"
+          {...rest}
+        >
+          {children}
+        </code>
+      );
+    }
+
+    if (!html) {
+      return (
+        <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto my-4">
+          <code className="font-mono text-sm">{code}</code>
+        </pre>
+      );
+    }
+
+    return (
+      <div
+        className="my-4 rounded-lg overflow-hidden [&>pre]:!m-0 [&>pre]:!rounded-lg"
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    );
   };
 
   return (
@@ -164,10 +175,16 @@ export const ArtifactMarkdownViewer: React.FC<ArtifactMarkdownViewerProps> = ({
             spellCheck={false}
           />
         ) : viewMode === 'preview' ? (
-          <div
-            className="prose max-w-none"
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(artifact.content) }}
-          />
+          <div className="prose prose-sm max-w-none">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                code: CodeBlock,
+              }}
+            >
+              {artifact.content}
+            </ReactMarkdown>
+          </div>
         ) : (
           <pre className="p-4 bg-gray-50 rounded overflow-auto">
             <code className="text-sm font-mono whitespace-pre">{artifact.content}</code>

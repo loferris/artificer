@@ -2,8 +2,9 @@
  * Code artifact viewer with syntax highlighting
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Artifact } from '../../../../lib/llm-artifacts/src/core/types';
+import { highlightCode } from '../../../utils/shiki';
 
 interface ArtifactCodeViewerProps {
   artifact: Artifact;
@@ -19,6 +20,22 @@ export const ArtifactCodeViewer: React.FC<ArtifactCodeViewerProps> = ({
   const [copied, setCopied] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(artifact.content);
+  const [highlightedHtml, setHighlightedHtml] = useState('');
+
+  // Highlight code on mount or when content/language changes
+  useEffect(() => {
+    if (!isEditing && artifact.content) {
+      highlightCode(
+        artifact.content,
+        artifact.language || 'text'
+      )
+        .then(setHighlightedHtml)
+        .catch(err => {
+          console.error('Error highlighting artifact code:', err);
+          // Fallback will be handled in render
+        });
+    }
+  }, [artifact.content, artifact.language, isEditing]);
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(artifact.content);
@@ -131,8 +148,14 @@ export const ArtifactCodeViewer: React.FC<ArtifactCodeViewerProps> = ({
             className="w-full h-full p-4 font-mono text-sm bg-gray-900 text-gray-100 resize-none focus:outline-none"
             spellCheck={false}
           />
+        ) : highlightedHtml ? (
+          <div
+            className="h-full overflow-auto [&>pre]:h-full [&>pre]:m-0"
+            dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+          />
         ) : (
-          <pre className="p-4 bg-gray-900 text-gray-100 overflow-auto h-full">
+          // Loading fallback while Shiki is highlighting
+          <pre className="p-4 bg-gray-900 text-gray-100 overflow-auto h-full m-0">
             <code className="text-sm font-mono whitespace-pre">{artifact.content}</code>
           </pre>
         )}
