@@ -171,7 +171,7 @@ export class ChainOrchestrator {
           );
 
           // Store routing decision in database
-          await this.storeRoutingDecision(result);
+          await this.storeRoutingDecision(result, context.userMessage);
 
           return result;
         } catch (execError) {
@@ -417,7 +417,7 @@ export class ChainOrchestrator {
       context.conversationId
     );
 
-    await this.storeRoutingDecision(result);
+    await this.storeRoutingDecision(result, context.userMessage);
 
     return result;
   }
@@ -453,29 +453,42 @@ export class ChainOrchestrator {
 
   /**
    * Stores the routing decision in the database for analytics
+   * PII-safe: Only stores hashed prompt, metadata, and aggregated metrics
    */
-  private async storeRoutingDecision(result: ChainResult): Promise<void> {
+  private async storeRoutingDecision(result: ChainResult, userMessage: string): Promise<void> {
     if (!this.db) {
       logger.warn('[ChainOrchestrator] No database connection, skipping routing decision storage');
       return;
     }
 
     try {
+      // Create SHA-256 hash of user message for deduplication (PII-safe)
+      const promptHash = crypto.createHash('sha256').update(userMessage).digest('hex');
+
       await this.db.routingDecision.create({
         data: {
-          prompt: result.analysis.reasoning,
-          analysis: result.analysis as any,
-          routingPlan: result.routingPlan as any,
+          // PII-safe prompt analytics
+          promptHash,
+          promptLength: userMessage.length,
+          complexity: result.analysis.complexity,
+          category: result.analysis.category,
+
+          // Metadata
           executedModel: result.model,
-          validationResult: result.validation as any,
           totalCost: new Decimal(result.totalCost),
           successful: result.successful,
           retryCount: result.retryCount,
+          latencyMs: result.totalLatency,
+
+          // Optional fields
           conversationId: result.conversationId,
+          strategy: result.routingPlan.strategy,
+          validationScore: result.validation?.score,
         },
       });
 
-      logger.info('[ChainOrchestrator] Routing decision stored', {
+      logger.info('[ChainOrchestrator] Routing decision stored (PII-safe)', {
+        promptHash: promptHash.substring(0, 16) + '...',
         model: result.model,
         cost: result.totalCost,
         successful: result.successful,
@@ -709,7 +722,7 @@ export class ChainOrchestrator {
           );
 
           // Store decision (don't wait)
-          this.storeRoutingDecision(result).catch(err =>
+          this.storeRoutingDecision(result, context.userMessage).catch(err =>
             logger.error('[ChainOrchestrator] Failed to store decision', err)
           );
 

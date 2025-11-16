@@ -46,7 +46,7 @@ The system is designed API-first with a clean service layer, making it suitable 
 - Type-safe API layer with tRPC
 - **Standalone orchestration server** for external integrations (Python, CLI tools, etc.)
 - Comprehensive rate limiting and session management
-- **546 tests** with full test coverage for critical components
+- **592 tests** with full test coverage for critical components
 - **Project & document management** for organizing conversations and knowledge
 
 **User Interface**
@@ -114,7 +114,7 @@ The service layer is designed for integration with external tools:
 - Project-first conversation organization
 - Cost optimization and tracking with real-time usage monitoring
 - Professional logging (clientLogger + pino)
-- 563 automated tests with comprehensive coverage
+- 592 automated tests with comprehensive coverage
 
 **🔄 Backend Complete, Frontend In Progress**
 - Conversation branching system (database schema and services ready)
@@ -244,7 +244,7 @@ npm run test:ui
 npm test -- src/components/__tests__/CostTracker.test.tsx
 ```
 
-**Current Test Coverage**: 546 tests across 44 test files covering:
+**Current Test Coverage**: 592 tests across 45 test files covering:
 - Component functionality and rendering
 - Service layer business logic (70-100% coverage for core services)
 - API endpoints and error handling

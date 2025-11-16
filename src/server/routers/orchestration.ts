@@ -4,30 +4,8 @@ import { TRPCError } from '@trpc/server';
 import { createServicesFromContext } from '../services/ServiceFactory';
 import { ChainOrchestrator } from '../services/orchestration/ChainOrchestrator';
 import { ChainConfig } from '../services/orchestration/types';
-import { ModelRegistry } from '../services/orchestration/ModelRegistry';
+import { getModelRegistry } from '../services/orchestration/ModelRegistry';
 import { logger } from '../utils/logger';
-
-// Global model registry singleton (initialized lazily)
-let globalModelRegistry: ModelRegistry | null = null;
-
-/**
- * Get or create the global model registry
- * The registry is initialized on first use
- */
-async function getModelRegistry(): Promise<ModelRegistry> {
-  if (!globalModelRegistry) {
-    globalModelRegistry = new ModelRegistry();
-
-    // Initialize in background (non-blocking)
-    globalModelRegistry.initialize().catch(error => {
-      logger.warn('[orchestrationRouter] Model registry initialization failed, using fallback', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-    });
-  }
-
-  return globalModelRegistry;
-}
 
 // Helper function to ensure user exists in demo mode
 function ensureDemoUser(ctx: any) {
@@ -301,15 +279,18 @@ export const orchestrationRouter = router({
         return {
           decisions: decisions.map(d => ({
             id: d.id,
-            prompt: d.prompt.substring(0, 100), // Truncate for privacy
+            promptHash: d.promptHash.substring(0, 16) + '...', // Show truncated hash (PII-safe)
+            promptLength: d.promptLength,
+            complexity: d.complexity,
+            category: d.category,
             executedModel: d.executedModel,
             totalCost: Number(d.totalCost),
             successful: d.successful,
             retryCount: d.retryCount,
+            latencyMs: d.latencyMs,
+            strategy: d.strategy,
+            validationScore: d.validationScore,
             createdAt: d.createdAt,
-            analysis: d.analysis,
-            routingPlan: d.routingPlan,
-            validationResult: d.validationResult,
           })),
           summary,
         };

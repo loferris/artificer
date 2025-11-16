@@ -422,48 +422,95 @@ MAX_RETRIES=3  # Allow more retry attempts
 
 ## Database Schema
 
-The orchestration system tracks all routing decisions for analytics:
+The orchestration system tracks all routing decisions for analytics using a **PII-safe schema** that stores only metadata and aggregated metrics:
 
 ```prisma
 model RoutingDecision {
-  id               String   @id @default(cuid())
-  conversationId   String
-  sessionId        String
-  prompt           String
-  analysis         Json     // AnalysisResult
-  routingPlan      Json     // RoutingPlan
-  executedModel    String
-  totalCost        Decimal
-  successful       Boolean
-  retryCount       Int
-  validationResult Json?    // ValidationResult
-  createdAt        DateTime @default(now())
+  id               String    @id @default(cuid())
 
+  // PII-safe prompt analytics (no user content stored)
+  promptHash       String    // SHA-256 hash for deduplication
+  promptLength     Int       // Character count for analytics
+  complexity       Int       // 1-10 scale from analyzer
+  category         String    // Task category: code, research, creative, analysis, chat
+
+  // Metadata (no PII)
+  executedModel    String    // The model that was actually used
+  totalCost        Decimal   @db.Decimal(10, 6) // Total cost in USD
+  successful       Boolean   // Whether the final response was successful
+  retryCount       Int       @default(0) // Number of retries attempted
+  latencyMs        Int       // Total latency in milliseconds
+
+  // Optional fields
+  conversationId   String?   // Link to conversation (indirect PII - consider removing for full anonymization)
+  strategy         String?   // Routing strategy: single, ensemble, speculative
+  validationScore  Int?      // Validation score 1-10 (if validated)
+
+  // Timestamps
+  createdAt        DateTime  @default(now())
+  expiresAt        DateTime  @default(dbgenerated("NOW() + INTERVAL '30 days'")) // Auto-cleanup after 30 days
+
+  @@map("routing_decisions")
   @@index([conversationId])
-  @@index([sessionId])
+  @@index([executedModel])
+  @@index([successful])
+  @@index([createdAt])
+  @@index([complexity])
+  @@index([category])
+  @@index([expiresAt]) // For efficient cleanup queries
 }
 ```
+
+**Privacy & Compliance:**
+- ❌ **No PII stored**: User prompts and AI responses are never stored
+- ✅ **Hash-based deduplication**: SHA-256 hashing prevents duplicate analysis
+- ✅ **30-day TTL**: Automatic data expiration for compliance
+- ✅ **Metadata-only tracking**: Only aggregate metrics and performance data
 
 **Access analytics:**
 ```sql
 -- Most used models
 SELECT executedModel, COUNT(*) as usage
-FROM "RoutingDecision"
+FROM routing_decisions
 GROUP BY executedModel
 ORDER BY usage DESC;
 
 -- Average cost by complexity
 SELECT
-  analysis->>'complexity' as complexity,
-  AVG(totalCost) as avg_cost
-FROM "RoutingDecision"
-GROUP BY complexity;
+  complexity,
+  AVG(totalCost) as avg_cost,
+  COUNT(*) as request_count
+FROM routing_decisions
+GROUP BY complexity
+ORDER BY complexity;
 
--- Retry rate
+-- Average cost by category
+SELECT
+  category,
+  AVG(totalCost) as avg_cost,
+  AVG(latencyMs) as avg_latency_ms,
+  COUNT(*) as request_count
+FROM routing_decisions
+GROUP BY category
+ORDER BY avg_cost DESC;
+
+-- Retry rate and success rate
 SELECT
   AVG(retryCount) as avg_retries,
-  SUM(CASE WHEN retryCount > 0 THEN 1 ELSE 0 END)::FLOAT / COUNT(*) as retry_rate
-FROM "RoutingDecision";
+  SUM(CASE WHEN retryCount > 0 THEN 1 ELSE 0 END)::FLOAT / COUNT(*) as retry_rate,
+  SUM(CASE WHEN successful THEN 1 ELSE 0 END)::FLOAT / COUNT(*) as success_rate
+FROM routing_decisions;
+
+-- Performance metrics by model
+SELECT
+  executedModel,
+  COUNT(*) as usage,
+  AVG(latencyMs) as avg_latency_ms,
+  AVG(totalCost) as avg_cost,
+  SUM(CASE WHEN successful THEN 1 ELSE 0 END)::FLOAT / COUNT(*) as success_rate
+FROM routing_decisions
+GROUP BY executedModel
+ORDER BY usage DESC;
 ```
 
 ## Future Enhancements

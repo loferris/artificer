@@ -133,6 +133,7 @@ describe('Rate Limiter', () => {
     it('should have proper rate limit configurations', () => {
       expect(RATE_LIMITS).toEqual({
         CHAT: { maxRequests: 30, windowMs: 60 * 1000 },
+        ORCHESTRATION: { maxRequests: 10, windowMs: 60 * 1000 },
         API: { maxRequests: 100, windowMs: 60 * 1000 },
         EXPORT: { maxRequests: 5, windowMs: 60 * 1000 },
       });
@@ -140,6 +141,7 @@ describe('Rate Limiter', () => {
 
     it('should have all required rate limit types', () => {
       expect(RATE_LIMITS).toHaveProperty('CHAT');
+      expect(RATE_LIMITS).toHaveProperty('ORCHESTRATION');
       expect(RATE_LIMITS).toHaveProperty('API');
       expect(RATE_LIMITS).toHaveProperty('EXPORT');
 

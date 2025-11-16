@@ -166,21 +166,36 @@ model ConversationSummary {
 }
 
 model RoutingDecision {
-  id               String   @id @default(cuid())
-  prompt           String   // Original user prompt
-  analysis         Json     // Analyzer agent output: complexity, category, capabilities, tokens
-  routingPlan      Json     // Router agent output: selected model(s), strategy (single/ensemble/speculative)
-  executedModel    String   // The model that was actually used
-  validationResult Json?    // Validator agent output: accuracy, completeness, retry decision
-  totalCost        Decimal  @db.Decimal(10, 6) // Total cost in USD
-  successful       Boolean  // Whether the final response was successful
-  retryCount       Int      @default(0) // Number of retries attempted
-  conversationId   String?  // Link to conversation if applicable
-  createdAt        DateTime @default(now())
+  id               String    @id @default(cuid())
+
+  // PII-safe prompt analytics (no user content stored)
+  promptHash       String    // SHA-256 hash for deduplication
+  promptLength     Int       // Character count for analytics
+  complexity       Int       // 1-10 scale from analyzer
+  category         String    // Task category: code, research, creative, analysis, chat
+
+  // Metadata (no PII)
+  executedModel    String    // The model that was actually used
+  totalCost        Decimal   @db.Decimal(10, 6) // Total cost in USD
+  successful       Boolean   // Whether the final response was successful
+  retryCount       Int       @default(0) // Number of retries attempted
+  latencyMs        Int       // Total latency in milliseconds
+
+  // Optional fields
+  conversationId   String?   // Link to conversation (indirect PII - consider removing for full anonymization)
+  strategy         String?   // Routing strategy: single, ensemble, speculative
+  validationScore  Int?      // Validation score 1-10 (if validated)
+
+  // Timestamps
+  createdAt        DateTime  @default(now())
+  expiresAt        DateTime  @default(dbgenerated("NOW() + INTERVAL '30 days'")) // Auto-cleanup after 30 days
 
   @@map("routing_decisions")
   @@index([conversationId])
   @@index([executedModel])
   @@index([successful])
   @@index([createdAt])
+  @@index([complexity])
+  @@index([category])
+  @@index([expiresAt]) // For efficient cleanup queries
 }
