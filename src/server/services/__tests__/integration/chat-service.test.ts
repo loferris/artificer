@@ -19,6 +19,10 @@ const mockDb = {
     count: vi.fn(),
     findMany: vi.fn(),
   },
+  conversationSummary: {
+    findMany: vi.fn().mockResolvedValue([]), // Default to no summaries
+    create: vi.fn(),
+  },
 } as unknown as PrismaClient;
 
 // Use the actual MockAssistant since it's designed for testing
@@ -74,8 +78,11 @@ describe('ChatService Integration Tests', () => {
           tokens: 5,
         });
 
-        mockDb.conversation.findUnique.mockResolvedValue(mockConversation as any);
+        // Include model in conversation mock for getConversationHistory
+        const conversationWithModel = { ...mockConversation, model: 'gpt-4' };
+        mockDb.conversation.findUnique.mockResolvedValue(conversationWithModel as any);
         mockDb.message.findMany.mockResolvedValue([]);
+        mockDb.conversationSummary.findMany.mockResolvedValue([]);
         mockDb.message.create
           .mockResolvedValueOnce(mockUserMessage as any)
           .mockResolvedValueOnce(mockAssistantMessage as any);

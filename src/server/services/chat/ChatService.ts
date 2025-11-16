@@ -6,6 +6,7 @@ import type { ConversationService } from '../conversation/ConversationService';
 import type { MessageService } from '../message/MessageService';
 import type { Assistant, AssistantResponse } from '../assistant';
 import type { RAGService } from '../rag/RAGService';
+import type { ConversationSummarizationService } from '../summarization/ConversationSummarizationService';
 import { generateDemoResponse } from '../../../utils/staticDemo';
 
 export interface ChatMessage {
@@ -85,6 +86,7 @@ export class DatabaseChatService implements ChatService {
     private messageService: MessageService,
     private assistant: Assistant,
     private ragService?: RAGService, // Optional - for easy toggling
+    private summarizationService?: ConversationSummarizationService, // Optional - for easy toggling
   ) {}
 
   // Existing sendMessage method remains the same
@@ -155,6 +157,9 @@ export class DatabaseChatService implements ChatService {
 
       // Update conversation activity
       await this.conversationService.updateActivity(conversationId);
+
+      // Check if summarization is needed (non-blocking)
+      this.checkAndTriggerSummarization(conversationId);
 
       return {
         userMessage: this.formatChatMessage(userMessage),
@@ -267,6 +272,9 @@ export class DatabaseChatService implements ChatService {
 
           await this._updateConversationMetadata(conversationId, content);
 
+          // Check if summarization is needed (non-blocking)
+          this.checkAndTriggerSummarization(conversationId);
+
           // Final chunk with completion metadata
           yield {
             content: '',
@@ -315,6 +323,9 @@ export class DatabaseChatService implements ChatService {
         }
 
         await this._updateConversationMetadata(conversationId, content);
+
+        // Check if summarization is needed (non-blocking)
+        this.checkAndTriggerSummarization(conversationId);
 
         // Final completion chunk
         yield {
@@ -435,6 +446,29 @@ export class DatabaseChatService implements ChatService {
       });
       return conversationHistory;
     }
+  }
+
+  /**
+   * Check if conversation needs summarization and trigger it in background
+   * Non-blocking - runs asynchronously without waiting
+   */
+  private checkAndTriggerSummarization(conversationId: string): void {
+    if (!this.summarizationService) {
+      return;
+    }
+
+    // Run summarization check in background (don't await)
+    this.summarizationService
+      .needsSummarization(conversationId)
+      .then((needsSummarization) => {
+        if (needsSummarization) {
+          logger.info('Triggering background summarization', { conversationId });
+          return this.summarizationService!.summarizeConversation(conversationId);
+        }
+      })
+      .catch((error) => {
+        logger.error('Background summarization failed', error as Error, { conversationId });
+      });
   }
 }
 

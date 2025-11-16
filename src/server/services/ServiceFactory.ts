@@ -15,6 +15,7 @@ import { isServerSideDemo } from '../../utils/demo';
 import { VectorService } from './vector/VectorService';
 import { EmbeddingService } from './vector/EmbeddingService';
 import { DefaultRAGService, NoOpRAGService, type RAGService } from './rag/RAGService';
+import { ConversationSummarizationService } from './summarization/ConversationSummarizationService';
 
 export interface ServiceContainer {
   conversationService: ConversationService;
@@ -92,7 +93,23 @@ export class ServiceFactory {
         }
       }
 
-      chatService = new DatabaseChatService(conversationService, messageService, assistant, ragService);
+      // Create summarization service if enabled
+      let summarizationService: ConversationSummarizationService | undefined;
+      if (process.env.ENABLE_SUMMARIZATION === 'true') {
+        try {
+          summarizationService = new ConversationSummarizationService(db!, assistant);
+        } catch (error) {
+          console.warn('Failed to initialize summarization service:', error);
+        }
+      }
+
+      chatService = new DatabaseChatService(
+        conversationService,
+        messageService,
+        assistant,
+        ragService,
+        summarizationService,
+      );
     }
 
     return {
