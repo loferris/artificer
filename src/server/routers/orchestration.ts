@@ -104,7 +104,7 @@ export const orchestrationRouter = router({
         }
 
         // Create services with proper dependency injection
-        const { chatService, conversationService, messageService, assistant } = createServicesFromContext(ctx);
+        const { chatService, conversationService, messageService, assistant, structuredQueryService } = createServicesFromContext(ctx);
 
         // Validate conversation access
         await conversationService.validateConversationAccess(input.conversationId, user.sessionId);
@@ -119,8 +119,8 @@ export const orchestrationRouter = router({
         // Build chain config
         const config = buildChainConfig();
 
-        // Create chain orchestrator
-        const orchestrator = new ChainOrchestrator(config, assistant, ctx.db);
+        // Create chain orchestrator with StructuredQueryService for secure prompt formatting
+        const orchestrator = new ChainOrchestrator(config, assistant, ctx.db, structuredQueryService);
 
         // Run the chain orchestration
         const chainResult = await orchestrator.orchestrate({

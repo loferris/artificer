@@ -18,6 +18,9 @@ import {
 import crypto from 'crypto';
 import { Assistant, AssistantResponse } from '../assistant';
 import { logger } from '../../utils/logger';
+import { StructuredQueryService } from '../security/StructuredQueryService';
+import type { ConversationService } from '../conversation/ConversationService';
+import type { MessageService } from '../message/MessageService';
 
 /**
  * ChainOrchestrator - Intelligent multi-stage routing system
@@ -27,6 +30,10 @@ import { logger } from '../../utils/logger';
  * 2. Router Agent: Select optimal model(s) based on analysis
  * 3. Executor: Run the task using selected model(s)
  * 4. Validator Agent: Validate response quality and decide if retry needed
+ *
+ * Security:
+ * - Uses StructuredQueryService to prevent prompt injection attacks
+ * - Separates user instructions from untrusted data (conversation history, documents)
  */
 export class ChainOrchestrator {
   private analyzer: AnalyzerAgent;
@@ -34,16 +41,19 @@ export class ChainOrchestrator {
   private validator: ValidatorAgent;
   private assistant: Assistant;
   private db?: PrismaClient;
+  private structuredQueryService?: StructuredQueryService;
   private routeCache: Map<string, CachedRoute> = new Map();
   private readonly CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
   constructor(
     private config: ChainConfig,
     assistant: Assistant,
-    db?: PrismaClient
+    db?: PrismaClient,
+    structuredQueryService?: StructuredQueryService
   ) {
     this.assistant = assistant;
     this.db = db;
+    this.structuredQueryService = structuredQueryService;
 
     // Initialize agents
     this.analyzer = new AnalyzerAgent(config.analyzerModel);
@@ -225,6 +235,7 @@ export class ChainOrchestrator {
 
   /**
    * Stage 3: Execute the query with selected model
+   * Uses StructuredQueryService for secure prompt formatting if available
    */
   private async executeQuery(
     context: ChainContext,
@@ -233,15 +244,46 @@ export class ChainOrchestrator {
     const startTime = Date.now();
 
     try {
-      const messages = [
-        ...(context.conversationHistory || []),
-        { role: 'user', content: context.userMessage }
-      ];
+      let finalMessage = context.userMessage;
+      let conversationHistory = context.conversationHistory || [];
+
+      // Use StructuredQueryService for secure prompt formatting if available
+      if (this.structuredQueryService && context.useStructuredQuery !== false) {
+        logger.info('[ChainOrchestrator] Using StructuredQueryService for secure prompt formatting');
+
+        try {
+          const structured = await this.structuredQueryService.structure({
+            message: context.userMessage,
+            conversationId: context.conversationId,
+            uploadedFiles: context.uploadedFiles,
+            projectId: context.projectId,
+          });
+
+          // Format into secure prompt
+          const securePrompt = this.structuredQueryService.formatPrompt(structured);
+
+          logger.debug('[ChainOrchestrator] Structured prompt created', {
+            instructionLength: structured.instruction.length,
+            documentsCount: structured.context.documents.length,
+            historyLength: structured.context.conversationHistory.length,
+          });
+
+          // Use the secure prompt as the message, with empty history
+          // (history is already included in the structured prompt)
+          finalMessage = securePrompt;
+          conversationHistory = [];
+        } catch (structureError) {
+          logger.warn('[ChainOrchestrator] Failed to structure query, falling back to direct message', {
+            error: structureError instanceof Error ? structureError.message : String(structureError),
+          });
+          // Fall back to direct message passing
+        }
+      }
 
       // Use the assistant's getResponse method with specific model
       const response = await this.assistant.getResponse(
-        context.userMessage,
-        context.conversationHistory || [],
+        finalMessage,
+        conversationHistory,
         { signal: context.signal }
       );
 

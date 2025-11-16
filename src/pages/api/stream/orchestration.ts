@@ -151,7 +151,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       };
 
       // Create services
-      const { conversationService, messageService, assistant } = createServicesFromContext(mockCtx);
+      const { conversationService, messageService, assistant, structuredQueryService } = createServicesFromContext(mockCtx);
 
       // Validate conversation access
       await conversationService.validateConversationAccess(conversationId, sessionId);
@@ -166,8 +166,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Build chain config
       const config = buildChainConfig();
 
-      // Create chain orchestrator
-      const orchestrator = new ChainOrchestrator(config, assistant, mockCtx.db);
+      // Create chain orchestrator with StructuredQueryService for secure prompt formatting
+      const orchestrator = new ChainOrchestrator(config, assistant, mockCtx.db, structuredQueryService);
 
       // Stream the orchestration progress
       const stream = orchestrator.orchestrateStream({
