@@ -27,6 +27,7 @@ function HomePage() {
       onSendMessage={() => chat.handleMessageSubmit(chat.input)}
       isLoading={chat.isLoading}
       isCreatingConversation={chat.isCreatingConversation}
+      orchestrationState={chat.orchestrationState}
       onExport={handleExport}
     />
   );
