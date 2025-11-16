@@ -1,5 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import type { Components } from 'react-markdown';
 import type { Message as BaseMessage } from '../../types';
+import { highlightCode } from '../../utils/shiki';
 
 export interface RAGSource {
   filename: string;
@@ -17,6 +20,60 @@ interface MessageListProps {
   isLoading?: boolean;
   className?: string;
 }
+
+/**
+ * Custom code component for ReactMarkdown with Shiki syntax highlighting
+ */
+const CodeBlock: Components['code'] = (props) => {
+  const { children, className, node, ...rest } = props;
+  const [html, setHtml] = useState('');
+  const match = /language-(\w+)/.exec(className || '');
+  const lang = match ? match[1] : 'text';
+  const code = String(children).replace(/\n$/, '');
+
+  // Check if it's inline code by looking at the node structure
+  // Inline code typically doesn't have a language class
+  const isInline = !match;
+
+  useEffect(() => {
+    if (!isInline && lang) {
+      highlightCode(code, lang)
+        .then(setHtml)
+        .catch(err => {
+          console.error('Error highlighting code:', err);
+        });
+    }
+  }, [code, lang, isInline]);
+
+  // Inline code (e.g., `variable`)
+  if (isInline) {
+    return (
+      <code
+        className="px-1.5 py-0.5 bg-gray-100 text-gray-800 rounded text-sm font-mono"
+        {...rest}
+      >
+        {children}
+      </code>
+    );
+  }
+
+  // Code block - show loading state while highlighting
+  if (!html) {
+    return (
+      <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto my-4">
+        <code className="font-mono text-sm">{code}</code>
+      </pre>
+    );
+  }
+
+  // Rendered with Shiki highlighting
+  return (
+    <div
+      className="my-4 rounded-lg overflow-hidden [&>pre]:!m-0 [&>pre]:!rounded-lg"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+};
 
 const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
   const [showContext, setShowContext] = useState(false);
@@ -56,7 +113,15 @@ const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
           </div>
 
           {/* Content */}
-          <div className="whitespace-pre-wrap leading-relaxed">{message.content}</div>
+          <div className="prose prose-sm max-w-none leading-relaxed [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+            <ReactMarkdown
+              components={{
+                code: CodeBlock,
+              }}
+            >
+              {message.content}
+            </ReactMarkdown>
+          </div>
 
           {/* RAG Sources */}
           {hasRAG && (
