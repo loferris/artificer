@@ -64,8 +64,6 @@ export interface AssistantService {
 export type ModelType = 'claude' | 'deepseek' | 'qwen' | 'mock';
 
 // Common UI types
-export type ViewMode = 'terminal' | 'chat';
-export type ThemeMode = 'purple-rich' | 'amber-forest' | 'cyan-light';
 export type ExportFormat = 'markdown' | 'json';
 
 // Component prop types - centralized to avoid duplication
@@ -121,5 +119,3 @@ export interface StreamingState {
 // Event handler types
 export type MessageHandler = (content: string) => void | Promise<void>;
 export type ConversationHandler = (conversationId: string) => void;
-export type ThemeHandler = (theme: ThemeMode) => void;
-export type ViewModeHandler = (mode: ViewMode) => void;

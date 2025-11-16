@@ -46,8 +46,8 @@ describe('DemoBanner', () => {
       expect(screen.getByText('AI Workflow Engine Demo')).toBeInTheDocument();
     });
 
-    expect(screen.getByText(/Switch themes/)).toBeInTheDocument();
-    expect(screen.getByText(/Export conversations/)).toBeInTheDocument();
+    expect(screen.getByText(/Project organization/)).toBeInTheDocument();
+    expect(screen.getByText(/Export & share conversations/)).toBeInTheDocument();
     expect(screen.getByText('🚀')).toBeInTheDocument();
     expect(screen.getByText('✨')).toBeInTheDocument();
   });

@@ -1,6 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MessageList, type Message } from '../MessageList';
+
+// Mock scrollIntoView for testing
+beforeAll(() => {
+  Element.prototype.scrollIntoView = () => {};
+});
 
 describe('MessageList', () => {
   const mockMessages: Message[] = [
@@ -34,15 +39,17 @@ describe('MessageList', () => {
   it('displays user messages with correct styling', () => {
     render(<MessageList messages={mockMessages} />);
 
-    const userMessage = screen.getByText('Hello, how are you?').closest('div');
-    expect(userMessage).toHaveClass('bg-blue-600');
+    const userMessage = screen.getByText('Hello, how are you?');
+    const messageContainer = userMessage.closest('.bg-blue-600');
+    expect(messageContainer).toBeInTheDocument();
   });
 
   it('displays assistant messages with correct styling', () => {
     render(<MessageList messages={mockMessages} />);
 
-    const assistantMessage = screen.getByText('I am doing well, thank you!').closest('div');
-    expect(assistantMessage).toHaveClass('bg-white');
+    const assistantMessage = screen.getByText('I am doing well, thank you!');
+    const messageContainer = assistantMessage.closest('.bg-white');
+    expect(messageContainer).toBeInTheDocument();
   });
 
   it('shows loading indicator when isLoading is true', () => {

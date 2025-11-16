@@ -44,6 +44,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Simplified error boundaries to use Tailwind classes
 
 ### Removed
+- **Legacy UI Code Cleanup** (10 additional files, ~1,750 lines)
+  - ExportButton, ProjectSelector, StreamingMessage components
+  - useCostTracker, useStaticDemo hooks
+  - staticDemo utility and streaming library (ContentRenderer, StreamParser)
+  - Legacy type definitions (ViewMode, ThemeMode, ThemeHandler, ViewModeHandler)
+  - Orphaned test files (ExportButton.test, staticDemo.test)
+  - Terminal theme CSS (reduced from 211 to 12 lines)
 - **Terminal Mode Components** (12 files)
   - UnifiedTerminalView, ChatDisplay, StreamingChatDisplay
   - TerminalHeader, TerminalView, ChatInput

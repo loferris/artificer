@@ -42,7 +42,7 @@ The system is designed API-first with a clean service layer, making it suitable 
 - Type-safe API layer with tRPC
 - **Standalone orchestration server** for external integrations (Python, CLI tools, etc.)
 - Comprehensive rate limiting and session management
-- **529 tests** with full test coverage for critical components
+- **546 tests** with full test coverage for critical components
 - **Project & document management** for organizing conversations and knowledge
 
 **User Interface**
@@ -69,7 +69,7 @@ The system is designed API-first with a clean service layer, making it suitable 
 - **Real-time**: WebSocket subscriptions + SSE endpoints with unified ChatService backend
 - **AI Integration**: OpenRouter API supporting multiple models (Claude, DeepSeek, Qwen, etc.) + OpenAI for embeddings
 - **Token Management**: tiktoken for accurate token counting and context window management
-- **Testing**: Vitest with 563 tests and comprehensive coverage
+- **Testing**: Vitest with 546 tests and comprehensive coverage
 - **Styling**: Tailwind CSS 3.4 with responsive design
 - **Logging**: Centralized clientLogger (frontend) + structured pino logger (backend)
 
@@ -223,7 +223,7 @@ npm run test:ui
 npm test -- src/components/__tests__/CostTracker.test.tsx
 ```
 
-**Current Test Coverage**: 529 tests across 45 test files covering:
+**Current Test Coverage**: 546 tests across 44 test files covering:
 - Component functionality and rendering
 - Service layer business logic (70-100% coverage for core services)
 - API endpoints and error handling

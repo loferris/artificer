@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import type { Message as BaseMessage } from '../../types';
 
 export interface RAGSource {
   filename: string;
@@ -6,15 +7,9 @@ export interface RAGSource {
   score: number;
 }
 
-export interface Message {
-  id: string;
-  role: 'user' | 'assistant' | 'system';
-  content: string;
+export interface Message extends Omit<BaseMessage, 'timestamp'> {
   timestamp: Date | string;
   ragSources?: RAGSource[];
-  model?: string;
-  cost?: number;
-  tokens?: number;
 }
 
 interface MessageListProps {
@@ -106,8 +101,8 @@ const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
                     </span>
                   </div>
                   <div className="text-gray-600 text-xs leading-relaxed pl-6">
-                    "{source.content.substring(0, 200)}
-                    {source.content.length > 200 ? '...' : ''}"
+                    &ldquo;{source.content.substring(0, 200)}
+                    {source.content.length > 200 ? '...' : ''}&rdquo;
                   </div>
                 </div>
               ))}

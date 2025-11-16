@@ -179,8 +179,8 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                   </div>
                 )}
                 <div className="flex items-center space-x-3 text-xs text-gray-400 mt-1 ml-6">
-                  <span>📄 {project.documentCount || 0}</span>
-                  <span>💬 {project.conversationCount || 0}</span>
+                  <span>📄 {project.stats.documentCount || 0}</span>
+                  <span>💬 {project.stats.conversationCount || 0}</span>
                   <span>{formatDate(project.updatedAt)}</span>
                 </div>
               </div>
