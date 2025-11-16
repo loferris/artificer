@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { router, publicProcedure, protectedProcedure } from '../trpc';
 import { ProjectService } from '../services/project/ProjectService';
 import { DocumentService } from '../services/project/DocumentService';
+import { DocumentUpdateService } from '../services/document/DocumentUpdateService';
 
 /**
  * Helper to check if demo mode is active
@@ -335,6 +336,31 @@ export const projectsRouter = router({
     }),
 
   /**
+   * Get a specific document by ID
+   */
+  getDocument: protectedProcedure
+    .input(z.object({ documentId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const documentService = new DocumentService(ensureDatabase(ctx));
+        const document = await documentService.findById(input.documentId);
+
+        return {
+          success: true,
+          document,
+          timestamp: new Date().toISOString(),
+        };
+      } catch (error) {
+        return {
+          success: false,
+          document: null,
+          error: error instanceof Error ? error.message : 'Failed to fetch document',
+          timestamp: new Date().toISOString(),
+        };
+      }
+    }),
+
+  /**
    * Search documents within a project
    */
   searchDocuments: protectedProcedure
@@ -387,6 +413,90 @@ export const projectsRouter = router({
         return {
           success: false,
           error: error instanceof Error ? error.message : 'Failed to delete document',
+          timestamp: new Date().toISOString(),
+        };
+      }
+    }),
+
+  /**
+   * Update document content
+   */
+  updateDocument: protectedProcedure
+    .input(z.object({
+      documentId: z.string().min(1, 'Document ID is required'),
+      content: z.string(),
+      reason: z.string().optional(), // Optional reason for the update (for audit trail)
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const documentService = new DocumentService(ensureDatabase(ctx));
+
+        const document = await documentService.updateContent(
+          input.documentId,
+          input.content
+        );
+
+        return {
+          success: true,
+          document: {
+            id: document.id,
+            filename: document.filename,
+            contentType: document.contentType,
+            updatedAt: document.updatedAt,
+          },
+          timestamp: new Date().toISOString(),
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to update document',
+          timestamp: new Date().toISOString(),
+        };
+      }
+    }),
+
+  /**
+   * Propose a document update based on conversation context
+   */
+  proposeDocumentUpdate: protectedProcedure
+    .input(z.object({
+      documentId: z.string().min(1, 'Document ID is required'),
+      conversationContext: z.string(),
+      userRequest: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const documentService = new DocumentService(ensureDatabase(ctx));
+        const updateService = new DocumentUpdateService();
+
+        // Get the document
+        const document = await documentService.findById(input.documentId);
+
+        // Generate update proposal
+        const proposal = await updateService.createUpdateProposal(
+          document.id,
+          document.filename,
+          document.content,
+          input.conversationContext,
+          input.userRequest
+        );
+
+        return {
+          success: true,
+          proposal: {
+            documentId: proposal.documentId,
+            documentName: document.filename,
+            originalContent: proposal.originalContent,
+            proposedContent: proposal.proposedContent,
+            reason: proposal.reason,
+            changeSummary: proposal.changeSummary,
+          },
+          timestamp: new Date().toISOString(),
+        };
+      } catch (error) {
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Failed to propose document update',
           timestamp: new Date().toISOString(),
         };
       }
