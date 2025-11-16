@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { trpc } from '../../lib/trpc/client';
 import { format } from 'date-fns';
+import { clientLogger } from '../../utils/clientLogger';
 
 interface ProjectPanelProps {
   projectId: string;
@@ -43,7 +44,7 @@ export const ProjectPanel: React.FC<ProjectPanelProps> = ({ projectId, isOpen, o
       refetchDocuments();
       e.target.value = ''; // Reset file input
     } catch (error) {
-      console.error('Failed to upload document:', error);
+      clientLogger.error('Failed to upload document', error as Error, { projectId }, 'ProjectPanel');
       alert('Failed to upload document. Please try again.');
     } finally {
       setUploadingFile(false);
@@ -57,7 +58,7 @@ export const ProjectPanel: React.FC<ProjectPanelProps> = ({ projectId, isOpen, o
       await deleteDocumentMutation.mutateAsync({ documentId });
       refetchDocuments();
     } catch (error) {
-      console.error('Failed to delete document:', error);
+      clientLogger.error('Failed to delete document', error as Error, { documentId }, 'ProjectPanel');
       alert('Failed to delete document. Please try again.');
     }
   };
