@@ -111,11 +111,11 @@ Respond ONLY with valid JSON. No additional text.`;
       // Validate model exists
       const primaryModel = this.validateModel(parsed.primaryModel);
       const fallbackModels = Array.isArray(parsed.fallbackModels)
-        ? parsed.fallbackModels.map(m => this.validateModel(m)).filter(Boolean)
+        ? parsed.fallbackModels.map((m: any) => this.validateModel(m)).filter(Boolean)
         : [];
 
       return {
-        primaryModel,
+        primaryModel: primaryModel as string,
         fallbackModels: fallbackModels as string[],
         strategy: this.validateStrategy(parsed.strategy),
         estimatedCost: Math.max(0, Number(parsed.estimatedCost) || 0),

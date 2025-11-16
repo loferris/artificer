@@ -155,11 +155,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { conversationService, messageService, assistant, structuredQueryService } = createServicesFromContext(mockCtx);
 
       // Validate conversation access
-      await conversationService.validateConversationAccess(conversationId, sessionId);
+      await conversationService.validateAccess(conversationId, sessionId);
 
       // Get conversation history
-      const messages = await messageService.getMessages(conversationId, sessionId);
-      const conversationHistory = messages.map(msg => ({
+      const messages = await messageService.getByConversation(conversationId);
+      const conversationHistory = messages.map((msg: { role: string; content: string }) => ({
         role: msg.role,
         content: msg.content,
       }));
@@ -171,7 +171,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const registry = await getModelRegistry();
 
       // Create chain orchestrator with both ModelRegistry and StructuredQueryService
-      const orchestrator = new ChainOrchestrator(config, assistant, mockCtx.db, registry, structuredQueryService);
+      const orchestrator = new ChainOrchestrator(
+        config,
+        assistant,
+        mockCtx.db || undefined,
+        registry,
+        structuredQueryService
+      );
 
       // Stream the orchestration progress
       const stream = orchestrator.orchestrateStream({

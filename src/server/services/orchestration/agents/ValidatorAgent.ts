@@ -153,7 +153,7 @@ Is this response acceptable?`;
         shouldRetry,
         suggestedModel,
         reasoning: String(parsed.reasoning || 'No reasoning provided'),
-        issues: Array.isArray(parsed.issues) ? parsed.issues.filter(i => typeof i === 'string') : []
+        issues: Array.isArray(parsed.issues) ? parsed.issues.filter((i: any) => typeof i === 'string') : []
       };
     } catch (error) {
       logger.error('[ValidatorAgent] Failed to parse validation', error);

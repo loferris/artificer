@@ -118,11 +118,11 @@ export const orchestrationRouter = router({
         const { chatService, conversationService, messageService, assistant, structuredQueryService } = createServicesFromContext(ctx);
 
         // Validate conversation access
-        await conversationService.validateConversationAccess(input.conversationId, user.sessionId);
+        await conversationService.validateAccess(input.conversationId, user.sessionId);
 
         // Get conversation history
-        const messages = await messageService.getMessages(input.conversationId, user.sessionId);
-        const conversationHistory = messages.map(msg => ({
+        const messages = await messageService.getByConversation(input.conversationId);
+        const conversationHistory = messages.map((msg: { role: string; content: string }) => ({
           role: msg.role,
           content: msg.content,
         }));
@@ -134,7 +134,13 @@ export const orchestrationRouter = router({
         const registry = await getModelRegistry();
 
         // Create chain orchestrator with both ModelRegistry and StructuredQueryService
-        const orchestrator = new ChainOrchestrator(config, assistant, ctx.db, registry, structuredQueryService);
+        const orchestrator = new ChainOrchestrator(
+          config,
+          assistant,
+          ctx.db || undefined,
+          registry,
+          structuredQueryService
+        );
 
         // Run the chain orchestration
         const chainResult = await orchestrator.orchestrate({
@@ -157,34 +163,27 @@ export const orchestrationRouter = router({
 
         // Store messages in database
         // Store user message
-        const userMessage = await messageService.createMessage({
+        const userMessage = await messageService.create({
           conversationId: input.conversationId,
           role: 'user',
           content: input.content,
         });
 
         // Store assistant message
-        const assistantMessage = await messageService.createMessage({
+        const assistantMessage = await messageService.create({
           conversationId: input.conversationId,
           role: 'assistant',
           content: chainResult.response,
-          tokens: chainResult.totalTokens,
         });
 
         // Auto-generate title if this is the first user message
         let conversationTitle: string | undefined;
         if (messages.length === 0) {
           try {
-            conversationTitle = await chatService.generateConversationTitle(
-              input.content,
-              chainResult.response
-            );
+            conversationTitle = conversationService.generateTitle(input.content);
 
-            if (conversationTitle && ctx.db) {
-              await ctx.db.conversation.update({
-                where: { id: input.conversationId },
-                data: { title: conversationTitle },
-              });
+            if (conversationTitle) {
+              await conversationService.updateTitle(input.conversationId, conversationTitle);
             }
           } catch (error) {
             logger.error('[orchestrationRouter] Failed to generate title', error);
@@ -197,7 +196,7 @@ export const orchestrationRouter = router({
           id: assistantMessage.id,
           content: chainResult.response,
           role: 'assistant' as const,
-          timestamp: assistantMessage.timestamp,
+          timestamp: assistantMessage.createdAt,
           model: chainResult.model,
           cost: chainResult.totalCost,
           tokens: chainResult.totalTokens,

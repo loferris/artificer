@@ -98,7 +98,7 @@ export class ChainOrchestrator {
     try {
       // Stage 1: Analyze
       const analysis = await this.analyzeQuery(context);
-      logger.info('[ChainOrchestrator] Analysis complete', analysis);
+      logger.info('[ChainOrchestrator] Analysis complete', { analysis });
 
       // Check if complexity meets threshold for chain routing
       if (analysis.complexity < context.config.minComplexityForChain) {
