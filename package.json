@@ -31,10 +31,18 @@
     "db:seed:no-embeddings": "SKIP_EMBEDDINGS=true node --env-file=.env --import tsx scripts/seed-vector-data.ts",
     "generate-api-key": "node --env-file=.env --import tsx scripts/generate-api-key.ts",
     "list-api-keys": "node --env-file=.env --import tsx scripts/list-api-keys.ts",
-    "revoke-api-key": "node --env-file=.env --import tsx scripts/revoke-api-key.ts"
+    "revoke-api-key": "node --env-file=.env --import tsx scripts/revoke-api-key.ts",
+    "highlight:up": "docker compose -f docker-compose.highlight.yml up -d",
+    "highlight:down": "docker compose -f docker-compose.highlight.yml down",
+    "highlight:logs": "docker compose -f docker-compose.highlight.yml logs -f",
+    "highlight:restart": "docker compose -f docker-compose.highlight.yml restart",
+    "highlight:clean": "docker compose -f docker-compose.highlight.yml down -v",
+    "dev:with-highlight": "npm run highlight:up && npm run dev"
   },
   "dependencies": {
     "@axiomhq/js": "^1.3.1",
+    "@highlight-run/next": "^7.9.38",
+    "@highlight-run/node": "^3.12.22",
     "@prisma/client": "^6.15.0",
     "@tanstack/react-query": "^5.0.0",
     "@trpc/client": "^11.5.1",

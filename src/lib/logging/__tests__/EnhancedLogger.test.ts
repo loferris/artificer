@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EnhancedLogger } from '../EnhancedLogger';
+import { H } from '@highlight-run/node';
 import type pino from 'pino';
 
 // Mock Axiom
@@ -7,6 +8,22 @@ vi.mock('@axiomhq/js', () => ({
   Axiom: vi.fn().mockImplementation(() => ({
     ingest: vi.fn().mockResolvedValue(undefined),
   })),
+}));
+
+// Mock Highlight
+vi.mock('@highlight-run/node', () => ({
+  H: {
+    init: vi.fn(),
+    consumeError: vi.fn(),
+    startSpan: vi.fn(() => ({
+      setStatus: vi.fn(),
+      addEvent: vi.fn(),
+      recordException: vi.fn(),
+      end: vi.fn(),
+    })),
+    runWithHeaders: vi.fn((headers, fn) => fn()),
+    startActiveSpan: vi.fn((name, opts, fn) => fn({ setStatus: vi.fn(), recordException: vi.fn(), end: vi.fn() })),
+  },
 }));
 
 describe('EnhancedLogger', () => {
@@ -478,6 +495,141 @@ describe('EnhancedLogger', () => {
 
       logger.info({ requestId: '123' }, 'Test message');
       expect(mockPinoInstance.info).toHaveBeenCalled();
+    });
+  });
+
+  describe('Highlight Integration', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      delete process.env.HIGHLIGHT_PROJECT_ID;
+      delete process.env.HIGHLIGHT_BACKEND_URL;
+      delete process.env.HIGHLIGHT_SERVICE_NAME;
+    });
+
+    it('should not enable Highlight without project ID', () => {
+      logger = new EnhancedLogger(mockPinoInstance);
+      expect(logger.isHighlightEnabled()).toBe(false);
+      expect(H.init).not.toHaveBeenCalled();
+    });
+
+    it('should enable Highlight with project ID', () => {
+      process.env.HIGHLIGHT_PROJECT_ID = 'test-project';
+
+      logger = new EnhancedLogger(mockPinoInstance);
+      expect(logger.isHighlightEnabled()).toBe(true);
+      expect(H.init).toHaveBeenCalledWith(
+        expect.objectContaining({
+          projectID: 'test-project',
+          serviceName: 'alembic-orchestrator',
+        })
+      );
+    });
+
+    it('should use self-hosted backend URL if configured', () => {
+      process.env.HIGHLIGHT_PROJECT_ID = 'local-dev';
+      process.env.HIGHLIGHT_BACKEND_URL = 'http://localhost:4318';
+
+      logger = new EnhancedLogger(mockPinoInstance);
+      expect(H.init).toHaveBeenCalledWith(
+        expect.objectContaining({
+          projectID: 'local-dev',
+          otlpEndpoint: 'http://localhost:4318',
+        })
+      );
+    });
+
+    it('should use custom service name if configured', () => {
+      process.env.HIGHLIGHT_PROJECT_ID = 'test-project';
+      process.env.HIGHLIGHT_SERVICE_NAME = 'custom-service';
+
+      logger = new EnhancedLogger(mockPinoInstance);
+      expect(H.init).toHaveBeenCalledWith(
+        expect.objectContaining({
+          serviceName: 'custom-service',
+        })
+      );
+    });
+
+    it('should send errors to Highlight when enabled', () => {
+      process.env.HIGHLIGHT_PROJECT_ID = 'test-project';
+      logger = new EnhancedLogger(mockPinoInstance);
+
+      const error = new Error('Test error');
+      const context = { requestId: '123', sessionId: '456' };
+
+      logger.error(context, 'Error occurred', error, { extra: 'data' });
+
+      expect(H.consumeError).toHaveBeenCalledWith(
+        error,
+        '123',
+        expect.objectContaining({
+          requestId: '123',
+          sessionId: '456',
+          extra: 'data',
+          message: 'Error occurred',
+        })
+      );
+    });
+
+    it('should not send errors to Highlight when disabled', () => {
+      logger = new EnhancedLogger(mockPinoInstance);
+
+      const error = new Error('Test error');
+      logger.error({ requestId: '123' }, 'Error occurred', error);
+
+      expect(H.consumeError).not.toHaveBeenCalled();
+    });
+
+    it('should handle Highlight initialization errors gracefully', () => {
+      process.env.HIGHLIGHT_PROJECT_ID = 'test-project';
+
+      // Mock init to throw
+      H.init.mockImplementationOnce(() => {
+        throw new Error('Highlight init failed');
+      });
+
+      expect(() => {
+        logger = new EnhancedLogger(mockPinoInstance);
+      }).not.toThrow();
+
+      expect(logger.isHighlightEnabled()).toBe(false);
+      expect(mockPinoInstance.warn).toHaveBeenCalled();
+    });
+
+    it('should handle Highlight error reporting failures gracefully', () => {
+      process.env.HIGHLIGHT_PROJECT_ID = 'test-project';
+      logger = new EnhancedLogger(mockPinoInstance);
+
+      // Mock consumeError to throw
+      H.consumeError.mockImplementationOnce(() => {
+        throw new Error('Highlight error reporting failed');
+      });
+
+      const error = new Error('Test error');
+
+      expect(() => {
+        logger.error({ requestId: '123' }, 'Error occurred', error);
+      }).not.toThrow();
+
+      // Should still log the original error via pino
+      expect(mockPinoInstance.error).toHaveBeenCalled();
+    });
+
+    it('should return Highlight instance from getHighlight when enabled', () => {
+      process.env.HIGHLIGHT_PROJECT_ID = 'test-project';
+      logger = new EnhancedLogger(mockPinoInstance);
+
+      const H = logger.getHighlight();
+      expect(H).toBeDefined();
+      expect(H).toHaveProperty('init');
+      expect(H).toHaveProperty('consumeError');
+    });
+
+    it('should return null from getHighlight when disabled', () => {
+      logger = new EnhancedLogger(mockPinoInstance);
+
+      const H = logger.getHighlight();
+      expect(H).toBeNull();
     });
   });
 });

@@ -1,5 +1,6 @@
 import pino from 'pino';
 import { Axiom } from '@axiomhq/js';
+import { H } from '@highlight-run/node';
 
 /**
  * Context for structured logging with request/session correlation
@@ -67,15 +68,16 @@ interface LogEvent {
 }
 
 /**
- * Enhanced logger that wraps pino and adds Axiom cloud aggregation
+ * Enhanced logger that wraps pino and adds cloud aggregation
  *
  * Features:
- * - Dual logging to pino (local) and Axiom (cloud)
- * - Request ID correlation
+ * - Triple logging: pino (local), Axiom (cloud analytics), Highlight (error tracking)
+ * - Request ID correlation and distributed tracing
  * - Structured contexts
  * - Specialized methods for chain, cost, security, and performance tracking
  * - Batched Axiom ingestion for efficiency
- * - Graceful degradation if Axiom unavailable
+ * - Highlight error tracking and session replay
+ * - Graceful degradation if cloud services unavailable
  */
 export class EnhancedLogger {
   private pino: pino.Logger;
@@ -86,6 +88,7 @@ export class EnhancedLogger {
   private isProduction: boolean;
   private context: LogContext;
   private axiomEnabled: boolean;
+  private highlightEnabled: boolean;
 
   constructor(
     pinoInstance?: pino.Logger,
@@ -120,6 +123,36 @@ export class EnhancedLogger {
         // Graceful degradation - log error but continue with pino only
         this.pino.warn({ err: error }, 'Failed to initialize Axiom - continuing with local logging only');
         this.axiomEnabled = false;
+      }
+    }
+
+    // Initialize Highlight if project ID is configured
+    this.highlightEnabled = !!process.env.HIGHLIGHT_PROJECT_ID;
+
+    if (this.highlightEnabled) {
+      try {
+        const highlightConfig: any = {
+          projectID: process.env.HIGHLIGHT_PROJECT_ID!,
+          serviceName: process.env.HIGHLIGHT_SERVICE_NAME || 'alembic-orchestrator',
+          serviceVersion: process.env.npm_package_version || '1.0.0',
+        };
+
+        // Use self-hosted backend if configured (development)
+        // Otherwise uses Highlight cloud (production)
+        if (process.env.HIGHLIGHT_BACKEND_URL) {
+          highlightConfig.otlpEndpoint = process.env.HIGHLIGHT_BACKEND_URL;
+          this.pino.info('Initializing Highlight with self-hosted backend', {
+            backend: process.env.HIGHLIGHT_BACKEND_URL,
+          });
+        } else {
+          this.pino.info('Initializing Highlight with cloud backend');
+        }
+
+        H.init(highlightConfig);
+      } catch (error) {
+        // Graceful degradation - log error but continue without Highlight
+        this.pino.warn({ err: error }, 'Failed to initialize Highlight - continuing without error tracking');
+        this.highlightEnabled = false;
       }
     }
   }
@@ -229,6 +262,20 @@ export class EnhancedLogger {
       error: error?.message,
       stack: error?.stack,
     });
+
+    // Send error to Highlight for tracking and alerting
+    if (this.highlightEnabled && error) {
+      try {
+        H.consumeError(error, mergedContext.requestId as string | undefined, {
+          ...mergedContext,
+          ...data,
+          message,
+        });
+      } catch (highlightError) {
+        // Don't let Highlight errors break the application
+        this.pino.debug({ err: highlightError }, 'Failed to send error to Highlight');
+      }
+    }
   }
 
   warn(context: LogContext, message: string, data?: Record<string, unknown>): void {
@@ -431,6 +478,20 @@ export class EnhancedLogger {
   isAxiomEnabled(): boolean {
     return this.axiomEnabled;
   }
+
+  /**
+   * Check if Highlight is enabled
+   */
+  isHighlightEnabled(): boolean {
+    return this.highlightEnabled;
+  }
+
+  /**
+   * Get Highlight instance for advanced usage (e.g., manual trace creation)
+   */
+  getHighlight() {
+    return this.highlightEnabled ? H : null;
+  }
 }
 
 /**
@@ -456,3 +517,6 @@ const defaultPinoInstance = pino({
 
 export const enhancedLogger = new EnhancedLogger(defaultPinoInstance);
 export default enhancedLogger;
+
+// Re-export Highlight for direct usage (tracing, etc.)
+export { H as Highlight };
