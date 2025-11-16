@@ -127,7 +127,7 @@ export const orchestrationRouter = router({
         }
 
         // Create services with proper dependency injection
-        const { chatService, conversationService, messageService, assistant } = createServicesFromContext(ctx);
+        const { chatService, conversationService, messageService, assistant, structuredQueryService } = createServicesFromContext(ctx);
 
         // Validate conversation access
         await conversationService.validateConversationAccess(input.conversationId, user.sessionId);
@@ -145,8 +145,8 @@ export const orchestrationRouter = router({
         // Get global model registry
         const registry = await getModelRegistry();
 
-        // Create chain orchestrator
-        const orchestrator = new ChainOrchestrator(config, assistant, ctx.db, registry);
+        // Create chain orchestrator with both ModelRegistry and StructuredQueryService
+        const orchestrator = new ChainOrchestrator(config, assistant, ctx.db, registry, structuredQueryService);
 
         // Run the chain orchestration
         const chainResult = await orchestrator.orchestrate({
