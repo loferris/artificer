@@ -74,7 +74,7 @@ export class DocumentUpdateService {
         response.choices[0]?.message?.content || '{}'
       ) as DocumentUpdateDecision;
 
-      logger.info('Update intent analysis complete', decision);
+      logger.info('Update intent analysis complete', { ...decision } as Record<string, unknown>);
 
       return {
         shouldUpdate: decision.shouldUpdate || false,
