@@ -1,6 +1,6 @@
 /**
  * Document Converter Library
- * A format-agnostic document conversion library using Portable Text as the intermediate format
+ * A format-agnostic document conversion library with pluggable intermediate formats
  *
  * @example
  * ```typescript
@@ -14,6 +14,15 @@
  * // Export to Notion JSON
  * const notionJson = await converter.export(doc, 'notion');
  * ```
+ *
+ * @example Custom adapter
+ * ```typescript
+ * import { DocumentConverter, FormatAdapter } from './document-converter';
+ *
+ * const converter = new DocumentConverter({
+ *   adapter: myCustomAdapter
+ * });
+ * ```
  */
 
 import { PluginRegistry } from './plugins/plugin-registry.js';
@@ -23,6 +32,7 @@ import { RoamImporter } from './importers/roam-importer.js';
 import { MarkdownExporter } from './exporters/markdown-exporter.js';
 import { NotionExporter } from './exporters/notion-exporter.js';
 import { RoamExporter } from './exporters/roam-exporter.js';
+import { portableTextAdapter } from './adapters/portable-text-adapter.js';
 
 import type {
   ConvertedDocument,
@@ -31,11 +41,22 @@ import type {
   ImporterPlugin,
   ExporterPlugin,
 } from './types/index.js';
+import type { FormatAdapter } from './core/format-adapter.js';
+
+export interface DocumentConverterOptions {
+  /**
+   * Format adapter to use for intermediate representation
+   * Defaults to Portable Text adapter
+   */
+  adapter?: FormatAdapter;
+}
 
 export class DocumentConverter {
   private registry: PluginRegistry;
+  public readonly adapter: FormatAdapter;
 
-  constructor() {
+  constructor(options?: DocumentConverterOptions) {
+    this.adapter = options?.adapter || portableTextAdapter;
     this.registry = new PluginRegistry();
     this.registerDefaultPlugins();
   }
@@ -140,6 +161,11 @@ export class DocumentConverter {
 export * from './types/index.js';
 export * from './core/portable-text-utils.js';
 export { PluginRegistry } from './plugins/plugin-registry.js';
+
+// Export format adapter interfaces and implementations
+export type { FormatAdapter, IntermediateDocument, BlockStyle, ListType, TextMark, CalloutType } from './core/format-adapter.js';
+export { BaseFormatAdapter } from './core/format-adapter.js';
+export { PortableTextAdapter, portableTextAdapter } from './adapters/portable-text-adapter.js';
 
 // Export built-in plugins
 export { MarkdownImporter } from './importers/markdown-importer.js';

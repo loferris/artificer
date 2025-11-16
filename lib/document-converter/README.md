@@ -1,15 +1,16 @@
 # Document Converter
 
-A format-agnostic document conversion library using Portable Text as the intermediate format. Think of it as a lightweight, extensible Pandoc alternative specifically designed for knowledge management tools.
+A format-agnostic document conversion library with **pluggable intermediate formats**. Think of it as a lightweight, extensible Pandoc alternative specifically designed for knowledge management tools.
 
 ## Features
 
 - 🔄 **Format Agnostic**: Convert between Markdown, Notion, Roam Research, and more
-- 📝 **Portable Text**: Uses Portable Text as the universal intermediate format
+- 📝 **Pluggable Formats**: Uses Portable Text by default, but swap to ProseMirror, Slate, or your own AST
 - 🔌 **Extensible**: Easy plugin system for adding new formats
-- 🎯 **Type Safe**: Full TypeScript support
+- 🎯 **Type Safe**: Full TypeScript support with generics
 - 🧪 **Well Tested**: Comprehensive test coverage
 - 📦 **Zero Config**: Works out of the box with sensible defaults
+- 🔁 **Zero Breaking Changes**: Swap intermediate formats without rewriting importers/exporters
 
 ## Supported Formats
 
@@ -157,9 +158,44 @@ const doc = await converter.import(JSON.stringify(roamPage), {
 });
 ```
 
-## Portable Text Format
+## Pluggable Intermediate Formats
 
-Documents are converted to Portable Text, a JSON-based rich text specification:
+**NEW!** You can now swap out the intermediate format without changing any importers or exporters:
+
+```typescript
+import { DocumentConverter, BaseFormatAdapter } from '@ai-workflow/document-converter';
+
+// Create a custom adapter (e.g., for ProseMirror, Slate, etc.)
+class MyAdapter extends BaseFormatAdapter {
+  readonly name = 'my-format';
+
+  createTextBlock(children, options) {
+    return { type: 'paragraph', content: children };
+  }
+
+  // ... implement other methods
+}
+
+// Use your custom format
+const converter = new DocumentConverter({
+  adapter: new MyAdapter()
+});
+
+// All conversions now use your format!
+const doc = await converter.import(markdown);
+```
+
+**Benefits:**
+- ✅ **Zero breaking changes** - existing code works as-is
+- ✅ **Swap formats easily** - change one line of code
+- ✅ **Keep your importers/exporters** - they adapt automatically
+- ✅ **Type safe** - full TypeScript support
+
+See the **[Adapter Guide](./ADAPTER_GUIDE.md)** for complete documentation, examples, and a full ProseMirror adapter implementation.
+
+## Portable Text Format (Default)
+
+By default, documents are converted to Portable Text, a JSON-based rich text specification:
 
 ```typescript
 import type { ConvertedDocument } from '@ai-workflow/document-converter';

@@ -11,9 +11,8 @@ import type {
 export type { ArbitraryTypedObject } from '@portabletext/types';
 
 /**
- * Extended Portable Text types with custom marks and blocks
+ * Document metadata (format-agnostic)
  */
-
 export interface DocumentMetadata {
   title?: string;
   author?: string;
@@ -25,9 +24,21 @@ export interface DocumentMetadata {
   [key: string]: unknown;
 }
 
-export interface ConvertedDocument {
-  content: (PortableTextBlock | CodeBlock | ImageBlock | CalloutBlock | EmbedBlock | TableBlock)[];
+/**
+ * Generic converted document (format-agnostic)
+ * The content type depends on the FormatAdapter being used
+ */
+export interface ConvertedDocument<T = any> {
+  content: T[];
   metadata: DocumentMetadata;
+}
+
+/**
+ * Portable Text specific document (for backward compatibility)
+ * @deprecated Use ConvertedDocument<PortableTextBlock> instead
+ */
+export interface PortableTextDocument extends ConvertedDocument<PortableTextBlock | CodeBlock | ImageBlock | CalloutBlock | EmbedBlock | TableBlock> {
+  content: (PortableTextBlock | CodeBlock | ImageBlock | CalloutBlock | EmbedBlock | TableBlock)[];
 }
 
 /**
@@ -162,20 +173,20 @@ export interface RoamPage {
 }
 
 /**
- * Converter plugin interfaces
+ * Converter plugin interfaces (now format-agnostic)
  */
-export interface ImporterPlugin {
+export interface ImporterPlugin<T = any> {
   name: string;
   supportedFormats: string[];
   detect(input: string | Buffer): boolean;
-  import(input: string, options?: ImportOptions): Promise<ConvertedDocument>;
+  import(input: string, options?: ImportOptions): Promise<ConvertedDocument<T>>;
 }
 
-export interface ExporterPlugin {
+export interface ExporterPlugin<T = any> {
   name: string;
   targetFormat: string;
   export(
-    document: ConvertedDocument,
+    document: ConvertedDocument<T>,
     options?: ExportOptions
   ): Promise<string>;
 }
