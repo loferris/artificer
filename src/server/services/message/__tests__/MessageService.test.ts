@@ -185,6 +185,7 @@ describe('MessageService', () => {
           where: { conversationId: 'conv-123' },
           orderBy: { createdAt: 'asc' },
           select: {
+            id: true,
             role: true,
             content: true,
           },

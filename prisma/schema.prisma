@@ -74,7 +74,8 @@ model Conversation {
   projectId String?
   project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
-  messages Message[]
+  messages  Message[]
+  summaries ConversationSummary[]
 
   // Conversation settings
   systemPrompt String?
@@ -142,4 +143,24 @@ model KnowledgeEntity {
   @@index([projectId])
   @@index([type])
   @@index([projectId, type])
+}
+
+model ConversationSummary {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  // Summary content
+  summaryContent String       // The actual summary text
+  messageRange   Json         // { startMessageId, endMessageId, startIndex, endIndex }
+  tokensSaved    Int          // Approximate tokens saved by this summary
+  messageCount   Int          // Number of messages summarized
+
+  // Versioning and chaining
+  createdAt      DateTime     @default(now())
+  supersededBy   String?      // ID of the summary that replaced this one (for re-summarization)
+
+  @@map("conversation_summaries")
+  @@index([conversationId])
+  @@index([conversationId, supersededBy])
 }
