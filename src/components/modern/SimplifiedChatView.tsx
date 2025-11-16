@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ProjectSidebar } from './ProjectSidebar';
 import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
 import { ProjectPanel } from './ProjectPanel';
+import { DocumentUpdateProposalBanner } from './DocumentUpdateProposalBanner';
 import type { Message } from './MessageList';
+import type { DocumentUpdateProposal } from '../../hooks/useDocumentUpdate';
 
 interface OrchestrationState {
   stage: 'analyzing' | 'routing' | 'executing' | 'validating' | 'retrying' | 'complete' | 'idle';
@@ -43,6 +45,18 @@ interface SimplifiedChatViewProps {
 
   // Export
   onExport?: (format: 'markdown' | 'json', scope: 'current' | 'all') => void;
+
+  // Document Update
+  documentUpdate?: {
+    currentProposal: DocumentUpdateProposal | null;
+    isGenerating: boolean;
+    isApplying: boolean;
+    proposeUpdate: (documentId: string, conversationContext: string, userRequest: string) => Promise<DocumentUpdateProposal | null>;
+    applyProposal: () => Promise<boolean>;
+    rejectProposal: () => void;
+    shouldSuggestUpdate: (message: string) => boolean;
+  };
+  projectDocuments?: Array<{ id: string; filename: string; content: string }>;
 }
 
 export const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
@@ -60,9 +74,12 @@ export const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   isCreatingConversation = false,
   orchestrationState = null,
   onExport,
+  documentUpdate,
+  projectDocuments,
 }) => {
   const [selectedProjectForPanel, setSelectedProjectForPanel] = useState<string | null>(null);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [lastMessageContent, setLastMessageContent] = useState<string>('');
 
   const handleProjectManage = (projectId: string) => {
     setSelectedProjectForPanel(projectId);
@@ -72,6 +89,64 @@ export const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
     onExport?.(format, scope);
     setShowExportMenu(false);
   };
+
+  // Smart document selection: find the most relevant document based on message content
+  const findRelevantDocument = (message: string, docs: Array<{ id: string; filename: string; content: string }>) => {
+    const lowerMessage = message.toLowerCase();
+
+    // Try to find explicit file references
+    for (const doc of docs) {
+      const filename = doc.filename.toLowerCase();
+      if (lowerMessage.includes(filename) || lowerMessage.includes(filename.replace(/\.[^/.]+$/, ''))) {
+        return doc;
+      }
+    }
+
+    // Look for document type keywords
+    if (lowerMessage.includes('readme')) {
+      const readme = docs.find(d => d.filename.toLowerCase().includes('readme'));
+      if (readme) return readme;
+    }
+
+    // Default to first document if available
+    return docs[0];
+  };
+
+  // Check for document update opportunities after messages
+  useEffect(() => {
+    if (!documentUpdate || !projectDocuments || projectDocuments.length === 0) {
+      return;
+    }
+
+    // Get the last user message
+    const lastUserMessage = messages.filter(m => m.role === 'user').slice(-1)[0];
+    if (!lastUserMessage || lastUserMessage.content === lastMessageContent) {
+      return; // No new user message
+    }
+
+    // Update tracking
+    setLastMessageContent(lastUserMessage.content);
+
+    // Check if this message suggests updating a document
+    if (documentUpdate.shouldSuggestUpdate(lastUserMessage.content)) {
+      const targetDoc = findRelevantDocument(lastUserMessage.content, projectDocuments);
+
+      if (targetDoc) {
+        // Get recent conversation context (last 5 messages)
+        const recentMessages = messages.slice(-5);
+        const conversationContext = recentMessages
+          .map(m => `${m.role}: ${m.content}`)
+          .join('\n\n');
+
+        // Propose the update
+        documentUpdate.proposeUpdate(
+          targetDoc.id,
+          conversationContext,
+          lastUserMessage.content
+        );
+      }
+    }
+  }, [messages, documentUpdate, projectDocuments, lastMessageContent]);
 
   // Get current conversation title
   const currentConversationTitle = currentConversationId
@@ -202,7 +277,7 @@ export const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-hidden bg-white">
+        <div className="flex-1 overflow-hidden bg-white flex flex-col">
           {isCreatingConversation ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
@@ -214,11 +289,44 @@ export const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
               </div>
             </div>
           ) : (
-            <MessageList
-              messages={messages}
-              isLoading={isLoading}
-              orchestrationState={orchestrationState}
-            />
+            <>
+              {/* Document Update Proposal Banner */}
+              {documentUpdate?.currentProposal && (
+                <div className="p-4 border-b border-gray-200 bg-gray-50">
+                  <DocumentUpdateProposalBanner
+                    proposal={documentUpdate.currentProposal}
+                    onApply={async () => {
+                      const success = await documentUpdate.applyProposal();
+                      if (success) {
+                        // Success feedback is handled by the hook
+                      }
+                    }}
+                    onReject={documentUpdate.rejectProposal}
+                    isApplying={documentUpdate.isApplying}
+                  />
+                </div>
+              )}
+
+              {/* Loading State for Document Update Generation */}
+              {documentUpdate?.isGenerating && (
+                <div className="p-4 bg-blue-50 border-b border-blue-200">
+                  <div className="flex items-center space-x-3">
+                    <div className="animate-spin w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                    <span className="text-blue-800">
+                      Analyzing conversation and generating document update...
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex-1 overflow-hidden">
+                <MessageList
+                  messages={messages}
+                  isLoading={isLoading}
+                  orchestrationState={orchestrationState}
+                />
+              </div>
+            </>
           )}
         </div>
 

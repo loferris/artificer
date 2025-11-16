@@ -53,20 +53,23 @@
     "url": "https://github.com/yourusername/ai-workflow-engine/issues"
   },
   "homepage": "https://github.com/yourusername/ai-workflow-engine/tree/main/lib/document-converter#readme",
-  "dependencies": {
-    "@portabletext/types": "^3.0.0",
-    "mdast-util-from-markdown": "^2.0.2",
-    "mdast-util-frontmatter": "^2.0.1",
-    "mdast-util-to-markdown": "^2.1.2",
+  "peerDependencies": {
     "remark": "^15.0.0",
     "remark-frontmatter": "^5.0.0",
     "remark-gfm": "^4.0.0",
     "remark-parse": "^11.0.0",
     "remark-stringify": "^11.0.0",
-    "unified": "^11.0.0",
+    "unified": "^11.0.0"
+  },
+  "dependencies": {
+    "@portabletext/types": "^3.0.0",
+    "@types/js-yaml": "^4.0.9",
+    "js-yaml": "^4.1.1",
+    "mdast-util-from-markdown": "^2.0.2",
+    "mdast-util-frontmatter": "^2.0.1",
+    "mdast-util-to-markdown": "^2.1.2",
     "unist-builder": "^4.0.0",
-    "unist-util-visit": "^5.0.0",
-    "yaml": "^2.8.1"
+    "unist-util-visit": "^5.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
