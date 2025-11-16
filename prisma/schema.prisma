@@ -17,7 +17,6 @@ model User {
   // Relations
   projects        Project[]
   apiKeys         ApiKey[]
-  generatedImages GeneratedImage[]
   batchJobs       BatchJob[]
 
   @@map("users")
@@ -60,7 +59,6 @@ model Project {
   conversations     Conversation[]
   documents         Document[]
   knowledgeEntities KnowledgeEntity[]
-  generatedImages   GeneratedImage[]
   batchJobs         BatchJob[]
 
   @@map("projects")
@@ -80,7 +78,6 @@ model Conversation {
 
   messages        Message[]
   summaries       ConversationSummary[]
-  generatedImages GeneratedImage[]
 
   // Conversation settings
   systemPrompt String?
@@ -104,9 +101,6 @@ model Message {
   parentId String?
   parent   Message?  @relation("MessageTree", fields: [parentId], references: [id])
   children Message[] @relation("MessageTree")
-
-  // Image generation support
-  generatedImages GeneratedImage[]
 
   @@map("messages")
 }
@@ -209,41 +203,6 @@ model RoutingDecision {
   @@index([complexity])
   @@index([category])
   @@index([expiresAt]) // For efficient cleanup queries
-}
-
-model GeneratedImage {
-  id             String   @id @default(cuid())
-  userId         String?
-  user           User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  projectId      String?
-  project        Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  conversationId String?
-  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: SetNull)
-  messageId      String?
-  message        Message? @relation(fields: [messageId], references: [id], onDelete: SetNull)
-
-  // Generation details
-  prompt         String   @db.Text  // User's original prompt
-  revisedPrompt  String?  @db.Text  // DALL-E 3 may revise the prompt
-  model          String              // dall-e-3, dall-e-2, stable-diffusion-xl, etc.
-
-  // Storage options (one of these should be populated)
-  imageUrl       String?             // External URL (S3, CDN, or OpenAI temporary URL)
-  imageData      Bytes?              // Binary storage in PostgreSQL
-  base64Data     String?  @db.Text   // Base64 string (for smaller images)
-
-  // Generation parameters and metadata
-  parameters     Json                // Size, quality, style, n, etc.
-  metadata       Json?               // Cost, generation time, provider info, etc.
-
-  createdAt      DateTime @default(now())
-
-  @@map("generated_images")
-  @@index([userId])
-  @@index([projectId])
-  @@index([conversationId])
-  @@index([messageId])
-  @@index([createdAt])
 }
 
 model BatchJob {
