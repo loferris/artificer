@@ -16,6 +16,7 @@ export {
   type CostLog,
   type PerformanceLog,
   type SecurityLog,
+  type SanitizationConfig,
 } from './EnhancedLogger';
 
 export {

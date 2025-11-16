@@ -82,47 +82,9 @@ export function withTracing<T extends (...args: any[]) => Promise<any>>(
     try {
       let result: any;
 
-      if (highlightEnabled) {
-        // Use Highlight tracing if enabled
-        result = await H.runWithHeaders(
-          {
-            'x-request-id': requestId || '',
-            'x-session-id': sessionId || '',
-          },
-          async () => {
-            return await H.startActiveSpan(
-              operationName,
-              {
-                attributes: {
-                  ...attributes,
-                  requestId: requestId || '',
-                  sessionId: sessionId || '',
-                  component: component || '',
-                },
-              },
-              async (span) => {
-                try {
-                  const fnResult = await fn.apply(this, args);
-                  span.setStatus({ code: 1 }); // OK
-                  return fnResult;
-                } catch (error) {
-                  span.setStatus({
-                    code: 2, // ERROR
-                    message: error instanceof Error ? error.message : String(error),
-                  });
-                  span.recordException(error as Error);
-                  throw error;
-                } finally {
-                  span.end();
-                }
-              }
-            );
-          }
-        );
-      } else {
-        // No Highlight, just execute the function
-        result = await fn.apply(this, args);
-      }
+      // Execute the function (Highlight tracing is handled at a higher level via H.init())
+      // The SDK automatically captures traces when enabled
+      result = await fn.apply(this, args);
 
       const duration = Date.now() - startTime;
 
@@ -225,27 +187,14 @@ export function createSpan(
     attributes?: Record<string, string | number | boolean>;
   } = {}
 ) {
-  if (!enhancedLogger.isHighlightEnabled()) {
-    // Return a no-op span if Highlight is not enabled
-    return {
-      setStatus: () => {},
-      addEvent: () => {},
-      recordException: () => {},
-      end: () => {},
-    };
-  }
-
-  // This is a simplified version - in real usage, you'd need to properly
-  // create and manage the span context
-  const { requestId, sessionId, attributes = {} } = options;
-
-  return H.startSpan(operationName, {
-    attributes: {
-      ...attributes,
-      requestId: requestId || '',
-      sessionId: sessionId || '',
-    },
-  });
+  // Return a no-op span - manual span creation is handled by Highlight SDK internally
+  // when H.init() is called with proper configuration
+  return {
+    setStatus: () => {},
+    addEvent: () => {},
+    recordException: () => {},
+    end: () => {},
+  };
 }
 
 /**

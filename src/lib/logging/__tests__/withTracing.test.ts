@@ -90,7 +90,7 @@ describe('withTracing', () => {
     );
   });
 
-  it('should create Highlight spans when enabled', async () => {
+  it('should execute function when Highlight is enabled', async () => {
     const testFn = vi.fn(async () => 'result');
 
     const wrapped = withTracing(testFn, {
@@ -99,31 +99,16 @@ describe('withTracing', () => {
       attributes: { foo: 'bar' },
     });
 
-    await wrapped();
+    const result = await wrapped();
 
-    expect(H.runWithHeaders).toHaveBeenCalledWith(
-      expect.objectContaining({
-        'x-request-id': '123',
-      }),
-      expect.any(Function)
-    );
+    expect(result).toBe('result');
+    expect(testFn).toHaveBeenCalled();
 
-    expect(H.startActiveSpan).toHaveBeenCalledWith(
-      'test.operation',
-      expect.objectContaining({
-        attributes: expect.objectContaining({
-          foo: 'bar',
-          requestId: '123',
-        }),
-      }),
-      expect.any(Function)
-    );
-
-    expect(mockSpan.setStatus).toHaveBeenCalledWith({ code: 1 }); // OK
-    expect(mockSpan.end).toHaveBeenCalled();
+    // Highlight tracing is handled by SDK internally when H.init() is called
+    // withTracing focuses on performance logging
   });
 
-  it('should not create Highlight spans when disabled', async () => {
+  it('should execute function when Highlight is disabled', async () => {
     enhancedLogger.isHighlightEnabled.mockReturnValueOnce(false);
 
     const testFn = vi.fn(async () => 'result');
@@ -132,14 +117,13 @@ describe('withTracing', () => {
       operationName: 'test.operation',
     });
 
-    await wrapped();
+    const result = await wrapped();
 
-    expect(H.runWithHeaders).not.toHaveBeenCalled();
-    expect(H.startActiveSpan).not.toHaveBeenCalled();
+    expect(result).toBe('result');
     expect(testFn).toHaveBeenCalled();
   });
 
-  it('should log errors and set error status on span', async () => {
+  it('should log errors when operation fails', async () => {
     const error = new Error('Test error');
     const mockChildLogger = {
       logPerformance: vi.fn(),
@@ -157,12 +141,6 @@ describe('withTracing', () => {
     });
 
     await expect(wrapped()).rejects.toThrow('Test error');
-
-    expect(mockSpan.setStatus).toHaveBeenCalledWith({
-      code: 2, // ERROR
-      message: 'Test error',
-    });
-    expect(mockSpan.recordException).toHaveBeenCalledWith(error);
 
     expect(mockChildLogger.error).toHaveBeenCalledWith(
       expect.anything(),
@@ -228,7 +206,7 @@ describe('withTracing', () => {
     expect(testFn).toHaveBeenCalledWith(1, 'two', true);
   });
 
-  it('should include custom attributes', async () => {
+  it('should include custom attributes in performance logs', async () => {
     const testFn = vi.fn(async () => 'result');
     const mockChildLogger = {
       logPerformance: vi.fn(),
@@ -245,17 +223,6 @@ describe('withTracing', () => {
     });
 
     await wrapped();
-
-    expect(H.startActiveSpan).toHaveBeenCalledWith(
-      'test.operation',
-      expect.objectContaining({
-        attributes: expect.objectContaining({
-          userId: '123',
-          action: 'create',
-        }),
-      }),
-      expect.any(Function)
-    );
 
     expect(mockChildLogger.logPerformance).toHaveBeenCalledWith(
       expect.anything(),

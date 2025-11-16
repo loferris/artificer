@@ -57,6 +57,24 @@ export interface SecurityLog {
 }
 
 /**
+ * Configuration for PII sanitization
+ */
+export interface SanitizationConfig {
+  /**
+   * Keys to redact (e.g., ['email', 'ssn', 'password'])
+   */
+  redactKeys?: string[];
+  /**
+   * Regex patterns to redact (e.g., /\d{3}-\d{2}-\d{4}/ for SSN)
+   */
+  redactPatterns?: RegExp[];
+  /**
+   * Replacement string for redacted values
+   */
+  redactedValue?: string;
+}
+
+/**
  * Internal log event for batching
  */
 interface LogEvent {
@@ -80,6 +98,12 @@ interface LogEvent {
  * - Graceful degradation if cloud services unavailable
  */
 export class EnhancedLogger {
+  // Configuration constants
+  private static readonly FLUSH_INTERVAL_MS = 5000;
+  private static readonly AUTO_FLUSH_THRESHOLD = 100;
+  private static readonly MAX_FLATTEN_DEPTH = 10;
+  private static readonly DEFAULT_REDACTED_VALUE = '[REDACTED]';
+
   private pino: pino.Logger;
   private axiom?: Axiom;
   private dataset?: string;
@@ -89,15 +113,20 @@ export class EnhancedLogger {
   private context: LogContext;
   private axiomEnabled: boolean;
   private highlightEnabled: boolean;
+  private isFlushing: boolean = false;
+  private sanitizationConfig?: SanitizationConfig;
+  private exitHandler?: () => void;
 
   constructor(
     pinoInstance?: pino.Logger,
-    inheritedContext: LogContext = {}
+    inheritedContext: LogContext = {},
+    sanitizationConfig?: SanitizationConfig
   ) {
     // Initialize pino with existing config or create new instance
     this.pino = pinoInstance || this.createDefaultPinoInstance();
     this.context = inheritedContext;
     this.isProduction = process.env.NODE_ENV === 'production';
+    this.sanitizationConfig = sanitizationConfig;
 
     // Initialize Axiom only in production and if credentials are available
     this.axiomEnabled = this.isProduction &&
@@ -112,10 +141,10 @@ export class EnhancedLogger {
         });
         this.dataset = process.env.AXIOM_DATASET!;
 
-        // Start periodic flush every 5 seconds
+        // Start periodic flush
         this.flushInterval = setInterval(() => {
           void this.flush();
-        }, 5000);
+        }, EnhancedLogger.FLUSH_INTERVAL_MS);
 
         // Flush on process exit
         this.setupExitHandlers();
@@ -141,9 +170,9 @@ export class EnhancedLogger {
         // Otherwise uses Highlight cloud (production)
         if (process.env.HIGHLIGHT_BACKEND_URL) {
           highlightConfig.otlpEndpoint = process.env.HIGHLIGHT_BACKEND_URL;
-          this.pino.info('Initializing Highlight with self-hosted backend', {
+          this.pino.info({
             backend: process.env.HIGHLIGHT_BACKEND_URL,
-          });
+          }, 'Initializing Highlight with self-hosted backend');
         } else {
           this.pino.info('Initializing Highlight with cloud backend');
         }
@@ -184,7 +213,7 @@ export class EnhancedLogger {
    * Setup process exit handlers to flush remaining logs
    */
   private setupExitHandlers(): void {
-    const exitHandler = () => {
+    this.exitHandler = () => {
       if (this.flushInterval) {
         clearInterval(this.flushInterval);
       }
@@ -192,10 +221,23 @@ export class EnhancedLogger {
     };
 
     // Handle various exit scenarios
-    process.on('beforeExit', exitHandler);
-    process.on('SIGINT', exitHandler);
-    process.on('SIGTERM', exitHandler);
-    process.on('SIGUSR2', exitHandler); // nodemon restart
+    process.on('beforeExit', this.exitHandler);
+    process.on('SIGINT', this.exitHandler);
+    process.on('SIGTERM', this.exitHandler);
+    process.on('SIGUSR2', this.exitHandler); // nodemon restart
+  }
+
+  /**
+   * Remove exit handlers
+   */
+  private removeExitHandlers(): void {
+    if (this.exitHandler) {
+      process.off('beforeExit', this.exitHandler);
+      process.off('SIGINT', this.exitHandler);
+      process.off('SIGTERM', this.exitHandler);
+      process.off('SIGUSR2', this.exitHandler);
+      this.exitHandler = undefined;
+    }
   }
 
   /**
@@ -218,22 +260,35 @@ export class EnhancedLogger {
     });
 
     // Auto-flush if buffer gets too large
-    if (this.logBuffer.length >= 100) {
+    if (this.logBuffer.length >= EnhancedLogger.AUTO_FLUSH_THRESHOLD) {
       void this.flush();
     }
   }
 
   /**
    * Flatten nested objects for Axiom (makes querying easier)
+   * @param obj Object to flatten
+   * @param prefix Current key prefix
+   * @param depth Current recursion depth
+   * @returns Flattened object
    */
-  private flattenObject(obj: Record<string, unknown>, prefix = ''): Record<string, unknown> {
+  private flattenObject(
+    obj: Record<string, unknown>,
+    prefix = '',
+    depth = 0
+  ): Record<string, unknown> {
+    // Prevent stack overflow on deeply nested objects
+    if (depth >= EnhancedLogger.MAX_FLATTEN_DEPTH) {
+      return { [prefix || 'data']: '[max depth exceeded]' };
+    }
+
     const flattened: Record<string, unknown> = {};
 
     for (const [key, value] of Object.entries(obj)) {
       const newKey = prefix ? `${prefix}.${key}` : key;
 
       if (value && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
-        Object.assign(flattened, this.flattenObject(value as Record<string, unknown>, newKey));
+        Object.assign(flattened, this.flattenObject(value as Record<string, unknown>, newKey, depth + 1));
       } else {
         flattened[newKey] = value;
       }
@@ -243,22 +298,68 @@ export class EnhancedLogger {
   }
 
   /**
+   * Sanitize data to remove PII
+   * @param data Data to sanitize
+   * @returns Sanitized data with PII redacted
+   */
+  private sanitizeData(data: Record<string, unknown>): Record<string, unknown> {
+    if (!this.sanitizationConfig) {
+      return data;
+    }
+
+    const { redactKeys = [], redactPatterns = [], redactedValue = EnhancedLogger.DEFAULT_REDACTED_VALUE } = this.sanitizationConfig;
+
+    const sanitized: Record<string, unknown> = {};
+
+    for (const [key, value] of Object.entries(data)) {
+      // Check if key should be redacted
+      if (redactKeys.includes(key.toLowerCase())) {
+        sanitized[key] = redactedValue;
+        continue;
+      }
+
+      // Check if value matches redaction pattern
+      if (typeof value === 'string' && redactPatterns.length > 0) {
+        let sanitizedValue = value;
+        for (const pattern of redactPatterns) {
+          sanitizedValue = sanitizedValue.replace(pattern, redactedValue);
+        }
+        sanitized[key] = sanitizedValue;
+        continue;
+      }
+
+      // Recursively sanitize nested objects
+      if (value && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
+        sanitized[key] = this.sanitizeData(value as Record<string, unknown>);
+        continue;
+      }
+
+      // Pass through other values
+      sanitized[key] = value;
+    }
+
+    return sanitized;
+  }
+
+  /**
    * Core logging methods
    */
 
   info(context: LogContext, message: string, data?: Record<string, unknown>): void {
     const mergedContext = { ...this.context, ...context };
-    const pinoData = { ...mergedContext, ...data };
+    const sanitizedData = data ? this.sanitizeData(data) : undefined;
+    const pinoData = { ...mergedContext, ...sanitizedData };
     this.pino.info(pinoData, message);
-    this.bufferForAxiom('info', message, mergedContext, data);
+    this.bufferForAxiom('info', message, mergedContext, sanitizedData);
   }
 
   error(context: LogContext, message: string, error?: Error, data?: Record<string, unknown>): void {
     const mergedContext = { ...this.context, ...context };
-    const errorData = error ? { err: error, ...mergedContext, ...data } : { ...mergedContext, ...data };
+    const sanitizedData = data ? this.sanitizeData(data) : undefined;
+    const errorData = error ? { err: error, ...mergedContext, ...sanitizedData } : { ...mergedContext, ...sanitizedData };
     this.pino.error(errorData, message);
     this.bufferForAxiom('error', message, mergedContext, {
-      ...data,
+      ...sanitizedData,
       error: error?.message,
       stack: error?.stack,
     });
@@ -266,11 +367,11 @@ export class EnhancedLogger {
     // Send error to Highlight for tracking and alerting
     if (this.highlightEnabled && error) {
       try {
-        H.consumeError(error, mergedContext.requestId as string | undefined, {
-          ...mergedContext,
-          ...data,
-          message,
-        });
+        H.consumeError(
+          error,
+          mergedContext.requestId as string | undefined,
+          mergedContext.sessionId as string | undefined
+        );
       } catch (highlightError) {
         // Don't let Highlight errors break the application
         this.pino.debug({ err: highlightError }, 'Failed to send error to Highlight');
@@ -280,16 +381,18 @@ export class EnhancedLogger {
 
   warn(context: LogContext, message: string, data?: Record<string, unknown>): void {
     const mergedContext = { ...this.context, ...context };
-    const pinoData = { ...mergedContext, ...data };
+    const sanitizedData = data ? this.sanitizeData(data) : undefined;
+    const pinoData = { ...mergedContext, ...sanitizedData };
     this.pino.warn(pinoData, message);
-    this.bufferForAxiom('warn', message, mergedContext, data);
+    this.bufferForAxiom('warn', message, mergedContext, sanitizedData);
   }
 
   debug(context: LogContext, message: string, data?: Record<string, unknown>): void {
     const mergedContext = { ...this.context, ...context };
-    const pinoData = { ...mergedContext, ...data };
+    const sanitizedData = data ? this.sanitizeData(data) : undefined;
+    const pinoData = { ...mergedContext, ...sanitizedData };
     this.pino.debug(pinoData, message);
-    this.bufferForAxiom('debug', message, mergedContext, data);
+    this.bufferForAxiom('debug', message, mergedContext, sanitizedData);
   }
 
   /**
@@ -417,7 +520,7 @@ export class EnhancedLogger {
 
   child(context: LogContext): EnhancedLogger {
     const mergedContext = { ...this.context, ...context };
-    return new EnhancedLogger(this.pino, mergedContext);
+    return new EnhancedLogger(this.pino, mergedContext, this.sanitizationConfig);
   }
 
   /**
@@ -425,9 +528,12 @@ export class EnhancedLogger {
    */
 
   async flush(): Promise<void> {
-    if (!this.axiomEnabled || !this.axiom || !this.dataset || this.logBuffer.length === 0) {
+    // Prevent concurrent flushes
+    if (this.isFlushing || !this.axiomEnabled || !this.axiom || !this.dataset || this.logBuffer.length === 0) {
       return;
     }
+
+    this.isFlushing = true;
 
     const eventsToFlush = [...this.logBuffer];
     this.logBuffer = [];
@@ -462,7 +568,27 @@ export class EnhancedLogger {
 
       // Don't re-buffer failed events to avoid memory leak
       // In production, consider implementing a dead letter queue
+    } finally {
+      this.isFlushing = false;
     }
+  }
+
+  /**
+   * Dispose of logger resources and flush remaining logs
+   * Call this before destroying the logger instance to prevent memory leaks
+   */
+  async dispose(): Promise<void> {
+    // Clear interval to prevent memory leaks
+    if (this.flushInterval) {
+      clearInterval(this.flushInterval);
+      this.flushInterval = undefined;
+    }
+
+    // Remove exit handlers to prevent memory leaks
+    this.removeExitHandlers();
+
+    // Flush any remaining logs
+    await this.flush();
   }
 
   /**

@@ -48,7 +48,11 @@ describe('EnhancedLogger', () => {
     vi.clearAllTimers();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    // Dispose logger to prevent memory leaks from exit handlers
+    if (logger) {
+      await logger.dispose();
+    }
     vi.clearAllMocks();
   });
 
@@ -562,12 +566,7 @@ describe('EnhancedLogger', () => {
       expect(H.consumeError).toHaveBeenCalledWith(
         error,
         '123',
-        expect.objectContaining({
-          requestId: '123',
-          sessionId: '456',
-          extra: 'data',
-          message: 'Error occurred',
-        })
+        '456'
       );
     });
 
@@ -630,6 +629,247 @@ describe('EnhancedLogger', () => {
 
       const H = logger.getHighlight();
       expect(H).toBeNull();
+    });
+  });
+
+  describe('PII Sanitization', () => {
+    it('should redact sensitive keys', () => {
+      const sanitizationConfig = {
+        redactKeys: ['email', 'password', 'ssn'],
+      };
+
+      logger = new EnhancedLogger(mockPinoInstance, {}, sanitizationConfig);
+
+      logger.info({ requestId: '123' }, 'User action', {
+        email: 'user@example.com',
+        password: 'secret123',
+        name: 'John Doe',
+      });
+
+      expect(mockPinoInstance.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: '[REDACTED]',
+          password: '[REDACTED]',
+          name: 'John Doe',
+        }),
+        'User action'
+      );
+    });
+
+    it('should redact values matching patterns', () => {
+      const sanitizationConfig = {
+        redactPatterns: [/\d{3}-\d{2}-\d{4}/], // SSN pattern
+      };
+
+      logger = new EnhancedLogger(mockPinoInstance, {}, sanitizationConfig);
+
+      logger.info({ requestId: '123' }, 'User data', {
+        message: 'SSN is 123-45-6789',
+        name: 'John Doe',
+      });
+
+      expect(mockPinoInstance.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'SSN is [REDACTED]',
+          name: 'John Doe',
+        }),
+        'User data'
+      );
+    });
+
+    it('should use custom redaction value', () => {
+      const sanitizationConfig = {
+        redactKeys: ['email'],
+        redactedValue: '***',
+      };
+
+      logger = new EnhancedLogger(mockPinoInstance, {}, sanitizationConfig);
+
+      logger.info({ requestId: '123' }, 'User action', {
+        email: 'user@example.com',
+      });
+
+      expect(mockPinoInstance.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: '***',
+        }),
+        'User action'
+      );
+    });
+
+    it('should sanitize nested objects', () => {
+      const sanitizationConfig = {
+        redactKeys: ['email'],
+      };
+
+      logger = new EnhancedLogger(mockPinoInstance, {}, sanitizationConfig);
+
+      logger.info({ requestId: '123' }, 'User action', {
+        user: {
+          name: 'John',
+          email: 'john@example.com',
+          profile: {
+            email: 'profile@example.com',
+          },
+        },
+      });
+
+      expect(mockPinoInstance.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          user: {
+            name: 'John',
+            email: '[REDACTED]',
+            profile: {
+              email: '[REDACTED]',
+            },
+          },
+        }),
+        'User action'
+      );
+    });
+
+    it('should inherit sanitization config in child logger', () => {
+      const sanitizationConfig = {
+        redactKeys: ['email'],
+      };
+
+      const parentLogger = new EnhancedLogger(mockPinoInstance, {}, sanitizationConfig);
+      const childLogger = parentLogger.child({ component: 'test' });
+
+      childLogger.info({ requestId: '123' }, 'Test', {
+        email: 'test@example.com',
+      });
+
+      expect(mockPinoInstance.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: '[REDACTED]',
+        }),
+        'Test'
+      );
+    });
+
+    it('should not sanitize when config is not provided', () => {
+      logger = new EnhancedLogger(mockPinoInstance);
+
+      logger.info({ requestId: '123' }, 'User action', {
+        email: 'user@example.com',
+      });
+
+      expect(mockPinoInstance.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: 'user@example.com',
+        }),
+        'User action'
+      );
+    });
+  });
+
+  describe('Dispose Method', () => {
+    it('should clear flush interval on dispose', async () => {
+      process.env.NODE_ENV = 'production';
+      process.env.AXIOM_TOKEN = 'test-token';
+      process.env.AXIOM_DATASET = 'test-dataset';
+
+      logger = new EnhancedLogger(mockPinoInstance);
+
+      // Verify interval is set
+      expect(logger['flushInterval']).toBeDefined();
+
+      await logger.dispose();
+
+      // Verify interval is cleared
+      expect(logger['flushInterval']).toBeUndefined();
+    });
+
+    it('should flush remaining logs on dispose', async () => {
+      process.env.NODE_ENV = 'production';
+      process.env.AXIOM_TOKEN = 'test-token';
+      process.env.AXIOM_DATASET = 'test-dataset';
+
+      logger = new EnhancedLogger(mockPinoInstance);
+
+      // Add some logs
+      logger.info({ requestId: '123' }, 'Test message 1');
+      logger.info({ requestId: '456' }, 'Test message 2');
+
+      expect(logger.getBufferSize()).toBe(2);
+
+      await logger.dispose();
+
+      // Buffer should be flushed
+      expect(logger.getBufferSize()).toBe(0);
+    });
+
+    it('should be safe to call dispose multiple times', async () => {
+      logger = new EnhancedLogger(mockPinoInstance);
+
+      await logger.dispose();
+      await logger.dispose(); // Should not throw
+
+      expect(logger['flushInterval']).toBeUndefined();
+    });
+  });
+
+  describe('Flush Concurrency Control', () => {
+    it('should prevent concurrent flushes', async () => {
+      process.env.NODE_ENV = 'production';
+      process.env.AXIOM_TOKEN = 'test-token';
+      process.env.AXIOM_DATASET = 'test-dataset';
+
+      logger = new EnhancedLogger(mockPinoInstance);
+
+      // Add logs to buffer
+      for (let i = 0; i < 10; i++) {
+        logger.info({ requestId: String(i) }, `Message ${i}`);
+      }
+
+      // Mock axiom.ingest to be slow
+      const { Axiom } = await import('@axiomhq/js');
+      const mockAxiom = (Axiom as unknown as ReturnType<typeof vi.fn>).mock.results[0]?.value;
+      if (mockAxiom?.ingest) {
+        let callCount = 0;
+        mockAxiom.ingest = vi.fn().mockImplementation(async () => {
+          callCount++;
+          // Simulate slow network
+          await new Promise(resolve => setTimeout(resolve, 100));
+          return callCount;
+        });
+      }
+
+      // Start multiple flushes concurrently
+      const flush1 = logger.flush();
+      const flush2 = logger.flush();
+      const flush3 = logger.flush();
+
+      await Promise.all([flush1, flush2, flush3]);
+
+      // Should only have called ingest once (second and third flush should have returned early)
+      if (mockAxiom?.ingest) {
+        expect(mockAxiom.ingest).toHaveBeenCalledTimes(1);
+      }
+    });
+  });
+
+  describe('Depth Limit for Flattening', () => {
+    it('should handle deeply nested objects', () => {
+      process.env.NODE_ENV = 'production';
+      process.env.AXIOM_TOKEN = 'test-token';
+      process.env.AXIOM_DATASET = 'test-dataset';
+
+      logger = new EnhancedLogger(mockPinoInstance);
+
+      // Create a deeply nested object (depth > 10)
+      const deeplyNested: any = { level: 0 };
+      let current = deeplyNested;
+      for (let i = 1; i <= 15; i++) {
+        current.nested = { level: i };
+        current = current.nested;
+      }
+
+      logger.info({ requestId: '123' }, 'Deep object', deeplyNested);
+
+      // Should not crash and should buffer the log
+      expect(logger.getBufferSize()).toBe(1);
     });
   });
 });
