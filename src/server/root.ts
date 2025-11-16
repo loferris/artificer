@@ -11,6 +11,7 @@ import { authRouter } from './routers/auth';
 import { searchRouter } from './routers/search';
 import { orchestrationRouter } from './routers/orchestration';
 import { imagesRouter } from './routers/images';
+import { batchRouter } from './routers/batch';
 
 export const appRouter = router({
   chat: chatRouter,
@@ -24,6 +25,7 @@ export const appRouter = router({
   search: searchRouter,
   orchestration: orchestrationRouter,
   images: imagesRouter,
+  batch: batchRouter,
 });
 
 export type AppRouter = typeof appRouter;

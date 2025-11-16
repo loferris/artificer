@@ -18,6 +18,7 @@ model User {
   projects        Project[]
   apiKeys         ApiKey[]
   generatedImages GeneratedImage[]
+  batchJobs       BatchJob[]
 
   @@map("users")
 }
@@ -60,6 +61,7 @@ model Project {
   documents         Document[]
   knowledgeEntities KnowledgeEntity[]
   generatedImages   GeneratedImage[]
+  batchJobs         BatchJob[]
 
   @@map("projects")
   @@index([userId])
@@ -242,4 +244,93 @@ model GeneratedImage {
   @@index([conversationId])
   @@index([messageId])
   @@index([createdAt])
+}
+
+model BatchJob {
+  id          String   @id @default(cuid())
+  name        String
+  projectId   String?
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // Job configuration
+  config      Json     // Pipeline phases, concurrency limits, etc.
+
+  // Status tracking
+  status      String   // PENDING, RUNNING, PAUSED, COMPLETED, FAILED, CANCELLED
+  currentPhase String?
+
+  // Progress tracking
+  totalItems    Int
+  completedItems Int     @default(0)
+  failedItems    Int     @default(0)
+
+  // Checkpointing
+  checkpoint     Json?   // Last known good state
+
+  // Analytics
+  costIncurred   Float   @default(0)
+  tokensUsed     Int     @default(0)
+
+  // Timing
+  startedAt      DateTime?
+  completedAt    DateTime?
+  estimatedCompletionAt DateTime?
+
+  // Error tracking
+  error          String?  @db.Text
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  items          BatchItem[]
+
+  @@map("batch_jobs")
+  @@index([projectId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model BatchItem {
+  id             String   @id @default(cuid())
+  batchJobId     String
+  job            BatchJob @relation(fields: [batchJobId], references: [id], onDelete: Cascade)
+
+  // Item identification
+  itemIndex      Int      // Position in batch (0-based)
+
+  // Input/Output
+  input          Json     // Original input data
+  output         Json?    // Final output data
+
+  // Per-phase outputs (for multi-phase pipelines)
+  phaseOutputs   Json?    // { "phase1": "...", "phase2": "...", ... }
+
+  // Status tracking
+  status         String   // PENDING, PROCESSING, COMPLETED, FAILED, SKIPPED
+  currentPhase   String?
+
+  // Error tracking
+  errors         Json[]   @default([])
+  retryCount     Int      @default(0)
+
+  // Analytics
+  costIncurred   Float    @default(0)
+  tokensUsed     Int      @default(0)
+  processingTimeMs Int?
+
+  // Timing
+  startedAt      DateTime?
+  completedAt    DateTime?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("batch_items")
+  @@index([batchJobId, itemIndex])
+  @@index([batchJobId, status])
+  @@unique([batchJobId, itemIndex])
 }
