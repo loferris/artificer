@@ -67,6 +67,7 @@ export class ModelRegistry {
   private configPatterns: ModelConfig['models'] = [];
   private lastFetch: number = 0;
   private readonly CACHE_TTL_MS = 3600000; // 1 hour
+  private readonly MAX_CACHE_SIZE = 500; // Prevent memory leak from unbounded growth
 
   constructor(private configPath?: string) {
     // Load static config as fallback
@@ -103,6 +104,9 @@ export class ModelRegistry {
     // Check cache first
     let metadata = this.cache.get(modelId);
     if (metadata) {
+      // LRU: Move to end (most recently used)
+      this.cache.delete(modelId);
+      this.cache.set(modelId, metadata);
       return metadata;
     }
 
@@ -110,12 +114,14 @@ export class ModelRegistry {
     metadata = this.matchConfigPattern(modelId);
     if (metadata) {
       // Cache for future use
+      this.evictLRUIfNeeded();
       this.cache.set(modelId, metadata);
       return metadata;
     }
 
     // Last resort: infer from name
     metadata = this.inferFromName(modelId);
+    this.evictLRUIfNeeded();
     this.cache.set(modelId, metadata);
 
     logger.debug('[ModelRegistry] Inferred metadata for unknown model', {
@@ -315,7 +321,7 @@ export class ModelRegistry {
   /**
    * Match model ID against config patterns
    */
-  private matchConfigPattern(modelId: string): ModelMetadata | null {
+  private matchConfigPattern(modelId: string): ModelMetadata | undefined {
     for (const pattern of this.configPatterns) {
       const regex = new RegExp('^' + pattern.pattern.replace(/\*/g, '.*') + '$');
       if (regex.test(modelId)) {
@@ -328,7 +334,7 @@ export class ModelRegistry {
         };
       }
     }
-    return null;
+    return undefined;
   }
 
   /**
@@ -412,4 +418,45 @@ export class ModelRegistry {
       maxTokens: 4096, // Conservative default
     };
   }
+
+  /**
+   * Evict least recently used entry if cache exceeds MAX_CACHE_SIZE
+   * Prevents memory leak from unbounded cache growth
+   */
+  private evictLRUIfNeeded(): void {
+    if (this.cache.size >= this.MAX_CACHE_SIZE) {
+      // Map maintains insertion order, so first key is least recently used
+      const firstKey = this.cache.keys().next().value;
+      if (firstKey) {
+        this.cache.delete(firstKey);
+
+        logger.debug('[ModelRegistry] Evicted LRU cache entry', {
+          evictedModel: firstKey,
+          cacheSize: this.cache.size,
+        });
+      }
+    }
+  }
+}
+
+// Global model registry singleton (initialized lazily)
+let globalModelRegistry: ModelRegistry | null = null;
+
+/**
+ * Get or create the global model registry
+ * The registry is initialized on first use
+ */
+export async function getModelRegistry(): Promise<ModelRegistry> {
+  if (!globalModelRegistry) {
+    globalModelRegistry = new ModelRegistry();
+
+    // Initialize in background (non-blocking)
+    globalModelRegistry.initialize().catch(error => {
+      logger.warn('[ModelRegistry] Initialization failed, using fallback', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    });
+  }
+
+  return globalModelRegistry;
 }

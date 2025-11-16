@@ -19,6 +19,10 @@ import {
 import crypto from 'crypto';
 import { Assistant, AssistantResponse } from '../assistant';
 import { logger } from '../../utils/logger';
+import { countMessageTokens } from '../../utils/tokenCounter';
+import { StructuredQueryService } from '../security/StructuredQueryService';
+import type { ConversationService } from '../conversation/ConversationService';
+import type { MessageService } from '../message/MessageService';
 
 /**
  * ChainOrchestrator - Intelligent multi-stage routing system
@@ -28,6 +32,10 @@ import { logger } from '../../utils/logger';
  * 2. Router Agent: Select optimal model(s) based on analysis
  * 3. Executor: Run the task using selected model(s)
  * 4. Validator Agent: Validate response quality and decide if retry needed
+ *
+ * Security:
+ * - Uses StructuredQueryService to prevent prompt injection attacks
+ * - Separates user instructions from untrusted data (conversation history, documents)
  */
 export class ChainOrchestrator {
   private analyzer: AnalyzerAgent;
@@ -36,17 +44,26 @@ export class ChainOrchestrator {
   private assistant: Assistant;
   private db?: PrismaClient;
   private registry: ModelRegistry;
+  private structuredQueryService?: StructuredQueryService;
   private routeCache: Map<string, CachedRoute> = new Map();
   private readonly CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+  // Default timeouts (in milliseconds)
+  private readonly DEFAULT_ANALYZER_TIMEOUT = 30000;    // 30 seconds
+  private readonly DEFAULT_ROUTER_TIMEOUT = 30000;      // 30 seconds
+  private readonly DEFAULT_EXECUTION_TIMEOUT = 120000;  // 2 minutes
+  private readonly DEFAULT_VALIDATOR_TIMEOUT = 30000;   // 30 seconds
 
   constructor(
     private config: ChainConfig,
     assistant: Assistant,
     db?: PrismaClient,
-    registry?: ModelRegistry
+    registry?: ModelRegistry,
+    structuredQueryService?: StructuredQueryService
   ) {
     this.assistant = assistant;
     this.db = db;
+    this.structuredQueryService = structuredQueryService;
 
     // Initialize or use provided model registry
     this.registry = registry || new ModelRegistry();
@@ -81,7 +98,7 @@ export class ChainOrchestrator {
     try {
       // Stage 1: Analyze
       const analysis = await this.analyzeQuery(context);
-      logger.info('[ChainOrchestrator] Analysis complete', analysis);
+      logger.info('[ChainOrchestrator] Analysis complete', { analysis });
 
       // Check if complexity meets threshold for chain routing
       if (analysis.complexity < context.config.minComplexityForChain) {
@@ -154,7 +171,7 @@ export class ChainOrchestrator {
           );
 
           // Store routing decision in database
-          await this.storeRoutingDecision(result);
+          await this.storeRoutingDecision(result, context.userMessage);
 
           return result;
         } catch (execError) {
@@ -197,10 +214,16 @@ export class ChainOrchestrator {
    */
   private async analyzeQuery(context: ChainContext): Promise<AnalysisResult> {
     try {
-      return await this.analyzer.analyze(
-        context.userMessage,
-        context.conversationHistory || [],
-        this.createOpenRouterFetch()
+      const timeout = context.config.analyzerTimeout || this.DEFAULT_ANALYZER_TIMEOUT;
+
+      return await this.withTimeout(
+        this.analyzer.analyze(
+          context.userMessage,
+          context.conversationHistory || [],
+          this.createOpenRouterFetch(context.signal)
+        ),
+        timeout,
+        'Analysis'
       );
     } catch (error) {
       logger.error('[ChainOrchestrator] Analysis failed, using fallback', error);
@@ -217,10 +240,16 @@ export class ChainOrchestrator {
     context: ChainContext
   ): Promise<RoutingPlan> {
     try {
-      return await this.router.route(
-        analysis,
-        this.createOpenRouterFetch(),
-        context.config.preferCheapModels || false
+      const timeout = context.config.routerTimeout || this.DEFAULT_ROUTER_TIMEOUT;
+
+      return await this.withTimeout(
+        this.router.route(
+          analysis,
+          this.createOpenRouterFetch(context.signal),
+          context.config.preferCheapModels || false
+        ),
+        timeout,
+        'Routing'
       );
     } catch (error) {
       logger.error('[ChainOrchestrator] Routing failed, using fallback', error);
@@ -231,6 +260,7 @@ export class ChainOrchestrator {
 
   /**
    * Stage 3: Execute the query with selected model
+   * Uses StructuredQueryService for secure prompt formatting if available
    */
   private async executeQuery(
     context: ChainContext,
@@ -239,16 +269,56 @@ export class ChainOrchestrator {
     const startTime = Date.now();
 
     try {
-      const messages = [
-        ...(context.conversationHistory || []),
-        { role: 'user', content: context.userMessage }
-      ];
+      let finalMessage = context.userMessage;
+      let conversationHistory = context.conversationHistory || [];
+
+      // Use StructuredQueryService for secure prompt formatting if available
+      if (this.structuredQueryService && context.useStructuredQuery !== false) {
+        logger.info('[ChainOrchestrator] Using StructuredQueryService for secure prompt formatting');
+
+        try {
+          const structured = await this.structuredQueryService.structure({
+            message: context.userMessage,
+            conversationId: context.conversationId,
+            uploadedFiles: context.uploadedFiles,
+            projectId: context.projectId,
+          });
+
+          // Format into secure prompt
+          const securePrompt = this.structuredQueryService.formatPrompt(structured);
+
+          logger.debug('[ChainOrchestrator] Structured prompt created', {
+            instructionLength: structured.instruction.length,
+            documentsCount: structured.context.documents.length,
+            historyLength: structured.context.conversationHistory.length,
+          });
+
+          // Use the secure prompt as the message, with empty history
+          // (history is already included in the structured prompt)
+          finalMessage = securePrompt;
+          conversationHistory = [];
+        } catch (structureError) {
+          logger.warn('[ChainOrchestrator] Failed to structure query, falling back to direct message', {
+            error: structureError instanceof Error ? structureError.message : String(structureError),
+          });
+          // Fall back to direct message passing
+        }
+      }
 
       // Use the assistant's getResponse method with specific model
-      const response = await this.assistant.getResponse(
-        context.userMessage,
-        context.conversationHistory || [],
-        { signal: context.signal }
+      const timeout = context.config.executionTimeout || this.DEFAULT_EXECUTION_TIMEOUT;
+
+      const response = await this.withTimeout(
+        this.assistant.getResponse(
+          finalMessage,
+          conversationHistory,
+          {
+            signal: context.signal,
+            model: model  // Pass the selected model from orchestration
+          }
+        ),
+        timeout,
+        `Execution with ${model}`
       );
 
       const latency = Date.now() - startTime;
@@ -258,7 +328,7 @@ export class ChainOrchestrator {
         return {
           content: response,
           model: model,
-          tokens: this.estimateTokens(response),
+          tokens: this.estimateTokens(response, model),
           cost: 0,
           latency,
         };
@@ -267,7 +337,7 @@ export class ChainOrchestrator {
         return {
           content: assistantResponse.response,
           model: assistantResponse.model || model,
-          tokens: this.estimateTokens(assistantResponse.response),
+          tokens: this.estimateTokens(assistantResponse.response, assistantResponse.model || model),
           cost: assistantResponse.cost || 0,
           latency,
         };
@@ -293,12 +363,18 @@ export class ChainOrchestrator {
       }
 
       // Full validation for complex tasks
-      return await this.validator.validate(
-        context.userMessage,
-        analysis,
-        execution,
-        this.config.availableModels,
-        this.createOpenRouterFetch()
+      const timeout = context.config.validatorTimeout || this.DEFAULT_VALIDATOR_TIMEOUT;
+
+      return await this.withTimeout(
+        this.validator.validate(
+          context.userMessage,
+          analysis,
+          execution,
+          this.config.availableModels,
+          this.createOpenRouterFetch(context.signal)
+        ),
+        timeout,
+        'Validation'
       );
     } catch (error) {
       logger.error('[ChainOrchestrator] Validation failed, using fallback', error);
@@ -341,7 +417,7 @@ export class ChainOrchestrator {
       context.conversationId
     );
 
-    await this.storeRoutingDecision(result);
+    await this.storeRoutingDecision(result, context.userMessage);
 
     return result;
   }
@@ -377,29 +453,42 @@ export class ChainOrchestrator {
 
   /**
    * Stores the routing decision in the database for analytics
+   * PII-safe: Only stores hashed prompt, metadata, and aggregated metrics
    */
-  private async storeRoutingDecision(result: ChainResult): Promise<void> {
+  private async storeRoutingDecision(result: ChainResult, userMessage: string): Promise<void> {
     if (!this.db) {
       logger.warn('[ChainOrchestrator] No database connection, skipping routing decision storage');
       return;
     }
 
     try {
+      // Create SHA-256 hash of user message for deduplication (PII-safe)
+      const promptHash = crypto.createHash('sha256').update(userMessage).digest('hex');
+
       await this.db.routingDecision.create({
         data: {
-          prompt: result.analysis.reasoning,
-          analysis: result.analysis as any,
-          routingPlan: result.routingPlan as any,
+          // PII-safe prompt analytics
+          promptHash,
+          promptLength: userMessage.length,
+          complexity: result.analysis.complexity,
+          category: result.analysis.category,
+
+          // Metadata
           executedModel: result.model,
-          validationResult: result.validation as any,
           totalCost: new Decimal(result.totalCost),
           successful: result.successful,
           retryCount: result.retryCount,
+          latencyMs: result.totalLatency,
+
+          // Optional fields
           conversationId: result.conversationId,
+          strategy: result.routingPlan.strategy,
+          validationScore: result.validation?.score,
         },
       });
 
-      logger.info('[ChainOrchestrator] Routing decision stored', {
+      logger.info('[ChainOrchestrator] Routing decision stored (PII-safe)', {
+        promptHash: promptHash.substring(0, 16) + '...',
         model: result.model,
         cost: result.totalCost,
         successful: result.successful,
@@ -412,8 +501,9 @@ export class ChainOrchestrator {
 
   /**
    * Creates a wrapper function for OpenRouter API calls
+   * @param signal Optional AbortSignal for cancellation support
    */
-  private createOpenRouterFetch() {
+  private createOpenRouterFetch(signal?: AbortSignal) {
     return async (
       model: string,
       messages: Array<{ role: string; content: string }>
@@ -422,7 +512,10 @@ export class ChainOrchestrator {
       const userMessage = messages[messages.length - 1]?.content || '';
       const history = messages.slice(0, -1);
 
-      const response = await this.assistant.getResponse(userMessage, history);
+      const response = await this.assistant.getResponse(userMessage, history, {
+        model,
+        signal,
+      });
 
       if (typeof response === 'string') {
         return { content: response };
@@ -433,11 +526,30 @@ export class ChainOrchestrator {
   }
 
   /**
-   * Estimates token count from text (rough approximation)
+   * Counts tokens in text using tiktoken (accurate)
    */
-  private estimateTokens(text: string): number {
-    // Rough estimate: ~4 characters per token
-    return Math.ceil(text.length / 4);
+  private estimateTokens(text: string, model: string = 'gpt-4'): number {
+    return countMessageTokens(text, model);
+  }
+
+  /**
+   * Wraps a promise with a timeout to prevent hanging operations
+   * @param promise The promise to wrap
+   * @param timeoutMs Timeout in milliseconds
+   * @param operationName Name of the operation for error messages
+   */
+  private async withTimeout<T>(
+    promise: Promise<T>,
+    timeoutMs: number,
+    operationName: string
+  ): Promise<T> {
+    const timeoutPromise = new Promise<T>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`${operationName} timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+    });
+
+    return Promise.race([promise, timeoutPromise]);
   }
 
   /**
@@ -459,7 +571,7 @@ export class ChainOrchestrator {
       };
 
       const analysisPromise = this.analyzeQuery(context);
-      const cacheKey = this.generateCacheKey(context.userMessage);
+      const cacheKey = this.generateCacheKey(context.userMessage, context.sessionId);
 
       const analysis = await analysisPromise;
 
@@ -610,7 +722,7 @@ export class ChainOrchestrator {
           );
 
           // Store decision (don't wait)
-          this.storeRoutingDecision(result).catch(err =>
+          this.storeRoutingDecision(result, context.userMessage).catch(err =>
             logger.error('[ChainOrchestrator] Failed to store decision', err)
           );
 
@@ -668,9 +780,11 @@ export class ChainOrchestrator {
    * Cache management methods
    */
 
-  private generateCacheKey(message: string): string {
-    // Simple hash of message content
-    return crypto.createHash('md5').update(message.toLowerCase().trim()).digest('hex');
+  private generateCacheKey(message: string, sessionId?: string): string {
+    // Hash message + sessionId to prevent cache collisions between users
+    // Use SHA-256 for better security than MD5
+    const input = `${sessionId || 'anon'}:${message.toLowerCase().trim()}`;
+    return crypto.createHash('sha256').update(input).digest('hex');
   }
 
   private getCachedRoute(

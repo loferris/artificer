@@ -233,10 +233,23 @@ export abstract class BaseFormatAdapter implements FormatAdapter {
   abstract getCalloutType(block: any): CalloutType | undefined;
 
   /**
-   * Default key generation (can be overridden)
+   * Default key generation using crypto.randomUUID()
+   * Generates RFC 4122 version 4 UUIDs for guaranteed uniqueness
    */
   generateKey(): string {
-    return Math.random().toString(36).substring(2, 15);
+    // Use Node.js crypto.randomUUID() for proper UUID v4 generation
+    // Falls back to random string if crypto is not available (browser environments)
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+
+    // Fallback for older Node.js versions or browsers without crypto.randomUUID
+    // This is a simple UUID v4 implementation
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
   }
 
   /**

@@ -211,7 +211,7 @@ export class MarkdownExporter implements ExporterPlugin {
 
   private convertCalloutBlock(block: any): string {
     const type = block.calloutType || 'note';
-    const text = this.convertSpans(block.children || [], []);
+    const text = this.convertSpans(block.children || [], block.markDefs || []);
 
     // Obsidian-style callout
     return `> [!${type}]\n> ${text}`;

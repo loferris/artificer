@@ -67,6 +67,9 @@ export const RATE_LIMITS = {
   // Chat messages - most expensive operation
   CHAT: { maxRequests: 30, windowMs: 60 * 1000 }, // 30 requests per minute
 
+  // Orchestration - very expensive (runs analyzer + router + executor + validator)
+  ORCHESTRATION: { maxRequests: 10, windowMs: 60 * 1000 }, // 10 requests per minute
+
   // General API calls
   API: { maxRequests: 100, windowMs: 60 * 1000 }, // 100 requests per minute
 

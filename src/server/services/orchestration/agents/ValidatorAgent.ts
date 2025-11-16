@@ -1,4 +1,5 @@
 import { AnalysisResult, ValidationResult, ExecutionResult } from '../types';
+import { logger } from '../../../utils/logger';
 
 /**
  * ValidatorAgent - Validates response quality and determines if retry is needed
@@ -27,7 +28,7 @@ export class ValidatorAgent {
       const response = await openRouterFetch(this.modelId, messages);
       return this.parseValidationResponse(response.content, availableModels, executionResult.model);
     } catch (error) {
-      console.error('[ValidatorAgent] Validation failed:', error);
+      logger.error('[ValidatorAgent] Validation failed', error);
       // Fallback: accept the response
       return this.getFallbackValidation(executionResult);
     }
@@ -152,10 +153,10 @@ Is this response acceptable?`;
         shouldRetry,
         suggestedModel,
         reasoning: String(parsed.reasoning || 'No reasoning provided'),
-        issues: Array.isArray(parsed.issues) ? parsed.issues.filter(i => typeof i === 'string') : []
+        issues: Array.isArray(parsed.issues) ? parsed.issues.filter((i: any) => typeof i === 'string') : []
       };
     } catch (error) {
-      console.error('[ValidatorAgent] Failed to parse validation:', error);
+      logger.error('[ValidatorAgent] Failed to parse validation', error);
       throw error;
     }
   }

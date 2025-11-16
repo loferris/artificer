@@ -13,11 +13,12 @@ export const ProjectPanel: React.FC<ProjectPanelProps> = ({ projectId, isOpen, o
   const [searchQuery, setSearchQuery] = useState('');
   const [uploadingFile, setUploadingFile] = useState(false);
 
-  const { data: projectData, refetch: refetchProject } = trpc.projects.getById.useQuery(projectId, {
-    enabled: isOpen && !!projectId,
-  });
+  const { data: projectData, refetch: refetchProject } = trpc.projects.getById.useQuery(
+    { id: projectId },
+    { enabled: isOpen && !!projectId }
+  );
 
-  const { data: documentsData, refetch: refetchDocuments } = trpc.projects.listDocuments.useQuery(
+  const { data: documentsData, refetch: refetchDocuments } = trpc.projects.getDocuments.useQuery(
     { projectId },
     { enabled: isOpen && !!projectId }
   );
@@ -64,7 +65,7 @@ export const ProjectPanel: React.FC<ProjectPanelProps> = ({ projectId, isOpen, o
   };
 
   const filteredDocuments = documents.filter(
-    (doc) =>
+    (doc: any) =>
       doc.filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (doc.content && doc.content.toLowerCase().includes(searchQuery.toLowerCase()))
   );
@@ -118,7 +119,7 @@ export const ProjectPanel: React.FC<ProjectPanelProps> = ({ projectId, isOpen, o
             </div>
             <div className="flex items-center space-x-2">
               <span>💬</span>
-              <span>{project?.conversationCount || 0} conversations</span>
+              <span>{project?._count?.conversations || 0} conversations</span>
             </div>
             {project?.updatedAt && (
               <div className="flex items-center space-x-2">
@@ -186,7 +187,7 @@ export const ProjectPanel: React.FC<ProjectPanelProps> = ({ projectId, isOpen, o
               </div>
             ) : (
               <div className="space-y-3">
-                {filteredDocuments.map((doc) => (
+                {filteredDocuments.map((doc: any) => (
                   <div
                     key={doc.id}
                     className="bg-gray-50 border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors group"

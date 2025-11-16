@@ -26,9 +26,15 @@ describe('ProjectSidebar', () => {
         id: 'proj-1',
         name: 'Test Project',
         description: 'A test project',
-        documentCount: 5,
-        conversationCount: 3,
+        stats: {
+          documentCount: 5,
+          conversationCount: 3,
+          knowledgeEntityCount: 0,
+          lastActivity: new Date('2024-01-01'),
+        },
         updatedAt: new Date('2024-01-01'),
+        createdAt: new Date('2024-01-01'),
+        settings: null,
       },
     ],
   };
@@ -103,8 +109,9 @@ describe('ProjectSidebar', () => {
       />
     );
 
-    const projectElement = screen.getByText('Test Project').closest('div');
-    expect(projectElement).toHaveClass('bg-blue-50');
+    const projectElement = screen.getByText('Test Project');
+    const projectContainer = projectElement.closest('.bg-blue-50');
+    expect(projectContainer).toBeInTheDocument();
   });
 
   it('calls onProjectSelect when project is clicked', () => {

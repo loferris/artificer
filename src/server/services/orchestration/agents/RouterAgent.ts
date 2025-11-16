@@ -1,5 +1,6 @@
 import { AnalysisResult, RoutingPlan, RoutingStrategy } from '../types';
 import { ModelRegistry, ModelMetadata } from '../ModelRegistry';
+import { logger } from '../../../utils/logger';
 
 /**
  * RouterAgent - Decides which model(s) to use based on analysis
@@ -34,7 +35,7 @@ export class RouterAgent {
       const response = await openRouterFetch(this.modelId, messages);
       return this.parseRoutingResponse(response.content, analysis);
     } catch (error) {
-      console.error('[RouterAgent] Routing failed:', error);
+      logger.error('[RouterAgent] Routing failed', error);
       // Fallback to rule-based routing
       return this.getFallbackRouting(analysis, preferCheap);
     }
@@ -110,11 +111,11 @@ Respond ONLY with valid JSON. No additional text.`;
       // Validate model exists
       const primaryModel = this.validateModel(parsed.primaryModel);
       const fallbackModels = Array.isArray(parsed.fallbackModels)
-        ? parsed.fallbackModels.map(m => this.validateModel(m)).filter(Boolean)
+        ? parsed.fallbackModels.map((m: any) => this.validateModel(m)).filter(Boolean)
         : [];
 
       return {
-        primaryModel,
+        primaryModel: primaryModel as string,
         fallbackModels: fallbackModels as string[],
         strategy: this.validateStrategy(parsed.strategy),
         estimatedCost: Math.max(0, Number(parsed.estimatedCost) || 0),
@@ -122,7 +123,7 @@ Respond ONLY with valid JSON. No additional text.`;
         shouldValidate: Boolean(parsed.shouldValidate ?? (analysis.complexity >= 7))
       };
     } catch (error) {
-      console.error('[RouterAgent] Failed to parse routing:', error);
+      logger.error('[RouterAgent] Failed to parse routing', error);
       throw error;
     }
   }

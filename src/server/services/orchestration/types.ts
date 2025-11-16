@@ -21,6 +21,16 @@ export type RoutingStrategy =
   | 'speculative';  // Hedge bets with parallel execution
 
 /**
+ * File attachment for structured queries
+ */
+export interface FileAttachment {
+  filename: string;
+  content: string;
+  mimeType?: string;
+  size?: number;
+}
+
+/**
  * Output from the Analyzer Agent
  */
 export interface AnalysisResult {
@@ -106,6 +116,12 @@ export interface ChainConfig {
   maxRetries: number;
   validationEnabled: boolean;
 
+  // Timeouts (in milliseconds)
+  analyzerTimeout?: number;    // Default: 30000 (30s)
+  routerTimeout?: number;      // Default: 30000 (30s)
+  executionTimeout?: number;   // Default: 120000 (2min)
+  validatorTimeout?: number;   // Default: 30000 (30s)
+
   // Cost settings
   maxCostPerRequest?: number;
   preferCheapModels?: boolean;
@@ -121,6 +137,11 @@ export interface ChainContext {
   sessionId: string;
   config: ChainConfig;
   signal?: AbortSignal;
+
+  // Security and data separation
+  uploadedFiles?: FileAttachment[];  // User-uploaded files (treated as untrusted data)
+  projectId?: string;                // Project context (if querying project documents)
+  useStructuredQuery?: boolean;      // Enable/disable StructuredQueryService (default: true)
 }
 
 /**

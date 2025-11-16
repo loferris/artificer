@@ -1,5 +1,10 @@
 /**
  * Plugin registry for managing importers and exporters
+ *
+ * Thread-safety note:
+ * - Read operations (get, list, detect) are safe for concurrent access
+ * - Write operations (register, clear) should not be called concurrently
+ * - If using with Worker Threads, ensure registration happens during initialization
  */
 
 import type {
@@ -11,33 +16,60 @@ import type {
 } from '../types/index.js';
 import { ConversionError } from '../types/index.js';
 
+export interface PluginRegistrationOptions {
+  /**
+   * If true, allows overwriting existing plugins with the same name
+   * Default: false
+   */
+  allowOverwrite?: boolean;
+}
+
 export class PluginRegistry {
   private importers = new Map<string, ImporterPlugin>();
   private exporters = new Map<string, ExporterPlugin>();
+  private registrationLock = Promise.resolve();
 
   /**
    * Register an importer plugin
+   * @throws {ConversionError} If plugin with same name exists and allowOverwrite is false
    */
-  registerImporter(plugin: ImporterPlugin): void {
-    if (this.importers.has(plugin.name)) {
+  registerImporter(
+    plugin: ImporterPlugin,
+    options?: PluginRegistrationOptions
+  ): void {
+    const allowOverwrite = options?.allowOverwrite ?? false;
+    const existing = this.importers.get(plugin.name);
+
+    if (existing && !allowOverwrite) {
       throw new ConversionError(
-        `Importer plugin "${plugin.name}" is already registered`,
-        'DUPLICATE_PLUGIN'
+        `Importer plugin "${plugin.name}" is already registered. Use allowOverwrite option to replace it.`,
+        'DUPLICATE_PLUGIN',
+        { existingPlugin: existing.name, newPlugin: plugin.name }
       );
     }
+
     this.importers.set(plugin.name, plugin);
   }
 
   /**
    * Register an exporter plugin
+   * @throws {ConversionError} If plugin with same name exists and allowOverwrite is false
    */
-  registerExporter(plugin: ExporterPlugin): void {
-    if (this.exporters.has(plugin.name)) {
+  registerExporter(
+    plugin: ExporterPlugin,
+    options?: PluginRegistrationOptions
+  ): void {
+    const allowOverwrite = options?.allowOverwrite ?? false;
+    const existing = this.exporters.get(plugin.name);
+
+    if (existing && !allowOverwrite) {
       throw new ConversionError(
-        `Exporter plugin "${plugin.name}" is already registered`,
-        'DUPLICATE_PLUGIN'
+        `Exporter plugin "${plugin.name}" is already registered. Use allowOverwrite option to replace it.`,
+        'DUPLICATE_PLUGIN',
+        { existingPlugin: existing.name, newPlugin: plugin.name }
       );
     }
+
     this.exporters.set(plugin.name, plugin);
   }
 
@@ -140,6 +172,66 @@ export class PluginRegistry {
     }
 
     return exporter.export(document, options);
+  }
+
+  /**
+   * Unregister an importer plugin by name
+   * @returns true if the plugin was found and removed, false otherwise
+   */
+  unregisterImporter(name: string): boolean {
+    return this.importers.delete(name);
+  }
+
+  /**
+   * Unregister an exporter plugin by name
+   * @returns true if the plugin was found and removed, false otherwise
+   */
+  unregisterExporter(name: string): boolean {
+    return this.exporters.delete(name);
+  }
+
+  /**
+   * Register an importer plugin with async safety for concurrent operations
+   * Use this when registering plugins from async contexts or worker threads
+   */
+  async registerImporterAsync(
+    plugin: ImporterPlugin,
+    options?: PluginRegistrationOptions
+  ): Promise<void> {
+    // Chain registration operations to prevent concurrent modifications
+    this.registrationLock = this.registrationLock.then(() => {
+      this.registerImporter(plugin, options);
+    });
+    await this.registrationLock;
+  }
+
+  /**
+   * Register an exporter plugin with async safety for concurrent operations
+   * Use this when registering plugins from async contexts or worker threads
+   */
+  async registerExporterAsync(
+    plugin: ExporterPlugin,
+    options?: PluginRegistrationOptions
+  ): Promise<void> {
+    // Chain registration operations to prevent concurrent modifications
+    this.registrationLock = this.registrationLock.then(() => {
+      this.registerExporter(plugin, options);
+    });
+    await this.registrationLock;
+  }
+
+  /**
+   * Check if an importer is registered
+   */
+  hasImporter(name: string): boolean {
+    return this.importers.has(name);
+  }
+
+  /**
+   * Check if an exporter is registered
+   */
+  hasExporter(name: string): boolean {
+    return this.exporters.has(name);
   }
 
   /**

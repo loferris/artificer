@@ -1,4 +1,5 @@
 import { AnalysisResult, TaskCategory, RequiredCapability } from '../types';
+import { logger } from '../../../utils/logger';
 
 /**
  * AnalyzerAgent - Analyzes user queries to determine task characteristics
@@ -26,7 +27,7 @@ export class AnalyzerAgent {
       const response = await openRouterFetch(this.modelId, messages);
       return this.parseAnalysisResponse(response.content);
     } catch (error) {
-      console.error('[AnalyzerAgent] Analysis failed:', error);
+      logger.error('[AnalyzerAgent] Analysis failed', error);
       // Fallback to conservative defaults
       return this.getFallbackAnalysis(userMessage);
     }
@@ -93,7 +94,7 @@ Respond ONLY with valid JSON. No additional text.`;
         reasoning: String(parsed.reasoning || 'No reasoning provided')
       };
     } catch (error) {
-      console.error('[AnalyzerAgent] Failed to parse analysis:', error);
+      logger.error('[AnalyzerAgent] Failed to parse analysis', error);
       throw error;
     }
   }

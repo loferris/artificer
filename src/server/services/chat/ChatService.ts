@@ -7,7 +7,7 @@ import type { MessageService } from '../message/MessageService';
 import type { Assistant, AssistantResponse } from '../assistant';
 import type { RAGService } from '../rag/RAGService';
 import type { ConversationSummarizationService } from '../summarization/ConversationSummarizationService';
-import { generateDemoResponse } from '../../../utils/staticDemo';
+import { generateDemoResponse } from '../../../utils/demo';
 
 export interface ChatMessage {
   id: string;
@@ -17,6 +17,11 @@ export interface ChatMessage {
   model?: string;
   cost?: number;
   tokens?: number;
+  ragSources?: Array<{
+    filename: string;
+    content: string;
+    score: number;
+  }>;
 }
 
 export interface SendMessageInput {
@@ -41,6 +46,11 @@ export interface ChatStreamChunk {
     model?: string;
     cost?: number;
     messageId?: string;
+    ragSources?: Array<{
+      filename: string;
+      content: string;
+      score: number;
+    }>;
   };
 }
 

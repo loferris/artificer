@@ -8,6 +8,7 @@ import { logger } from '../../../server/utils/logger';
 import { prisma } from '../../../server/db/client';
 import { ChainOrchestrator } from '../../../server/services/orchestration/ChainOrchestrator';
 import { ChainConfig } from '../../../server/services/orchestration/types';
+import { getModelRegistry } from '../../../server/services/orchestration/ModelRegistry';
 
 // Input validation schema
 const streamOrchestrationSchema = z.object({
@@ -83,7 +84,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const sessionId = user?.sessionId || 'anonymous';
     const identifier = `${userAgent}-${sessionId}`;
 
-    const rateLimit = createRateLimitMiddleware('CHAT');
+    const rateLimit = createRateLimitMiddleware('ORCHESTRATION');
     const rateLimitResult = rateLimit(identifier);
 
     if (!rateLimitResult.allowed) {
@@ -151,14 +152,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       };
 
       // Create services
-      const { conversationService, messageService, assistant } = createServicesFromContext(mockCtx);
+      const { conversationService, messageService, assistant, structuredQueryService } = createServicesFromContext(mockCtx);
 
       // Validate conversation access
-      await conversationService.validateConversationAccess(conversationId, sessionId);
+      await conversationService.validateAccess(conversationId, sessionId);
 
       // Get conversation history
-      const messages = await messageService.getMessages(conversationId, sessionId);
-      const conversationHistory = messages.map(msg => ({
+      const messages = await messageService.getByConversation(conversationId);
+      const conversationHistory = messages.map((msg: { role: string; content: string }) => ({
         role: msg.role,
         content: msg.content,
       }));
@@ -166,8 +167,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Build chain config
       const config = buildChainConfig();
 
-      // Create chain orchestrator
-      const orchestrator = new ChainOrchestrator(config, assistant, mockCtx.db);
+      // Get global model registry
+      const registry = await getModelRegistry();
+
+      // Create chain orchestrator with both ModelRegistry and StructuredQueryService
+      const orchestrator = new ChainOrchestrator(
+        config,
+        assistant,
+        mockCtx.db || undefined,
+        registry,
+        structuredQueryService
+      );
 
       // Stream the orchestration progress
       const stream = orchestrator.orchestrateStream({

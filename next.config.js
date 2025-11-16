@@ -9,6 +9,16 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: false,
   },
+  webpack: (config, { isServer }) => {
+    // Exclude lib/ directory from webpack processing
+    // This prevents build errors from library test configs
+    config.watchOptions = {
+      ...config.watchOptions,
+      ignored: ['**/node_modules/**', '**/lib/**'],
+    };
+
+    return config;
+  },
 };
 
 export default nextConfig;

@@ -16,12 +16,18 @@ import { VectorService } from './vector/VectorService';
 import { EmbeddingService } from './vector/EmbeddingService';
 import { DefaultRAGService, NoOpRAGService, type RAGService } from './rag/RAGService';
 import { ConversationSummarizationService } from './summarization/ConversationSummarizationService';
+import {
+  StructuredQueryService,
+  DatabaseStructuredQueryService,
+  DemoStructuredQueryService,
+} from './security/StructuredQueryService';
 
 export interface ServiceContainer {
   conversationService: ConversationService;
   messageService: MessageService;
   chatService: ChatService;
   assistant: Assistant;
+  structuredQueryService: StructuredQueryService;
 }
 
 export interface ServiceFactoryOptions {
@@ -68,16 +74,25 @@ export class ServiceFactory {
     let conversationService: ConversationService;
     let messageService: MessageService;
     let chatService: ChatService;
+    let structuredQueryService: StructuredQueryService;
 
     if (useDemo) {
       // Create demo services
       conversationService = new DemoConversationService();
       messageService = new DemoMessageService();
       chatService = new DemoChatService(conversationService, messageService);
+      structuredQueryService = new DemoStructuredQueryService();
     } else {
       // Create database services
       conversationService = new DatabaseConversationService(db!);
       messageService = new DatabaseMessageService(db!);
+
+      // Create structured query service for security
+      structuredQueryService = new DatabaseStructuredQueryService(
+        db!,
+        conversationService,
+        messageService,
+      );
 
       // Create RAG service if enabled
       let ragService: RAGService | undefined;
@@ -117,6 +132,7 @@ export class ServiceFactory {
       messageService,
       chatService,
       assistant,
+      structuredQueryService,
     };
   }
 

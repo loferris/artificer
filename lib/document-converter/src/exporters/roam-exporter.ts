@@ -197,12 +197,24 @@ export class RoamExporter implements ExporterPlugin {
   }
 
   private generateUid(): string {
-    // Generate a Roam-style UID (9 characters)
+    // Generate a Roam-style UID (9 characters) using crypto for better randomness
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let uid = '';
-    for (let i = 0; i < 9; i++) {
-      uid += chars.charAt(Math.floor(Math.random() * chars.length));
+
+    // Use crypto.getRandomValues for cryptographically strong random values
+    const randomValues = new Uint8Array(9);
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      crypto.getRandomValues(randomValues);
+      for (let i = 0; i < 9; i++) {
+        uid += chars.charAt(randomValues[i] % chars.length);
+      }
+    } else {
+      // Fallback for environments without crypto.getRandomValues
+      for (let i = 0; i < 9; i++) {
+        uid += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
     }
+
     return uid;
   }
 }

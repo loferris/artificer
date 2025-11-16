@@ -1,0 +1,4 @@
+# Exclude library test and development files from Vercel builds
+lib/document-converter/vitest.config.ts
+lib/document-converter/src/__tests__
+lib/document-converter/.github

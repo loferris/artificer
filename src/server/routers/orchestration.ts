@@ -4,30 +4,8 @@ import { TRPCError } from '@trpc/server';
 import { createServicesFromContext } from '../services/ServiceFactory';
 import { ChainOrchestrator } from '../services/orchestration/ChainOrchestrator';
 import { ChainConfig } from '../services/orchestration/types';
-import { ModelRegistry } from '../services/orchestration/ModelRegistry';
+import { getModelRegistry } from '../services/orchestration/ModelRegistry';
 import { logger } from '../utils/logger';
-
-// Global model registry singleton (initialized lazily)
-let globalModelRegistry: ModelRegistry | null = null;
-
-/**
- * Get or create the global model registry
- * The registry is initialized on first use
- */
-async function getModelRegistry(): Promise<ModelRegistry> {
-  if (!globalModelRegistry) {
-    globalModelRegistry = new ModelRegistry();
-
-    // Initialize in background (non-blocking)
-    globalModelRegistry.initialize().catch(error => {
-      logger.warn('[orchestrationRouter] Model registry initialization failed, using fallback', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-    });
-  }
-
-  return globalModelRegistry;
-}
 
 // Helper function to ensure user exists in demo mode
 function ensureDemoUser(ctx: any) {
@@ -75,6 +53,12 @@ function buildChainConfig(): ChainConfig {
   const validationEnabled = process.env.VALIDATION_ENABLED !== 'false'; // Default true
   const preferCheapModels = process.env.PREFER_CHEAP_MODELS === 'true';
 
+  // Timeout configuration (in milliseconds)
+  const analyzerTimeout = parseInt(process.env.ANALYZER_TIMEOUT || '30000', 10);    // 30s
+  const routerTimeout = parseInt(process.env.ROUTER_TIMEOUT || '30000', 10);        // 30s
+  const executionTimeout = parseInt(process.env.EXECUTION_TIMEOUT || '120000', 10); // 2min
+  const validatorTimeout = parseInt(process.env.VALIDATOR_TIMEOUT || '30000', 10);  // 30s
+
   return {
     analyzerModel,
     routerModel,
@@ -84,6 +68,10 @@ function buildChainConfig(): ChainConfig {
     maxRetries,
     validationEnabled,
     preferCheapModels,
+    analyzerTimeout,
+    routerTimeout,
+    executionTimeout,
+    validatorTimeout,
   };
 }
 
@@ -127,14 +115,14 @@ export const orchestrationRouter = router({
         }
 
         // Create services with proper dependency injection
-        const { chatService, conversationService, messageService, assistant } = createServicesFromContext(ctx);
+        const { chatService, conversationService, messageService, assistant, structuredQueryService } = createServicesFromContext(ctx);
 
         // Validate conversation access
-        await conversationService.validateConversationAccess(input.conversationId, user.sessionId);
+        await conversationService.validateAccess(input.conversationId, user.sessionId);
 
         // Get conversation history
-        const messages = await messageService.getMessages(input.conversationId, user.sessionId);
-        const conversationHistory = messages.map(msg => ({
+        const messages = await messageService.getByConversation(input.conversationId);
+        const conversationHistory = messages.map((msg: { role: string; content: string }) => ({
           role: msg.role,
           content: msg.content,
         }));
@@ -145,8 +133,14 @@ export const orchestrationRouter = router({
         // Get global model registry
         const registry = await getModelRegistry();
 
-        // Create chain orchestrator
-        const orchestrator = new ChainOrchestrator(config, assistant, ctx.db, registry);
+        // Create chain orchestrator with both ModelRegistry and StructuredQueryService
+        const orchestrator = new ChainOrchestrator(
+          config,
+          assistant,
+          ctx.db || undefined,
+          registry,
+          structuredQueryService
+        );
 
         // Run the chain orchestration
         const chainResult = await orchestrator.orchestrate({
@@ -169,34 +163,27 @@ export const orchestrationRouter = router({
 
         // Store messages in database
         // Store user message
-        const userMessage = await messageService.createMessage({
+        const userMessage = await messageService.create({
           conversationId: input.conversationId,
           role: 'user',
           content: input.content,
         });
 
         // Store assistant message
-        const assistantMessage = await messageService.createMessage({
+        const assistantMessage = await messageService.create({
           conversationId: input.conversationId,
           role: 'assistant',
           content: chainResult.response,
-          tokens: chainResult.totalTokens,
         });
 
         // Auto-generate title if this is the first user message
         let conversationTitle: string | undefined;
         if (messages.length === 0) {
           try {
-            conversationTitle = await chatService.generateConversationTitle(
-              input.content,
-              chainResult.response
-            );
+            conversationTitle = conversationService.generateTitle(input.content);
 
-            if (conversationTitle && ctx.db) {
-              await ctx.db.conversation.update({
-                where: { id: input.conversationId },
-                data: { title: conversationTitle },
-              });
+            if (conversationTitle) {
+              await conversationService.updateTitle(input.conversationId, conversationTitle);
             }
           } catch (error) {
             logger.error('[orchestrationRouter] Failed to generate title', error);
@@ -209,7 +196,7 @@ export const orchestrationRouter = router({
           id: assistantMessage.id,
           content: chainResult.response,
           role: 'assistant' as const,
-          timestamp: assistantMessage.timestamp,
+          timestamp: assistantMessage.createdAt,
           model: chainResult.model,
           cost: chainResult.totalCost,
           tokens: chainResult.totalTokens,
@@ -291,15 +278,18 @@ export const orchestrationRouter = router({
         return {
           decisions: decisions.map(d => ({
             id: d.id,
-            prompt: d.prompt.substring(0, 100), // Truncate for privacy
+            promptHash: d.promptHash.substring(0, 16) + '...', // Show truncated hash (PII-safe)
+            promptLength: d.promptLength,
+            complexity: d.complexity,
+            category: d.category,
             executedModel: d.executedModel,
             totalCost: Number(d.totalCost),
             successful: d.successful,
             retryCount: d.retryCount,
+            latencyMs: d.latencyMs,
+            strategy: d.strategy,
+            validationScore: d.validationScore,
             createdAt: d.createdAt,
-            analysis: d.analysis,
-            routingPlan: d.routingPlan,
-            validationResult: d.validationResult,
           })),
           summary,
         };
