@@ -1,6 +1,11 @@
 import { TRPCError } from '@trpc/server';
 import type { PrismaClient } from '@prisma/client';
 import { DEMO_CONFIG } from '../../config/demo';
+import {
+  countConversationTokens,
+  estimateMessageFit,
+  calculateContextWindow,
+} from '../../utils/tokenCounter';
 
 export interface Message {
   id: string;
@@ -62,8 +67,15 @@ export interface MessageService {
 
   /**
    * Get conversation history formatted for AI assistant
+   * Includes summaries and recent messages within token budget
    */
-  getConversationHistory(conversationId: string): Promise<Array<{ role: string; content: string }>>;
+  getConversationHistory(
+    conversationId: string,
+    options?: {
+      maxTokens?: number;
+      model?: string;
+    },
+  ): Promise<Array<{ role: string; content: string }>>;
 
   /**
    * Estimate token count from text content
@@ -176,20 +188,88 @@ export class DatabaseMessageService implements MessageService {
 
   async getConversationHistory(
     conversationId: string,
+    options?: {
+      maxTokens?: number;
+      model?: string;
+    },
   ): Promise<Array<{ role: string; content: string }>> {
+    // Get conversation model if not provided
+    const conversation = await this.db.conversation.findUnique({
+      where: { id: conversationId },
+      select: { model: true },
+    });
+
+    const model = options?.model || conversation?.model || 'gpt-4';
+
+    // Calculate context window configuration
+    const contextConfig = calculateContextWindow();
+    const maxTokens = options?.maxTokens || contextConfig.recentMessagesWindow;
+
+    // Get all messages
     const messages = await this.db.message.findMany({
       where: { conversationId },
       orderBy: { createdAt: 'asc' },
       select: {
+        id: true,
         role: true,
         content: true,
       },
     });
 
-    return messages.map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-    }));
+    // Get active summaries
+    const summaries = await this.db.conversationSummary.findMany({
+      where: {
+        conversationId,
+        supersededBy: null,
+      },
+      orderBy: { createdAt: 'asc' },
+      select: {
+        summaryContent: true,
+        messageRange: true,
+      },
+    });
+
+    // Determine which messages are already summarized
+    let unsummarizedStartIndex = 0;
+    if (summaries.length > 0) {
+      const lastSummary = summaries[summaries.length - 1];
+      const messageRange = lastSummary.messageRange as { endMessageId: string };
+      const endIndex = messages.findIndex((m) => m.id === messageRange.endMessageId);
+      unsummarizedStartIndex = endIndex + 1;
+    }
+
+    const unsummarizedMessages = messages.slice(unsummarizedStartIndex);
+
+    // Determine how many recent messages fit in token budget
+    const { count: messageFit } = estimateMessageFit(
+      unsummarizedMessages.map((m) => ({ role: m.role, content: m.content })),
+      maxTokens,
+      model,
+    );
+
+    // Take the most recent messages that fit
+    const recentMessages = unsummarizedMessages.slice(-messageFit);
+
+    // Build final history: summaries + recent messages
+    const history: Array<{ role: string; content: string }> = [];
+
+    // Add summaries as system messages
+    for (const summary of summaries) {
+      history.push({
+        role: 'system',
+        content: `[Previous conversation summary]\n${summary.summaryContent}`,
+      });
+    }
+
+    // Add recent messages
+    for (const msg of recentMessages) {
+      history.push({
+        role: msg.role,
+        content: msg.content,
+      });
+    }
+
+    return history;
   }
 
   estimateTokens(content: string): number {
@@ -380,8 +460,15 @@ export class DemoMessageService implements MessageService {
 
   async getConversationHistory(
     conversationId: string,
+    options?: {
+      maxTokens?: number;
+      model?: string;
+    },
   ): Promise<Array<{ role: string; content: string }>> {
     const messages = await this.getByConversation(conversationId);
+
+    // Simple implementation for demo mode - just return all messages
+    // In production mode, this would use token-based windowing
     return messages.map((msg) => ({
       role: msg.role,
       content: msg.content,
