@@ -137,7 +137,8 @@ export class NotionImporter implements ImporterPlugin {
   }
 
   private convertBlock(
-    block: NotionBlock
+    block: NotionBlock,
+    level: number = 1
   ): PortableTextBlock | PortableTextBlock[] | null {
     const type = block.type;
     const content = (block as any)[type];
@@ -156,9 +157,9 @@ export class NotionImporter implements ImporterPlugin {
       case 'heading_3':
         return this.convertHeading(content, 'h3');
       case 'bulleted_list_item':
-        return this.convertListItem(content, 'bullet');
+        return this.convertListItem(content, 'bullet', level);
       case 'numbered_list_item':
-        return this.convertListItem(content, 'number');
+        return this.convertListItem(content, 'number', level);
       case 'to_do':
         return this.convertTodo(content);
       case 'toggle':
@@ -177,6 +178,26 @@ export class NotionImporter implements ImporterPlugin {
         return this.convertTable(content);
       case 'bookmark':
         return this.convertBookmark(content);
+      case 'embed':
+        return this.convertEmbed(content);
+      case 'file':
+        return this.convertFile(content, 'file');
+      case 'pdf':
+        return this.convertFile(content, 'pdf');
+      case 'video':
+        return this.convertVideo(content);
+      case 'audio':
+        return this.convertAudio(content);
+      case 'column_list':
+        return this.convertColumnList(content, block);
+      case 'column':
+        return this.convertColumn(content, block, level);
+      case 'child_page':
+        return this.convertChildPage(content, block);
+      case 'table_of_contents':
+        return this.convertTableOfContents(content);
+      case 'link_preview':
+        return this.convertLinkPreview(content);
       default:
         // Fallback for unknown types
         if (content.rich_text) {
@@ -215,19 +236,40 @@ export class NotionImporter implements ImporterPlugin {
 
   private convertListItem(
     content: any,
-    listType: 'bullet' | 'number'
-  ): PortableTextBlock {
+    listType: 'bullet' | 'number',
+    level: number = 1
+  ): PortableTextBlock | PortableTextBlock[] {
     const children = this.convertRichText(content.rich_text || []);
 
-    return {
+    const listBlock: PortableTextBlock = {
       _type: 'block',
       _key: generateKey(),
       style: 'normal',
       listItem: listType,
-      level: 1,
+      level,
       children: children.length > 0 ? children : [createSpan('')],
       markDefs: [],
     };
+
+    // Handle nested blocks (children property in Notion API)
+    if (content.children && Array.isArray(content.children) && content.children.length > 0) {
+      const nestedBlocks: PortableTextBlock[] = [listBlock];
+
+      for (const childBlock of content.children) {
+        const converted = this.convertBlock(childBlock, level + 1);
+        if (converted) {
+          if (Array.isArray(converted)) {
+            nestedBlocks.push(...converted);
+          } else {
+            nestedBlocks.push(converted);
+          }
+        }
+      }
+
+      return nestedBlocks;
+    }
+
+    return listBlock;
   }
 
   private convertTodo(content: any): PortableTextBlock {
@@ -293,6 +335,157 @@ export class NotionImporter implements ImporterPlugin {
   private convertBookmark(content: any): PortableTextBlock {
     const url = content.url || '';
     return createTextBlock(`[Bookmark: ${url}]`, 'normal');
+  }
+
+  private convertEmbed(content: any): any {
+    const url = content.url || '';
+    const caption = content.caption
+      ? this.extractPlainText(content.caption)
+      : undefined;
+
+    return {
+      _type: 'embed',
+      _key: generateKey(),
+      url,
+      title: caption,
+    };
+  }
+
+  private convertFile(content: any, type: 'file' | 'pdf'): any {
+    const url = content.external?.url || content.file?.url || '';
+    const caption = content.caption
+      ? this.extractPlainText(content.caption)
+      : undefined;
+
+    return {
+      _type: 'file',
+      _key: generateKey(),
+      url,
+      type,
+      caption,
+    };
+  }
+
+  private convertVideo(content: any): any {
+    const url = content.external?.url || content.file?.url || '';
+    const caption = content.caption
+      ? this.extractPlainText(content.caption)
+      : undefined;
+
+    return {
+      _type: 'video',
+      _key: generateKey(),
+      url,
+      caption,
+      provider: content.type,
+    };
+  }
+
+  private convertAudio(content: any): any {
+    const url = content.external?.url || content.file?.url || '';
+    const caption = content.caption
+      ? this.extractPlainText(content.caption)
+      : undefined;
+
+    return {
+      _type: 'audio',
+      _key: generateKey(),
+      url,
+      caption,
+    };
+  }
+
+  private convertColumnList(_content: any, block: any): any {
+    // Column lists contain columns as children
+    const columns: any[] = [];
+
+    if (block.children && Array.isArray(block.children)) {
+      for (const child of block.children) {
+        if (child.type === 'column') {
+          const columnContent = child.column;
+          const columnChildren: PortableTextBlock[] = [];
+
+          if (columnContent.children && Array.isArray(columnContent.children)) {
+            for (const nestedBlock of columnContent.children) {
+              const converted = this.convertBlock(nestedBlock);
+              if (converted) {
+                if (Array.isArray(converted)) {
+                  columnChildren.push(...converted);
+                } else {
+                  columnChildren.push(converted);
+                }
+              }
+            }
+          }
+
+          columns.push({
+            _type: 'column',
+            _key: generateKey(),
+            children: columnChildren,
+          });
+        }
+      }
+    }
+
+    return {
+      _type: 'columnList',
+      _key: generateKey(),
+      columns,
+    };
+  }
+
+  private convertColumn(_content: any, block: any, level: number): any {
+    // Columns are typically handled by column_list
+    // But if encountered standalone, convert children
+    const children: PortableTextBlock[] = [];
+
+    if (block.children && Array.isArray(block.children)) {
+      for (const child of block.children) {
+        const converted = this.convertBlock(child, level);
+        if (converted) {
+          if (Array.isArray(converted)) {
+            children.push(...converted);
+          } else {
+            children.push(converted);
+          }
+        }
+      }
+    }
+
+    return {
+      _type: 'column',
+      _key: generateKey(),
+      children,
+    };
+  }
+
+  private convertChildPage(content: any, block: any): any {
+    const title = content.title || 'Untitled';
+
+    return {
+      _type: 'childPage',
+      _key: generateKey(),
+      title,
+      pageId: block.id,
+    };
+  }
+
+  private convertTableOfContents(content: any): any {
+    return {
+      _type: 'tableOfContents',
+      _key: generateKey(),
+      color: content.color,
+    };
+  }
+
+  private convertLinkPreview(content: any): any {
+    const url = content.url || '';
+
+    return {
+      _type: 'linkPreview',
+      _key: generateKey(),
+      url,
+    };
   }
 
   private convertRichText(richText: any[]): PortableTextSpan[] {

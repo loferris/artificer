@@ -18,7 +18,7 @@ export class NotionExporter implements ExporterPlugin {
     document: ConvertedDocument,
     options?: ExportOptions
   ): Promise<string> {
-    const blocks = document.content.map((block) => this.convertBlock(block));
+    const blocks = this.convertBlocks(document.content);
 
     const result = {
       object: 'list',
@@ -32,6 +32,53 @@ export class NotionExporter implements ExporterPlugin {
       null,
       options?.prettyPrint ? 2 : undefined
     );
+  }
+
+  /**
+   * Convert blocks handling nested list structure
+   */
+  private convertBlocks(blocks: any[], startIndex: number = 0, endIndex?: number): any[] {
+    const result: any[] = [];
+    const end = endIndex ?? blocks.length;
+    let i = startIndex;
+
+    while (i < end) {
+      const block = blocks[i];
+
+      // Check if this is a list item with potential children
+      if (block.listItem && block.level) {
+        const converted = this.convertBlock(block);
+        if (converted) {
+          // Look ahead for immediate children (level + 1)
+          let j = i + 1;
+          const childStartIndex = j;
+
+          // Find the range of all child blocks
+          while (j < end && blocks[j].listItem && blocks[j].level > block.level) {
+            j++;
+          }
+
+          // Recursively convert children if any exist
+          if (j > childStartIndex) {
+            const blockType = block.listItem === 'number' ? 'numbered_list_item' : 'bulleted_list_item';
+            converted[blockType].children = this.convertBlocks(blocks, childStartIndex, j);
+          }
+
+          result.push(converted);
+          i = j;
+          continue;
+        }
+      } else {
+        const converted = this.convertBlock(block);
+        if (converted) {
+          result.push(converted);
+        }
+      }
+
+      i++;
+    }
+
+    return result;
   }
 
   private convertBlock(block: any): any {
@@ -53,6 +100,20 @@ export class NotionExporter implements ExporterPlugin {
         return this.convertTableBlock(block, baseBlock);
       case 'callout':
         return this.convertCalloutBlock(block, baseBlock);
+      case 'embed':
+        return this.convertEmbedBlock(block, baseBlock);
+      case 'file':
+        return this.convertFileBlock(block, baseBlock);
+      case 'video':
+        return this.convertVideoBlock(block, baseBlock);
+      case 'audio':
+        return this.convertAudioBlock(block, baseBlock);
+      case 'childPage':
+        return this.convertChildPageBlock(block, baseBlock);
+      case 'tableOfContents':
+        return this.convertTableOfContentsBlock(block, baseBlock);
+      case 'linkPreview':
+        return this.convertLinkPreviewBlock(block, baseBlock);
       default:
         return null;
     }
@@ -116,7 +177,7 @@ export class NotionExporter implements ExporterPlugin {
       for (const mark of span.marks || []) {
         const markDef = markDefs.find((def) => def._key === mark);
 
-        if (markDef?.type === 'link') {
+        if (markDef?._type === 'link') {
           href = markDef.href;
         } else {
           switch (mark) {
@@ -219,7 +280,7 @@ export class NotionExporter implements ExporterPlugin {
   }
 
   private convertCalloutBlock(block: any, baseBlock: any): any {
-    const richText = this.convertSpans(block.children || [], []);
+    const richText = this.convertSpans(block.children || [], block.markDefs || []);
 
     return {
       ...baseBlock,
@@ -252,5 +313,112 @@ export class NotionExporter implements ExporterPlugin {
       note: 'gray',
     };
     return colorMap[type] || 'gray';
+  }
+
+  private convertEmbedBlock(block: any, baseBlock: any): any {
+    return {
+      ...baseBlock,
+      type: 'embed',
+      embed: {
+        url: block.url || '',
+      },
+    };
+  }
+
+  private convertFileBlock(block: any, baseBlock: any): any {
+    const blockType = block.type === 'pdf' ? 'pdf' : 'file';
+    return {
+      ...baseBlock,
+      type: blockType,
+      [blockType]: {
+        type: 'external',
+        external: {
+          url: block.url || '',
+        },
+        caption: block.caption
+          ? [
+              {
+                type: 'text',
+                text: { content: block.caption },
+                plain_text: block.caption,
+              },
+            ]
+          : [],
+      },
+    };
+  }
+
+  private convertVideoBlock(block: any, baseBlock: any): any {
+    return {
+      ...baseBlock,
+      type: 'video',
+      video: {
+        type: block.provider || 'external',
+        [block.provider || 'external']: {
+          url: block.url || '',
+        },
+        caption: block.caption
+          ? [
+              {
+                type: 'text',
+                text: { content: block.caption },
+                plain_text: block.caption,
+              },
+            ]
+          : [],
+      },
+    };
+  }
+
+  private convertAudioBlock(block: any, baseBlock: any): any {
+    return {
+      ...baseBlock,
+      type: 'audio',
+      audio: {
+        type: 'external',
+        external: {
+          url: block.url || '',
+        },
+        caption: block.caption
+          ? [
+              {
+                type: 'text',
+                text: { content: block.caption },
+                plain_text: block.caption,
+              },
+            ]
+          : [],
+      },
+    };
+  }
+
+  private convertChildPageBlock(block: any, baseBlock: any): any {
+    return {
+      ...baseBlock,
+      type: 'child_page',
+      child_page: {
+        title: block.title || 'Untitled',
+      },
+    };
+  }
+
+  private convertTableOfContentsBlock(block: any, baseBlock: any): any {
+    return {
+      ...baseBlock,
+      type: 'table_of_contents',
+      table_of_contents: {
+        color: block.color || 'default',
+      },
+    };
+  }
+
+  private convertLinkPreviewBlock(block: any, baseBlock: any): any {
+    return {
+      ...baseBlock,
+      type: 'link_preview',
+      link_preview: {
+        url: block.url || '',
+      },
+    };
   }
 }
