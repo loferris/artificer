@@ -292,7 +292,7 @@ describe('ChainOrchestrator', () => {
           }),
         })
         .mockResolvedValueOnce({
-          response: 'Sure!',
+          response: 'Sure, I can help you with that!',
           model: 'deepseek/deepseek-chat',
           cost: 0.00005,
         });
@@ -329,7 +329,7 @@ describe('ChainOrchestrator', () => {
           }),
         })
         .mockResolvedValueOnce({
-          response: 'Hi!',
+          response: 'Hi there! How can I help you today?',
           model: 'deepseek/deepseek-chat',
           cost: 0.0001,
         });
