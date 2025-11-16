@@ -429,15 +429,8 @@ export class DatabaseStructuredQueryService implements StructuredQueryService {
         // For now, we'll leave this as a placeholder
         logger.info('Project documents would be fetched here', { projectId: input.projectId });
 
-        // TODO: Implement project document fetching
-        // const projectDocs = await this.projectService.getDocuments(input.projectId);
-        // for (const doc of projectDocs) {
-        //   documents.push({
-        //     filename: doc.filename,
-        //     content: doc.content,
-        //     source: 'project',
-        //   });
-        // }
+        // TODO: Implement project document fetching when ProjectService.getDocuments() is available
+        // This will fetch project-specific documents and add them to the context with source: 'project'
       } catch (error) {
         logger.warn('Failed to fetch project documents', {
           error: error instanceof Error ? error.message : String(error),
