@@ -5,7 +5,6 @@ import { conversationsRouter } from './routers/conversations';
 import { messagesRouter } from './routers/messages';
 import { usageRouter } from './routers/usage';
 import { exportRouter } from './routers/export';
-import { subscriptionsRouter } from './routers/subscriptions';
 import { projectsRouter } from './routers/projects';
 import { monitoringRouter } from './routers/monitoring';
 import { authRouter } from './routers/auth';
@@ -18,7 +17,6 @@ export const appRouter = router({
   messages: messagesRouter,
   usage: usageRouter,
   export: exportRouter,
-  subscriptions: subscriptionsRouter,
   projects: projectsRouter,
   monitoring: monitoringRouter,
   auth: authRouter,
