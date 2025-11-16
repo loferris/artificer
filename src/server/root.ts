@@ -11,6 +11,7 @@ import { authRouter } from './routers/auth';
 import { searchRouter } from './routers/search';
 import { orchestrationRouter } from './routers/orchestration';
 import { artifactsRouter } from './routers/artifacts';
+import { repositoriesRouter } from './routers/repositories';
 
 export const appRouter = router({
   chat: chatRouter,
@@ -24,6 +25,7 @@ export const appRouter = router({
   search: searchRouter,
   orchestration: orchestrationRouter,
   artifacts: artifactsRouter,
+  repositories: repositoriesRouter,
 });
 
 export type AppRouter = typeof appRouter;

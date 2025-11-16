@@ -34,6 +34,8 @@
     "revoke-api-key": "node --env-file=.env --import tsx scripts/revoke-api-key.ts"
   },
   "dependencies": {
+    "@gitbeaker/rest": "^43.8.0",
+    "@octokit/rest": "^22.0.1",
     "@portabletext/types": "^3.0.0",
     "@prisma/client": "^6.15.0",
     "@tanstack/react-query": "^5.0.0",
@@ -52,6 +54,7 @@
     "mdast-util-from-markdown": "^2.0.2",
     "mdast-util-frontmatter": "^2.0.1",
     "mdast-util-to-markdown": "^2.1.2",
+    "minimatch": "^10.1.1",
     "next": "^15.5.2",
     "openai": "^6.8.1",
     "pg": "^8.16.3",

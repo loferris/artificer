@@ -58,6 +58,7 @@ model Project {
   conversations    Conversation[]
   documents        Document[]
   knowledgeEntities KnowledgeEntity[]
+  repositories     RepositoryConnection[]
 
   @@map("projects")
   @@index([userId])
@@ -148,6 +149,9 @@ model Document {
   // Versioning
   version     Int      @default(1)
   versions    DocumentVersion[]
+
+  // Repository tracking (for files from GitHub/GitLab)
+  repositoryDoc RepositoryDocument?
 
   // Additional metadata
   metadata    Json?
@@ -293,4 +297,73 @@ model ArtifactVersion {
   @@map("artifact_versions")
   @@index([artifactId])
   @@index([artifactId, version])
+}
+
+model RepositoryConnection {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Repository info
+  provider    String   // 'github' | 'gitlab'
+  repoUrl     String   // https://github.com/user/repo
+  repoOwner   String   // 'user' or 'org'
+  repoName    String   // 'repo'
+  branch      String   @default("main")
+
+  // Authentication (encrypted)
+  accessToken String   // Encrypted Personal Access Token
+  tokenIv     String   // Initialization vector for decryption
+  tokenTag    String   // Authentication tag for AES-GCM
+  tokenExpiry DateTime?
+
+  // Sync status
+  lastSyncAt  DateTime?
+  syncStatus  String   @default("pending") // 'pending' | 'syncing' | 'success' | 'error'
+  syncError   String?
+  filesCount  Int      @default(0)
+
+  // Settings
+  autoSync       Boolean  @default(false)
+  syncInterval   Int?     // Minutes between auto-syncs
+  pathFilters    String[] @default([]) // ["/src/**", "/docs/**"]
+  ignorePatterns String[] @default([]) // ["*.lock", "node_modules/**"]
+
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  documents   RepositoryDocument[]
+
+  @@unique([projectId, provider, repoOwner, repoName])
+  @@map("repository_connections")
+  @@index([projectId])
+  @@index([syncStatus])
+  @@index([provider])
+}
+
+model RepositoryDocument {
+  id               String               @id @default(cuid())
+  repositoryId     String
+  repository       RepositoryConnection @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  // Document reference
+  documentId       String               @unique
+  document         Document             @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  // Git metadata
+  gitPath          String               // Path in repo: "src/server/app.ts"
+  gitCommitSha     String               // SHA of commit when synced
+  gitBranch        String               // branch name
+  gitUrl           String?              // Direct URL to file on GitHub/GitLab
+
+  // Sync tracking
+  lastSyncedAt     DateTime             @default(now())
+  fileHash         String?              // SHA256 hash to detect changes
+
+  @@map("repository_documents")
+  @@index([repositoryId])
+  @@index([documentId])
+  @@index([gitPath])
 }
