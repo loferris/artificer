@@ -21,13 +21,15 @@ The **live demo** showcases all major features without requiring API keys or dat
 
 This is a **conversation orchestration platform** that treats AI interactions as structured data rather than ephemeral chat logs. It provides:
 
+- **Intelligent model routing** with automatic complexity analysis and adaptive model selection
+- **Chain orchestration** using specialized agents (Analyzer → Router → Execute → Validate)
 - **Unified multi-model access** through OpenRouter API integration
 - **Real-time streaming** with WebSocket and SSE endpoints
 - **Project-based organization** for grouping related conversations and documents
 - **RAG (Retrieval-Augmented Generation)** with transparent source attribution
 - **Structured export system** for knowledge management workflows
 - **Document management** with vector search and semantic retrieval
-- **Cost tracking** and usage monitoring
+- **Cost optimization** with dynamic model selection and usage monitoring
 
 The system is designed API-first with a clean service layer, making it suitable for integration with CLI tools, Obsidian plugins, and other knowledge management workflows.
 
@@ -38,6 +40,8 @@ The system is designed API-first with a clean service layer, making it suitable 
 - **Chroma vector database** for semantic search and embeddings storage
 - **OpenAI API integration** for embedding generation (text-embedding-3-small)
 - OpenRouter API integration supporting multiple AI models
+- **Chain orchestration system** with intelligent model routing and quality validation
+- **Dynamic Model Registry** with 3-tier fallback (OpenRouter API → Config → Inference)
 - Real-time streaming via WebSocket subscriptions and SSE endpoints
 - Type-safe API layer with tRPC
 - **Standalone orchestration server** for external integrations (Python, CLI tools, etc.)
@@ -91,6 +95,10 @@ The service layer is designed for integration with external tools:
 ## Feature Status
 
 **✅ Production Ready**
+- **Chain orchestration** with 4-stage pipeline (Analyze → Route → Execute → Validate)
+- **Intelligent model routing** based on task complexity and requirements
+- **Dynamic Model Registry** with real-time updates from OpenRouter API
+- **Automatic quality validation** with smart retry logic
 - Real-time streaming (WebSocket + SSE with unified backend)
 - Multi-model AI access via OpenRouter API
 - PostgreSQL conversation persistence with Prisma ORM
@@ -102,9 +110,9 @@ The service layer is designed for integration with external tools:
 - Export system (Markdown, JSON)
 - Comprehensive rate limiting and session management
 - Type-safe API layer with tRPC and Zod validation
-- Modern simplified chat UI with RAG source attribution
+- Modern simplified chat UI with RAG source attribution and orchestration progress
 - Project-first conversation organization
-- Cost tracking with real-time usage monitoring
+- Cost optimization and tracking with real-time usage monitoring
 - Professional logging (clientLogger + pino)
 - 563 automated tests with comprehensive coverage
 
@@ -114,7 +122,9 @@ The service layer is designed for integration with external tools:
 - Advanced export format support (services implemented, UI integration needed)
 
 **📋 Planned Enhancements**
-- Intelligent model routing based on cost and task complexity
+- Learning from user feedback to improve routing decisions
+- Cost budgets and advanced cost optimization strategies
+- Custom routing rules and multi-stage task execution
 - Enhanced PKM tool integrations (full Notion, Obsidian, Google Docs integrations)
 - Cross-session context preservation and conversation merging
 - Fine-grained permission scopes for API keys
@@ -160,8 +170,10 @@ npm run start:standalone
 ```
 
 **Documentation:**
+- [Chain Orchestration Guide](./docs/ORCHESTRATION.md) - Intelligent model routing, Model Registry, cost optimization
 - [Standalone API Guide](./docs/STANDALONE_API.md) - Complete API reference with Python examples
 - [Authentication Guide](./docs/AUTHENTICATION.md) - API key authentication, IP whitelisting, and security
+- [SSE Streaming Guide](./docs/SSE_STREAMING.md) - Real-time streaming implementation details
 - [Implementation Status](./docs/internal/STANDALONE_STATUS.md) - Current capabilities and limitations
 - [Security Considerations](./SECURITY.md) - Authentication requirements for production
 
@@ -178,6 +190,15 @@ OPENROUTER_API_KEY="your_openrouter_api_key"
 REQUIRE_AUTH=false  # Set to 'true' for production with API keys
 IP_WHITELIST=       # Comma-separated IPs (leave empty to allow all)
 ADMIN_EMAIL=admin@example.com
+
+# Chain Orchestration (optional but recommended)
+CHAIN_ROUTING_ENABLED=true
+ANALYZER_MODEL="deepseek/deepseek-chat"
+ROUTER_MODEL="anthropic/claude-3-haiku"
+VALIDATOR_MODEL="anthropic/claude-3-5-sonnet"
+OPENROUTER_MODELS="deepseek/deepseek-chat,anthropic/claude-3-haiku,anthropic/claude-3-5-sonnet,openai/gpt-4o-mini"
+VALIDATION_ENABLED=true
+PREFER_CHEAP_MODELS=false
 
 # Vector Database & Embeddings
 CHROMA_URL="http://localhost:8000"

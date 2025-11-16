@@ -1,5 +1,6 @@
 import { AnalysisResult, RoutingPlan, RoutingStrategy } from '../types';
 import { ModelRegistry, ModelMetadata } from '../ModelRegistry';
+import { logger } from '../../../utils/logger';
 
 /**
  * RouterAgent - Decides which model(s) to use based on analysis
@@ -34,7 +35,7 @@ export class RouterAgent {
       const response = await openRouterFetch(this.modelId, messages);
       return this.parseRoutingResponse(response.content, analysis);
     } catch (error) {
-      console.error('[RouterAgent] Routing failed:', error);
+      logger.error('[RouterAgent] Routing failed', error);
       // Fallback to rule-based routing
       return this.getFallbackRouting(analysis, preferCheap);
     }
@@ -122,7 +123,7 @@ Respond ONLY with valid JSON. No additional text.`;
         shouldValidate: Boolean(parsed.shouldValidate ?? (analysis.complexity >= 7))
       };
     } catch (error) {
-      console.error('[RouterAgent] Failed to parse routing:', error);
+      logger.error('[RouterAgent] Failed to parse routing', error);
       throw error;
     }
   }
