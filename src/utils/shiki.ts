@@ -35,6 +35,7 @@ const DEFAULT_LANGS: BundledLanguage[] = [
   'css',
   'jsx',
   'tsx',
+  'mermaid',
 ];
 
 const DEFAULT_THEMES: BundledTheme[] = ['github-dark', 'github-light'];

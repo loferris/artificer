@@ -6,6 +6,9 @@ import React from 'react';
 import type { Artifact } from '../../../../lib/llm-artifacts/src/core/types';
 import { ArtifactCodeViewer } from './ArtifactCodeViewer';
 import { ArtifactMarkdownViewer } from './ArtifactMarkdownViewer';
+import { ArtifactReactViewer } from './ArtifactReactViewer';
+import { ArtifactHTMLViewer } from './ArtifactHTMLViewer';
+import { ArtifactMermaidViewer } from './ArtifactMermaidViewer';
 
 interface ArtifactViewerProps {
   artifact: Artifact;
@@ -40,32 +43,7 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({
         return <ArtifactCodeViewer artifact={artifact} onEdit={onEdit} readOnly={readOnly} />;
 
       case 'html':
-        // HTML preview
-        return (
-          <div className="flex flex-col h-full">
-            <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200">
-              <span className="text-sm font-medium text-gray-600">HTML Preview</span>
-              {onClose && (
-                <button
-                  onClick={onClose}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
-            </div>
-            <div className="flex-1 overflow-auto p-4">
-              <iframe
-                srcDoc={artifact.content}
-                className="w-full h-full border border-gray-300 rounded"
-                sandbox="allow-scripts"
-                title="HTML Preview"
-              />
-            </div>
-          </div>
-        );
+        return <ArtifactHTMLViewer artifact={artifact} onEdit={onEdit} readOnly={readOnly} />;
 
       case 'svg':
         // SVG preview
@@ -91,34 +69,10 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({
         );
 
       case 'mermaid':
-        // Mermaid diagram (show as code for now, would need mermaid library for rendering)
-        return (
-          <div className="flex flex-col h-full">
-            <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200">
-              <span className="text-sm font-medium text-gray-600">Mermaid Diagram</span>
-              {onClose && (
-                <button
-                  onClick={onClose}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
-            </div>
-            <div className="flex-1 overflow-auto p-4">
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
-                <p className="text-sm text-blue-800">
-                  💡 Mermaid diagram rendering coming soon. For now, copy the code and paste it into a Mermaid viewer.
-                </p>
-              </div>
-              <pre className="p-4 bg-gray-900 text-gray-100 rounded overflow-auto">
-                <code className="text-sm font-mono whitespace-pre">{artifact.content}</code>
-              </pre>
-            </div>
-          </div>
-        );
+        return <ArtifactMermaidViewer artifact={artifact} onEdit={onEdit} readOnly={readOnly} />;
+
+      case 'react-component':
+        return <ArtifactReactViewer artifact={artifact} onEdit={onEdit} readOnly={readOnly} />;
 
       default:
         // Fallback to code viewer
