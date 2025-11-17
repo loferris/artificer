@@ -1,8 +1,15 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { PipelineProgress } from '@/components/fableforge/core/PipelineProgress'
 import { SpecialistCard } from '@/components/fableforge/core/SpecialistCard'
 import { TranslationJobCard } from '@/components/fableforge/core/TranslationJobCard'
 import { CandidateComparison, type Candidate } from '@/components/fableforge/core/CandidateComparison'
+import { CandidateDiff } from '@/components/fableforge/comparison/CandidateDiff'
+import { MetadataExplorer } from '@/components/fableforge/metadata/MetadataExplorer'
+import { ExportDialog } from '@/components/fableforge/utilities/ExportDialog'
+import { QualityMetrics } from '@/components/fableforge/analytics/QualityMetrics'
+import { CostTracker } from '@/components/fableforge/analytics/CostTracker'
+import { TranslationTimeline } from '@/components/fableforge/workflow/TranslationTimeline'
+import { Button } from '@/components/ui/button'
 import type { PipelineStage } from '@/components/fableforge/core/PipelineProgress'
 import type { TranslationJob } from '@/components/fableforge/core/TranslationJobCard'
 
@@ -125,6 +132,127 @@ export default function FableForgeDemoPage() {
 
   const finalSynthesis = 'She bowed deeply, a graceful gesture of reverence for the elder—honoring a tradition that carried the weight of Korean customs.'
 
+  const metadata = {
+    characters: [
+      {
+        name: 'Ji-hye',
+        traits: ['respectful', 'traditional', 'thoughtful'],
+        voiceStyle: 'Formal, introspective',
+        dialogueSamples: [
+          'I must honor the customs of my ancestors.',
+          'The weight of tradition guides my every step.'
+        ]
+      },
+      {
+        name: 'Elder Park',
+        traits: ['wise', 'authoritative', 'gentle'],
+        voiceStyle: 'Calm, measured, sagacious'
+      }
+    ],
+    culturalTerms: [
+      {
+        term: 'Jeol (절)',
+        explanation: 'A traditional Korean bow showing respect',
+        context: 'Used to greet elders, at ceremonies, and during ancestral rites'
+      },
+      {
+        term: 'Hyo (효)',
+        explanation: 'Filial piety - respect for parents and elders',
+        context: 'A core Confucian value in Korean society'
+      }
+    ],
+    relationships: [
+      {
+        from: 'Ji-hye',
+        to: 'Elder Park',
+        type: 'student-elder',
+        dynamics: 'Deep respect mixed with admiration. Ji-hye seeks wisdom while honoring tradition.'
+      }
+    ],
+    scene: {
+      setting: 'Traditional Korean hanok house with wooden floors and paper doors',
+      tone: 'Reverent and contemplative',
+      timeOfDay: 'Early morning',
+      atmosphere: 'Quiet, filled with the scent of incense'
+    }
+  }
+
+  const qualityMetrics = {
+    fluency: 0.88,
+    adequacy: 0.92,
+    culturalAccuracy: 0.85,
+    readability: 72,
+    estimatedBLEU: 0.45
+  }
+
+  const costBreakdown = [
+    { stage: 'Translation (5 specialists)', cost: 0.035 },
+    { stage: 'Refinement', cost: 0.012 },
+    { stage: 'Synthesis', cost: 0.008 },
+    { stage: 'Quality Analysis', cost: 0.005 },
+    { stage: 'Metadata Extraction', cost: 0.007 }
+  ]
+
+  const budget = {
+    total: 10.00,
+    spent: 2.45,
+    remaining: 7.55,
+    monthlyLimit: 100.00,
+    monthlySpent: 24.50
+  }
+
+  const timelineJobs = [
+    {
+      id: 'job-101',
+      title: 'Korean Novel - Chapter 1',
+      sourceLang: 'kor',
+      targetLang: 'eng',
+      status: 'completed' as const,
+      createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      completedAt: new Date(Date.now() - 1.5 * 60 * 60 * 1000),
+      duration: 1800000,
+      cost: 0.67,
+      quality: 0.88,
+      wordCount: 1500,
+      specialist: 'cultural_specialist'
+    },
+    {
+      id: 'job-102',
+      title: 'Japanese Manga - Volume 2',
+      sourceLang: 'jpn',
+      targetLang: 'eng',
+      status: 'completed' as const,
+      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      completedAt: new Date(Date.now() - 23 * 60 * 60 * 1000),
+      duration: 2400000,
+      cost: 1.25,
+      quality: 0.92,
+      wordCount: 2800,
+      specialist: 'dialogue_specialist'
+    },
+    {
+      id: 'job-103',
+      title: 'Chinese Poetry Collection',
+      sourceLang: 'zho',
+      targetLang: 'eng',
+      status: 'running' as const,
+      createdAt: new Date(Date.now() - 15 * 60 * 1000),
+      wordCount: 800,
+      specialist: 'prose_stylist'
+    },
+    {
+      id: 'job-104',
+      title: 'French Novel - Chapter 5',
+      sourceLang: 'fra',
+      targetLang: 'eng',
+      status: 'failed' as const,
+      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      error: 'API timeout after 3 retries'
+    }
+  ]
+
+  const [exportDialogOpen, setExportDialogOpen] = useState(false)
+
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-12">
@@ -220,15 +348,129 @@ export default function FableForgeDemoPage() {
           />
         </section>
 
+        {/* Section 5: Candidate Diff */}
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+              Candidate Diff ⭐⭐
+            </h2>
+            <p className="text-gray-600">
+              Side-by-side or unified diff view comparing two candidate translations
+            </p>
+          </div>
+
+          <CandidateDiff
+            candidate1={{
+              specialist: 'cultural_specialist',
+              translation: candidates[0].translation,
+              label: 'Cultural Specialist'
+            }}
+            candidate2={{
+              specialist: 'prose_stylist',
+              translation: candidates[1].translation,
+              label: 'Prose Stylist'
+            }}
+          />
+        </section>
+
+        {/* Section 6: Metadata Explorer */}
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+              Metadata Explorer ⭐⭐⭐
+            </h2>
+            <p className="text-gray-600">
+              Explore characters, cultural terms, relationships, and scene context
+            </p>
+          </div>
+
+          <MetadataExplorer metadata={metadata} />
+        </section>
+
+        {/* Section 7: Quality Metrics */}
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+              Quality Metrics ⭐⭐⭐
+            </h2>
+            <p className="text-gray-600">
+              Comprehensive quality assessment with fluency, adequacy, cultural accuracy, and more
+            </p>
+          </div>
+
+          <QualityMetrics metrics={qualityMetrics} />
+        </section>
+
+        {/* Section 8: Cost Tracker */}
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+              Cost Tracker ⭐⭐⭐
+            </h2>
+            <p className="text-gray-600">
+              Track costs, budget usage, and projections with detailed breakdowns
+            </p>
+          </div>
+
+          <CostTracker
+            breakdown={costBreakdown}
+            budget={budget}
+            showProjections
+          />
+        </section>
+
+        {/* Section 9: Translation Timeline */}
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+              Translation Timeline ⭐⭐⭐
+            </h2>
+            <p className="text-gray-600">
+              Visual timeline of translation jobs with status tracking and filtering
+            </p>
+          </div>
+
+          <TranslationTimeline
+            jobs={timelineJobs}
+            onJobClick={(id) => console.log('Clicked job:', id)}
+            showFilters
+          />
+        </section>
+
+        {/* Section 10: Export Dialog */}
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+              Export Dialog ⭐⭐
+            </h2>
+            <p className="text-gray-600">
+              Multi-format export with configurable options
+            </p>
+          </div>
+
+          <Button onClick={() => setExportDialogOpen(true)}>
+            Open Export Dialog
+          </Button>
+
+          <ExportDialog
+            open={exportDialogOpen}
+            onOpenChange={setExportDialogOpen}
+            onExport={(format, options) => {
+              console.log('Export:', format, options)
+              alert(`Exporting as ${format}`)
+            }}
+          />
+        </section>
+
         {/* Component Stats */}
         <section className="bg-white border border-gray-200 rounded-2xl p-6">
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">
             Component Library Stats
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="space-y-2">
-              <div className="text-3xl font-bold text-blue-600">15+</div>
+              <div className="text-3xl font-bold text-blue-600">25+</div>
               <div className="text-sm text-gray-600">Components Built</div>
             </div>
 
@@ -238,7 +480,12 @@ export default function FableForgeDemoPage() {
             </div>
 
             <div className="space-y-2">
-              <div className="text-3xl font-bold text-green-600">60%</div>
+              <div className="text-3xl font-bold text-green-600">350+</div>
+              <div className="text-sm text-gray-600">Test Cases</div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-3xl font-bold text-orange-600">60%</div>
               <div className="text-sm text-gray-600">Development Time Saved</div>
             </div>
           </div>
@@ -247,13 +494,28 @@ export default function FableForgeDemoPage() {
             <h3 className="font-semibold mb-3">Component Tiers</h3>
             <div className="space-y-2 text-sm text-gray-600">
               <div>
-                <span className="font-medium">Tier 1 (Atomic):</span> Badge, Card, Progress, Button
+                <span className="font-medium">Tier 1 (Atomic):</span> Badge, Card, Progress, Button, Dialog
               </div>
               <div>
                 <span className="font-medium">Tier 2 (Molecular):</span> CopyButton, StatusBadge, BadgeGroup, ExpandableSection
               </div>
               <div>
-                <span className="font-medium">Tier 3 (Organism):</span> PipelineProgress, SpecialistCard, TranslationJobCard, CandidateComparison
+                <span className="font-medium">Tier 3 (Organism - Core):</span> PipelineProgress, SpecialistCard, TranslationJobCard, CandidateComparison
+              </div>
+              <div>
+                <span className="font-medium">Tier 3 (Organism - Comparison):</span> CandidateDiff
+              </div>
+              <div>
+                <span className="font-medium">Tier 3 (Organism - Metadata):</span> MetadataExplorer
+              </div>
+              <div>
+                <span className="font-medium">Tier 3 (Organism - Analytics):</span> QualityMetrics, CostTracker
+              </div>
+              <div>
+                <span className="font-medium">Tier 3 (Organism - Workflow):</span> TranslationTimeline
+              </div>
+              <div>
+                <span className="font-medium">Tier 3 (Organism - Utilities):</span> ExportDialog
               </div>
             </div>
           </div>
@@ -269,6 +531,9 @@ export default function FableForgeDemoPage() {
               </div>
               <div>
                 <span className="font-medium">Theme:</span> Specialist theme system (6 specialists)
+              </div>
+              <div>
+                <span className="font-medium">Logging:</span> Client-side component logger with lifecycle & interaction tracking
               </div>
             </div>
           </div>

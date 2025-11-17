@@ -17,6 +17,29 @@ export type { CandidateComparisonProps, Candidate } from './core/CandidateCompar
 export { SpecialistCard } from './core/SpecialistCard'
 export type { SpecialistCardProps } from './core/SpecialistCard'
 
+// Comparison Components
+export { CandidateDiff } from './comparison/CandidateDiff'
+export type { CandidateDiffProps, DiffCandidate, DiffGranularity, ViewMode } from './comparison/CandidateDiff'
+
+// Metadata Components
+export { MetadataExplorer } from './metadata/MetadataExplorer'
+export type { MetadataExplorerProps, TranslationMetadata, Character, CulturalTerm, Relationship, SceneContext } from './metadata/MetadataExplorer'
+
+// Analytics Components
+export { QualityMetrics } from './analytics/QualityMetrics'
+export type { QualityMetricsProps, QualityMetricsData } from './analytics/QualityMetrics'
+
+export { CostTracker } from './analytics/CostTracker'
+export type { CostTrackerProps, CostBreakdown, BudgetInfo } from './analytics/CostTracker'
+
+// Workflow Components
+export { TranslationTimeline } from './workflow/TranslationTimeline'
+export type { TranslationTimelineProps, TimelineJob, TimelineJobStatus } from './workflow/TranslationTimeline'
+
+// Utility Components
+export { ExportDialog } from './utilities/ExportDialog'
+export type { ExportDialogProps, ExportFormat, ExportOptions } from './utilities/ExportDialog'
+
 // Re-export shared components for convenience
 export { CopyButton } from '../shared/CopyButton'
 export { StatusBadge } from '../shared/StatusBadge'
@@ -28,6 +51,7 @@ export { Badge } from '../ui/badge'
 export { Button } from '../ui/button'
 export { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '../ui/card'
 export { Progress } from '../ui/progress'
+export { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogBody, DialogFooter } from '../ui/dialog'
 
 // Re-export utilities
 export { getSpecialistTheme, getAllSpecialistTypes, isSpecialistType } from '@/lib/specialist-theme'
