@@ -2,6 +2,7 @@
  * Service for detecting and generating document updates based on LLM conversations
  */
 
+import { z } from 'zod';
 import { logger } from '../../utils/logger';
 import { models } from '../../config/models';
 import {
@@ -10,6 +11,14 @@ import {
   buildChangeSummaryPrompt,
   type DocumentUpdateContext,
 } from '../../../lib/prompts/document-update';
+
+// Zod schema for validating LLM JSON responses
+const DocumentUpdateDecisionSchema = z.object({
+  shouldUpdate: z.boolean(),
+  documentId: z.string().nullable().optional(),
+  reason: z.string().optional(),
+  confidence: z.number().min(0).max(1).optional(),
+});
 
 export interface DocumentUpdateDecision {
   shouldUpdate: boolean;
@@ -109,7 +118,7 @@ export class DocumentUpdateService {
         }
       );
 
-      // Safely parse JSON response with validation
+      // Safely parse and validate JSON response with zod
       if (!content || content.trim().length === 0) {
         throw new Error('Empty response from LLM');
       }
@@ -117,19 +126,13 @@ export class DocumentUpdateService {
       let decision: DocumentUpdateDecision;
       try {
         const parsed = JSON.parse(content);
-
-        // Validate required fields
-        if (typeof parsed.shouldUpdate !== 'boolean') {
-          throw new Error('Invalid decision format: missing shouldUpdate');
-        }
+        const validated = DocumentUpdateDecisionSchema.parse(parsed);
 
         decision = {
-          shouldUpdate: parsed.shouldUpdate,
-          documentId: parsed.documentId || null,
-          reason: parsed.reason || 'No reason provided',
-          confidence: typeof parsed.confidence === 'number'
-            ? Math.min(Math.max(parsed.confidence, 0), 1) // Clamp 0-1
-            : 0,
+          shouldUpdate: validated.shouldUpdate,
+          documentId: validated.documentId ?? null,
+          reason: validated.reason ?? 'No reason provided',
+          confidence: validated.confidence ?? 0,
         };
       } catch (parseError) {
         logger.error('Failed to parse LLM decision', { content, parseError });

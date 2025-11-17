@@ -66,6 +66,7 @@
     "mdast-util-to-markdown": "^2.1.2",
     "next": "^15.5.2",
     "openai": "^6.8.1",
+    "pdf2pic": "^3.2.0",
     "pg": "^8.16.3",
     "pino": "^9.2.0",
     "postcss": "^8.5.6",

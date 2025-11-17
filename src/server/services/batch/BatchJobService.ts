@@ -102,13 +102,32 @@ export class BatchJobService {
 
     // Start execution if requested
     if (autoStart) {
-      // Execute asynchronously (don't await)
-      this.executeBatchJob(job.id).catch((error) => {
+      // Execute asynchronously (don't await) with proper error handling
+      this.executeBatchJob(job.id).catch(async (error) => {
         logger.error('Batch job execution failed', {
           jobId: job.id,
           error: error instanceof Error ? error.message : 'Unknown error',
         });
+
+        // Update job status to FAILED if execution fails
+        try {
+          await this.db.batchJob.update({
+            where: { id: job.id },
+            data: {
+              status: 'FAILED',
+              error: error instanceof Error ? error.message : 'Unknown error',
+              completedAt: new Date(),
+            },
+          });
+        } catch (updateError) {
+          logger.error('Failed to update job status after execution error', {
+            jobId: job.id,
+            updateError,
+          });
+        }
       });
+
+      logger.info('Batch job execution started asynchronously', { jobId: job.id });
     }
 
     return job;
@@ -333,8 +352,8 @@ export class BatchJobService {
       data: { status: 'PAUSED' },
     });
 
-    // Note: Actual pause happens when executor checks status
-    // between item processing
+    // The executor will detect this status change and stop processing new items
+    // Items currently being processed will complete, then the job will pause
   }
 
   /**

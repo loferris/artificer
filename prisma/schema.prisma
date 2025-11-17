@@ -205,6 +205,24 @@ model RoutingDecision {
   @@index([expiresAt]) // For efficient cleanup queries
 }
 
+// Batch processing status enums
+enum BatchJobStatus {
+  PENDING
+  RUNNING
+  PAUSED
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum BatchItemStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  SKIPPED
+}
+
 model BatchJob {
   id          String   @id @default(cuid())
   name        String
@@ -217,7 +235,7 @@ model BatchJob {
   config      Json     // Pipeline phases, concurrency limits, etc.
 
   // Status tracking
-  status      String   // PENDING, RUNNING, PAUSED, COMPLETED, FAILED, CANCELLED
+  status      BatchJobStatus
   currentPhase String?
 
   // Progress tracking
@@ -250,6 +268,7 @@ model BatchJob {
   @@index([projectId])
   @@index([userId])
   @@index([status])
+  @@index([currentPhase])
   @@index([createdAt])
 }
 
@@ -269,7 +288,7 @@ model BatchItem {
   phaseOutputs   Json?    // { "phase1": "...", "phase2": "...", ... }
 
   // Status tracking
-  status         String   // PENDING, PROCESSING, COMPLETED, FAILED, SKIPPED
+  status         BatchItemStatus
   currentPhase   String?
 
   // Error tracking

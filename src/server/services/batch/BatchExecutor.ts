@@ -133,13 +133,44 @@ export class BatchExecutor {
         },
       };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+      // Check if job was paused or cancelled (not a real failure)
+      if (errorMessage.includes('paused') || errorMessage.includes('cancelled')) {
+        const job = await this.db.batchJob.findUnique({
+          where: { id: jobId },
+          select: { status: true },
+        });
+
+        logger.info('Batch execution stopped', {
+          jobId,
+          status: job?.status,
+        });
+
+        // Job status already set by pause/cancel action
+        // Return current state
+        const results = await this.getItemResults(jobId);
+        const analytics = await this.calculateAnalytics(jobId);
+
+        return {
+          jobId,
+          status: (job?.status as 'PAUSED') || 'PAUSED',
+          results,
+          analytics: {
+            ...analytics,
+            processingTimeMs: Date.now() - startTime,
+          },
+        };
+      }
+
+      // Actual failure
       logger.error('Batch execution failed', {
         jobId,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: errorMessage,
       });
 
       await this.updateJobStatus(jobId, 'FAILED', {
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: errorMessage,
         completedAt: new Date(),
       });
 
@@ -170,6 +201,17 @@ export class BatchExecutor {
       totalItems: items.length,
     });
 
+    // Check if job should stop before starting phase
+    const statusCheck = await this.checkJobStatus(jobId);
+    if (statusCheck.shouldStop) {
+      logger.info('Job stopped before phase execution', {
+        jobId,
+        phase: phase.name,
+        status: statusCheck.status,
+      });
+      throw new Error(`Job ${statusCheck.status.toLowerCase()}`);
+    }
+
     // Update job current phase
     await this.db.batchJob.update({
       where: { id: jobId },
@@ -185,59 +227,104 @@ export class BatchExecutor {
 
     // Track checkpoint state
     let lastCheckpointAt = startIndex;
+    let lastCheckpointTime = Date.now();
     let phaseCompletedItems = 0;
     let phaseFailedItems = 0;
+    let itemsProcessedSinceSync = 0;
+    const ANALYTICS_SYNC_FREQUENCY = 50; // Sync analytics every 50 items
+    const CHUNK_SIZE = 500; // Process items in chunks to reduce memory pressure
 
-    // Process items with concurrency control
-    const processingTasks = itemsToProcess.map(async (item, idx) => {
-      const itemIndex = startIndex + 1 + idx;
+    // Process items in chunks to avoid creating thousands of promises at once
+    for (let chunkStart = 0; chunkStart < itemsToProcess.length; chunkStart += CHUNK_SIZE) {
+      const chunkEnd = Math.min(chunkStart + CHUNK_SIZE, itemsToProcess.length);
+      const chunk = itemsToProcess.slice(chunkStart, chunkEnd);
 
-      await semaphore.withPermit(async () => {
-        try {
-          await this.processItem(jobId, itemIndex, item, phase, phaseIndex);
-          phaseCompletedItems++;
+      logger.debug('Processing chunk', {
+        jobId,
+        phase: phase.name,
+        chunkStart,
+        chunkEnd,
+        totalItems: itemsToProcess.length,
+      });
 
-          // Auto-checkpoint
-          const shouldCheckpoint = await this.checkpointService.autoCheckpoint(
-            jobId,
-            {
-              currentPhase: phase.name,
-              completedPhases: checkpoint?.completedPhases || [],
-              lastCompletedItemIndex: itemIndex,
-              totalItems: items.length,
-              completedItems: phaseCompletedItems,
-              failedItems: phaseFailedItems,
-              costIncurred: 0, // Updated separately
-              tokensUsed: 0, // Updated separately
-              phaseProgress: {
-                [phase.name]: {
-                  lastCompletedIndex: itemIndex,
-                  itemsProcessed: phaseCompletedItems,
-                  itemsFailed: phaseFailedItems,
+      // Process chunk items with concurrency control
+      const chunkTasks = chunk.map(async (item, idx) => {
+        const itemIndex = startIndex + 1 + chunkStart + idx;
+
+        await semaphore.withPermit(async () => {
+          try {
+            // Check job status before processing each item
+            const statusCheck = await this.checkJobStatus(jobId);
+            if (statusCheck.shouldStop) {
+              logger.info('Job stopped during item processing, skipping item', {
+                jobId,
+                itemIndex,
+                status: statusCheck.status,
+              });
+              return; // Skip this item
+            }
+
+            await this.processItem(jobId, itemIndex, item, phase, phaseIndex);
+            phaseCompletedItems++;
+            itemsProcessedSinceSync++;
+
+            // Periodic analytics sync to reduce DB contention
+            if (itemsProcessedSinceSync >= ANALYTICS_SYNC_FREQUENCY) {
+              await this.syncJobAnalytics(jobId);
+              itemsProcessedSinceSync = 0;
+            }
+
+            // Auto-checkpoint (item count OR time-based)
+            const shouldCheckpoint = await this.checkpointService.autoCheckpoint(
+              jobId,
+              {
+                currentPhase: phase.name,
+                completedPhases: checkpoint?.completedPhases || [],
+                lastCompletedItemIndex: itemIndex,
+                totalItems: items.length,
+                completedItems: phaseCompletedItems,
+                failedItems: phaseFailedItems,
+                costIncurred: 0, // Updated separately
+                tokensUsed: 0, // Updated separately
+                phaseProgress: {
+                  [phase.name]: {
+                    lastCompletedIndex: itemIndex,
+                    itemsProcessed: phaseCompletedItems,
+                    itemsFailed: phaseFailedItems,
+                  },
                 },
               },
-            },
-            { frequency: checkpointFrequency, lastCheckpointAt }
-          );
+              {
+                frequency: checkpointFrequency,
+                lastCheckpointAt,
+                lastCheckpointTime,
+                timeIntervalMs: 5 * 60 * 1000, // Checkpoint every 5 minutes
+              }
+            );
 
-          if (shouldCheckpoint) {
-            lastCheckpointAt = itemIndex;
+            if (shouldCheckpoint) {
+              lastCheckpointAt = itemIndex;
+              lastCheckpointTime = Date.now();
+            }
+          } catch (error) {
+            phaseFailedItems++;
+            logger.error('Item processing failed', {
+              jobId,
+              itemIndex,
+              phase: phase.name,
+              error: error instanceof Error ? error.message : 'Unknown error',
+            });
+            // Continue processing other items
           }
-        } catch (error) {
-          phaseFailedItems++;
-          logger.error('Item processing failed', {
-            jobId,
-            itemIndex,
-            phase: phase.name,
-            error: error instanceof Error ? error.message : 'Unknown error',
-          });
-          // Continue processing other items
-        }
+        });
       });
-    });
 
-    // Wait for all items to complete
-    await Promise.allSettled(processingTasks);
+      // Wait for this chunk to complete before moving to next
+      await Promise.allSettled(chunkTasks);
+    }
+
+    // Final analytics sync to ensure accuracy
+    await this.syncJobAnalytics(jobId);
 
     logger.info('Phase execution completed', {
       jobId,
@@ -258,6 +345,7 @@ export class BatchExecutor {
     phaseIndex: number
   ): Promise<void> {
     const startTime = Date.now();
+    const ITEM_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes per item
 
     try {
       // Mark item as processing
@@ -278,14 +366,22 @@ export class BatchExecutor {
       // Get input for this phase
       const input = phaseIndex === 0 ? item.input : await this.getPhaseInput(jobId, itemIndex, phaseIndex);
 
-      // Execute through ChainOrchestrator
-      const result = await this.chainOrchestrator.executeChain({
-        query: input,
-        taskType: phase.taskType,
-        model: phase.model,
-        useRAG: phase.useRAG,
-        validationConfig: phase.validation,
-      });
+      // Execute through ChainOrchestrator with timeout protection
+      const result = await Promise.race([
+        this.chainOrchestrator.executeChain({
+          query: input,
+          taskType: phase.taskType,
+          model: phase.model,
+          useRAG: phase.useRAG,
+          validationConfig: phase.validation,
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(new Error(`Item processing timeout after ${ITEM_TIMEOUT_MS / 1000}s`)),
+            ITEM_TIMEOUT_MS
+          )
+        ),
+      ]);
 
       const processingTime = Date.now() - startTime;
 
@@ -301,28 +397,132 @@ export class BatchExecutor {
     } catch (error) {
       const processingTime = Date.now() - startTime;
 
-      await this.db.batchItem.update({
+      // Get current item to check retry count
+      const currentItem = await this.db.batchItem.findUnique({
         where: {
           batchJobId_itemIndex: {
             batchJobId: jobId,
             itemIndex,
           },
         },
-        data: {
-          status: 'FAILED',
-          errors: {
-            push: {
-              phase: phase.name,
-              error: error instanceof Error ? error.message : 'Unknown error',
-              timestamp: new Date().toISOString(),
-            },
-          },
-          processingTimeMs: processingTime,
-          completedAt: new Date(),
-        },
+        select: { retryCount: true },
       });
 
-      throw error;
+      const currentRetryCount = currentItem?.retryCount || 0;
+
+      // Get retry strategy from job config
+      const job = await this.db.batchJob.findUnique({
+        where: { id: jobId },
+        select: { config: true },
+      });
+
+      const config = job?.config as BatchConfig;
+      const maxRetries = config?.retryStrategy?.maxRetries || 0;
+      const backoffType = config?.retryStrategy?.backoff || 'exponential';
+
+      // Determine if we should retry or mark as dead letter
+      const shouldRetry = currentRetryCount < maxRetries;
+
+      if (shouldRetry) {
+        // Calculate backoff delay
+        const backoffMs = this.calculateBackoff(currentRetryCount, backoffType);
+
+        logger.info('Item failed, scheduling retry', {
+          jobId,
+          itemIndex,
+          phase: phase.name,
+          retryCount: currentRetryCount + 1,
+          maxRetries,
+          backoffMs,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+
+        // Update item for retry
+        await this.db.batchItem.update({
+          where: {
+            batchJobId_itemIndex: {
+              batchJobId: jobId,
+              itemIndex,
+            },
+          },
+          data: {
+            status: 'PENDING', // Reset to PENDING for retry
+            retryCount: currentRetryCount + 1,
+            errors: {
+              push: {
+                phase: phase.name,
+                error: error instanceof Error ? error.message : 'Unknown error',
+                timestamp: new Date().toISOString(),
+                retryAttempt: currentRetryCount + 1,
+              },
+            },
+            processingTimeMs: processingTime,
+          },
+        });
+
+        // Apply backoff delay if configured
+        if (backoffMs > 0) {
+          await new Promise((resolve) => setTimeout(resolve, backoffMs));
+        }
+
+        // Don't throw error - let the item be retried in next batch
+      } else {
+        // Max retries exhausted - mark as FAILED (dead letter)
+        logger.warn('Item moved to dead letter queue (max retries exhausted)', {
+          jobId,
+          itemIndex,
+          phase: phase.name,
+          retryCount: currentRetryCount,
+          maxRetries,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+
+        await this.db.batchItem.update({
+          where: {
+            batchJobId_itemIndex: {
+              batchJobId: jobId,
+              itemIndex,
+            },
+          },
+          data: {
+            status: 'FAILED', // Dead letter
+            errors: {
+              push: {
+                phase: phase.name,
+                error: error instanceof Error ? error.message : 'Unknown error',
+                timestamp: new Date().toISOString(),
+                deadLetter: true, // Mark as dead letter
+              },
+            },
+            processingTimeMs: processingTime,
+            completedAt: new Date(),
+          },
+        });
+
+        throw error;
+      }
+    }
+  }
+
+  /**
+   * Calculate backoff delay based on retry count and strategy
+   * @private
+   */
+  private calculateBackoff(retryCount: number, backoffType: 'exponential' | 'linear' | 'constant'): number {
+    const baseDelayMs = 1000; // 1 second base delay
+
+    switch (backoffType) {
+      case 'exponential':
+        // 1s, 2s, 4s, 8s, 16s, ...
+        return baseDelayMs * Math.pow(2, retryCount);
+      case 'linear':
+        // 1s, 2s, 3s, 4s, 5s, ...
+        return baseDelayMs * (retryCount + 1);
+      case 'constant':
+        // Always 1s
+        return baseDelayMs;
+      default:
+        return baseDelayMs;
     }
   }
 
@@ -371,7 +571,9 @@ export class BatchExecutor {
       throw new Error(`Item not found: ${itemIndex}`);
     }
 
-    const phaseOutputs = (item.phaseOutputs as any) || {};
+    // Type-safe handling of phase outputs (Prisma Json field)
+    const phaseOutputs: Record<string, string> =
+      (item.phaseOutputs as Record<string, string> | null) || {};
     phaseOutputs[phaseName] = result.response;
 
     // Update item with phase output
@@ -393,15 +595,8 @@ export class BatchExecutor {
       },
     });
 
-    // Update job analytics
-    await this.db.batchJob.update({
-      where: { id: jobId },
-      data: {
-        costIncurred: { increment: result.cost || 0 },
-        tokensUsed: { increment: result.tokens || 0 },
-        completedItems: { increment: 1 },
-      },
-    });
+    // Note: Job-level analytics are synced periodically via syncJobAnalytics()
+    // to reduce database contention from concurrent updates
   }
 
   /**
@@ -476,6 +671,59 @@ export class BatchExecutor {
         status,
         ...updates,
       },
+    });
+  }
+
+  /**
+   * Check if job should stop processing (paused or cancelled)
+   */
+  private async checkJobStatus(jobId: string): Promise<{ shouldStop: boolean; status: string }> {
+    const job = await this.db.batchJob.findUnique({
+      where: { id: jobId },
+      select: { status: true },
+    });
+
+    if (!job) {
+      throw new Error(`Job not found: ${jobId}`);
+    }
+
+    const shouldStop = job.status === 'PAUSED' || job.status === 'CANCELLED';
+    return { shouldStop, status: job.status };
+  }
+
+  /**
+   * Sync job-level analytics from aggregated item totals
+   * This reduces race conditions by calculating from source of truth
+   */
+  private async syncJobAnalytics(jobId: string): Promise<void> {
+    const items = await this.db.batchItem.findMany({
+      where: { batchJobId: jobId },
+      select: {
+        status: true,
+        costIncurred: true,
+        tokensUsed: true,
+      },
+    });
+
+    const completedItems = items.filter((i) => i.status === 'COMPLETED').length;
+    const totalCost = items.reduce((sum, i) => sum + (i.costIncurred || 0), 0);
+    const totalTokens = items.reduce((sum, i) => sum + (i.tokensUsed || 0), 0);
+
+    // Update job with calculated totals (atomic operation)
+    await this.db.batchJob.update({
+      where: { id: jobId },
+      data: {
+        costIncurred: totalCost,
+        tokensUsed: totalTokens,
+        completedItems,
+      },
+    });
+
+    logger.debug('Synced job analytics', {
+      jobId,
+      completedItems,
+      totalCost,
+      totalTokens,
     });
   }
 }

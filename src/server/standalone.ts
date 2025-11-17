@@ -16,6 +16,8 @@ import { prisma } from './db/client';
 import * as corsLib from 'cors';
 import type { IncomingMessage, ServerResponse } from 'http';
 import { openApiSpec } from './openapi-spec';
+import { ShutdownManager } from './services/batch/ShutdownManager';
+import { CheckpointService } from './services/batch/CheckpointService';
 
 const cors = corsLib.default;
 
@@ -142,12 +144,62 @@ const server = createHTTPServer({
     // Health check endpoint
     if (req.url === '/health') {
       res.setHeader('Content-Type', 'application/json');
-      res.writeHead(200);
-      res.end(JSON.stringify({
+
+      const isDemoMode = process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+      const healthStatus: any = {
         status: 'ok',
         timestamp: new Date().toISOString(),
-        mode: process.env.DEMO_MODE === 'true' ? 'demo' : 'database'
-      }));
+        mode: isDemoMode ? 'demo' : 'database',
+        services: {},
+      };
+
+      // Check database connection
+      if (!isDemoMode) {
+        try {
+          await prisma.$queryRaw`SELECT 1`;
+          healthStatus.services.database = { status: 'healthy' };
+
+          // Check batch jobs status
+          try {
+            const runningJobs = await prisma.batchJob.count({
+              where: { status: 'RUNNING' },
+            });
+            const pendingJobs = await prisma.batchJob.count({
+              where: { status: 'PENDING' },
+            });
+
+            healthStatus.services.batchJobs = {
+              status: 'healthy',
+              running: runningJobs,
+              pending: pendingJobs,
+            };
+          } catch (error) {
+            healthStatus.services.batchJobs = {
+              status: 'degraded',
+              error: error instanceof Error ? error.message : 'Unknown error',
+            };
+          }
+        } catch (error) {
+          healthStatus.status = 'unhealthy';
+          healthStatus.services.database = {
+            status: 'unhealthy',
+            error: error instanceof Error ? error.message : 'Unknown error',
+          };
+        }
+      }
+
+      // Check external services
+      healthStatus.services.openai = {
+        configured: !!process.env.OPENAI_API_KEY,
+      };
+
+      healthStatus.services.openrouter = {
+        configured: !!process.env.OPENROUTER_API_KEY,
+      };
+
+      const statusCode = healthStatus.status === 'ok' ? 200 : 503;
+      res.writeHead(statusCode);
+      res.end(JSON.stringify(healthStatus, null, 2));
       return;
     }
 
@@ -186,23 +238,28 @@ server.listen(PORT, HOST, () => {
   `);
 
   logger.info('Ready to accept requests from external applications');
+
+  // Initialize graceful shutdown for batch jobs (only in database mode)
+  const isDemoMode = process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+  if (!isDemoMode) {
+    const checkpointService = new CheckpointService(prisma);
+    const shutdownManager = new ShutdownManager(prisma, checkpointService);
+    shutdownManager.registerHandlers();
+    logger.info('Graceful shutdown handlers registered for batch jobs');
+  }
 });
 
-// Graceful shutdown
-process.on('SIGTERM', async () => {
-  logger.info('SIGTERM received, shutting down gracefully...');
-  server.close(async () => {
+// Note: Graceful shutdown for batch jobs is handled by ShutdownManager
+// which is registered in the server.listen callback above.
+// ShutdownManager will pause jobs, save checkpoints, and then call process.exit()
+//
+// Additional cleanup for database connection (if needed)
+process.on('beforeExit', async (code) => {
+  logger.info('Process exiting, disconnecting from database...', { code });
+  try {
     await prisma.$disconnect();
-    logger.info('Server closed');
-    process.exit(0);
-  });
-});
-
-process.on('SIGINT', async () => {
-  logger.info('SIGINT received, shutting down gracefully...');
-  server.close(async () => {
-    await prisma.$disconnect();
-    logger.info('Server closed');
-    process.exit(0);
-  });
+    logger.info('Database disconnected');
+  } catch (error) {
+    logger.error('Error disconnecting from database', error as Error);
+  }
 });

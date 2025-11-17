@@ -26,6 +26,21 @@ function ensureDatabase(ctx: any) {
 }
 
 /**
+ * Sanitize filename to prevent path traversal attacks
+ * Removes directory separators and other potentially dangerous characters
+ */
+function sanitizeFilename(filename: string): string {
+  // Remove any path components (. / \)
+  return filename
+    .replace(/\.\./g, '') // Remove ..
+    .replace(/[/\\]/g, '') // Remove / and \
+    .replace(/^\.+/, '') // Remove leading dots
+    .replace(/[<>:"|?*]/g, '') // Remove Windows reserved characters
+    .trim() // Trim whitespace
+    || 'untitled'; // Fallback if empty after sanitization
+}
+
+/**
  * Validation schemas for project operations
  */
 const ProjectCreateSchema = z.object({
@@ -274,15 +289,18 @@ export const projectsRouter = router({
     .mutation(async ({ ctx, input }) => {
       try {
         const documentService = new DocumentService(ensureDatabase(ctx));
-        
+
+        // Sanitize filename to prevent path traversal attacks
+        const safeFilename = sanitizeFilename(input.filename);
+
         // Decode base64 content
         const buffer = Buffer.from(input.content, 'base64');
         const extractedContent = documentService.extractTextContent(buffer, input.contentType);
-        
+
         const document = await documentService.create({
           projectId: input.projectId,
-          filename: input.filename,
-          originalName: input.filename,
+          filename: safeFilename,
+          originalName: safeFilename,
           contentType: input.contentType,
           content: extractedContent,
           size: buffer.length,

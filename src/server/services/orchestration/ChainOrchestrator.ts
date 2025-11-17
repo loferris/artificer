@@ -95,10 +95,20 @@ export class ChainOrchestrator {
       conversationId: context.conversationId,
     });
 
+    // Check if already aborted
+    if (context.signal?.aborted) {
+      throw new Error('Request was cancelled before orchestration started');
+    }
+
     try {
       // Stage 1: Analyze
       const analysis = await this.analyzeQuery(context);
       logger.info('[ChainOrchestrator] Analysis complete', { analysis });
+
+      // Check abort after analysis
+      if (context.signal?.aborted) {
+        throw new Error('Request was cancelled after analysis');
+      }
 
       // Check if complexity meets threshold for chain routing
       if (analysis.complexity < context.config.minComplexityForChain) {
@@ -114,12 +124,22 @@ export class ChainOrchestrator {
         estimatedCost: routingPlan.estimatedCost,
       });
 
+      // Check abort after routing
+      if (context.signal?.aborted) {
+        throw new Error('Request was cancelled after routing');
+      }
+
       // Stage 3 & 4: Execute and optionally validate (with retry logic)
       let execution: ExecutionResult;
       let validation: ValidationResult | undefined;
       let finalModel = routingPlan.primaryModel;
 
       while (retryCount <= context.config.maxRetries) {
+        // Check abort before each retry
+        if (context.signal?.aborted) {
+          throw new Error('Request was cancelled before execution');
+        }
+
         try {
           // Execute with selected model
           execution = await this.executeQuery(context, finalModel);
