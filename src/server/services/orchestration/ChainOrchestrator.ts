@@ -15,6 +15,7 @@ import {
   StreamEvent,
   CachedRoute,
   RouteCacheKey,
+  TaskCategory,
 } from './types';
 import crypto from 'crypto';
 import { Assistant, AssistantResponse } from '../assistant';
@@ -983,8 +984,10 @@ export class ChainOrchestrator {
         // Build minimal analysis result (since we bypassed analysis)
         const analysis: AnalysisResult = {
           complexity: 5, // Assume medium complexity
-          category: params.taskType || 'general',
-          requirements: [],
+          category: (params.taskType as TaskCategory) || 'chat',
+          capabilities: [],
+          estimatedTokens: 0,
+          reasoning: 'Direct model execution bypassed analysis',
         };
 
         // Build minimal routing plan (since we bypassed routing)

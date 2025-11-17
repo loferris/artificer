@@ -3,7 +3,7 @@
  */
 
 import type { PortableTextBlock, PortableTextSpan } from '@portabletext/types';
-import type { DocumentMetadata } from '../types/index';
+import type { DocumentMetadata } from '../types/index.js';
 
 /**
  * Create a standard text block

@@ -12,6 +12,17 @@ import {
   DatabaseMocks,
   type MockPrismaClient,
 } from '../../../../test/utils/mockDatabase';
+import { models } from '../../../config/models';
+
+// Mock the models config to ensure consistent test values
+vi.mock('../../../config/models', () => ({
+  models: {
+    chat: 'anthropic/claude-sonnet-4.5',
+    chatFallback: 'deepseek/deepseek-chat-v3.1',
+    embedding: 'openai/text-embedding-3-small',
+    embeddingDimensions: 1536,
+  },
+}));
 
 describe('ConversationService', () => {
   let mockClient: MockPrismaClient;
@@ -40,7 +51,7 @@ describe('ConversationService', () => {
         const mockCreatedConversation = {
           id: 'conv-123',
           title: null,
-          model: 'deepseek-chat',
+          model: 'anthropic/claude-sonnet-4.5',
           systemPrompt: 'You are a helpful AI assistant.',
           temperature: 0.7,
           maxTokens: 1000,
@@ -51,7 +62,7 @@ describe('ConversationService', () => {
         const mockConversationWithMessages = {
           id: 'conv-123',
           title: null,
-          model: 'deepseek-chat',
+          model: 'anthropic/claude-sonnet-4.5',
           systemPrompt: 'You are a helpful AI assistant.',
           temperature: 0.7,
           maxTokens: 1000,
@@ -70,7 +81,7 @@ describe('ConversationService', () => {
         expect(mockClient.conversation.create).toHaveBeenCalledWith({
           data: {
             title: null,
-            model: 'deepseek-chat',
+            model: 'anthropic/claude-sonnet-4.5',
             projectId: null,
             systemPrompt: 'You are a helpful AI assistant.',
             temperature: 0.7,
@@ -89,7 +100,7 @@ describe('ConversationService', () => {
 
         expect(result).toMatchObject({
           id: 'conv-123',
-          model: 'deepseek-chat',
+          model: 'anthropic/claude-sonnet-4.5',
         });
       });
 
@@ -166,7 +177,7 @@ describe('ConversationService', () => {
           {
             id: 'conv-1',
             title: 'Chat 1',
-            model: 'deepseek-chat',
+            model: 'anthropic/claude-sonnet-4.5',
             systemPrompt: 'System prompt',
             temperature: 0.7,
             maxTokens: 1000,
@@ -197,7 +208,7 @@ describe('ConversationService', () => {
         expect(result[0]).toMatchObject({
           id: 'conv-1',
           title: 'Chat 1',
-          model: 'deepseek-chat',
+          model: 'anthropic/claude-sonnet-4.5',
           messageCount: 2,
           lastMessagePreview: 'Hello world',
         });
@@ -237,7 +248,7 @@ describe('ConversationService', () => {
         const mockCreatedConversation = {
           id: 'conv-123',
           title: null,
-          model: 'deepseek-chat',
+          model: 'anthropic/claude-sonnet-4.5',
           systemPrompt: 'You are a helpful AI assistant.',
           temperature: 0.7,
           maxTokens: 1000,
@@ -248,7 +259,7 @@ describe('ConversationService', () => {
         const mockConversationWithMessages = {
           id: 'conv-123',
           title: null,
-          model: 'deepseek-chat',
+          model: 'anthropic/claude-sonnet-4.5',
           systemPrompt: 'You are a helpful AI assistant.',
           temperature: 0.7,
           maxTokens: 1000,
@@ -276,7 +287,7 @@ describe('ConversationService', () => {
 
         expect(result).toMatchObject({
           id: 'conv-123',
-          model: 'deepseek-chat',
+          model: 'anthropic/claude-sonnet-4.5',
         });
       });
 

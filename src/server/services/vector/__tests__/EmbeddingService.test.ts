@@ -1,6 +1,16 @@
 import { describe, it, expect, vi } from 'vitest';
 import { EmbeddingService } from '../EmbeddingService';
 
+// Mock the models config to ensure consistent test values
+vi.mock('../../../config/models', () => ({
+  models: {
+    chat: 'anthropic/claude-sonnet-4.5',
+    chatFallback: 'deepseek/deepseek-chat-v3.1',
+    embedding: 'openai/text-embedding-3-small',
+    embeddingDimensions: 1536,
+  },
+}));
+
 describe('EmbeddingService', () => {
   describe('constructor', () => {
     it('should throw without API key', () => {
@@ -16,7 +26,7 @@ describe('EmbeddingService', () => {
       const service = new EmbeddingService();
       const modelInfo = service.getModelInfo();
 
-      expect(modelInfo.model).toBe('text-embedding-3-small');
+      expect(modelInfo.model).toBe('openai/text-embedding-3-small');
       expect(modelInfo.dimensions).toBe(1536);
     });
   });
@@ -78,7 +88,7 @@ describe('EmbeddingService', () => {
       const info = service.getModelInfo();
 
       expect(info).toMatchObject({
-        model: 'text-embedding-3-small',
+        model: 'openai/text-embedding-3-small',
         dimensions: 1536,
         maxTokens: 8191,
         costPer1kTokens: 0.00002,

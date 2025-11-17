@@ -3,8 +3,15 @@
  * Handles direct text extraction from text-based PDFs
  */
 
-import pdf from 'pdf-parse';
 import type { PdfExtractionResult, PdfMetadata } from '../types/pdf.js';
+
+// Dynamic import for pdf-parse to handle ESM/CJS compatibility
+type PdfParseResult = {
+  numpages: number;
+  info?: Record<string, any>;
+  text: string;
+};
+type PdfParseFunction = (buffer: Buffer) => Promise<PdfParseResult>;
 
 export class PdfExtractor {
   /**
@@ -13,7 +20,9 @@ export class PdfExtractor {
    */
   async extractText(buffer: Buffer): Promise<PdfExtractionResult> {
     try {
-      const data = await pdf(buffer);
+      // Use dynamic import to handle ESM/CJS compatibility
+      const pdfParse = (await import('pdf-parse')).default as unknown as PdfParseFunction;
+      const data = await pdfParse(buffer);
 
       // Parse metadata
       const metadata: PdfMetadata = {

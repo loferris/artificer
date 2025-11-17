@@ -9,8 +9,8 @@ import type {
   ImportOptions,
   NotionBlock,
   NotionPage,
-} from '../types/index';
-import { ConversionError } from '../types/index';
+} from '../types/index.js';
+import { ConversionError } from '../types/index.js';
 import {
   createTextBlock,
   createSpan,
@@ -20,7 +20,7 @@ import {
   createCalloutBlock,
   generateKey,
   createMetadata,
-} from '../core/portable-text-utils';
+} from '../core/portable-text-utils.js';
 import type { PortableTextBlock, PortableTextSpan } from '@portabletext/types';
 
 export class NotionImporter implements ImporterPlugin {

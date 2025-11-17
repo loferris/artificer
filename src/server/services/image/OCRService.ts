@@ -12,7 +12,14 @@ import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import { circuitBreakerRegistry } from '../../utils/CircuitBreaker';
-import pdf from 'pdf-parse';
+
+// Type for pdf-parse function
+type PdfParseResult = {
+  numpages: number;
+  info?: Record<string, any>;
+  text: string;
+};
+type PdfParseFunction = (buffer: Buffer) => Promise<PdfParseResult>;
 
 // Constants
 const MAX_IMAGE_SIZE_BYTES = 20 * 1024 * 1024; // 20MB
@@ -81,7 +88,9 @@ export class OCRService implements OCRProvider {
 
     try {
       // Get PDF metadata to determine page count
-      const data = await pdf(buffer);
+      // Use dynamic import to handle ESM/CJS compatibility
+      const pdfParse = (await import('pdf-parse')).default as unknown as PdfParseFunction;
+      const data = await pdfParse(buffer);
       const pageCount = data.numpages || 0;
 
       logger.info('Starting PDF OCR with parallel page processing', {
@@ -280,7 +289,7 @@ export class OCRService implements OCRProvider {
       // Wrap API call with circuit breaker and timeout protection
       const response = await circuitBreaker.execute(async () => {
         return Promise.race([
-          this.openai.chat.completions.create({
+          this.openai!.chat.completions.create({
             model: this.config.model,
             messages: [
               {
@@ -380,7 +389,7 @@ export class OCRService implements OCRProvider {
       // Wrap API call with circuit breaker and timeout protection
       const response = await circuitBreaker.execute(async () => {
         return Promise.race([
-          this.openai.chat.completions.create({
+          this.openai!.chat.completions.create({
             model: this.config.model,
             messages: [
               {
