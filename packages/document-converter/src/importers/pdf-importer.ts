@@ -4,8 +4,8 @@
  */
 
 import type { PortableTextBlock } from '@portabletext/types';
-import { PdfExtractor } from '../extractors/pdf-extractor.js';
-import type { PdfImportOptions, OCRResult } from '../types/pdf.js';
+import { PdfExtractor } from '../extractors/pdf-extractor';
+import type { PdfImportOptions, OCRResult } from '../types/pdf';
 
 export class PdfImporter {
   private extractor: PdfExtractor;
