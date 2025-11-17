@@ -10,7 +10,7 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import { logger } from '~/server/utils/logger';
+import { logger } from '../../utils/logger';
 import { CheckpointService } from './CheckpointService';
 
 export interface ShutdownOptions {
@@ -227,10 +227,28 @@ export class ShutdownManager {
         const totalCost = job.items.reduce((sum, i) => sum + i.costIncurred, 0);
         const totalTokens = job.items.reduce((sum, i) => sum + i.tokensUsed, 0);
 
+        // Determine completed phases from config
+        let completedPhases: string[] = [];
+        try {
+          const config = job.config as any;
+          const phases = config.phases || [];
+          const currentPhaseIndex = phases.findIndex((p: any) => p.name === job.currentPhase);
+
+          // All phases before the current phase are considered completed
+          if (currentPhaseIndex > 0) {
+            completedPhases = phases.slice(0, currentPhaseIndex).map((p: any) => p.name);
+          }
+        } catch (error) {
+          logger.warn('Failed to extract completed phases from job config', {
+            jobId,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+
         // Save checkpoint
         await this.checkpointService.saveCheckpoint(jobId, {
           currentPhase: job.currentPhase || 'unknown',
-          completedPhases: [], // TODO: Track from config
+          completedPhases,
           lastCompletedItemIndex: completedItems - 1,
           totalItems: job.totalItems,
           completedItems,

@@ -8,7 +8,7 @@ import { PrismaClient } from '@prisma/client';
 import { BatchExecutor, BatchConfig, PhaseConfig } from './BatchExecutor';
 import { CheckpointService } from './CheckpointService';
 import { ChainOrchestrator } from '../orchestration/ChainOrchestrator';
-import { logger } from '~/server/utils/logger';
+import { logger } from '../../utils/logger';
 
 export interface CreateBatchJobInput {
   name: string;
@@ -81,7 +81,7 @@ export class BatchJobService {
           phases,
           concurrency,
           checkpointFrequency,
-        },
+        } as any,
       },
     });
 
@@ -481,16 +481,16 @@ export class BatchJobService {
       cost: {
         total: job.costIncurred,
         perItem: avgCostPerItem,
-        byPhase: phaseAnalytics.map((p) => ({ phase: p.phase, cost: p.cost })),
+        byPhase: phaseAnalytics.map((p: any) => ({ phase: p.phase, cost: p.cost })),
       },
       tokens: {
         total: job.tokensUsed,
         perItem: avgTokensPerItem,
-        byPhase: phaseAnalytics.map((p) => ({ phase: p.phase, tokens: p.tokens })),
+        byPhase: phaseAnalytics.map((p: any) => ({ phase: p.phase, tokens: p.tokens })),
       },
       performance: {
         avgProcessingTimeMs: Math.round(avgProcessingTime),
-        byPhase: phaseAnalytics.map((p) => ({
+        byPhase: phaseAnalytics.map((p: any) => ({
           phase: p.phase,
           avgMs: p.avgProcessingTimeMs,
         })),

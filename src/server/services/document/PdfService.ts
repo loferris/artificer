@@ -6,7 +6,7 @@
 
 import { PdfExtractor, type PdfExtractionResult } from '@ai-workflow/document-converter';
 import { OCRService } from '../image/OCRService';
-import { logger } from '~/server/utils/logger';
+import { logger } from '../../utils/logger';
 
 export interface PdfProcessingResult {
   text: string;
@@ -185,18 +185,4 @@ export class PdfService {
     };
   }
 
-  /**
-   * Extract text from specific page range
-   * Useful for large PDFs to process in chunks
-   */
-  async extractPageRange(
-    buffer: Buffer,
-    startPage: number,
-    endPage: number
-  ): Promise<PdfProcessingResult> {
-    // Note: pdf-parse doesn't support page ranges natively
-    // This is a placeholder for future implementation with pdfjs-dist
-    logger.warn('Page range extraction not yet implemented, processing full PDF');
-    return this.processPdf(buffer);
-  }
 }

@@ -5,6 +5,7 @@ import { ProjectService } from '../services/project/ProjectService';
 import { DocumentService } from '../services/project/DocumentService';
 import { DocumentUpdateService } from '../services/document/DocumentUpdateService';
 import { documentUpdateRateLimiter } from '../utils/rateLimit';
+import { ensureDatabase } from '../utils/routerHelpers';
 
 /**
  * Helper to check if demo mode is active
@@ -12,17 +13,6 @@ import { documentUpdateRateLimiter } from '../utils/rateLimit';
 function isDemoMode() {
   return process.env.DEMO_MODE === 'true' ||
          process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
-}
-
-/**
- * Helper to ensure database is available
- * Throws error if in demo mode
- */
-function ensureDatabase(ctx: any) {
-  if (!ctx.db) {
-    throw new Error('DEMO_MODE');
-  }
-  return ctx.db;
 }
 
 /**
@@ -80,8 +70,7 @@ export const projectsRouter = router({
           name: input.name,
           description: input.description,
           settings: input.settings,
-          // TODO: Get userId from authentication when implemented
-          userId: 'anonymous',
+          userId: ctx.authenticatedUser?.id || ctx.user?.id || 'anonymous',
         });
 
         return {
@@ -114,8 +103,8 @@ export const projectsRouter = router({
       const db = ensureDatabase(ctx);
       const projectService = new ProjectService(db);
 
-      // TODO: Filter by userId when authentication is implemented
-      const projects = await projectService.findAll();
+      const userId = ctx.authenticatedUser?.id || ctx.user?.id;
+      const projects = await projectService.findAll(userId);
 
       return {
         success: true,
@@ -305,7 +294,7 @@ export const projectsRouter = router({
           content: extractedContent,
           size: buffer.length,
           metadata: {
-            uploadedBy: 'anonymous', // TODO: Get from auth
+            uploadedBy: ctx.authenticatedUser?.id || ctx.user?.id || 'anonymous',
             originalEncoding: 'base64',
           },
         });

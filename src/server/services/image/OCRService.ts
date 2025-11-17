@@ -6,12 +6,13 @@
 
 import { OpenAI } from 'openai';
 import type { OCRProvider, OCRResult } from '@ai-workflow/document-converter';
-import { logger } from '~/server/utils/logger';
+import { logger } from '../../utils/logger';
 import { fromBuffer } from 'pdf2pic';
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
-import { circuitBreakerRegistry } from '~/server/utils/CircuitBreaker';
+import { circuitBreakerRegistry } from '../../utils/CircuitBreaker';
+import pdf from 'pdf-parse';
 
 // Constants
 const MAX_IMAGE_SIZE_BYTES = 20 * 1024 * 1024; // 20MB
@@ -80,7 +81,6 @@ export class OCRService implements OCRProvider {
 
     try {
       // Get PDF metadata to determine page count
-      const pdf = require('pdf-parse');
       const data = await pdf(buffer);
       const pageCount = data.numpages || 0;
 

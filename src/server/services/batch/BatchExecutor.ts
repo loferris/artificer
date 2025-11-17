@@ -4,11 +4,11 @@
  * Uses existing ChainOrchestrator for individual item processing
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, BatchJobStatus } from '@prisma/client';
 import { ChainOrchestrator } from '../orchestration/ChainOrchestrator';
 import { CheckpointService, BatchCheckpoint } from './CheckpointService';
-import { Semaphore } from '~/server/utils/Semaphore';
-import { logger } from '~/server/utils/logger';
+import { Semaphore } from '../../utils/Semaphore';
+import { logger } from '../../utils/logger';
 
 export interface BatchConfig {
   jobId: string;
@@ -416,7 +416,7 @@ export class BatchExecutor {
         select: { config: true },
       });
 
-      const config = job?.config as BatchConfig;
+      const config = job?.config as unknown as BatchConfig;
       const maxRetries = config?.retryStrategy?.maxRetries || 0;
       const backoffType = config?.retryStrategy?.backoff || 'exponential';
 
@@ -658,7 +658,7 @@ export class BatchExecutor {
    */
   private async updateJobStatus(
     jobId: string,
-    status: string,
+    status: BatchJobStatus,
     updates: {
       startedAt?: Date;
       completedAt?: Date;

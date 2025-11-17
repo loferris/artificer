@@ -3,12 +3,13 @@
  * Handles saving and restoring batch job state for crash recovery
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { z } from 'zod';
-import { logger } from '~/server/utils/logger';
+import { logger } from '../../utils/logger';
 
 // Zod schema for runtime validation of checkpoint data
 const PhaseProgressSchema = z.record(
+  z.string(),
   z.object({
     lastCompletedIndex: z.number(),
     itemsProcessed: z.number(),
@@ -138,7 +139,7 @@ export class CheckpointService {
       await this.db.batchJob.update({
         where: { id: jobId },
         data: {
-          checkpoint: null,
+          checkpoint: Prisma.JsonNull,
         },
       });
 
@@ -192,7 +193,7 @@ export class CheckpointService {
             },
             {
               checkpoint: {
-                not: null,
+                not: Prisma.JsonNull,
               },
             },
           ],
@@ -220,7 +221,7 @@ export class CheckpointService {
           },
         },
         data: {
-          checkpoint: null,
+          checkpoint: Prisma.JsonNull,
         },
       });
 
@@ -272,13 +273,13 @@ export class CheckpointService {
             },
             {
               checkpoint: {
-                not: null,
+                not: Prisma.JsonNull,
               },
             },
           ],
         },
         data: {
-          checkpoint: null,
+          checkpoint: Prisma.JsonNull,
         },
       });
 

@@ -5,15 +5,13 @@
 
 import { z } from 'zod';
 import { router, protectedProcedure } from '../trpc';
-import { TRPCError } from '@trpc/server';
 import { BatchJobService } from '../services/batch/BatchJobService';
 import { ChainOrchestrator } from '../services/orchestration/ChainOrchestrator';
-import type { ChainConfig } from '../services/orchestration/types';
 import { logger } from '../utils/logger';
-import { models } from '../config/models';
 import { getModelRegistry } from '../services/orchestration/ModelRegistry';
 import { createServicesFromContext } from '../services/ServiceFactory';
 import { CheckpointService } from '../services/batch/CheckpointService';
+import { ensureDatabase, sanitizeError, buildChainConfig } from '../utils/routerHelpers';
 
 // Validation schemas
 const PhaseConfigSchema = z.object({
@@ -32,7 +30,7 @@ const PhaseConfigSchema = z.object({
 // Batch item schema with size limits for security
 const BatchItemSchema = z.object({
   input: z.string().min(1).max(100_000), // 100KB max per item input
-  metadata: z.record(z.unknown()).optional(), // Optional metadata
+  metadata: z.record(z.string(), z.unknown()).optional(), // Optional metadata
 });
 
 const CreateBatchJobSchema = z.object({
@@ -55,99 +53,6 @@ const ListJobsSchema = z.object({
   limit: z.number().min(1).max(100).default(20),
   offset: z.number().min(0).default(0),
 });
-
-// Helper to ensure database is available
-function ensureDatabase(ctx: any) {
-  if (!ctx.db) {
-    throw new TRPCError({
-      code: 'PRECONDITION_FAILED',
-      message: 'Database not available in demo mode',
-    });
-  }
-  return ctx.db;
-}
-
-/**
- * Sanitize errors for client responses
- * Logs full error details server-side but only sends safe messages to client
- */
-function sanitizeError(error: unknown, operation: string): TRPCError {
-  // Log full error details for debugging
-  logger.error(`Batch router error: ${operation}`, {
-    error: error instanceof Error ? error.message : 'Unknown error',
-    stack: error instanceof Error ? error.stack : undefined,
-  });
-
-  // If it's already a TRPCError, return it
-  if (error instanceof TRPCError) {
-    return error;
-  }
-
-  // For known error types, create appropriate TRPC errors
-  if (error instanceof Error) {
-    // Database errors
-    if (error.message.includes('not found') || error.message.includes('does not exist')) {
-      return new TRPCError({
-        code: 'NOT_FOUND',
-        message: error.message,
-      });
-    }
-
-    // Permission/auth errors
-    if (error.message.includes('not authorized') || error.message.includes('permission denied')) {
-      return new TRPCError({
-        code: 'FORBIDDEN',
-        message: 'You do not have permission to perform this action',
-      });
-    }
-
-    // Validation errors
-    if (error.message.includes('invalid') || error.message.includes('validation')) {
-      return new TRPCError({
-        code: 'BAD_REQUEST',
-        message: error.message,
-      });
-    }
-
-    // Default to internal server error with sanitized message
-    return new TRPCError({
-      code: 'INTERNAL_SERVER_ERROR',
-      message: `Operation failed: ${error.message}`,
-    });
-  }
-
-  // Unknown error type
-  return new TRPCError({
-    code: 'INTERNAL_SERVER_ERROR',
-    message: 'An unexpected error occurred',
-  });
-}
-
-/**
- * Builds chain configuration from centralized model registry and environment variables
- */
-function buildChainConfig(): ChainConfig {
-  const analyzerModel = models.analyzer;
-  const routerModel = models.router;
-  const validatorModel = models.validator;
-  const availableModels = models.available;
-
-  const minComplexity = parseInt(process.env.CHAIN_ROUTING_MIN_COMPLEXITY || '5', 10);
-  const maxRetries = parseInt(process.env.MAX_RETRIES || '2', 10);
-  const validationEnabled = process.env.VALIDATION_ENABLED !== 'false';
-  const preferCheapModels = process.env.PREFER_CHEAP_MODELS === 'true';
-
-  return {
-    analyzerModel,
-    routerModel,
-    validatorModel,
-    availableModels,
-    minComplexityForChain: minComplexity,
-    maxRetries,
-    validationEnabled,
-    preferCheapModels,
-  };
-}
 
 /**
  * Singleton cache for ChainOrchestrator instances

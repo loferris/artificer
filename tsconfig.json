@@ -30,6 +30,8 @@
     "vitest.e2e.config.ts",
     "lib/document-converter/vitest.config.ts",
     "lib/document-converter/src/__tests__/**/*",
+    "lib/document-converter/examples/**/*",
+    "examples/**/*",
     "src/server/standalone.ts",
     "src/server/openapi-spec.ts"
   ]
