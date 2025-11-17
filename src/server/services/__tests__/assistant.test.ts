@@ -11,6 +11,16 @@ Object.defineProperty(global, 'window', {
   writable: true,
 });
 
+// Mock the models config to ensure consistent test values
+vi.mock('../../config/models', () => ({
+  models: {
+    chat: 'anthropic/claude-sonnet-4.5',
+    chatFallback: 'deepseek/deepseek-chat-v3.1',
+    embedding: 'openai/text-embedding-3-small',
+    embeddingDimensions: 1536,
+  },
+}));
+
 describe('Assistant Service', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -96,10 +106,10 @@ describe('Assistant Service', () => {
         const models = results.map((r) => r.model);
         const validModels = [
           'anthropic/claude-3-haiku',
-          'anthropic/claude-3-sonnet',
+          'anthropic/claude-sonnet-4.5',
+          'deepseek/deepseek-chat-v3.1',
           'meta-llama/llama-3.1-8b-instruct',
           'openai/gpt-4o-mini',
-          'deepseek-chat',
         ];
 
         // All models should be from the valid list
@@ -109,9 +119,7 @@ describe('Assistant Service', () => {
       });
 
       it('uses model from environment variable when available', async () => {
-        const originalEnvModel = process.env.CHAT_MODEL;
-        process.env.CHAT_MODEL = 'anthropic/claude-3-sonnet';
-
+        // The assistant uses models.chat which is mocked to 'anthropic/claude-sonnet-4.5'
         const userMessage = 'Test message';
         const mockResponse = {
           choices: [{ message: { content: 'Test response' } }],
@@ -124,10 +132,8 @@ describe('Assistant Service', () => {
 
         const result = await assistant.getResponse(userMessage);
 
-        expect(result.model).toBe('anthropic/claude-3-sonnet');
-
-        // Restore environment
-        process.env.CHAT_MODEL = originalEnvModel;
+        // Should use the mocked chat model
+        expect(result.model).toBe('anthropic/claude-sonnet-4.5');
       });
 
       it('handles API errors gracefully', async () => {

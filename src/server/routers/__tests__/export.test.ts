@@ -576,7 +576,7 @@ describe('Export Router', () => {
       const caller = exportRouter.createCaller(mockContext);
       const result = await caller.getFormats();
 
-      expect(result.formats).toHaveLength(5);
+      expect(result.formats).toHaveLength(6);
       expect(result.formats).toEqual(
         expect.arrayContaining([
           expect.objectContaining({

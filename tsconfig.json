@@ -16,7 +16,8 @@
     "incremental": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@ai-workflow/document-converter": ["./lib/document-converter/src/index.ts"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
@@ -30,6 +31,8 @@
     "vitest.e2e.config.ts",
     "lib/document-converter/vitest.config.ts",
     "lib/document-converter/src/__tests__/**/*",
+    "lib/document-converter/examples/**/*",
+    "examples/**/*",
     "src/server/standalone.ts",
     "src/server/openapi-spec.ts"
   ]

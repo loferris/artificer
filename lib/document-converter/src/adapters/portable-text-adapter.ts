@@ -8,7 +8,7 @@ import {
   type BlockStyle,
   type ListType,
   type CalloutType,
-} from '../core/format-adapter';
+} from '../core/format-adapter.js';
 
 /**
  * Portable Text adapter implementation

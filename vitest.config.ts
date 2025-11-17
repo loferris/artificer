@@ -76,6 +76,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@ai-workflow/document-converter': path.resolve(__dirname, './lib/document-converter/src/index.ts'),
       'node-fetch': 'node-fetch/lib/index.js',
     },
   },
