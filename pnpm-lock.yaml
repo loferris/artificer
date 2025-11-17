@@ -124,6 +124,9 @@ importers:
 
   apps/workbench:
     dependencies:
+      '@ai-workflow/document-converter':
+        specifier: workspace:*
+        version: link:../../packages/document-converter
       '@artificer/fableforge':
         specifier: workspace:*
         version: link:../../packages/fableforge
@@ -368,6 +371,61 @@ importers:
       vitest-mock-extended:
         specifier: ^3.1.0
         version: 3.1.0(typescript@5.9.3)(vitest@3.2.4)
+
+  packages/document-converter:
+    dependencies:
+      '@portabletext/types':
+        specifier: ^3.0.0
+        version: 3.0.0
+      '@types/js-yaml':
+        specifier: ^4.0.9
+        version: 4.0.9
+      js-yaml:
+        specifier: ^4.1.1
+        version: 4.1.1
+      mdast-util-from-markdown:
+        specifier: ^2.0.2
+        version: 2.0.2
+      mdast-util-frontmatter:
+        specifier: ^2.0.1
+        version: 2.0.1
+      mdast-util-to-markdown:
+        specifier: ^2.1.2
+        version: 2.1.2
+      remark:
+        specifier: ^15.0.0
+        version: 15.0.1
+      remark-frontmatter:
+        specifier: ^5.0.0
+        version: 5.0.0
+      remark-gfm:
+        specifier: ^4.0.0
+        version: 4.0.1
+      remark-parse:
+        specifier: ^11.0.0
+        version: 11.0.0
+      remark-stringify:
+        specifier: ^11.0.0
+        version: 11.0.0
+      unified:
+        specifier: ^11.0.0
+        version: 11.0.5
+      unist-builder:
+        specifier: ^4.0.0
+        version: 4.0.0
+      unist-util-visit:
+        specifier: ^5.0.0
+        version: 5.0.0
+    devDependencies:
+      '@types/node':
+        specifier: ^20.0.0
+        version: 20.19.25
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.4(@types/node@20.19.25)(@vitest/ui@3.2.4)(jsdom@24.1.3)(msw@2.12.2)(tsx@4.20.6)
 
   packages/fableforge:
     dependencies:
