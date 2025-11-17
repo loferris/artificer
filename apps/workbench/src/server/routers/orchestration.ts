@@ -3,10 +3,9 @@ import { router, protectedProcedure } from '../../server/trpc';
 import { TRPCError } from '@trpc/server';
 import { createServicesFromContext } from '../services/ServiceFactory';
 import { ChainOrchestrator } from '../services/orchestration/ChainOrchestrator';
-import { ChainConfig } from '../services/orchestration/types';
 import { getModelRegistry } from '../services/orchestration/ModelRegistry';
 import { logger } from '../utils/logger';
-import { models } from '../config/models';
+import { buildChainConfig } from '../utils/routerHelpers';
 
 // Helper function to ensure user exists in demo mode
 function ensureDemoUser(ctx: any) {
@@ -33,41 +32,84 @@ function ensureDemoUser(ctx: any) {
 }
 
 /**
- * Builds chain configuration from centralized model registry and environment variables
+ * Singleton cache for ChainOrchestrator instances
+ * Shared with batch.ts for consistent caching
  */
-function buildChainConfig(): ChainConfig {
-  // Model configuration from centralized registry
-  const analyzerModel = models.analyzer;
-  const routerModel = models.router;
-  const validatorModel = models.validator;
-  const availableModels = models.available;
+const orchestratorCache = new Map<string, { instance: ChainOrchestrator; lastUsed: number }>();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const MAX_CACHE_SIZE = 10;
 
-  const minComplexity = parseInt(process.env.CHAIN_ROUTING_MIN_COMPLEXITY || '5', 10);
-  const maxRetries = parseInt(process.env.MAX_RETRIES || '2', 10);
-  const validationEnabled = process.env.VALIDATION_ENABLED !== 'false'; // Default true
-  const preferCheapModels = process.env.PREFER_CHEAP_MODELS === 'true';
+/**
+ * Cleanup expired cache entries
+ */
+function cleanupOrchestratorCache() {
+  const now = Date.now();
+  const expiredKeys: string[] = [];
 
-  // Timeout configuration (in milliseconds)
-  const analyzerTimeout = parseInt(process.env.ANALYZER_TIMEOUT || '30000', 10);    // 30s
-  const routerTimeout = parseInt(process.env.ROUTER_TIMEOUT || '30000', 10);        // 30s
-  const executionTimeout = parseInt(process.env.EXECUTION_TIMEOUT || '120000', 10); // 2min
-  const validatorTimeout = parseInt(process.env.VALIDATOR_TIMEOUT || '30000', 10);  // 30s
+  for (const [key, entry] of orchestratorCache.entries()) {
+    if (now - entry.lastUsed > CACHE_TTL_MS) {
+      expiredKeys.push(key);
+    }
+  }
 
-  return {
-    analyzerModel,
-    routerModel,
-    validatorModel,
-    availableModels,
-    minComplexityForChain: minComplexity,
-    maxRetries,
-    validationEnabled,
-    preferCheapModels,
-    analyzerTimeout,
-    routerTimeout,
-    executionTimeout,
-    validatorTimeout,
-  };
+  expiredKeys.forEach((key) => {
+    logger.debug('Evicting expired ChainOrchestrator from cache', { key });
+    orchestratorCache.delete(key);
+  });
+
+  if (orchestratorCache.size > MAX_CACHE_SIZE) {
+    const entries = Array.from(orchestratorCache.entries()).sort(
+      (a, b) => a[1].lastUsed - b[1].lastUsed
+    );
+
+    const toRemove = entries.slice(0, orchestratorCache.size - MAX_CACHE_SIZE);
+    toRemove.forEach(([key]) => {
+      logger.debug('Evicting old ChainOrchestrator from cache (size limit)', { key });
+      orchestratorCache.delete(key);
+    });
+  }
 }
+
+/**
+ * Get or create a cached ChainOrchestrator instance
+ */
+async function getOrCreateChainOrchestrator(ctx: any): Promise<ChainOrchestrator> {
+  const hasDb = !!ctx.db;
+  const userId = ctx.user?.id || 'anonymous';
+  const cacheKey = `${userId}-${hasDb}`;
+
+  const cached = orchestratorCache.get(cacheKey);
+  if (cached) {
+    cached.lastUsed = Date.now();
+    logger.debug('Using cached ChainOrchestrator', { cacheKey });
+    return cached.instance;
+  }
+
+  logger.debug('Creating new ChainOrchestrator instance', { cacheKey });
+  const config = buildChainConfig();
+  const registry = await getModelRegistry();
+  const { assistant, structuredQueryService } = createServicesFromContext(ctx);
+
+  const instance = new ChainOrchestrator(
+    config,
+    assistant,
+    ctx.db || undefined,
+    registry,
+    structuredQueryService
+  );
+
+  orchestratorCache.set(cacheKey, {
+    instance,
+    lastUsed: Date.now(),
+  });
+
+  cleanupOrchestratorCache();
+
+  return instance;
+}
+
+// Periodic cleanup
+setInterval(cleanupOrchestratorCache, CACHE_TTL_MS);
 
 /**
  * The tRPC router for chain orchestration operations.
@@ -121,20 +163,11 @@ export const orchestrationRouter = router({
           content: msg.content,
         }));
 
-        // Build chain config
+        // Get or create cached ChainOrchestrator instance
+        const orchestrator = await getOrCreateChainOrchestrator(ctx);
+
+        // Build chain configuration
         const config = buildChainConfig();
-
-        // Get global model registry
-        const registry = await getModelRegistry();
-
-        // Create chain orchestrator with both ModelRegistry and StructuredQueryService
-        const orchestrator = new ChainOrchestrator(
-          config,
-          assistant,
-          ctx.db || undefined,
-          registry,
-          structuredQueryService
-        );
 
         // Run the chain orchestration
         const chainResult = await orchestrator.orchestrate({

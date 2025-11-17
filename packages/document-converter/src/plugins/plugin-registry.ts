@@ -13,8 +13,8 @@ import type {
   ConvertedDocument,
   ImportOptions,
   ExportOptions,
-} from '../types/index';
-import { ConversionError } from '../types/index';
+} from '../types/index.js';
+import { ConversionError } from '../types/index.js';
 
 export interface PluginRegistrationOptions {
   /**

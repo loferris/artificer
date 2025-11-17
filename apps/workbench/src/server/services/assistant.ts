@@ -8,6 +8,7 @@ import {
   type ModelCapabilities,
   type ModelHealthCheck,
 } from './assistant/assistant';
+import { circuitBreakerRegistry } from '../utils/CircuitBreaker';
 
 // Re-export types for consistency
 export type { Assistant, AssistantResponse, AssistantOptions, ModelCapabilities, ModelHealthCheck };
@@ -45,7 +46,9 @@ export class OpenRouterAssistant implements Assistant {
       }
 
       const messages = this.buildMessagesArray(userMessage, conversationHistory);
-      const model = await this.selectModel();
+
+      // Respect explicit model override, fallback to auto-selection
+      const model = options?.model || await this.selectModel();
 
       const response = await this.fetchResponseWithFallback(messages, model, options?.signal);
 
@@ -386,6 +389,13 @@ export class OpenRouterAssistant implements Assistant {
       }
 
       try {
+        // Get circuit breaker for OpenRouter
+        const circuitBreaker = circuitBreakerRegistry.getBreaker('openrouter', {
+          failureThreshold: 5,
+          successThreshold: 2,
+          timeout: 60000, // 1 minute
+        });
+
         const requestBody = {
           model,
           messages,
@@ -393,16 +403,19 @@ export class OpenRouterAssistant implements Assistant {
           max_tokens: 1000,
         };
 
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': this.getDefaultSiteName(),
-            'X-Title': this.siteName,
-          },
-          body: JSON.stringify(requestBody),
-          signal: controller.signal,
+        // Wrap fetch call with circuit breaker protection
+        const response = await circuitBreaker.execute(async () => {
+          return fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${this.apiKey}`,
+              'Content-Type': 'application/json',
+              'HTTP-Referer': this.getDefaultSiteName(),
+              'X-Title': this.siteName,
+            },
+            body: JSON.stringify(requestBody),
+            signal: controller.signal,
+          });
         });
 
         clearTimeout(timeoutId);

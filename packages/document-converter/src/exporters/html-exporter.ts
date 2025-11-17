@@ -6,7 +6,7 @@ import type {
   ExporterPlugin,
   ConvertedDocument,
   ExportOptions,
-} from '../types/index';
+} from '../types/index.js';
 import type { PortableTextSpan } from '@portabletext/types';
 
 export interface HtmlExportOptions extends ExportOptions {

@@ -5,6 +5,7 @@ import { ProjectService } from '../services/project/ProjectService';
 import { DocumentService } from '../services/project/DocumentService';
 import { DocumentUpdateService } from '../services/document/DocumentUpdateService';
 import { documentUpdateRateLimiter } from '../utils/rateLimit';
+import { ensureDatabase } from '../utils/routerHelpers';
 
 /**
  * Helper to check if demo mode is active
@@ -15,14 +16,18 @@ function isDemoMode() {
 }
 
 /**
- * Helper to ensure database is available
- * Throws error if in demo mode
+ * Sanitize filename to prevent path traversal attacks
+ * Removes directory separators and other potentially dangerous characters
  */
-function ensureDatabase(ctx: any) {
-  if (!ctx.db) {
-    throw new Error('DEMO_MODE');
-  }
-  return ctx.db;
+function sanitizeFilename(filename: string): string {
+  // Remove any path components (. / \)
+  return filename
+    .replace(/\.\./g, '') // Remove ..
+    .replace(/[/\\]/g, '') // Remove / and \
+    .replace(/^\.+/, '') // Remove leading dots
+    .replace(/[<>:"|?*]/g, '') // Remove Windows reserved characters
+    .trim() // Trim whitespace
+    || 'untitled'; // Fallback if empty after sanitization
 }
 
 /**
@@ -65,8 +70,7 @@ export const projectsRouter = router({
           name: input.name,
           description: input.description,
           settings: input.settings,
-          // TODO: Get userId from authentication when implemented
-          userId: 'anonymous',
+          userId: ctx.authenticatedUser?.id || ctx.user?.id || 'anonymous',
         });
 
         return {
@@ -99,8 +103,8 @@ export const projectsRouter = router({
       const db = ensureDatabase(ctx);
       const projectService = new ProjectService(db);
 
-      // TODO: Filter by userId when authentication is implemented
-      const projects = await projectService.findAll();
+      const userId = ctx.authenticatedUser?.id || ctx.user?.id;
+      const projects = await projectService.findAll(userId);
 
       return {
         success: true,
@@ -274,20 +278,23 @@ export const projectsRouter = router({
     .mutation(async ({ ctx, input }) => {
       try {
         const documentService = new DocumentService(ensureDatabase(ctx));
-        
+
+        // Sanitize filename to prevent path traversal attacks
+        const safeFilename = sanitizeFilename(input.filename);
+
         // Decode base64 content
         const buffer = Buffer.from(input.content, 'base64');
         const extractedContent = documentService.extractTextContent(buffer, input.contentType);
-        
+
         const document = await documentService.create({
           projectId: input.projectId,
-          filename: input.filename,
-          originalName: input.filename,
+          filename: safeFilename,
+          originalName: safeFilename,
           contentType: input.contentType,
           content: extractedContent,
           size: buffer.length,
           metadata: {
-            uploadedBy: 'anonymous', // TODO: Get from auth
+            uploadedBy: ctx.authenticatedUser?.id || ctx.user?.id || 'anonymous',
             originalEncoding: 'base64',
           },
         });

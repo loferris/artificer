@@ -3,7 +3,7 @@
  * This allows swapping between Portable Text, ProseMirror, Slate, or custom formats
  */
 
-import type { DocumentMetadata } from '../types/index';
+import type { DocumentMetadata } from '../types/index.js';
 
 /**
  * Intermediate document representation (format-agnostic)

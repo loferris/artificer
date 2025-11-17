@@ -17,6 +17,13 @@ const nextConfig = {
       ignored: ['**/node_modules/**', '**/lib/**'],
     };
 
+    // Add extension resolution for ESM .js imports that should resolve to .ts files
+    // This handles the document-converter library's ESM imports
+    config.resolve.extensionAlias = {
+      '.js': ['.js', '.ts'],
+      '.jsx': ['.jsx', '.tsx'],
+    };
+
     return config;
   },
 };

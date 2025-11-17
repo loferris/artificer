@@ -15,6 +15,7 @@ import {
   StreamEvent,
   CachedRoute,
   RouteCacheKey,
+  TaskCategory,
 } from './types';
 import crypto from 'crypto';
 import { Assistant, AssistantResponse } from '../assistant';
@@ -95,10 +96,20 @@ export class ChainOrchestrator {
       conversationId: context.conversationId,
     });
 
+    // Check if already aborted
+    if (context.signal?.aborted) {
+      throw new Error('Request was cancelled before orchestration started');
+    }
+
     try {
       // Stage 1: Analyze
       const analysis = await this.analyzeQuery(context);
       logger.info('[ChainOrchestrator] Analysis complete', { analysis });
+
+      // Check abort after analysis
+      if (context.signal?.aborted) {
+        throw new Error('Request was cancelled after analysis');
+      }
 
       // Check if complexity meets threshold for chain routing
       if (analysis.complexity < context.config.minComplexityForChain) {
@@ -114,12 +125,22 @@ export class ChainOrchestrator {
         estimatedCost: routingPlan.estimatedCost,
       });
 
+      // Check abort after routing
+      if (context.signal?.aborted) {
+        throw new Error('Request was cancelled after routing');
+      }
+
       // Stage 3 & 4: Execute and optionally validate (with retry logic)
       let execution: ExecutionResult;
       let validation: ValidationResult | undefined;
       let finalModel = routingPlan.primaryModel;
 
       while (retryCount <= context.config.maxRetries) {
+        // Check abort before each retry
+        if (context.signal?.aborted) {
+          throw new Error('Request was cancelled before execution');
+        }
+
         try {
           // Execute with selected model
           execution = await this.executeQuery(context, finalModel);
@@ -873,5 +894,154 @@ export class ChainOrchestrator {
   clearCache(): void {
     this.routeCache.clear();
     logger.info('[ChainOrchestrator] Cache cleared');
+  }
+
+  /**
+   * Batch-compatible execution wrapper
+   *
+   * Provides a simplified API for batch processing while maintaining
+   * compatibility with intelligent routing when needed.
+   *
+   * @param params Execution parameters
+   * @param params.query User message/query
+   * @param params.taskType Optional task type hint (for analysis)
+   * @param params.model Optional explicit model (bypasses routing if provided)
+   * @param params.useRAG Enable RAG context retrieval
+   * @param params.validationConfig Validation configuration
+   * @param params.conversationId Optional conversation ID
+   * @param params.signal Optional abort signal
+   *
+   * @returns ChainResult with execution details
+   *
+   * @example
+   * // Explicit model (batch processing use case)
+   * const result = await orchestrator.executeChain({
+   *   query: 'Translate this to French',
+   *   model: 'anthropic/claude-opus-4'
+   * });
+   *
+   * @example
+   * // Intelligent routing (no model specified)
+   * const result = await orchestrator.executeChain({
+   *   query: 'Complex analysis task',
+   *   taskType: 'analysis'
+   * });
+   */
+  async executeChain(params: {
+    query: string;
+    taskType?: string;
+    model?: string;
+    useRAG?: boolean;
+    validationConfig?: {
+      enabled: boolean;
+      minScore?: number;
+      maxRetries?: number;
+    };
+    conversationId?: string;
+    signal?: AbortSignal;
+  }): Promise<ChainResult> {
+    const startTime = Date.now();
+
+    logger.info('[ChainOrchestrator] executeChain called', {
+      hasExplicitModel: !!params.model,
+      model: params.model,
+      taskType: params.taskType,
+      useRAG: params.useRAG,
+    });
+
+    // If explicit model is provided, bypass routing and use it directly
+    if (params.model) {
+      logger.info('[ChainOrchestrator] Using explicit model, bypassing analysis/routing', {
+        model: params.model,
+      });
+
+      try {
+        // Build context for execution
+        const context: ChainContext = {
+          userMessage: params.query,
+          conversationHistory: [],
+          conversationId: params.conversationId,
+          sessionId: params.conversationId || 'batch',
+          config: this.config,
+          signal: params.signal,
+          projectId: params.useRAG ? params.conversationId : undefined,
+        };
+
+        // Execute with explicit model
+        const execution = await this.executeQuery(context, params.model);
+
+        // Simple validation if requested
+        let validation: ValidationResult | undefined;
+        if (params.validationConfig?.enabled) {
+          validation = this.validator.validateSimple(execution);
+
+          logger.info('[ChainOrchestrator] Validation result (explicit model)', {
+            isValid: validation.isValid,
+            score: validation.score,
+          });
+        }
+
+        // Build minimal analysis result (since we bypassed analysis)
+        const analysis: AnalysisResult = {
+          complexity: 5, // Assume medium complexity
+          category: (params.taskType as TaskCategory) || 'chat',
+          capabilities: [],
+          estimatedTokens: 0,
+          reasoning: 'Direct model execution bypassed analysis',
+        };
+
+        // Build minimal routing plan (since we bypassed routing)
+        const routingPlan: RoutingPlan = {
+          primaryModel: params.model,
+          fallbackModels: [],
+          strategy: 'single',
+          estimatedCost: execution.cost,
+          reasoning: 'Explicit model specified (batch processing)',
+          shouldValidate: params.validationConfig?.enabled || false,
+        };
+
+        const result = this.buildChainResult(
+          analysis,
+          routingPlan,
+          execution,
+          validation,
+          0, // No retries with explicit model
+          Date.now() - startTime,
+          params.conversationId
+        );
+
+        // Store decision for analytics
+        await this.storeRoutingDecision(result, params.query);
+
+        logger.info('[ChainOrchestrator] Explicit model execution complete', {
+          model: params.model,
+          cost: execution.cost,
+          latency: execution.latency,
+        });
+
+        return result;
+      } catch (error) {
+        logger.error('[ChainOrchestrator] Explicit model execution failed', {
+          model: params.model,
+          error,
+        });
+        throw error;
+      }
+    }
+
+    // No explicit model - use intelligent orchestration
+    logger.info('[ChainOrchestrator] No explicit model, using intelligent orchestration');
+
+    const context: ChainContext = {
+      userMessage: params.query,
+      conversationHistory: [],
+      conversationId: params.conversationId,
+      sessionId: params.conversationId || 'batch',
+      config: this.config,
+      signal: params.signal,
+      projectId: params.useRAG ? params.conversationId : undefined,
+    };
+
+    return this.orchestrate(context);
   }
 }
