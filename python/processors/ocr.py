@@ -1,170 +1,251 @@
 """
-OCR processing with OpenAI Vision API and Tesseract fallback
+Modular OCR Processor with Multiple Provider Support
+
+Supports:
+- Google Vision API (recommended - cheap, accurate, 1000 free/month)
+- OpenAI Vision API (good for general use)
+- Tesseract (free, local, offline)
+
+Automatically falls back through providers if one fails.
 """
 
-import base64
 import logging
-from typing import Dict, Any, Optional
-import time
-
-try:
-    from openai import OpenAI
-except ImportError:
-    OpenAI = None
-
-try:
-    import pytesseract
-    from PIL import Image
-    import io
-except ImportError:
-    pytesseract = None
-    Image = None
+from typing import Optional, List
+import os
+from .ocr_providers.base import OCRProvider, OCRResult
+from .ocr_providers.google_vision import GoogleVisionProvider
+from .ocr_providers.openai_vision import OpenAIVisionProvider
+from .ocr_providers.tesseract import TesseractProvider
 
 logger = logging.getLogger(__name__)
 
 
 class OCRProcessor:
-    """OCR processing with multiple backends"""
+    """
+    Multi-provider OCR processor with automatic fallback.
+
+    Priority order (configurable):
+    1. Google Vision (best accuracy, cheapest)
+    2. OpenAI Vision (good, more expensive)
+    3. Tesseract (free fallback)
+    """
 
     def __init__(
         self,
+        primary_provider: str = "google-vision",
+        google_credentials_path: Optional[str] = None,
+        google_credentials_json: Optional[dict] = None,
         openai_api_key: Optional[str] = None,
-        model: str = "gpt-4o-mini",
-        use_tesseract_fallback: bool = True,
+        openai_model: str = "gpt-4o-mini",
+        tesseract_enabled: bool = True,
+        auto_fallback: bool = True
     ):
-        self.model = model
-        self.use_tesseract_fallback = use_tesseract_fallback
-
-        # Initialize OpenAI client if available
-        if openai_api_key and OpenAI:
-            self.openai_client = OpenAI(api_key=openai_api_key)
-        else:
-            self.openai_client = None
-
-        # Check Tesseract availability
-        self.tesseract_available = pytesseract is not None and Image is not None
-
-        if not self.openai_client and not self.tesseract_available:
-            logger.warning("No OCR backend available (neither OpenAI nor Tesseract)")
-
-    def extract_text(self, image_data: bytes, content_type: str = "image/png") -> Dict[str, Any]:
         """
-        Extract text from image using available OCR backend.
+        Initialize OCR processor with multiple providers.
+
+        Args:
+            primary_provider: Primary provider to use ("google-vision", "openai-vision", "tesseract")
+            google_credentials_path: Path to Google service account JSON
+            google_credentials_json: Google credentials as dict
+            openai_api_key: OpenAI API key
+            openai_model: OpenAI model to use
+            tesseract_enabled: Enable Tesseract fallback
+            auto_fallback: Automatically try next provider if primary fails
+        """
+        self.primary_provider_name = primary_provider
+        self.auto_fallback = auto_fallback
+        self.providers: dict[str, OCRProvider] = {}
+
+        # Initialize Google Vision
+        try:
+            # Try credentials from parameters first
+            if google_credentials_path or google_credentials_json:
+                self.providers["google-vision"] = GoogleVisionProvider(
+                    credentials_path=google_credentials_path,
+                    credentials_json=google_credentials_json
+                )
+            # Then try environment variable
+            elif os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
+                self.providers["google-vision"] = GoogleVisionProvider()
+
+            if "google-vision" in self.providers:
+                logger.info("Google Vision provider initialized")
+        except Exception as e:
+            logger.warning(f"Google Vision provider not available: {e}")
+
+        # Initialize OpenAI Vision
+        try:
+            api_key = openai_api_key or os.getenv("OPENAI_API_KEY")
+            if api_key:
+                self.providers["openai-vision"] = OpenAIVisionProvider(
+                    api_key=api_key,
+                    model=openai_model
+                )
+                logger.info(f"OpenAI Vision provider initialized ({openai_model})")
+        except Exception as e:
+            logger.warning(f"OpenAI Vision provider not available: {e}")
+
+        # Initialize Tesseract
+        if tesseract_enabled:
+            try:
+                self.providers["tesseract"] = TesseractProvider()
+                logger.info("Tesseract provider initialized")
+            except Exception as e:
+                logger.warning(f"Tesseract provider not available: {e}")
+
+        # Log available providers
+        if not self.providers:
+            logger.error("No OCR providers available!")
+        else:
+            logger.info(
+                f"OCR providers initialized: {list(self.providers.keys())} "
+                f"(primary: {primary_provider})"
+            )
+
+    def extract_text(
+        self,
+        image_data: bytes,
+        content_type: str = "image/png",
+        provider: Optional[str] = None,
+        **options
+    ) -> OCRResult:
+        """
+        Extract text from image using specified or primary provider.
 
         Args:
             image_data: Raw image bytes
-            content_type: MIME type of image
+            content_type: MIME type
+            provider: Specific provider to use (None = use primary)
+            **options: Provider-specific options
 
         Returns:
-            Dictionary with extracted text and metadata
+            OCRResult with extracted text
         """
-        start = time.time()
+        # Determine which provider to use
+        provider_name = provider or self.primary_provider_name
 
-        # Try OpenAI Vision first (best quality)
-        if self.openai_client:
+        # Try primary provider
+        if provider_name in self.providers:
             try:
-                return self._extract_with_openai(image_data, content_type, start)
+                logger.info(f"Using {provider_name} for OCR")
+                return self._extract_with_provider(
+                    provider_name,
+                    image_data,
+                    content_type,
+                    **options
+                )
             except Exception as e:
-                logger.warning(f"OpenAI Vision failed: {e}, trying Tesseract fallback")
+                logger.error(f"{provider_name} failed: {e}")
+                if not self.auto_fallback:
+                    raise
 
-        # Fall back to Tesseract (free, local)
-        if self.use_tesseract_fallback and self.tesseract_available:
-            try:
-                return self._extract_with_tesseract(image_data, start)
-            except Exception as e:
-                logger.error(f"Tesseract OCR failed: {e}")
-                raise ValueError(f"All OCR methods failed")
+        # Auto-fallback through available providers
+        if self.auto_fallback:
+            # Define fallback order
+            fallback_order = [
+                "google-vision",  # Try Google first (cheapest, most accurate)
+                "openai-vision",  # Then OpenAI
+                "tesseract"       # Finally free local OCR
+            ]
 
-        raise ValueError("No OCR backend available")
+            # Remove already-tried provider
+            fallback_order = [p for p in fallback_order if p != provider_name]
 
-    def _extract_with_openai(
-        self, image_data: bytes, content_type: str, start_time: float
-    ) -> Dict[str, Any]:
-        """Extract text using OpenAI Vision API"""
-        # Encode image to base64
-        base64_image = base64.b64encode(image_data).decode("utf-8")
-        data_url = f"data:{content_type};base64,{base64_image}"
+            for fallback_provider in fallback_order:
+                if fallback_provider in self.providers:
+                    try:
+                        logger.warning(
+                            f"Falling back to {fallback_provider} for OCR"
+                        )
+                        return self._extract_with_provider(
+                            fallback_provider,
+                            image_data,
+                            content_type,
+                            **options
+                        )
+                    except Exception as e:
+                        logger.error(f"{fallback_provider} failed: {e}")
+                        continue
 
-        # Call OpenAI Vision API
-        response = self.openai_client.chat.completions.create(
-            model=self.model,
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": "Extract all text from this image verbatim. Preserve formatting, line breaks, and structure. If there is no text, respond with '[No text found]'.",
-                        },
-                        {"type": "image_url", "image_url": {"url": data_url, "detail": "high"}},
-                    ],
-                }
-            ],
-            max_tokens=4096,
-        )
+        raise RuntimeError("All OCR providers failed")
 
-        text = response.choices[0].message.content or ""
-        processing_time = int((time.time() - start_time) * 1000)
+    def _extract_with_provider(
+        self,
+        provider_name: str,
+        image_data: bytes,
+        content_type: str,
+        **options
+    ) -> OCRResult:
+        """Extract text using specific provider"""
+        provider = self.providers[provider_name]
 
-        # Calculate cost
-        tokens_used = response.usage.total_tokens if response.usage else 0
-        cost = self._calculate_cost(tokens_used)
-
-        logger.info(
-            f"OpenAI Vision OCR: {len(text)} chars, {tokens_used} tokens, ${cost:.4f}, {processing_time}ms"
-        )
-
-        return {
-            "text": text,
-            "confidence": 0.95,  # OpenAI doesn't provide confidence scores
-            "provider": "openai-vision",
-            "model": self.model,
-            "processing_time_ms": processing_time,
-            "tokens_used": tokens_used,
-            "cost": cost,
-        }
-
-    def _extract_with_tesseract(self, image_data: bytes, start_time: float) -> Dict[str, Any]:
-        """Extract text using Tesseract OCR (free, local)"""
-        # Open image
-        image = Image.open(io.BytesIO(image_data))
-
-        # Run Tesseract
-        text = pytesseract.image_to_string(image)
-
-        # Get confidence (if available)
+        # Call async method synchronously (for now)
+        # TODO: Make the entire chain async
+        import asyncio
         try:
-            data = pytesseract.image_to_data(image, output_type=pytesseract.Output.DICT)
-            confidences = [int(conf) for conf in data["conf"] if conf != "-1"]
-            avg_confidence = sum(confidences) / len(confidences) if confidences else 0
-        except:
-            avg_confidence = 0
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
 
-        processing_time = int((time.time() - start_time) * 1000)
-
-        logger.info(
-            f"Tesseract OCR: {len(text)} chars, {avg_confidence:.0f}% confidence, {processing_time}ms"
+        result = loop.run_until_complete(
+            provider.extract_text(image_data, content_type, **options)
         )
 
+        return result
+
+    def get_available_providers(self) -> List[str]:
+        """Get list of available provider names"""
+        return list(self.providers.keys())
+
+    def is_provider_available(self, provider: str) -> bool:
+        """Check if specific provider is available"""
+        return provider in self.providers and self.providers[provider].is_available()
+
+    def get_provider_info(self, provider: str) -> dict:
+        """Get information about a provider"""
+        if provider not in self.providers:
+            return {"available": False}
+
+        p = self.providers[provider]
         return {
-            "text": text,
-            "confidence": avg_confidence / 100,  # Convert to 0-1 scale
-            "provider": "tesseract",
-            "model": "tesseract",
-            "processing_time_ms": processing_time,
-            "tokens_used": 0,
-            "cost": 0.0,  # Tesseract is free!
+            "available": p.is_available(),
+            "name": p.name,
+            "is_free": p.is_free,
+            "supports_batch": p.supports_batch,
+            "supports_languages": p.supports_languages[:10],  # First 10 languages
         }
 
-    def _calculate_cost(self, total_tokens: int) -> float:
-        """Calculate OpenAI Vision API cost"""
-        tokens_in_millions = total_tokens / 1_000_000
+    def estimate_cost(
+        self,
+        num_images: int,
+        provider: Optional[str] = None
+    ) -> dict:
+        """
+        Estimate OCR cost for multiple images.
 
-        if self.model == "gpt-4o":
-            # OCR workload: 90% input (image), 10% output (text)
-            return tokens_in_millions * (0.9 * 2.5 + 0.1 * 10)
-        elif self.model == "gpt-4o-mini":
-            # OCR workload: 90% input (image), 10% output (text)
-            return tokens_in_millions * (0.9 * 0.15 + 0.1 * 0.6)
+        Returns:
+            Dictionary with cost breakdown by provider
+        """
+        provider_name = provider or self.primary_provider_name
 
-        return 0.0
+        costs = {}
+
+        # Google Vision: $1.50 per 1000 after free tier
+        if provider_name == "google-vision" or not provider:
+            free_images = max(0, 1000 - num_images)  # Assume monthly quota
+            paid_images = max(0, num_images - 1000)
+            costs["google-vision"] = (paid_images / 1000) * 1.50
+
+        # OpenAI Vision: ~$0.0015 per image (token-based, varies)
+        if provider_name == "openai-vision" or not provider:
+            # Estimate: ~1000 tokens per image with gpt-4o-mini
+            tokens_per_image = 1000
+            cost_per_1m_tokens = 0.15  # gpt-4o-mini input
+            costs["openai-vision"] = (num_images * tokens_per_image * cost_per_1m_tokens) / 1_000_000
+
+        # Tesseract: Free!
+        if provider_name == "tesseract" or not provider:
+            costs["tesseract"] = 0.0
+
+        return costs
