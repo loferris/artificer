@@ -12,6 +12,8 @@ google-cloud-vision>=3.5.0
 httpx>=0.25.0
 python-multipart>=0.0.6
 tiktoken>=0.5.1
+markdown-it-py>=3.0.0
+pyyaml>=6.0
 
 # Development dependencies
 pytest>=7.4.0
