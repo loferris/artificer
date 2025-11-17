@@ -10,6 +10,13 @@ build/
 *.tsbuildinfo
 .next/
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
 
 # Environment variables
 .env
