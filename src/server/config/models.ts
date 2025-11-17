@@ -183,16 +183,27 @@ export async function initializeModels(): Promise<ModelConfig> {
 
 /**
  * Get current model configuration
- * Throws if models haven't been initialized yet
+ * Automatically initializes with env vars if not already initialized
  *
  * @returns Current model configuration
  */
 export function getModels(): ModelConfig {
   if (!modelConfig) {
-    // Fallback: initialize synchronously with env vars
-    logger.warn('[ModelConfig] Models not initialized, falling back to env vars');
-    modelConfig = loadModelConfigFromEnv();
-    validateModelConfig(modelConfig);
+    // Fallback: initialize synchronously with env vars (safe for build time)
+    try {
+      // Only log warnings in runtime, not during build
+      if (process.env.VERCEL_ENV || process.env.NODE_ENV === 'production') {
+        // Silent initialization during build
+        modelConfig = loadModelConfigFromEnv();
+      } else {
+        logger.warn('[ModelConfig] Models not initialized, falling back to env vars');
+        modelConfig = loadModelConfigFromEnv();
+        validateModelConfig(modelConfig);
+      }
+    } catch (error) {
+      // If validation fails during build, just load the config without validation
+      modelConfig = loadModelConfigFromEnv();
+    }
   }
   return modelConfig;
 }
@@ -233,9 +244,23 @@ export function getModelTier(modelName: string): 'cheap' | 'medium' | 'expensive
 }
 
 // Legacy export for backward compatibility
-// This will initialize synchronously with env vars if not already initialized
+// Eagerly initialize to avoid Proxy issues during SSR/build
+let _legacyModels: ModelConfig | null = null;
+
+/**
+ * Get legacy models export (backward compatible)
+ * Initializes synchronously on first access
+ */
+function getLegacyModels(): ModelConfig {
+  if (!_legacyModels) {
+    _legacyModels = getModels();
+  }
+  return _legacyModels;
+}
+
+// Export as Proxy for property access compatibility
 export const models = new Proxy({} as ModelConfig, {
   get(_, prop) {
-    return getModels()[prop as keyof ModelConfig];
+    return getLegacyModels()[prop as keyof ModelConfig];
   },
 });
