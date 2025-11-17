@@ -370,56 +370,100 @@ export class PythonOCRClient {
       quality?: number;
     } = {}
   ): Promise<PythonImageConvertResult> {
-    if (!this.available) {
-      throw new Error('Python OCR service not available');
+    // Try Python service first
+    if (this.available) {
+      try {
+        const startTime = Date.now();
+        const base64Data = imageBuffer.toString('base64');
+
+        const response = await fetch(`${this.baseUrl}/api/images/convert`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            image_data: base64Data,
+            output_format: options.outputFormat || 'png',
+            max_width: options.maxWidth,
+            max_height: options.maxHeight,
+            quality: options.quality || 95,
+          }),
+          signal: AbortSignal.timeout(this.timeout),
+        });
+
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`Python service error: ${response.status} - ${error}`);
+        }
+
+        const result = await response.json();
+
+        logger.info('Image conversion by Python service', {
+          format: result.format,
+          dimensions: `${result.width}x${result.height}`,
+          sizeBytes: result.size_bytes,
+          processingTime: result.processing_time_ms,
+        });
+
+        return {
+          imageData: result.image_data,
+          contentType: result.content_type,
+          width: result.width,
+          height: result.height,
+          sizeBytes: result.size_bytes,
+          format: result.format,
+          processingTime: result.processing_time_ms,
+        };
+      } catch (error) {
+        logger.warn('Python image conversion failed, falling back to TypeScript sharp', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        // Fall through to TypeScript fallback
+      }
     }
 
+    // Fallback to TypeScript ImageUtils (sharp)
     try {
-      const base64Data = imageBuffer.toString('base64');
+      const { ImageUtils } = await import('../image/ImageUtils');
+      const startTime = Date.now();
 
-      const response = await fetch(`${this.baseUrl}/api/images/convert`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          image_data: base64Data,
-          output_format: options.outputFormat || 'png',
-          max_width: options.maxWidth,
-          max_height: options.maxHeight,
-          quality: options.quality || 95,
-        }),
-        signal: AbortSignal.timeout(this.timeout),
+      logger.debug('Using TypeScript sharp for image conversion');
+
+      // Convert image using sharp
+      const convertedBuffer = await ImageUtils.convert(imageBuffer, {
+        format: options.outputFormat as any,
+        quality: options.quality || 95,
+        maxWidth: options.maxWidth,
+        maxHeight: options.maxHeight,
       });
 
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Python service error: ${response.status} - ${error}`);
-      }
+      // Get image info
+      const info = await ImageUtils.getInfo(convertedBuffer);
+      const processingTime = Date.now() - startTime;
 
-      const result = await response.json();
-
-      logger.info('Image conversion by Python service', {
-        format: result.format,
-        dimensions: `${result.width}x${result.height}`,
-        sizeBytes: result.size_bytes,
-        processingTime: result.processing_time_ms,
+      logger.info('Image conversion by TypeScript sharp', {
+        format: info.format,
+        dimensions: `${info.width}x${info.height}`,
+        sizeBytes: info.size,
+        processingTime,
       });
 
       return {
-        imageData: result.image_data,
-        contentType: result.content_type,
-        width: result.width,
-        height: result.height,
-        sizeBytes: result.size_bytes,
-        format: result.format,
-        processingTime: result.processing_time_ms,
+        imageData: convertedBuffer.toString('base64'),
+        contentType: `image/${info.format}`,
+        width: info.width,
+        height: info.height,
+        sizeBytes: info.size,
+        format: info.format,
+        processingTime,
       };
     } catch (error) {
-      logger.error('Python image conversion failed', {
+      logger.error('Image conversion failed (both Python and TypeScript)', {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
-      throw error;
+      throw new Error(
+        `Image conversion failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 }
