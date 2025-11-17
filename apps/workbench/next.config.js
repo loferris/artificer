@@ -2,6 +2,13 @@
 const nextConfig = {
   reactStrictMode: true,
   output: 'standalone', // Required for Docker/Railway deployment
+  // Transpile workspace packages (monorepo support)
+  transpilePackages: [
+    '@artificer/ui',
+    '@artificer/fableforge',
+    '@artificer/hellbat',
+    '@ai-workflow/document-converter',
+  ],
   // Production-ready configuration
   typescript: {
     ignoreBuildErrors: false,
