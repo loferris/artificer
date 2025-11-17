@@ -12,6 +12,23 @@ import {
   ModelSelectionResult,
 } from './types';
 
+/**
+ * Quality thresholds for model filtering
+ */
+const QUALITY_MIN_COST_THRESHOLD = 0.10; // $0.10/1M - models below this are suspiciously cheap
+const COST_NORMALIZATION_MAX = 10.0; // Assumes max model cost is ~$10/1M tokens for scoring
+const CONTEXT_SCORE_BASE = 8000; // Base context length for log scale scoring (8k tokens)
+const CONTEXT_SCORE_RANGE = 125; // Log scale range multiplier (8k to 1M = 125x)
+
+/**
+ * Scoring weights for different factors
+ */
+const SCORE_WEIGHT_CONTEXT = 0.2;
+const SCORE_WEIGHT_COST = 0.2;
+const SCORE_WEIGHT_PREFERRED_PROVIDER = 0.1;
+const SCORE_WEIGHT_LATEST = 0.1;
+const SCORE_WEIGHT_JSON = 0.05;
+
 export class ModelFilterService {
   /**
    * Select the best model matching the given requirements
@@ -62,6 +79,12 @@ export class ModelFilterService {
     models: OpenRouterModel[],
     requirements: ModelRequirements
   ): OpenRouterModel[] {
+    // Validate input
+    if (!models || models.length === 0) {
+      logger.warn('[ModelFilter] No models provided for filtering');
+      return [];
+    }
+
     return models.filter(model => {
       // Check minimum input tokens
       if (requirements.minInputTokens && model.context_length < requirements.minInputTokens) {
@@ -108,8 +131,19 @@ export class ModelFilterService {
       }
 
       // Apply custom filter if provided
-      if (requirements.customFilter && !requirements.customFilter(model)) {
-        return false;
+      if (requirements.customFilter) {
+        try {
+          if (!requirements.customFilter(model)) {
+            return false;
+          }
+        } catch (error) {
+          logger.error('[ModelFilter] Custom filter threw error', {
+            modelId: model.id,
+            error: error instanceof Error ? error.message : 'unknown'
+          });
+          // Fail-safe: exclude models that cause filter errors
+          return false;
+        }
       }
 
       // Exclude free models (they have rate limits and are unreliable for production)
@@ -128,8 +162,7 @@ export class ModelFilterService {
       // If preferSpeed is not set, assume quality matters
       if (!requirements.preferSpeed) {
         const avgCost = (model.pricing.prompt + model.pricing.completion) / 2;
-        // Models cheaper than $0.10/1M average are suspiciously cheap (likely tiny/poor quality)
-        if (avgCost < 0.10) {
+        if (avgCost < QUALITY_MIN_COST_THRESHOLD) {
           return false;
         }
       }
@@ -148,22 +181,25 @@ export class ModelFilterService {
     // Prefer quality: higher context = better (log scale to handle large ranges)
     if (requirements.preferQuality) {
       // Use log scale: 32k=0.5, 128k=0.75, 512k=0.9, 1M+=1.0
-      const contextScore = Math.min(Math.log10(model.context_length / 8000) / Math.log10(125), 1);
-      score += contextScore * 0.2;
+      const contextScore = Math.min(
+        Math.log10(model.context_length / CONTEXT_SCORE_BASE) / Math.log10(CONTEXT_SCORE_RANGE),
+        1
+      );
+      score += contextScore * SCORE_WEIGHT_CONTEXT;
     }
 
     // Prefer speed/cost: lower price = better
     if (requirements.preferSpeed || !requirements.preferQuality) {
       const avgCost = (model.pricing.prompt + model.pricing.completion) / 2;
-      const costScore = Math.max(0, 1 - (avgCost / 10)); // Normalize to 0-1
-      score += costScore * 0.2;
+      const costScore = Math.max(0, 1 - (avgCost / COST_NORMALIZATION_MAX));
+      score += costScore * SCORE_WEIGHT_COST;
     }
 
     // Preferred provider bonus
     if (requirements.preferredProviders && requirements.preferredProviders.length > 0) {
       const provider = this.extractProvider(model.id);
       if (requirements.preferredProviders.includes(provider)) {
-        score += 0.1;
+        score += SCORE_WEIGHT_PREFERRED_PROVIDER;
       }
     }
 
@@ -171,7 +207,7 @@ export class ModelFilterService {
     if (requirements.preferLatest) {
       // Models with higher version numbers or "latest" in name get bonus
       if (model.id.includes('latest') || this.isLatestVersion(model.id)) {
-        score += 0.1;
+        score += SCORE_WEIGHT_LATEST;
       }
     }
 
@@ -180,7 +216,7 @@ export class ModelFilterService {
       // Claude, GPT-4, and other modern models typically support JSON
       const supportsJson = this.likelySupportsJson(model);
       if (supportsJson) {
-        score += 0.05;
+        score += SCORE_WEIGHT_JSON;
       }
     }
 
@@ -197,12 +233,14 @@ export class ModelFilterService {
 
   /**
    * Check if model is likely the latest version from its provider
+   *
+   * NOTE: This is disabled as version heuristics are unreliable.
+   * OpenRouter API doesn't provide version metadata, so we can't accurately determine
+   * which model is "latest" without maintaining a hard-coded version map.
+   * Better to rely on other scoring factors (quality, cost, provider preference).
    */
-  private isLatestVersion(modelId: string): boolean {
-    // Simple heuristic: contains "3.5", "4", "4o", "v2", etc.
-    // This is approximate and can be refined
-    const latestIndicators = ['3.5', '-4', '4o', 'v2', 'v3', 'turbo'];
-    return latestIndicators.some(indicator => modelId.toLowerCase().includes(indicator));
+  private isLatestVersion(_modelId: string): boolean {
+    return false;
   }
 
   /**

@@ -81,6 +81,35 @@ export async function loadDynamicModelConfig(): Promise<ModelConfig> {
   try {
     // Discover models for each role (with env var overrides)
     // Note: Embeddings are NOT discovered from OpenRouter since they don't provide embedding models
+    // Use Promise.allSettled to handle individual role failures gracefully
+    const roles: ModelRole[] = [
+      'chat',
+      'chatFallback',
+      'analyzer',
+      'router',
+      'validator',
+      'documentUpdateDecision',
+      'documentUpdateGeneration',
+      'documentUpdateSummary',
+      'summarization',
+    ];
+
+    const envOverrides = [
+      process.env.CHAT_MODEL,
+      process.env.CHAT_FALLBACK_MODEL,
+      process.env.ANALYZER_MODEL,
+      process.env.ROUTER_MODEL,
+      process.env.VALIDATOR_MODEL,
+      process.env.DOCUMENT_UPDATE_DECISION_MODEL,
+      process.env.DOCUMENT_UPDATE_GENERATION_MODEL,
+      process.env.DOCUMENT_UPDATE_SUMMARY_MODEL,
+      process.env.SUMMARIZATION_MODEL,
+    ];
+
+    const results = await Promise.allSettled(
+      roles.map((role, index) => getModelWithOverride(role, envOverrides[index]))
+    );
+
     const [
       chat,
       chatFallback,
@@ -91,20 +120,16 @@ export async function loadDynamicModelConfig(): Promise<ModelConfig> {
       documentUpdateGeneration,
       documentUpdateSummary,
       summarization,
-    ] = await Promise.all([
-      getModelWithOverride('chat', process.env.CHAT_MODEL),
-      getModelWithOverride('chatFallback', process.env.CHAT_FALLBACK_MODEL),
-      getModelWithOverride('analyzer', process.env.ANALYZER_MODEL),
-      getModelWithOverride('router', process.env.ROUTER_MODEL),
-      getModelWithOverride('validator', process.env.VALIDATOR_MODEL),
-      getModelWithOverride('documentUpdateDecision', process.env.DOCUMENT_UPDATE_DECISION_MODEL),
-      getModelWithOverride('documentUpdateGeneration', process.env.DOCUMENT_UPDATE_GENERATION_MODEL),
-      getModelWithOverride('documentUpdateSummary', process.env.DOCUMENT_UPDATE_SUMMARY_MODEL),
-      getModelWithOverride('summarization', process.env.SUMMARIZATION_MODEL),
-    ]);
-
-    // Embedding model: use env var or fallback (OpenRouter doesn't provide embeddings)
-    const embedding = process.env.EMBEDDING_MODEL || null;
+    ] = results.map((result, index) => {
+      if (result.status === 'fulfilled') {
+        return result.value;
+      } else {
+        logger.warn(`[DynamicModels] Failed to discover ${roles[index]}`, {
+          error: result.reason instanceof Error ? result.reason.message : result.reason
+        });
+        return null;
+      }
+    });
 
     // Get available models list
     const availableModels = await getAvailableModelsList();
@@ -113,7 +138,10 @@ export async function loadDynamicModelConfig(): Promise<ModelConfig> {
     const fallbackModels = ModelDiscoveryService.getFallbackModels();
     const fallbackChat = fallbackModels.find(m => m.id.includes('sonnet'))?.id || fallbackModels[0]?.id;
     const fallbackCheap = fallbackModels.find(m => m.id.includes('deepseek'))?.id || fallbackModels[1]?.id;
-    const fallbackEmbedding = fallbackModels.find(m => m.id.includes('embedding'))?.id;
+    const fallbackEmbedding = fallbackModels.find(m => m.id.includes('embedding'))?.id || '';
+
+    // Embedding model: use env var or fallback (OpenRouter doesn't provide embeddings)
+    const embedding = process.env.EMBEDDING_MODEL || fallbackEmbedding;
 
     const config: ModelConfig = {
       chat: chat || fallbackChat || '',
@@ -125,7 +153,7 @@ export async function loadDynamicModelConfig(): Promise<ModelConfig> {
       documentUpdateGeneration: documentUpdateGeneration || chat || fallbackChat || '',
       documentUpdateSummary: documentUpdateSummary || chatFallback || fallbackCheap || '',
       summarization: summarization || chatFallback || fallbackCheap || '',
-      embedding: embedding || fallbackEmbedding || '',
+      embedding,
       embeddingDimensions: parseInt(process.env.EMBEDDING_DIMENSIONS || '1536', 10),
       available: availableModels,
     };

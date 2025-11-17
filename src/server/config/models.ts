@@ -2,11 +2,15 @@
  * Centralized model configuration
  * Single source of truth for all AI models used throughout the application
  *
- * Models are loaded from environment variables with fallback to ModelDiscoveryService.
- * Specialized models (analyzer, validator, etc.) fall back to base chat models if not set.
+ * Models can be loaded either:
+ * - From environment variables (static)
+ * - From dynamic model discovery (async)
+ *
+ * Call initializeModels() at server startup before accepting requests.
  */
 
 import { ModelDiscoveryService } from '../services/model/ModelDiscoveryService';
+import { logger } from '../utils/logger';
 
 export interface ModelConfig {
   /** Primary chat model for general conversations */
@@ -47,11 +51,10 @@ export interface ModelConfig {
 }
 
 /**
- * Load model configuration from environment variables
+ * Load model configuration from environment variables only
  * Falls back to ModelDiscoveryService hardcoded models if env vars not set
- * Optional specialized models fall back to base chat models
  */
-function loadModelConfig(): ModelConfig {
+export function loadModelConfigFromEnv(): ModelConfig {
   // Get fallback models from discovery service (the ONLY source of hardcoded models)
   const fallbackModels = ModelDiscoveryService.getFallbackModels();
   const fallbackChat = fallbackModels.find(m => m.id.includes('sonnet'))?.id || fallbackModels[0]?.id || '';
@@ -102,7 +105,7 @@ function validateModelConfig(config: ModelConfig): void {
   for (const field of requiredFields) {
     const value = config[field];
     if (!value || (typeof value === 'string' && value.trim() === '')) {
-      console.error(`❌ Model config: ${field} is required but not set (this should not happen with fallback models)`);
+      logger.error(`[ModelConfig] ${field} is required but not set (this should not happen with fallback models)`);
       throw new Error(`${field} must be configured`);
     }
   }
@@ -123,35 +126,76 @@ function validateModelConfig(config: ModelConfig): void {
   for (const field of openRouterModelFields) {
     const value = config[field];
     if (typeof value === 'string' && !value.includes('/')) {
-      console.warn(`⚠️  Model config: ${field}="${value}" may be invalid (expected format: provider/model-name)`);
+      logger.warn(`[ModelConfig] ${field}="${value}" may be invalid (expected format: provider/model-name)`);
     }
   }
 
   // Log configuration in development
   if (process.env.NODE_ENV === 'development') {
-    console.log('📋 Model Configuration:');
-    console.log(`  Chat: ${config.chat}`);
-    console.log(`  Chat Fallback: ${config.chatFallback}`);
-    console.log(`  Analyzer: ${config.analyzer}`);
-    console.log(`  Router: ${config.router}`);
-    console.log(`  Validator: ${config.validator}`);
-    console.log(`  Document Update Decision: ${config.documentUpdateDecision}`);
-    console.log(`  Document Update Generation: ${config.documentUpdateGeneration}`);
-    console.log(`  Document Update Summary: ${config.documentUpdateSummary}`);
-    console.log(`  Summarization: ${config.summarization}`);
-    console.log(`  Embedding: ${config.embedding} (${config.embeddingDimensions}D)`);
-    console.log(`  Available Models: ${config.available.join(', ')}`);
+    logger.info('[ModelConfig] Model configuration loaded:', {
+      chat: config.chat,
+      chatFallback: config.chatFallback,
+      analyzer: config.analyzer,
+      router: config.router,
+      validator: config.validator,
+      documentUpdateDecision: config.documentUpdateDecision,
+      documentUpdateGeneration: config.documentUpdateGeneration,
+      documentUpdateSummary: config.documentUpdateSummary,
+      summarization: config.summarization,
+      embedding: config.embedding,
+      embeddingDimensions: config.embeddingDimensions,
+      availableCount: config.available.length,
+    });
   }
 }
 
 /**
- * Global model configuration instance
- * Loaded once at startup
+ * Global model configuration (initialized asynchronously)
  */
-export const models: ModelConfig = loadModelConfig();
+let modelConfig: ModelConfig | null = null;
 
-// Validate on load
-validateModelConfig(models);
+/**
+ * Initialize model configuration
+ * Must be called once at server startup before accepting requests
+ *
+ * @returns Promise that resolves to the initialized config
+ */
+export async function initializeModels(): Promise<ModelConfig> {
+  if (modelConfig) {
+    logger.debug('[ModelConfig] Already initialized, returning cached config');
+    return modelConfig;
+  }
+
+  const isDynamicEnabled = process.env.USE_DYNAMIC_MODEL_DISCOVERY === 'true';
+
+  if (isDynamicEnabled) {
+    logger.info('[ModelConfig] Loading with dynamic model discovery');
+    const { loadDynamicModelConfig } = await import('./dynamicModels');
+    modelConfig = await loadDynamicModelConfig();
+  } else {
+    logger.info('[ModelConfig] Loading from environment variables');
+    modelConfig = loadModelConfigFromEnv();
+  }
+
+  validateModelConfig(modelConfig);
+  return modelConfig;
+}
+
+/**
+ * Get current model configuration
+ * Throws if models haven't been initialized yet
+ *
+ * @returns Current model configuration
+ */
+export function getModels(): ModelConfig {
+  if (!modelConfig) {
+    // Fallback: initialize synchronously with env vars
+    logger.warn('[ModelConfig] Models not initialized, falling back to env vars');
+    modelConfig = loadModelConfigFromEnv();
+    validateModelConfig(modelConfig);
+  }
+  return modelConfig;
+}
 
 /**
  * Helper to get a specific model with runtime override support
@@ -164,19 +208,22 @@ export function getModel(
   if (override && override.trim() !== '') {
     return override;
   }
-  return models[role] as string;
+  return getModels()[role] as string;
 }
 
 /**
  * Check if a model is in the available list
  */
 export function isModelAvailable(modelName: string): boolean {
-  return models.available.includes(modelName);
+  return getModels().available.includes(modelName);
 }
 
 /**
- * Get pricing tier for common models (rough estimates)
+ * Get pricing tier for common models (rough heuristic estimate)
  * Useful for cost-aware routing
+ *
+ * NOTE: This is a simple heuristic based on model name patterns.
+ * For accurate pricing, use ModelDiscoveryService to fetch actual costs.
  */
 export function getModelTier(modelName: string): 'cheap' | 'medium' | 'expensive' | 'unknown' {
   if (modelName.includes('deepseek')) return 'cheap';
@@ -184,3 +231,11 @@ export function getModelTier(modelName: string): 'cheap' | 'medium' | 'expensive
   if (modelName.includes('sonnet') || modelName.includes('gpt-4o')) return 'expensive';
   return 'unknown';
 }
+
+// Legacy export for backward compatibility
+// This will initialize synchronously with env vars if not already initialized
+export const models = new Proxy({} as ModelConfig, {
+  get(_, prop) {
+    return getModels()[prop as keyof ModelConfig];
+  },
+});

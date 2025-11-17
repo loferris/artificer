@@ -5,7 +5,8 @@
  * This should be called once when the server starts.
  */
 
-import { loadDynamicModelConfig, refreshModelCache } from './config/dynamicModels';
+import { initializeModels } from './config/models';
+import { refreshModelCache } from './config/dynamicModels';
 import { logger } from './utils/logger';
 
 let isInitialized = false;
@@ -30,14 +31,9 @@ export async function initializeServer(): Promise<void> {
     try {
       logger.info('[ServerInit] Starting server initialization');
 
-      // Initialize model discovery if enabled
-      if (process.env.USE_DYNAMIC_MODEL_DISCOVERY === 'true') {
-        logger.info('[ServerInit] Initializing dynamic model discovery');
-        await loadDynamicModelConfig();
-        logger.info('[ServerInit] Model discovery initialized');
-      } else {
-        logger.info('[ServerInit] Dynamic model discovery disabled');
-      }
+      // Initialize model configuration (handles both dynamic discovery and env vars)
+      await initializeModels();
+      logger.info('[ServerInit] Model configuration initialized');
 
       // Mark as initialized
       isInitialized = true;
@@ -45,7 +41,7 @@ export async function initializeServer(): Promise<void> {
     } catch (error) {
       logger.error('[ServerInit] Initialization failed', error);
       // Don't throw - allow server to start even if initialization fails
-      // Services will fall back to env vars
+      // Services will fall back to env vars via getModels()
     }
   })();
 

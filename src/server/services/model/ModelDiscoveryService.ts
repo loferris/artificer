@@ -196,18 +196,35 @@ export class ModelDiscoveryService {
       const cacheData = await fs.readFile(this.config.cacheFilePath, 'utf-8');
       const cache = JSON.parse(cacheData) as ModelCache;
 
-      // Convert date string back to Date object
-      cache.metadata.lastUpdated = new Date(cache.metadata.lastUpdated);
+      // Validate and convert date
+      const date = new Date(cache.metadata.lastUpdated);
+      if (isNaN(date.getTime())) {
+        logger.warn('[ModelDiscovery] Invalid cache date, ignoring file cache');
+        return null;
+      }
+      cache.metadata.lastUpdated = date;
+
+      // Validate structure
+      if (!cache.models || !Array.isArray(cache.models)) {
+        logger.warn('[ModelDiscovery] Invalid cache structure, missing models array');
+        return null;
+      }
+
+      if (cache.models.length === 0) {
+        logger.warn('[ModelDiscovery] Cache contains no models, ignoring');
+        return null;
+      }
 
       logger.debug('[ModelDiscovery] Loaded cache from file', {
         modelCount: cache.models.length,
         lastUpdated: cache.metadata.lastUpdated,
+        source: cache.metadata.source,
       });
 
       return cache;
     } catch (error) {
       // File doesn't exist or is corrupted
-      logger.debug('[ModelDiscovery] No valid file cache found');
+      logger.debug('[ModelDiscovery] No valid file cache found', { error: error instanceof Error ? error.message : 'unknown' });
       return null;
     }
   }

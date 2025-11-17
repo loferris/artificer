@@ -191,6 +191,14 @@ REQUIRE_AUTH=false  # Set to 'true' for production with API keys
 IP_WHITELIST=       # Comma-separated IPs (leave empty to allow all)
 ADMIN_EMAIL=admin@example.com
 
+# Model Configuration
+CHAT_MODEL="anthropic/claude-sonnet-4.5"
+CHAT_FALLBACK_MODEL="deepseek/deepseek-chat-v3.1"
+
+# Optional: Enable dynamic model discovery (recommended for production)
+# Automatically selects best models based on requirements and pricing
+USE_DYNAMIC_MODEL_DISCOVERY=false
+
 # Chain Orchestration (optional but recommended)
 CHAIN_ROUTING_ENABLED=true
 ANALYZER_MODEL="deepseek/deepseek-chat"

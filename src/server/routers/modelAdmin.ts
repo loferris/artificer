@@ -7,8 +7,8 @@
 import { z } from 'zod';
 import { router, protectedProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
+import { getDiscoveryService, getFilterService, refreshModelCache } from '../config/dynamicModels';
 import { ModelDiscoveryService } from '../services/model/ModelDiscoveryService';
-import { ModelFilterService } from '../services/model/ModelFilterService';
 import { ModelRequirements } from '../services/model/types';
 import { logger } from '../utils/logger';
 
@@ -27,17 +27,38 @@ const ModelRequirementsSchema = z.object({
   modality: z.string().optional(),
 });
 
+// Rate limiting for refresh endpoint
+const lastRefresh = new Map<string, number>();
+const REFRESH_COOLDOWN = 5 * 60 * 1000; // 5 minutes
+
 export const modelAdminRouter = router({
   /**
    * Force refresh models from OpenRouter API
    */
   refreshModels: protectedProcedure
-    .mutation(async () => {
+    .mutation(async ({ ctx }) => {
       try {
-        logger.info('[ModelAdmin] Manual model refresh requested');
+        // Rate limiting check
+        const userId = ctx.authenticatedUser?.id || ctx.clientIp;
+        const now = Date.now();
+        const last = lastRefresh.get(userId) || 0;
 
-        const discoveryService = new ModelDiscoveryService();
-        const models = await discoveryService.refresh();
+        if (now - last < REFRESH_COOLDOWN) {
+          const waitSeconds = Math.ceil((REFRESH_COOLDOWN - (now - last)) / 1000);
+          throw new TRPCError({
+            code: 'TOO_MANY_REQUESTS',
+            message: `Please wait ${waitSeconds}s before refreshing again`,
+          });
+        }
+
+        logger.info('[ModelAdmin] Manual model refresh requested', { userId });
+
+        await refreshModelCache();
+        const discoveryService = getDiscoveryService();
+        const models = await discoveryService.getModels();
+
+        // Update last refresh time
+        lastRefresh.set(userId, now);
 
         return {
           success: true,
@@ -61,7 +82,7 @@ export const modelAdminRouter = router({
   getCacheStatus: protectedProcedure
     .query(async () => {
       try {
-        const discoveryService = new ModelDiscoveryService();
+        const discoveryService = getDiscoveryService();
         const metadata = discoveryService.getCacheMetadata();
 
         if (!metadata) {
@@ -104,7 +125,7 @@ export const modelAdminRouter = router({
     }))
     .query(async ({ input }) => {
       try {
-        const discoveryService = new ModelDiscoveryService();
+        const discoveryService = getDiscoveryService();
         let models = await discoveryService.getModels();
 
         // Filter by provider if specified
@@ -148,8 +169,8 @@ export const modelAdminRouter = router({
     }))
     .query(async ({ input }) => {
       try {
-        const discoveryService = new ModelDiscoveryService();
-        const filterService = new ModelFilterService();
+        const discoveryService = getDiscoveryService();
+        const filterService = getFilterService();
 
         const models = await discoveryService.getModels();
         const requirements = input.requirements as ModelRequirements;
