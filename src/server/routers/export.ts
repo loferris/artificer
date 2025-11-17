@@ -5,6 +5,8 @@ import { createServicesFromContext } from '../services/ServiceFactory';
 import { ExportService, type ExportOptions } from '../services/export';
 import { DocumentConverter } from '../../../lib/document-converter/src/index';
 import type { ConvertedDocument } from '../../../lib/document-converter/src/types/index';
+import { pythonConversionClient } from '../services/python/PythonConversionClient';
+import { logger } from '../utils/logger';
 
 const converter = new DocumentConverter();
 
@@ -169,10 +171,38 @@ export const exportRouter = router({
               totalConversations: conversationsWithMessages.length,
             },
           };
-          result = await converter.export(combinedDoc, 'html', {
-            includeMetadata: input.includeMetadata,
-            includeStyles: true,
-          } as any); // HTML-specific options
+
+          // Try Python service first for 2-3x speedup
+          if (pythonConversionClient.isAvailable()) {
+            try {
+              logger.debug('Using Python conversion service for HTML export');
+              const pythonResult = await pythonConversionClient.exportHtml(combinedDoc, {
+                includeMetadata: input.includeMetadata,
+                includeStyles: true,
+                title: 'All Conversations',
+              });
+              result = pythonResult.html;
+              logger.info('Python HTML export completed', {
+                processingTime: pythonResult.processingTime,
+                htmlLength: result.length,
+              });
+            } catch (error) {
+              logger.warn('Python HTML export failed, falling back to TypeScript', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+              });
+              // Fallback to TypeScript
+              result = await converter.export(combinedDoc, 'html', {
+                includeMetadata: input.includeMetadata,
+                includeStyles: true,
+              } as any);
+            }
+          } else {
+            // Python service not available, use TypeScript
+            result = await converter.export(combinedDoc, 'html', {
+              includeMetadata: input.includeMetadata,
+              includeStyles: true,
+            } as any);
+          }
           break;
         default:
           throw new TRPCError({

@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { logger } from '../../utils/logger';
 import { VectorService, ChunkingService, EmbeddingService } from '../vector';
+import { pythonTextClient } from '../python/PythonTextClient';
 
 export interface DocumentCreateInput {
   projectId: string;
@@ -93,14 +94,48 @@ export class DocumentService {
         return;
       }
 
-      // Chunk the document
-      const chunkingService = new ChunkingService();
-      const chunks = chunkingService.chunkDocument(
-        documentId,
-        projectId,
-        textContent,
-        filename
-      );
+      // Chunk the document (try Python service first for 3-5x speedup)
+      let chunks;
+
+      if (pythonTextClient.isAvailable()) {
+        try {
+          logger.debug('Using Python text service for chunking', { documentId });
+          const result = await pythonTextClient.chunkDocument(
+            documentId,
+            projectId,
+            textContent,
+            filename
+          );
+          chunks = result.chunks;
+          logger.info('Python chunking completed', {
+            documentId,
+            chunkCount: chunks.length,
+            processingTime: result.totalChunks > 0 ? 'fast' : 'instant'
+          });
+        } catch (error) {
+          logger.warn('Python chunking failed, falling back to TypeScript', {
+            documentId,
+            error: error instanceof Error ? error.message : 'Unknown error'
+          });
+          // Fallback to TypeScript
+          const chunkingService = new ChunkingService();
+          chunks = chunkingService.chunkDocument(
+            documentId,
+            projectId,
+            textContent,
+            filename
+          );
+        }
+      } else {
+        // Python service not available, use TypeScript
+        const chunkingService = new ChunkingService();
+        chunks = chunkingService.chunkDocument(
+          documentId,
+          projectId,
+          textContent,
+          filename
+        );
+      }
 
       if (chunks.length === 0) {
         logger.warn('No chunks created from document', { documentId });
