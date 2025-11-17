@@ -1,26 +1,44 @@
 /**
  * Validation utilities for grouping, filtering, and formatting validation results
+ *
+ * DEPRECATED: This file is maintained for backward compatibility.
+ * Please import from '@/lib/hellbat' instead.
+ *
+ * @deprecated Use '@/lib/hellbat' instead
  */
 
-export type Severity = 'error' | 'warning' | 'info'
+// Re-export everything from hellbat domain module
+export type {
+  Severity,
+  ValidationResult,
+  GroupedValidation
+} from './hellbat'
 
-export interface ValidationResult {
-  id: string
-  severity: Severity
-  validator: string
-  message: string
-  suggestion?: string
-  autoFix?: () => void
-  entityId?: string
-  entityName?: string
-}
+export {
+  validationThemes,
+  groupBySeverity,
+  groupByValidator,
+  groupValidationsByEntity as groupByEntity,
+  filterBySeverity,
+  filterFixable,
+  getValidationCounts,
+  hasErrors,
+  isValid,
+  getHighestSeverity,
+  sortBySeverity,
+  formatValidationSummary,
+  getSeverityIcon,
+  getSeverityLabel,
+  getSeverityColorClass,
+  applyAllAutoFixes
+} from './hellbat'
 
-export interface GroupedValidation {
-  severity: Severity
-  results: ValidationResult[]
-  count: number
-}
+// Legacy theme interface for backward compatibility
+import { validationThemes, type Severity } from './hellbat'
 
+/**
+ * @deprecated Use validationThemes.get() from '@/lib/hellbat' instead
+ */
 export interface SeverityTheme {
   icon: string
   color: string
@@ -30,192 +48,40 @@ export interface SeverityTheme {
   label: string
 }
 
+/**
+ * Legacy theme record - converted from ThemeRegistry
+ * @deprecated Use validationThemes from '@/lib/hellbat' instead
+ */
 export const severityTheme: Record<Severity, SeverityTheme> = {
   error: {
-    icon: '❌',
-    color: 'red',
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-200',
-    textColor: 'text-red-700',
-    label: 'Errors'
+    icon: validationThemes.get('error')!.icon,
+    color: validationThemes.get('error')!.color,
+    bgColor: validationThemes.get('error')!.bgColor,
+    borderColor: validationThemes.get('error')!.borderColor,
+    textColor: validationThemes.get('error')!.textColor,
+    label: validationThemes.get('error')!.label
   },
   warning: {
-    icon: '⚠️',
-    color: 'yellow',
-    bgColor: 'bg-yellow-50',
-    borderColor: 'border-yellow-200',
-    textColor: 'text-yellow-700',
-    label: 'Warnings'
+    icon: validationThemes.get('warning')!.icon,
+    color: validationThemes.get('warning')!.color,
+    bgColor: validationThemes.get('warning')!.bgColor,
+    borderColor: validationThemes.get('warning')!.borderColor,
+    textColor: validationThemes.get('warning')!.textColor,
+    label: validationThemes.get('warning')!.label
   },
   info: {
-    icon: 'ℹ️',
-    color: 'blue',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200',
-    textColor: 'text-blue-700',
-    label: 'Info'
+    icon: validationThemes.get('info')!.icon,
+    color: validationThemes.get('info')!.color,
+    bgColor: validationThemes.get('info')!.bgColor,
+    borderColor: validationThemes.get('info')!.borderColor,
+    textColor: validationThemes.get('info')!.textColor,
+    label: validationThemes.get('info')!.label
   }
-}
-
-/**
- * Group validations by severity
- */
-export function groupBySeverity(
-  results: ValidationResult[]
-): Record<Severity, ValidationResult[]> {
-  const grouped: Record<Severity, ValidationResult[]> = {
-    error: [],
-    warning: [],
-    info: []
-  }
-
-  results.forEach(result => {
-    grouped[result.severity].push(result)
-  })
-
-  return grouped
-}
-
-/**
- * Group validations by validator
- */
-export function groupByValidator(
-  results: ValidationResult[]
-): Record<string, ValidationResult[]> {
-  const grouped: Record<string, ValidationResult[]> = {}
-
-  results.forEach(result => {
-    if (!grouped[result.validator]) {
-      grouped[result.validator] = []
-    }
-    grouped[result.validator].push(result)
-  })
-
-  return grouped
-}
-
-/**
- * Group validations by entity
- */
-export function groupByEntity(
-  results: ValidationResult[]
-): Record<string, ValidationResult[]> {
-  const grouped: Record<string, ValidationResult[]> = {
-    'No Entity': []
-  }
-
-  results.forEach(result => {
-    const key = result.entityName || result.entityId || 'No Entity'
-    if (!grouped[key]) {
-      grouped[key] = []
-    }
-    grouped[key].push(result)
-  })
-
-  return grouped
-}
-
-/**
- * Filter validations by severity
- */
-export function filterBySeverity(
-  results: ValidationResult[],
-  severities: Severity[]
-): ValidationResult[] {
-  return results.filter(result => severities.includes(result.severity))
-}
-
-/**
- * Filter validations with auto-fix available
- */
-export function filterFixable(results: ValidationResult[]): ValidationResult[] {
-  return results.filter(result => result.autoFix !== undefined)
-}
-
-/**
- * Get validation counts by severity
- */
-export function getValidationCounts(results: ValidationResult[]): Record<Severity, number> {
-  const grouped = groupBySeverity(results)
-  return {
-    error: grouped.error.length,
-    warning: grouped.warning.length,
-    info: grouped.info.length
-  }
-}
-
-/**
- * Check if there are any errors
- */
-export function hasErrors(results: ValidationResult[]): boolean {
-  return results.some(result => result.severity === 'error')
-}
-
-/**
- * Check if validation passed (no errors)
- */
-export function isValid(results: ValidationResult[]): boolean {
-  return !hasErrors(results)
-}
-
-/**
- * Get highest severity from results
- */
-export function getHighestSeverity(results: ValidationResult[]): Severity | null {
-  if (results.length === 0) return null
-
-  const severityOrder: Severity[] = ['error', 'warning', 'info']
-
-  for (const severity of severityOrder) {
-    if (results.some(r => r.severity === severity)) {
-      return severity
-    }
-  }
-
-  return null
-}
-
-/**
- * Sort validations by severity (errors first)
- */
-export function sortBySeverity(results: ValidationResult[]): ValidationResult[] {
-  const severityOrder: Record<Severity, number> = {
-    error: 0,
-    warning: 1,
-    info: 2
-  }
-
-  return [...results].sort((a, b) => {
-    return severityOrder[a.severity] - severityOrder[b.severity]
-  })
-}
-
-/**
- * Format validation summary
- */
-export function formatValidationSummary(results: ValidationResult[]): string {
-  const counts = getValidationCounts(results)
-  const parts: string[] = []
-
-  if (counts.error > 0) {
-    parts.push(`${counts.error} ${counts.error === 1 ? 'error' : 'errors'}`)
-  }
-  if (counts.warning > 0) {
-    parts.push(`${counts.warning} ${counts.warning === 1 ? 'warning' : 'warnings'}`)
-  }
-  if (counts.info > 0) {
-    parts.push(`${counts.info} info`)
-  }
-
-  if (parts.length === 0) {
-    return 'No issues'
-  }
-
-  return parts.join(', ')
 }
 
 /**
  * Get severity theme
+ * @deprecated Use validationThemes.get() from '@/lib/hellbat' instead
  */
 export function getSeverityTheme(severity: Severity): SeverityTheme {
   return severityTheme[severity]

@@ -1,35 +1,46 @@
 /**
  * Operation utilities for parsing, formatting, and grouping worldbuilding operations
+ *
+ * DEPRECATED: This file is maintained for backward compatibility.
+ * Please import from '@/lib/hellbat' instead.
+ *
+ * @deprecated Use '@/lib/hellbat' instead
  */
 
-import type { ValidationResult } from './validation-utils'
+// Re-export everything from hellbat domain module
+export type {
+  OperationIntent,
+  Operation
+} from './hellbat'
 
-export type OperationIntent =
-  | 'CREATE_ENTITY'
-  | 'UPDATE_ENTITY'
-  | 'DELETE_ENTITY'
-  | 'DEFINE_RELATIONSHIP'
-  | 'UPDATE_RELATIONSHIP'
-  | 'DELETE_RELATIONSHIP'
-  | 'ADD_ATTRIBUTE'
-  | 'REMOVE_ATTRIBUTE'
-  | 'SET_PROPERTY'
+export {
+  operationThemes,
+  formatOperation,
+  getOperationDescription,
+  getOperationIcon,
+  getOperationLabel,
+  groupByIntent,
+  groupByEntity,
+  groupBySession,
+  filterByIntent,
+  filterWithValidation,
+  getOperationCounts,
+  getTotalOperations,
+  getUniqueEntities,
+  getOperationsForEntity,
+  sortByTimestamp,
+  parseOperationsFromText,
+  isDestructiveOperation,
+  isRelationshipOperation,
+  isEntityOperation
+} from './hellbat'
 
-export interface Operation {
-  id: string
-  intent: OperationIntent
-  entityType?: string
-  entityName?: string
-  targetEntity?: string
-  relationshipType?: string
-  attributes?: Record<string, unknown>
-  previousValue?: unknown
-  newValue?: unknown
-  validation?: ValidationResult[]
-  timestamp: Date
-  sessionId?: string
-}
+// Legacy theme interface for backward compatibility
+import { operationThemes, type OperationIntent } from './hellbat'
 
+/**
+ * @deprecated Use operationThemes.get() from '@/lib/hellbat' instead
+ */
 export interface OperationTheme {
   icon: string
   color: string
@@ -39,295 +50,89 @@ export interface OperationTheme {
   label: string
 }
 
+/**
+ * Legacy theme record - converted from ThemeRegistry
+ * @deprecated Use operationThemes from '@/lib/hellbat' instead
+ */
 export const operationTheme: Record<OperationIntent, OperationTheme> = {
   CREATE_ENTITY: {
-    icon: '✨',
-    color: 'green',
-    bgColor: 'bg-green-50',
-    borderColor: 'border-green-200',
-    textColor: 'text-green-700',
-    label: 'Create Entity'
+    icon: operationThemes.get('CREATE_ENTITY')!.icon,
+    color: operationThemes.get('CREATE_ENTITY')!.color,
+    bgColor: operationThemes.get('CREATE_ENTITY')!.bgColor,
+    borderColor: operationThemes.get('CREATE_ENTITY')!.borderColor,
+    textColor: operationThemes.get('CREATE_ENTITY')!.textColor,
+    label: operationThemes.get('CREATE_ENTITY')!.label
   },
   UPDATE_ENTITY: {
-    icon: '📝',
-    color: 'blue',
-    bgColor: 'bg-blue-50',
-    borderColor: 'border-blue-200',
-    textColor: 'text-blue-700',
-    label: 'Update Entity'
+    icon: operationThemes.get('UPDATE_ENTITY')!.icon,
+    color: operationThemes.get('UPDATE_ENTITY')!.color,
+    bgColor: operationThemes.get('UPDATE_ENTITY')!.bgColor,
+    borderColor: operationThemes.get('UPDATE_ENTITY')!.borderColor,
+    textColor: operationThemes.get('UPDATE_ENTITY')!.textColor,
+    label: operationThemes.get('UPDATE_ENTITY')!.label
   },
   DELETE_ENTITY: {
-    icon: '🗑️',
-    color: 'red',
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-200',
-    textColor: 'text-red-700',
-    label: 'Delete Entity'
+    icon: operationThemes.get('DELETE_ENTITY')!.icon,
+    color: operationThemes.get('DELETE_ENTITY')!.color,
+    bgColor: operationThemes.get('DELETE_ENTITY')!.bgColor,
+    borderColor: operationThemes.get('DELETE_ENTITY')!.borderColor,
+    textColor: operationThemes.get('DELETE_ENTITY')!.textColor,
+    label: operationThemes.get('DELETE_ENTITY')!.label
   },
   DEFINE_RELATIONSHIP: {
-    icon: '🔗',
-    color: 'purple',
-    bgColor: 'bg-purple-50',
-    borderColor: 'border-purple-200',
-    textColor: 'text-purple-700',
-    label: 'Define Relationship'
+    icon: operationThemes.get('DEFINE_RELATIONSHIP')!.icon,
+    color: operationThemes.get('DEFINE_RELATIONSHIP')!.color,
+    bgColor: operationThemes.get('DEFINE_RELATIONSHIP')!.bgColor,
+    borderColor: operationThemes.get('DEFINE_RELATIONSHIP')!.borderColor,
+    textColor: operationThemes.get('DEFINE_RELATIONSHIP')!.textColor,
+    label: operationThemes.get('DEFINE_RELATIONSHIP')!.label
   },
   UPDATE_RELATIONSHIP: {
-    icon: '🔄',
-    color: 'indigo',
-    bgColor: 'bg-indigo-50',
-    borderColor: 'border-indigo-200',
-    textColor: 'text-indigo-700',
-    label: 'Update Relationship'
+    icon: operationThemes.get('UPDATE_RELATIONSHIP')!.icon,
+    color: operationThemes.get('UPDATE_RELATIONSHIP')!.color,
+    bgColor: operationThemes.get('UPDATE_RELATIONSHIP')!.bgColor,
+    borderColor: operationThemes.get('UPDATE_RELATIONSHIP')!.borderColor,
+    textColor: operationThemes.get('UPDATE_RELATIONSHIP')!.textColor,
+    label: operationThemes.get('UPDATE_RELATIONSHIP')!.label
   },
   DELETE_RELATIONSHIP: {
-    icon: '💔',
-    color: 'red',
-    bgColor: 'bg-red-50',
-    borderColor: 'border-red-200',
-    textColor: 'text-red-700',
-    label: 'Delete Relationship'
+    icon: operationThemes.get('DELETE_RELATIONSHIP')!.icon,
+    color: operationThemes.get('DELETE_RELATIONSHIP')!.color,
+    bgColor: operationThemes.get('DELETE_RELATIONSHIP')!.bgColor,
+    borderColor: operationThemes.get('DELETE_RELATIONSHIP')!.borderColor,
+    textColor: operationThemes.get('DELETE_RELATIONSHIP')!.textColor,
+    label: operationThemes.get('DELETE_RELATIONSHIP')!.label
   },
   ADD_ATTRIBUTE: {
-    icon: '➕',
-    color: 'teal',
-    bgColor: 'bg-teal-50',
-    borderColor: 'border-teal-200',
-    textColor: 'text-teal-700',
-    label: 'Add Attribute'
+    icon: operationThemes.get('ADD_ATTRIBUTE')!.icon,
+    color: operationThemes.get('ADD_ATTRIBUTE')!.color,
+    bgColor: operationThemes.get('ADD_ATTRIBUTE')!.bgColor,
+    borderColor: operationThemes.get('ADD_ATTRIBUTE')!.borderColor,
+    textColor: operationThemes.get('ADD_ATTRIBUTE')!.textColor,
+    label: operationThemes.get('ADD_ATTRIBUTE')!.label
   },
   REMOVE_ATTRIBUTE: {
-    icon: '➖',
-    color: 'orange',
-    bgColor: 'bg-orange-50',
-    borderColor: 'border-orange-200',
-    textColor: 'text-orange-700',
-    label: 'Remove Attribute'
+    icon: operationThemes.get('REMOVE_ATTRIBUTE')!.icon,
+    color: operationThemes.get('REMOVE_ATTRIBUTE')!.color,
+    bgColor: operationThemes.get('REMOVE_ATTRIBUTE')!.bgColor,
+    borderColor: operationThemes.get('REMOVE_ATTRIBUTE')!.borderColor,
+    textColor: operationThemes.get('REMOVE_ATTRIBUTE')!.textColor,
+    label: operationThemes.get('REMOVE_ATTRIBUTE')!.label
   },
   SET_PROPERTY: {
-    icon: '⚙️',
-    color: 'gray',
-    bgColor: 'bg-gray-50',
-    borderColor: 'border-gray-200',
-    textColor: 'text-gray-700',
-    label: 'Set Property'
+    icon: operationThemes.get('SET_PROPERTY')!.icon,
+    color: operationThemes.get('SET_PROPERTY')!.color,
+    bgColor: operationThemes.get('SET_PROPERTY')!.bgColor,
+    borderColor: operationThemes.get('SET_PROPERTY')!.borderColor,
+    textColor: operationThemes.get('SET_PROPERTY')!.textColor,
+    label: operationThemes.get('SET_PROPERTY')!.label
   }
 }
 
 /**
  * Get operation theme by intent
+ * @deprecated Use operationThemes.get() from '@/lib/hellbat' instead
  */
 export function getOperationTheme(intent: OperationIntent): OperationTheme {
   return operationTheme[intent]
-}
-
-/**
- * Format operation as human-readable text
- */
-export function formatOperation(operation: Operation): string {
-  const { intent, entityType, entityName, targetEntity, relationshipType } = operation
-
-  switch (intent) {
-    case 'CREATE_ENTITY':
-      return `Create ${entityType}: ${entityName}`
-    case 'UPDATE_ENTITY':
-      return `Update ${entityType}: ${entityName}`
-    case 'DELETE_ENTITY':
-      return `Delete ${entityType}: ${entityName}`
-    case 'DEFINE_RELATIONSHIP':
-      return `${entityName} → ${relationshipType} → ${targetEntity}`
-    case 'UPDATE_RELATIONSHIP':
-      return `Update relationship: ${entityName} → ${relationshipType} → ${targetEntity}`
-    case 'DELETE_RELATIONSHIP':
-      return `Remove relationship: ${entityName} → ${relationshipType} → ${targetEntity}`
-    case 'ADD_ATTRIBUTE':
-      return `Add attribute to ${entityName}`
-    case 'REMOVE_ATTRIBUTE':
-      return `Remove attribute from ${entityName}`
-    case 'SET_PROPERTY':
-      return `Set property on ${entityName}`
-    default:
-      return 'Unknown operation'
-  }
-}
-
-/**
- * Get short description of operation
- */
-export function getOperationDescription(operation: Operation): string {
-  const theme = getOperationTheme(operation.intent)
-  return `${theme.icon} ${theme.label}`
-}
-
-/**
- * Group operations by intent
- */
-export function groupByIntent(operations: Operation[]): Record<OperationIntent, Operation[]> {
-  const grouped = {} as Record<OperationIntent, Operation[]>
-
-  operations.forEach(op => {
-    if (!grouped[op.intent]) {
-      grouped[op.intent] = []
-    }
-    grouped[op.intent].push(op)
-  })
-
-  return grouped
-}
-
-/**
- * Group operations by entity
- */
-export function groupByEntity(operations: Operation[]): Record<string, Operation[]> {
-  const grouped: Record<string, Operation[]> = {}
-
-  operations.forEach(op => {
-    const key = op.entityName || 'Unknown'
-    if (!grouped[key]) {
-      grouped[key] = []
-    }
-    grouped[key].push(op)
-  })
-
-  return grouped
-}
-
-/**
- * Group operations by session
- */
-export function groupBySession(operations: Operation[]): Record<string, Operation[]> {
-  const grouped: Record<string, Operation[]> = {
-    'No Session': []
-  }
-
-  operations.forEach(op => {
-    const key = op.sessionId || 'No Session'
-    if (!grouped[key]) {
-      grouped[key] = []
-    }
-    grouped[key].push(op)
-  })
-
-  return grouped
-}
-
-/**
- * Filter operations by intent
- */
-export function filterByIntent(
-  operations: Operation[],
-  intents: OperationIntent[]
-): Operation[] {
-  return operations.filter(op => intents.includes(op.intent))
-}
-
-/**
- * Filter operations with validation issues
- */
-export function filterWithValidation(operations: Operation[]): Operation[] {
-  return operations.filter(op => op.validation && op.validation.length > 0)
-}
-
-/**
- * Get operation counts by intent
- */
-export function getOperationCounts(operations: Operation[]): Record<string, number> {
-  const counts: Record<string, number> = {}
-
-  operations.forEach(op => {
-    counts[op.intent] = (counts[op.intent] || 0) + 1
-  })
-
-  return counts
-}
-
-/**
- * Get total operation count
- */
-export function getTotalOperations(operations: Operation[]): number {
-  return operations.length
-}
-
-/**
- * Get unique entities from operations
- */
-export function getUniqueEntities(operations: Operation[]): string[] {
-  const entities = new Set<string>()
-
-  operations.forEach(op => {
-    if (op.entityName) {
-      entities.add(op.entityName)
-    }
-    if (op.targetEntity) {
-      entities.add(op.targetEntity)
-    }
-  })
-
-  return Array.from(entities)
-}
-
-/**
- * Get operations for a specific entity
- */
-export function getOperationsForEntity(
-  operations: Operation[],
-  entityName: string
-): Operation[] {
-  return operations.filter(
-    op => op.entityName === entityName || op.targetEntity === entityName
-  )
-}
-
-/**
- * Sort operations by timestamp (newest first)
- */
-export function sortByTimestamp(
-  operations: Operation[],
-  ascending = false
-): Operation[] {
-  return [...operations].sort((a, b) => {
-    const comparison = a.timestamp.getTime() - b.timestamp.getTime()
-    return ascending ? comparison : -comparison
-  })
-}
-
-/**
- * Parse operations from AI response text
- * This is a simple parser - adjust based on actual Artificer response format
- */
-export function parseOperationsFromText(text: string): Operation[] {
-  const operations: Operation[] = []
-  const lines = text.split('\n')
-
-  // Simple regex patterns - adjust to match actual format
-  const createEntityPattern = /CREATE_ENTITY:\s*(\w+)\s*-\s*(.+)/i
-  const defineRelPattern = /DEFINE_RELATIONSHIP:\s*(.+)\s*→\s*(.+)\s*→\s*(.+)/i
-
-  lines.forEach((line, index) => {
-    const createMatch = line.match(createEntityPattern)
-    if (createMatch) {
-      operations.push({
-        id: `op-${Date.now()}-${index}`,
-        intent: 'CREATE_ENTITY',
-        entityType: createMatch[1],
-        entityName: createMatch[2],
-        timestamp: new Date()
-      })
-      return
-    }
-
-    const relMatch = line.match(defineRelPattern)
-    if (relMatch) {
-      operations.push({
-        id: `op-${Date.now()}-${index}`,
-        intent: 'DEFINE_RELATIONSHIP',
-        entityName: relMatch[1].trim(),
-        relationshipType: relMatch[2].trim(),
-        targetEntity: relMatch[3].trim(),
-        timestamp: new Date()
-      })
-    }
-  })
-
-  return operations
 }
