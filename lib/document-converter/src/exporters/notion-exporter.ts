@@ -7,7 +7,7 @@ import type {
   ExporterPlugin,
   ConvertedDocument,
   ExportOptions,
-} from '../types/index.js';
+} from '../types/index';
 import type { PortableTextSpan } from '@portabletext/types';
 
 export class NotionExporter implements ExporterPlugin {

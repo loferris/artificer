@@ -6,6 +6,7 @@ import { getUserFromRequest } from './utils/session';
 import { createRateLimitMiddleware, RATE_LIMITS } from './middleware/rateLimiter';
 import { logger } from './utils/logger';
 import { ApiKeyService } from './services/auth';
+import { initializeServer } from './init';
 
 /**
  * Get client IP address from request
@@ -48,6 +49,11 @@ function isIpWhitelisted(ip: string): boolean {
 
 // Create context function
 export const createContext = async (opts: CreateNextContextOptions) => {
+  // Initialize server on first request (idempotent)
+  initializeServer().catch(err =>
+    logger.error('[TRPC] Server initialization failed', err)
+  );
+
   try {
     const user = getUserFromRequest(opts.req);
     const clientIp = getClientIp(opts.req);

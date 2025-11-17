@@ -10,6 +10,7 @@ import { monitoringRouter } from './routers/monitoring';
 import { authRouter } from './routers/auth';
 import { searchRouter } from './routers/search';
 import { orchestrationRouter } from './routers/orchestration';
+import { modelAdminRouter } from './routers/modelAdmin';
 
 export const appRouter = router({
   chat: chatRouter,
@@ -22,6 +23,7 @@ export const appRouter = router({
   auth: authRouter,
   search: searchRouter,
   orchestration: orchestrationRouter,
+  modelAdmin: modelAdminRouter,
 });
 
 export type AppRouter = typeof appRouter;

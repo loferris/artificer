@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { DocumentConverter, ConversionError } from '../index.js';
+import { DocumentConverter, ConversionError } from '../index';
 
 describe('DocumentConverter', () => {
   let converter: DocumentConverter;

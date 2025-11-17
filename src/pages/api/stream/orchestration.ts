@@ -9,6 +9,7 @@ import { prisma } from '../../../server/db/client';
 import { ChainOrchestrator } from '../../../server/services/orchestration/ChainOrchestrator';
 import { ChainConfig } from '../../../server/services/orchestration/types';
 import { getModelRegistry } from '../../../server/services/orchestration/ModelRegistry';
+import { models } from '../../../server/config/models';
 
 // Input validation schema
 const streamOrchestrationSchema = z.object({
@@ -31,19 +32,13 @@ const writeSSEComment = (res: NextApiResponse, comment: string) => {
   res.write(`: ${comment}\n\n`);
 };
 
-// Build chain config from environment
+// Build chain config from centralized model registry
 function buildChainConfig(): ChainConfig {
-  const analyzerModel = process.env.ANALYZER_MODEL || 'deepseek/deepseek-chat';
-  const routerModel = process.env.ROUTER_MODEL || 'anthropic/claude-3-haiku';
-  const validatorModel = process.env.VALIDATOR_MODEL || 'anthropic/claude-3-5-sonnet';
-
-  const modelsList = process.env.OPENROUTER_MODELS ||
-    'deepseek/deepseek-chat,anthropic/claude-3-haiku,anthropic/claude-3-5-sonnet,openai/gpt-4o-mini';
-
-  const availableModels = modelsList
-    .split(',')
-    .map(m => m.trim())
-    .filter(m => m.length > 0);
+  // Model configuration from centralized registry
+  const analyzerModel = models.analyzer;
+  const routerModel = models.router;
+  const validatorModel = models.validator;
+  const availableModels = models.available;
 
   const minComplexity = parseInt(process.env.CHAIN_ROUTING_MIN_COMPLEXITY || '5', 10);
   const maxRetries = parseInt(process.env.MAX_RETRIES || '2', 10);

@@ -1,9 +1,18 @@
 import React from 'react';
 import { SimplifiedChatView } from '../components/modern/SimplifiedChatView';
 import { useChat } from '../hooks/chat/useChat';
+import { useDocumentUpdate } from '../hooks/useDocumentUpdate';
+import { trpc } from '../lib/trpc/client';
 
 function HomePage() {
   const chat = useChat();
+  const documentUpdate = useDocumentUpdate();
+
+  // Fetch documents for the current project
+  const { data: projectDocuments } = trpc.projects.getDocuments.useQuery(
+    { projectId: chat.currentProjectId || '' },
+    { enabled: !!chat.currentProjectId }
+  );
 
   const handleExport = (format: 'markdown' | 'json', scope: 'current' | 'all') => {
     if (scope === 'current') {
@@ -29,6 +38,8 @@ function HomePage() {
       isCreatingConversation={chat.isCreatingConversation}
       orchestrationState={chat.orchestrationState}
       onExport={handleExport}
+      documentUpdate={documentUpdate}
+      projectDocuments={projectDocuments?.documents}
     />
   );
 }

@@ -26,7 +26,8 @@ export default defineConfig({
     reporter: process.env.CI === 'true' ? 'dot' : 'default',
     // CRITICAL: Set env vars for all test workers
     env: {
-      OPENROUTER_DEFAULT_MODEL: 'deepseek-chat',
+      CHAT_MODEL: 'anthropic/claude-sonnet-4.5',
+      CHAT_FALLBACK_MODEL: 'deepseek/deepseek-chat-v3.1',
       OPENROUTER_API_KEY: 'test-api-key',
       DATABASE_URL: 'postgresql://test:test@localhost:5432/test',
       NODE_ENV: 'test',

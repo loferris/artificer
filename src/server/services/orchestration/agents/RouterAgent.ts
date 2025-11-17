@@ -209,8 +209,11 @@ Respond ONLY with valid JSON. No additional text.`;
       .map(([id]) => id);
 
     if (modelsInTier.length === 0) {
-      // Fallback to first available model
-      return this.availableModels[0] || 'deepseek/deepseek-chat';
+      // Fallback to first available model (no hardcoded model names)
+      if (this.availableModels.length === 0) {
+        throw new Error('No models available for routing. Please configure OPENROUTER_MODELS in your .env file.');
+      }
+      return this.availableModels[0];
     }
 
     // Prefer models that match the category

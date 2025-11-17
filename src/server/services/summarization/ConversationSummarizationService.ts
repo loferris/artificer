@@ -9,6 +9,7 @@ import type { PrismaClient, ConversationSummary, Message } from '@prisma/client'
 import { logger } from '../../utils/logger';
 import { countConversationTokens, countMessageTokens } from '../../utils/tokenCounter';
 import type { Assistant } from '../assistant';
+import { models } from '../../config/models';
 
 export interface SummarizationConfig {
   /** Number of messages to trigger summarization */
@@ -34,7 +35,7 @@ const DEFAULT_CONFIG: SummarizationConfig = {
   messageTriggerThreshold: 100, // Summarize after 100 messages
   tokenTriggerThreshold: 50000, // Or after 50k tokens
   recentMessageWindow: 50, // Keep last 50 messages verbatim
-  summaryModel: 'deepseek/deepseek-chat', // Cost-effective model
+  summaryModel: models.summarization,
   enabled: process.env.ENABLE_SUMMARIZATION === 'true',
 };
 
