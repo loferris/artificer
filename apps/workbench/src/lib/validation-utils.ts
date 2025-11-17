@@ -12,7 +12,7 @@ export type {
   Severity,
   ValidationResult,
   GroupedValidation
-} from './hellbat'
+} from '@artificer/hellbat'
 
 export {
   validationThemes,
@@ -31,10 +31,10 @@ export {
   getSeverityLabel,
   getSeverityColorClass,
   applyAllAutoFixes
-} from './hellbat'
+} from '@artificer/hellbat'
 
 // Legacy theme interface for backward compatibility
-import { validationThemes, type Severity } from './hellbat'
+import { validationThemes, type Severity } from '@artificer/hellbat'
 
 /**
  * @deprecated Use validationThemes.get() from '@/lib/hellbat' instead

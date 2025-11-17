@@ -11,7 +11,7 @@
 export type {
   OperationIntent,
   Operation
-} from './hellbat'
+} from '@artificer/hellbat'
 
 export {
   operationThemes,
@@ -33,10 +33,10 @@ export {
   isDestructiveOperation,
   isRelationshipOperation,
   isEntityOperation
-} from './hellbat'
+} from '@artificer/hellbat'
 
 // Legacy theme interface for backward compatibility
-import { operationThemes, type OperationIntent } from './hellbat'
+import { operationThemes, type OperationIntent } from '@artificer/hellbat'
 
 /**
  * @deprecated Use operationThemes.get() from '@/lib/hellbat' instead

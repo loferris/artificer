@@ -7,8 +7,8 @@
  * @deprecated Use '@/lib/fableforge' instead
  */
 
-import { specialistThemes } from './fableforge'
-import type { SpecialistType } from './fableforge'
+import { specialistThemes } from '@artificer/fableforge'
+import type { SpecialistType } from '@artificer/fableforge'
 
 /**
  * @deprecated Use specialistThemes.get() from '@/lib/fableforge' instead
