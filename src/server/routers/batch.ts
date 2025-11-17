@@ -7,7 +7,11 @@ import { z } from 'zod';
 import { router, protectedProcedure } from '../trpc';
 import { BatchJobService } from '../services/batch/BatchJobService';
 import { ChainOrchestrator } from '../services/orchestration/ChainOrchestrator';
+import type { ChainConfig } from '../services/orchestration/types';
 import { logger } from '../utils/logger';
+import { models } from '../config/models';
+import { getModelRegistry } from '../services/orchestration/ModelRegistry';
+import { createServicesFromContext } from '../services/ServiceFactory';
 
 // Validation schemas
 const PhaseConfigSchema = z.object({
@@ -52,6 +56,49 @@ function ensureDatabase(ctx: any) {
   return ctx.db;
 }
 
+/**
+ * Builds chain configuration from centralized model registry and environment variables
+ */
+function buildChainConfig(): ChainConfig {
+  const analyzerModel = models.analyzer;
+  const routerModel = models.router;
+  const validatorModel = models.validator;
+  const availableModels = models.available;
+
+  const minComplexity = parseInt(process.env.CHAIN_ROUTING_MIN_COMPLEXITY || '5', 10);
+  const maxRetries = parseInt(process.env.MAX_RETRIES || '2', 10);
+  const validationEnabled = process.env.VALIDATION_ENABLED !== 'false';
+  const preferCheapModels = process.env.PREFER_CHEAP_MODELS === 'true';
+
+  return {
+    analyzerModel,
+    routerModel,
+    validatorModel,
+    availableModels,
+    minComplexityForChain: minComplexity,
+    maxRetries,
+    validationEnabled,
+    preferCheapModels,
+  };
+}
+
+/**
+ * Creates a properly configured ChainOrchestrator instance
+ */
+async function createChainOrchestrator(ctx: any): Promise<ChainOrchestrator> {
+  const config = buildChainConfig();
+  const registry = await getModelRegistry();
+  const { assistant, structuredQueryService } = createServicesFromContext(ctx);
+
+  return new ChainOrchestrator(
+    config,
+    assistant,
+    ctx.db || undefined,
+    registry,
+    structuredQueryService
+  );
+}
+
 export const batchRouter = router({
   /**
    * Create a new batch job
@@ -60,7 +107,7 @@ export const batchRouter = router({
     .input(CreateBatchJobSchema)
     .mutation(async ({ input, ctx }) => {
       const db = ensureDatabase(ctx);
-      const chainOrchestrator = new ChainOrchestrator(db);
+      const chainOrchestrator = await createChainOrchestrator(ctx);
       const batchJobService = new BatchJobService(db, chainOrchestrator);
 
       logger.info('Creating batch job via API', {
@@ -98,7 +145,7 @@ export const batchRouter = router({
     .input(z.object({ jobId: z.string() }))
     .query(async ({ input, ctx }) => {
       const db = ensureDatabase(ctx);
-      const chainOrchestrator = new ChainOrchestrator(db);
+      const chainOrchestrator = await createChainOrchestrator(ctx);
       const batchJobService = new BatchJobService(db, chainOrchestrator);
 
       const status = await batchJobService.getJobStatus(input.jobId);
@@ -116,7 +163,7 @@ export const batchRouter = router({
     .input(ListJobsSchema)
     .query(async ({ input, ctx }) => {
       const db = ensureDatabase(ctx);
-      const chainOrchestrator = new ChainOrchestrator(db);
+      const chainOrchestrator = await createChainOrchestrator(ctx);
       const batchJobService = new BatchJobService(db, chainOrchestrator);
 
       const result = await batchJobService.listJobs({
@@ -140,7 +187,7 @@ export const batchRouter = router({
     .input(z.object({ jobId: z.string() }))
     .query(async ({ input, ctx }) => {
       const db = ensureDatabase(ctx);
-      const chainOrchestrator = new ChainOrchestrator(db);
+      const chainOrchestrator = await createChainOrchestrator(ctx);
       const batchJobService = new BatchJobService(db, chainOrchestrator);
 
       const results = await batchJobService.getJobResults(input.jobId);
@@ -158,7 +205,7 @@ export const batchRouter = router({
     .input(z.object({ jobId: z.string() }))
     .query(async ({ input, ctx }) => {
       const db = ensureDatabase(ctx);
-      const chainOrchestrator = new ChainOrchestrator(db);
+      const chainOrchestrator = await createChainOrchestrator(ctx);
       const batchJobService = new BatchJobService(db, chainOrchestrator);
 
       const analytics = await batchJobService.getJobAnalytics(input.jobId);
@@ -176,7 +223,7 @@ export const batchRouter = router({
     .input(z.object({ jobId: z.string() }))
     .mutation(async ({ input, ctx }) => {
       const db = ensureDatabase(ctx);
-      const chainOrchestrator = new ChainOrchestrator(db);
+      const chainOrchestrator = await createChainOrchestrator(ctx);
       const batchJobService = new BatchJobService(db, chainOrchestrator);
 
       await batchJobService.resumeJob(input.jobId);
@@ -194,7 +241,7 @@ export const batchRouter = router({
     .input(z.object({ jobId: z.string() }))
     .mutation(async ({ input, ctx }) => {
       const db = ensureDatabase(ctx);
-      const chainOrchestrator = new ChainOrchestrator(db);
+      const chainOrchestrator = await createChainOrchestrator(ctx);
       const batchJobService = new BatchJobService(db, chainOrchestrator);
 
       await batchJobService.pauseJob(input.jobId);
@@ -212,7 +259,7 @@ export const batchRouter = router({
     .input(z.object({ jobId: z.string() }))
     .mutation(async ({ input, ctx }) => {
       const db = ensureDatabase(ctx);
-      const chainOrchestrator = new ChainOrchestrator(db);
+      const chainOrchestrator = await createChainOrchestrator(ctx);
       const batchJobService = new BatchJobService(db, chainOrchestrator);
 
       await batchJobService.cancelJob(input.jobId);
@@ -230,7 +277,7 @@ export const batchRouter = router({
     .input(z.object({ jobId: z.string() }))
     .mutation(async ({ input, ctx }) => {
       const db = ensureDatabase(ctx);
-      const chainOrchestrator = new ChainOrchestrator(db);
+      const chainOrchestrator = await createChainOrchestrator(ctx);
       const batchJobService = new BatchJobService(db, chainOrchestrator);
 
       await batchJobService.deleteJob(input.jobId);
@@ -248,7 +295,7 @@ export const batchRouter = router({
     .input(z.object({ jobId: z.string() }))
     .mutation(async ({ input, ctx }) => {
       const db = ensureDatabase(ctx);
-      const chainOrchestrator = new ChainOrchestrator(db);
+      const chainOrchestrator = await createChainOrchestrator(ctx);
       const batchJobService = new BatchJobService(db, chainOrchestrator);
 
       await batchJobService.executeBatchJob(input.jobId);

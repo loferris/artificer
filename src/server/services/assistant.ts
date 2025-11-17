@@ -45,7 +45,9 @@ export class OpenRouterAssistant implements Assistant {
       }
 
       const messages = this.buildMessagesArray(userMessage, conversationHistory);
-      const model = await this.selectModel();
+
+      // Respect explicit model override, fallback to auto-selection
+      const model = options?.model || await this.selectModel();
 
       const response = await this.fetchResponseWithFallback(messages, model, options?.signal);
 
