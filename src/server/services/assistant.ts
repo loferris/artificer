@@ -1,5 +1,6 @@
 import { logger } from '../utils/logger';
 import { DEMO_CONFIG } from '../config/demo';
+import { models } from '../config/models';
 import {
   type Assistant,
   type AssistantResponse,
@@ -23,9 +24,8 @@ export class OpenRouterAssistant implements Assistant {
   private modelCapabilities: Map<string, ModelCapabilities> = new Map();
   private modelHealthStatus: Map<string, ModelHealthCheck> = new Map();
   private fallbackModels: string[] = [
-    'deepseek-chat',
-    'anthropic/claude-3-haiku',
-    'openai/gpt-4o-mini',
+    models.chatFallback,
+    models.chat,
   ];
 
   constructor(config: { apiKey: string; siteName: string }) {
@@ -152,13 +152,13 @@ export class OpenRouterAssistant implements Assistant {
   }
 
   async checkAllModelsHealth(): Promise<ModelHealthCheck[]> {
-    const models = [
-      process.env.OPENROUTER_MODEL,
-      process.env.OPENROUTER_DEFAULT_MODEL,
+    const modelList = [
+      models.chat,
+      models.chatFallback,
       ...this.fallbackModels,
     ].filter((model): model is string => Boolean(model && model.trim() !== ''));
 
-    const uniqueModels = [...new Set(models)];
+    const uniqueModels = [...new Set(modelList)];
     const healthChecks = await Promise.allSettled(
       uniqueModels.map(async (model) => {
         await this.validateModel(model);
@@ -300,8 +300,8 @@ export class OpenRouterAssistant implements Assistant {
     try {
       // Build candidate list with priority order
       const candidates = [
-        process.env.OPENROUTER_MODEL,
-        process.env.OPENROUTER_DEFAULT_MODEL,
+        models.chat,
+        models.chatFallback,
         ...this.fallbackModels,
       ].filter((model): model is string => Boolean(model && model.trim() !== ''));
 
@@ -316,8 +316,8 @@ export class OpenRouterAssistant implements Assistant {
         }
       }
 
-      // If all validations fail, return the primary env model or first fallback
-      const fallbackModel = process.env.OPENROUTER_MODEL || this.fallbackModels[0];
+      // If all validations fail, return the primary model or first fallback
+      const fallbackModel = models.chat || this.fallbackModels[0];
       logger.warn(`All model validations failed, using fallback: ${fallbackModel}`);
       return fallbackModel;
     } catch (error) {

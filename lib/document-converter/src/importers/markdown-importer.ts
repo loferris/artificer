@@ -14,7 +14,7 @@ import type {
   ConvertedDocument,
   ImportOptions,
   ObsidianFrontmatter,
-} from '../types/index.js';
+} from '../types/index';
 import {
   createTextBlock,
   createSpan,
@@ -25,7 +25,7 @@ import {
   generateKey,
   createMetadata,
   sanitizeText,
-} from '../core/portable-text-utils.js';
+} from '../core/portable-text-utils';
 import type { PortableTextBlock, PortableTextSpan } from '@portabletext/types';
 
 export class MarkdownImporter implements ImporterPlugin {
@@ -397,7 +397,7 @@ export class MarkdownImporter implements ImporterPlugin {
   ): PortableTextSpan | PortableTextSpan[] | null {
     switch (node.type) {
       case 'text':
-        return this.convertText(node, markDefs);
+        return this.convertText(node);
       case 'strong':
         return this.convertWithMark(node.children, 'strong', markDefs);
       case 'emphasis':

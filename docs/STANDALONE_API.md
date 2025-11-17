@@ -327,7 +327,8 @@ DEMO_MODE=false               # Set to 'true' for in-memory demo mode
 
 # AI Models
 OPENROUTER_API_KEY=...        # OpenRouter API key
-OPENROUTER_MODEL=deepseek-chat # Default model
+CHAT_MODEL=anthropic/claude-sonnet-4.5 # Primary chat model
+CHAT_FALLBACK_MODEL=deepseek/deepseek-chat-v3.1 # Fallback chat model
 ```
 
 ### Docker Deployment

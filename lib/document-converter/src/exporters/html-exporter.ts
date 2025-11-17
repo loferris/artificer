@@ -6,7 +6,7 @@ import type {
   ExporterPlugin,
   ConvertedDocument,
   ExportOptions,
-} from '../types/index.js';
+} from '../types/index';
 import type { PortableTextSpan } from '@portabletext/types';
 
 export interface HtmlExportOptions extends ExportOptions {
@@ -270,8 +270,10 @@ ${bodyContent.join('\n')}
       '>': '&gt;',
       '"': '&quot;',
       "'": '&#39;',
+      '`': '&#96;',
+      '/': '&#x2F;',
     };
-    return text.replace(/[&<>"']/g, (char) => map[char]);
+    return text.replace(/[&<>"'`/]/g, (char) => map[char] || char);
   }
 
   private slugify(text: string): string {

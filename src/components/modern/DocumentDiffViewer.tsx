@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { diffLines, Change } from 'diff';
 
 interface DiffLine {
   type: 'added' | 'removed' | 'unchanged';
@@ -17,46 +18,42 @@ interface DocumentDiffViewerProps {
 }
 
 /**
- * Simple line-based diff algorithm
- * For production, consider using a library like diff-match-patch or react-diff-viewer
+ * Compute line-based diff using the 'diff' library
  */
 function computeLineDiff(original: string, proposed: string): DiffLine[] {
-  const originalLines = original.split('\n');
-  const proposedLines = proposed.split('\n');
+  const changes = diffLines(original, proposed);
   const diff: DiffLine[] = [];
+  let originalLineNumber = 0;
+  let proposedLineNumber = 0;
 
-  let origIndex = 0;
-  let propIndex = 0;
+  for (const change of changes) {
+    const lines = change.value.split('\n');
+    // Remove empty last line if present
+    if (lines[lines.length - 1] === '') {
+      lines.pop();
+    }
 
-  while (origIndex < originalLines.length || propIndex < proposedLines.length) {
-    const origLine = originalLines[origIndex];
-    const propLine = proposedLines[propIndex];
-
-    if (origLine === propLine) {
-      // Lines match
-      diff.push({
-        type: 'unchanged',
-        content: origLine || '',
-        lineNumber: origIndex + 1,
-      });
-      origIndex++;
-      propIndex++;
-    } else if (!propLine || (origLine && !proposedLines.slice(propIndex).includes(origLine))) {
-      // Line was removed
-      diff.push({
-        type: 'removed',
-        content: origLine || '',
-        lineNumber: origIndex + 1,
-      });
-      origIndex++;
-    } else {
-      // Line was added
-      diff.push({
-        type: 'added',
-        content: propLine || '',
-        lineNumber: propIndex + 1,
-      });
-      propIndex++;
+    for (const line of lines) {
+      if (change.added) {
+        diff.push({
+          type: 'added',
+          content: line,
+          lineNumber: ++proposedLineNumber,
+        });
+      } else if (change.removed) {
+        diff.push({
+          type: 'removed',
+          content: line,
+          lineNumber: ++originalLineNumber,
+        });
+      } else {
+        diff.push({
+          type: 'unchanged',
+          content: line,
+          lineNumber: ++originalLineNumber,
+        });
+        proposedLineNumber++;
+      }
     }
   }
 

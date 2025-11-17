@@ -6,7 +6,7 @@ import type {
   ExporterPlugin,
   ConvertedDocument,
   ExportOptions,
-} from '../types/index.js';
+} from '../types/index';
 import type { PortableTextSpan } from '@portabletext/types';
 
 export class RoamExporter implements ExporterPlugin {

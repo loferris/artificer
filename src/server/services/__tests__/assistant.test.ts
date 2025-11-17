@@ -109,8 +109,8 @@ describe('Assistant Service', () => {
       });
 
       it('uses model from environment variable when available', async () => {
-        const originalEnvModel = process.env.OPENROUTER_MODEL;
-        process.env.OPENROUTER_MODEL = 'anthropic/claude-3-sonnet';
+        const originalEnvModel = process.env.CHAT_MODEL;
+        process.env.CHAT_MODEL = 'anthropic/claude-3-sonnet';
 
         const userMessage = 'Test message';
         const mockResponse = {
@@ -127,7 +127,7 @@ describe('Assistant Service', () => {
         expect(result.model).toBe('anthropic/claude-3-sonnet');
 
         // Restore environment
-        process.env.OPENROUTER_MODEL = originalEnvModel;
+        process.env.CHAT_MODEL = originalEnvModel;
       });
 
       it('handles API errors gracefully', async () => {

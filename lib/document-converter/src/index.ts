@@ -25,16 +25,16 @@
  * ```
  */
 
-import { PluginRegistry } from './plugins/plugin-registry.js';
-import { MarkdownImporter } from './importers/markdown-importer.js';
-import { NotionImporter } from './importers/notion-importer.js';
-import { RoamImporter } from './importers/roam-importer.js';
-import { MarkdownExporter } from './exporters/markdown-exporter.js';
-import { NotionExporter } from './exporters/notion-exporter.js';
-import { RoamExporter } from './exporters/roam-exporter.js';
-import { HtmlExporter } from './exporters/html-exporter.js';
-import { portableTextAdapter } from './adapters/portable-text-adapter.js';
-import { ConversionError } from './types/index.js';
+import { PluginRegistry } from './plugins/plugin-registry';
+import { MarkdownImporter } from './importers/markdown-importer';
+import { NotionImporter } from './importers/notion-importer';
+import { RoamImporter } from './importers/roam-importer';
+import { MarkdownExporter } from './exporters/markdown-exporter';
+import { NotionExporter } from './exporters/notion-exporter';
+import { RoamExporter } from './exporters/roam-exporter';
+import { HtmlExporter } from './exporters/html-exporter';
+import { portableTextAdapter } from './adapters/portable-text-adapter';
+import { ConversionError } from './types/index';
 
 import type {
   ConvertedDocument,
@@ -42,8 +42,8 @@ import type {
   ExportOptions,
   ImporterPlugin,
   ExporterPlugin,
-} from './types/index.js';
-import type { FormatAdapter } from './core/format-adapter.js';
+} from './types/index';
+import type { FormatAdapter } from './core/format-adapter';
 
 export interface DocumentConverterOptions {
   /**
@@ -109,7 +109,7 @@ export class DocumentConverter {
    * @param options - Registration options (e.g., allowOverwrite)
    * @throws {Error} If plugin name is already registered (unless allowOverwrite is true)
    */
-  registerImporter(plugin: ImporterPlugin, options?: import('./plugins/plugin-registry.js').PluginRegistrationOptions): void {
+  registerImporter(plugin: ImporterPlugin, options?: import('./plugins/plugin-registry').PluginRegistrationOptions): void {
     this.registry.registerImporter(plugin, options);
   }
 
@@ -119,7 +119,7 @@ export class DocumentConverter {
    * @param options - Registration options (e.g., allowOverwrite)
    * @throws {Error} If plugin name is already registered (unless allowOverwrite is true)
    */
-  registerExporter(plugin: ExporterPlugin, options?: import('./plugins/plugin-registry.js').PluginRegistrationOptions): void {
+  registerExporter(plugin: ExporterPlugin, options?: import('./plugins/plugin-registry').PluginRegistrationOptions): void {
     this.registry.registerExporter(plugin, options);
   }
 
@@ -128,7 +128,7 @@ export class DocumentConverter {
    * @param plugin - The importer plugin to register
    * @param options - Registration options (e.g., allowOverwrite)
    */
-  async registerImporterAsync(plugin: ImporterPlugin, options?: import('./plugins/plugin-registry.js').PluginRegistrationOptions): Promise<void> {
+  async registerImporterAsync(plugin: ImporterPlugin, options?: import('./plugins/plugin-registry').PluginRegistrationOptions): Promise<void> {
     return this.registry.registerImporterAsync(plugin, options);
   }
 
@@ -137,7 +137,7 @@ export class DocumentConverter {
    * @param plugin - The exporter plugin to register
    * @param options - Registration options (e.g., allowOverwrite)
    */
-  async registerExporterAsync(plugin: ExporterPlugin, options?: import('./plugins/plugin-registry.js').PluginRegistrationOptions): Promise<void> {
+  async registerExporterAsync(plugin: ExporterPlugin, options?: import('./plugins/plugin-registry').PluginRegistrationOptions): Promise<void> {
     return this.registry.registerExporterAsync(plugin, options);
   }
 
@@ -297,24 +297,24 @@ export class DocumentConverter {
 }
 
 // Export types and utilities
-export * from './types/index.js';
-export * from './core/portable-text-utils.js';
-export { PluginRegistry } from './plugins/plugin-registry.js';
-export type { PluginRegistrationOptions } from './plugins/plugin-registry.js';
+export * from './types/index';
+export * from './core/portable-text-utils';
+export { PluginRegistry } from './plugins/plugin-registry';
+export type { PluginRegistrationOptions } from './plugins/plugin-registry';
 
 // Export format adapter interfaces and implementations
-export type { FormatAdapter, IntermediateDocument, BlockStyle, ListType, TextMark, CalloutType } from './core/format-adapter.js';
-export { BaseFormatAdapter } from './core/format-adapter.js';
-export { PortableTextAdapter, portableTextAdapter } from './adapters/portable-text-adapter.js';
+export type { FormatAdapter, IntermediateDocument, BlockStyle, ListType, TextMark, CalloutType } from './core/format-adapter';
+export { BaseFormatAdapter } from './core/format-adapter';
+export { PortableTextAdapter, portableTextAdapter } from './adapters/portable-text-adapter';
 
 // Export built-in plugins
-export { MarkdownImporter } from './importers/markdown-importer.js';
-export { NotionImporter } from './importers/notion-importer.js';
-export { RoamImporter } from './importers/roam-importer.js';
-export { MarkdownExporter } from './exporters/markdown-exporter.js';
-export { NotionExporter } from './exporters/notion-exporter.js';
-export { RoamExporter } from './exporters/roam-exporter.js';
-export { HtmlExporter } from './exporters/html-exporter.js';
+export { MarkdownImporter } from './importers/markdown-importer';
+export { NotionImporter } from './importers/notion-importer';
+export { RoamImporter } from './importers/roam-importer';
+export { MarkdownExporter } from './exporters/markdown-exporter';
+export { NotionExporter } from './exporters/notion-exporter';
+export { RoamExporter } from './exporters/roam-exporter';
+export { HtmlExporter } from './exporters/html-exporter';
 
 // Default export
 export default DocumentConverter;
