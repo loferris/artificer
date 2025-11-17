@@ -41,6 +41,32 @@ export interface PythonOCRResult {
   };
 }
 
+export interface PythonPageImage {
+  pageNumber: number;
+  imageData: string; // base64
+  contentType: string;
+  width: number;
+  height: number;
+  sizeBytes: number;
+  format: string;
+}
+
+export interface PythonPdfToImagesResult {
+  pages: PythonPageImage[];
+  totalPages: number;
+  processingTime: number;
+}
+
+export interface PythonImageConvertResult {
+  imageData: string; // base64
+  contentType: string;
+  width: number;
+  height: number;
+  sizeBytes: number;
+  format: string;
+  processingTime: number;
+}
+
 export class PythonOCRClient {
   private baseUrl: string;
   private timeout: number;
@@ -259,6 +285,138 @@ export class PythonOCRClient {
       };
     } catch (error) {
       logger.error('Python image OCR failed', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Convert PDF pages to images (2-10x faster than pdf2pic)
+   */
+  async extractPdfPagesToImages(
+    pdfBuffer: Buffer,
+    options: {
+      dpi?: number;
+      format?: string;
+      maxWidth?: number;
+      maxHeight?: number;
+    } = {}
+  ): Promise<PythonPdfToImagesResult> {
+    if (!this.available) {
+      throw new Error('Python OCR service not available');
+    }
+
+    try {
+      const base64Data = pdfBuffer.toString('base64');
+
+      const response = await fetch(`${this.baseUrl}/api/pdf/extract-images`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          pdf_data: base64Data,
+          dpi: options.dpi || 200,
+          format: options.format || 'png',
+          max_width: options.maxWidth || 2000,
+          max_height: options.maxHeight || 2000,
+        }),
+        signal: AbortSignal.timeout(this.timeout),
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Python service error: ${response.status} - ${error}`);
+      }
+
+      const result = await response.json();
+
+      logger.info('PDF to images conversion by Python service', {
+        totalPages: result.total_pages,
+        processingTime: result.processing_time_ms,
+      });
+
+      return {
+        pages: result.pages.map((page: any) => ({
+          pageNumber: page.page_number,
+          imageData: page.image_data,
+          contentType: page.content_type,
+          width: page.width,
+          height: page.height,
+          sizeBytes: page.size_bytes,
+          format: page.format,
+        })),
+        totalPages: result.total_pages,
+        processingTime: result.processing_time_ms,
+      };
+    } catch (error) {
+      logger.error('Python PDF to images conversion failed', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Convert or resize an image
+   */
+  async convertImage(
+    imageBuffer: Buffer,
+    options: {
+      outputFormat?: string;
+      maxWidth?: number;
+      maxHeight?: number;
+      quality?: number;
+    } = {}
+  ): Promise<PythonImageConvertResult> {
+    if (!this.available) {
+      throw new Error('Python OCR service not available');
+    }
+
+    try {
+      const base64Data = imageBuffer.toString('base64');
+
+      const response = await fetch(`${this.baseUrl}/api/images/convert`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          image_data: base64Data,
+          output_format: options.outputFormat || 'png',
+          max_width: options.maxWidth,
+          max_height: options.maxHeight,
+          quality: options.quality || 95,
+        }),
+        signal: AbortSignal.timeout(this.timeout),
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Python service error: ${response.status} - ${error}`);
+      }
+
+      const result = await response.json();
+
+      logger.info('Image conversion by Python service', {
+        format: result.format,
+        dimensions: `${result.width}x${result.height}`,
+        sizeBytes: result.size_bytes,
+        processingTime: result.processing_time_ms,
+      });
+
+      return {
+        imageData: result.image_data,
+        contentType: result.content_type,
+        width: result.width,
+        height: result.height,
+        sizeBytes: result.size_bytes,
+        format: result.format,
+        processingTime: result.processing_time_ms,
+      };
+    } catch (error) {
+      logger.error('Python image conversion failed', {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;

@@ -13,6 +13,7 @@ import path from 'path';
 import os from 'os';
 import { circuitBreakerRegistry } from '../../utils/CircuitBreaker';
 import pdf from 'pdf-parse';
+import { pythonOCRClient } from '../python/PythonOCRClient';
 
 // Constants
 const MAX_IMAGE_SIZE_BYTES = 20 * 1024 * 1024; // 20MB
@@ -182,6 +183,7 @@ export class OCRService implements OCRProvider {
 
   /**
    * Convert PDF pages to images for OCR processing
+   * Uses Python service (2-10x faster) with fallback to Node.js pdf2pic
    * @private
    */
   private async extractPdfPagesToImages(
@@ -189,6 +191,39 @@ export class OCRService implements OCRProvider {
     tempDir: string,
     pageCount: number
   ): Promise<Array<{ buffer: Buffer; contentType: string }>> {
+    // Try Python service first (2-10x faster)
+    if (pythonOCRClient.isAvailable()) {
+      try {
+        logger.info('Using Python service for PDF to image conversion', { pageCount });
+        const result = await pythonOCRClient.extractPdfPagesToImages(buffer, {
+          dpi: 200,
+          format: 'png',
+          maxWidth: 2000,
+          maxHeight: 2000,
+        });
+
+        // Convert base64 images to buffers
+        const pageImages = result.pages.map((page) => ({
+          buffer: Buffer.from(page.imageData, 'base64'),
+          contentType: page.contentType,
+        }));
+
+        logger.info('Python PDF to image conversion completed', {
+          pageCount: result.totalPages,
+          processingTime: result.processingTime,
+        });
+
+        return pageImages;
+      } catch (error) {
+        logger.warn('Python PDF to image conversion failed, falling back to pdf2pic', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        // Fall through to pdf2pic fallback
+      }
+    }
+
+    // Fallback to Node.js pdf2pic (slower but reliable)
+    logger.info('Using Node.js pdf2pic for PDF to image conversion', { pageCount });
     const converter = fromBuffer(buffer, {
       density: 200, // DPI - higher = better quality but larger files
       saveFilename: 'page',

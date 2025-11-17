@@ -20,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from processors.pdf import PdfProcessor
 from processors.ocr import OCRProcessor
+from processors.image import ImageProcessor
 
 # Configure logging
 logging.basicConfig(
@@ -50,6 +51,12 @@ ocr_processor = OCRProcessor(
     openai_api_key=os.getenv("OPENAI_API_KEY"),
     model=os.getenv("OCR_MODEL", "gpt-4o-mini"),
     use_tesseract_fallback=True
+)
+image_processor = ImageProcessor(
+    default_dpi=200,
+    default_format="png",
+    max_width=2000,
+    max_height=2000
 )
 
 
@@ -125,6 +132,53 @@ class HealthResponse(BaseModel):
     processors: Dict[str, bool]
 
 
+class ExtractPdfImagesToImagesRequest(BaseModel):
+    """Request to convert PDF pages to images"""
+    pdf_data: str = Field(..., description="Base64-encoded PDF data")
+    dpi: int = Field(default=200, description="DPI for rendering")
+    format: str = Field(default="png", description="Output format (png, jpeg, webp)")
+    max_width: int = Field(default=2000, description="Maximum width in pixels")
+    max_height: int = Field(default=2000, description="Maximum height in pixels")
+
+
+class PageImage(BaseModel):
+    """Single page image data"""
+    page_number: int
+    image_data: str  # Base64-encoded
+    content_type: str
+    width: int
+    height: int
+    size_bytes: int
+    format: str
+
+
+class ExtractPdfPagesToImagesResponse(BaseModel):
+    """Response from PDF to images conversion"""
+    pages: List[PageImage]
+    total_pages: int
+    processing_time_ms: int
+
+
+class ConvertImageRequest(BaseModel):
+    """Request to convert/resize an image"""
+    image_data: str = Field(..., description="Base64-encoded image data")
+    output_format: str = Field(default="png", description="Output format")
+    max_width: Optional[int] = Field(default=None, description="Maximum width")
+    max_height: Optional[int] = Field(default=None, description="Maximum height")
+    quality: int = Field(default=95, description="JPEG/WebP quality (1-100)")
+
+
+class ConvertImageResponse(BaseModel):
+    """Response from image conversion"""
+    image_data: str  # Base64-encoded
+    content_type: str
+    width: int
+    height: int
+    size_bytes: int
+    format: str
+    processing_time_ms: int
+
+
 # ===== API Endpoints =====
 
 @app.get("/", response_model=Dict[str, str])
@@ -146,6 +200,7 @@ async def health():
         version="0.1.0",
         processors={
             "pdf": True,
+            "image": True,
             "ocr_openai": ocr_processor.openai_client is not None,
             "ocr_tesseract": ocr_processor.tesseract_available
         }
@@ -278,6 +333,95 @@ async def extract_text_from_image(request: ExtractTextRequest):
         raise HTTPException(status_code=500, detail=f"Image OCR failed: {str(e)}")
 
 
+@app.post("/api/pdf/extract-images", response_model=ExtractPdfPagesToImagesResponse)
+async def extract_pdf_pages_to_images(request: ExtractPdfImagesToImagesRequest):
+    """
+    Convert PDF pages to images.
+
+    This endpoint performs fast PDF to image conversion using PyMuPDF.
+    2-10x faster than Node.js pdf2pic + GraphicsMagick.
+
+    Returns base64-encoded images for each page.
+    """
+    try:
+        import time
+        start = time.time()
+
+        # Decode base64 PDF
+        pdf_bytes = base64.b64decode(request.pdf_data)
+
+        # Convert to images
+        images = image_processor.extract_pdf_pages_to_images(
+            pdf_bytes,
+            dpi=request.dpi,
+            format=request.format,
+            max_width=request.max_width,
+            max_height=request.max_height
+        )
+
+        # Encode images as base64
+        page_images = []
+        for img in images:
+            page_images.append(
+                PageImage(
+                    page_number=img["page_number"],
+                    image_data=base64.b64encode(img["image_data"]).decode("utf-8"),
+                    content_type=img["content_type"],
+                    width=img["width"],
+                    height=img["height"],
+                    size_bytes=img["size_bytes"],
+                    format=img["format"]
+                )
+            )
+
+        processing_time = int((time.time() - start) * 1000)
+
+        return ExtractPdfPagesToImagesResponse(
+            pages=page_images,
+            total_pages=len(page_images),
+            processing_time_ms=processing_time
+        )
+
+    except Exception as e:
+        logger.error(f"PDF to images conversion failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"PDF to images conversion failed: {str(e)}")
+
+
+@app.post("/api/images/convert", response_model=ConvertImageResponse)
+async def convert_image(request: ConvertImageRequest):
+    """
+    Convert or resize an image.
+
+    Supports format conversion and resizing with high-quality resampling.
+    """
+    try:
+        # Decode base64 image
+        image_bytes = base64.b64decode(request.image_data)
+
+        # Convert image
+        result = image_processor.convert_image(
+            image_bytes,
+            output_format=request.output_format,
+            max_width=request.max_width,
+            max_height=request.max_height,
+            quality=request.quality
+        )
+
+        return ConvertImageResponse(
+            image_data=base64.b64encode(result["image_data"]).decode("utf-8"),
+            content_type=result["content_type"],
+            width=result["width"],
+            height=result["height"],
+            size_bytes=result["size_bytes"],
+            format=result["format"],
+            processing_time_ms=result["processing_time_ms"]
+        )
+
+    except Exception as e:
+        logger.error(f"Image conversion failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Image conversion failed: {str(e)}")
+
+
 # ===== Startup/Shutdown Events =====
 
 @app.on_event("startup")
@@ -287,6 +431,7 @@ async def startup_event():
     logger.info("Artificer Python OCR Service Starting")
     logger.info("=" * 60)
     logger.info(f"PDF Processor: Enabled (PyMuPDF)")
+    logger.info(f"Image Processor: Enabled (PyMuPDF + Pillow)")
     logger.info(f"OCR OpenAI: {'Enabled' if ocr_processor.openai_client else 'Disabled'}")
     logger.info(f"OCR Tesseract: {'Enabled' if ocr_processor.tesseract_available else 'Disabled'}")
     logger.info("=" * 60)
