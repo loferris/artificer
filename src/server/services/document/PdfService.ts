@@ -6,6 +6,7 @@
 
 import { PdfExtractor, type PdfExtractionResult } from '@ai-workflow/document-converter';
 import { OCRService } from '../image/OCRService';
+import { pythonOCRClient } from '../python/PythonOCRClient';
 import { logger } from '../../utils/logger';
 
 export interface PdfProcessingResult {
@@ -51,9 +52,42 @@ export class PdfService {
       size: buffer.length,
       forceOCR,
       hasOCRService: !!this.ocrService,
+      pythonServiceAvailable: pythonOCRClient.isAvailable(),
     });
 
+    // Try Python service first (10-20x faster!)
+    if (pythonOCRClient.isAvailable()) {
+      try {
+        logger.info('Using Python OCR service for PDF processing');
+        const pythonResult = await pythonOCRClient.extractPdfText(buffer, {
+          forceOCR,
+          minTextThreshold,
+        });
+
+        return {
+          text: pythonResult.text,
+          metadata: {
+            pages: pythonResult.metadata.pages,
+            method: 'direct', // Python result
+            title: pythonResult.metadata.title,
+            author: pythonResult.metadata.author,
+            creationDate: undefined, // Python doesn't parse dates yet
+            hasTextContent: pythonResult.metadata.hasTextContent,
+            ocrUsed: false,
+            processingTime: pythonResult.metadata.processingTime,
+          },
+        };
+      } catch (error) {
+        logger.warn('Python service failed, falling back to TypeScript', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        // Fall through to TypeScript implementation
+      }
+    }
+
     try {
+      // Fallback: TypeScript implementation
+      logger.info('Using TypeScript PDF extraction (fallback)');
       // Step 1: Try direct text extraction
       const extraction = await this.pdfExtractor.extractText(buffer);
 
