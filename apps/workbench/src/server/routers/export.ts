@@ -3,8 +3,8 @@ import { router, publicProcedure, protectedProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
 import { createServicesFromContext } from '../services/ServiceFactory';
 import { ExportService, type ExportOptions } from '../services/export';
-import { DocumentConverter } from '../../../lib/document-converter/src/index';
-import type { ConvertedDocument } from '../../../lib/document-converter/src/types/index';
+import { DocumentConverter } from '@ai-workflow/document-converter';
+import type { ConvertedDocument } from '@ai-workflow/document-converter/types';
 
 const converter = new DocumentConverter();
 
