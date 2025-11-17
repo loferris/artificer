@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { getSpecialistTheme, type SpecialistType } from '@/lib/specialist-theme'
 import { CopyButton } from '@/components/shared/CopyButton'
@@ -6,6 +6,9 @@ import { BadgeGroup } from '@/components/shared/BadgeGroup'
 import { ExpandableSection } from '@/components/shared/ExpandableSection'
 import { formatCost } from '@/lib/cost-utils'
 import { cn } from '@/lib/cn'
+import { createComponentLogger } from '@/lib/componentLogger'
+
+const logger = createComponentLogger('SpecialistCard')
 
 export interface SpecialistCardProps {
   specialist: SpecialistType
@@ -47,6 +50,38 @@ export function SpecialistCard({
 }: SpecialistCardProps) {
   const theme = getSpecialistTheme(specialist)
 
+  useEffect(() => {
+    logger.lifecycle('SpecialistCard', 'mount', {
+      specialist,
+      hasInsights: insights.length > 0,
+      hasRating: !!rating
+    })
+
+    return () => {
+      logger.lifecycle('SpecialistCard', 'unmount')
+    }
+  }, [])
+
+  const handleCardClick = () => {
+    logger.interaction({
+      component: 'SpecialistCard',
+      action: 'card_click',
+      target: specialist,
+      metadata: { selected }
+    })
+    onSelect?.()
+  }
+
+  const handleRating = (newRating: number) => {
+    logger.interaction({
+      component: 'SpecialistCard',
+      action: 'rate',
+      target: specialist,
+      metadata: { rating: newRating }
+    })
+    onRate?.(newRating)
+  }
+
   return (
     <Card
       className={cn(
@@ -54,7 +89,7 @@ export function SpecialistCard({
         selected && `ring-2 ${theme.borderColor.replace('border-', 'ring-')}`,
         className
       )}
-      onClick={onSelect}
+      onClick={handleCardClick}
     >
       <CardHeader className={cn("border-b-2", theme.borderColor, theme.bgColor)}>
         <div className="flex items-start justify-between gap-3">
@@ -126,7 +161,7 @@ export function SpecialistCard({
                 key={star}
                 onClick={(e) => {
                   e.stopPropagation()
-                  onRate(star)
+                  handleRating(star)
                 }}
                 className={cn(
                   "text-lg transition-colors",

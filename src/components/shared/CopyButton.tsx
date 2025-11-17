@@ -2,6 +2,9 @@ import React from 'react'
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/cn'
+import { createComponentLogger } from '@/lib/componentLogger'
+
+const logger = createComponentLogger('CopyButton')
 
 export interface CopyButtonProps {
   text: string
@@ -24,11 +27,27 @@ export function CopyButton({
 }: CopyButtonProps) {
   const { copy, copied } = useCopyToClipboard()
 
+  const handleCopy = async () => {
+    try {
+      await copy(text)
+      logger.interaction({
+        component: 'CopyButton',
+        action: 'copy',
+        metadata: { textLength: text.length }
+      })
+    } catch (error) {
+      logger.error('Copy failed', error as Error, {
+        component: 'CopyButton',
+        action: 'copy_error'
+      })
+    }
+  }
+
   return (
     <Button
       variant={variant}
       size={size}
-      onClick={() => copy(text)}
+      onClick={handleCopy}
       className={cn(
         copied && "bg-green-50 border-green-200 text-green-700 hover:bg-green-100",
         className

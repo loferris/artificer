@@ -1,9 +1,12 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { SpecialistCard } from './SpecialistCard'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { getSpecialistTheme, type SpecialistType } from '@/lib/specialist-theme'
 import { cn } from '@/lib/cn'
+import { createComponentLogger } from '@/lib/componentLogger'
+
+const logger = createComponentLogger('CandidateComparison')
 
 export interface Candidate {
   id: string
@@ -50,6 +53,18 @@ export function CandidateComparison({
   const [focusedId, setFocusedId] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
+  useEffect(() => {
+    logger.lifecycle('CandidateComparison', 'mount', {
+      candidatesCount: candidates.length,
+      hasFinalSynthesis: !!finalSynthesis,
+      layout
+    })
+
+    return () => {
+      logger.lifecycle('CandidateComparison', 'unmount')
+    }
+  }, [])
+
   const gridClasses = {
     '2x3': 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
     '3x2': 'grid-cols-1 md:grid-cols-3',
@@ -57,6 +72,16 @@ export function CandidateComparison({
   }
 
   const handleCardClick = (id: string) => {
+    const candidate = candidates.find(c => c.id === id)
+    const action = focusedId === id ? 'unfocus' : 'focus'
+
+    logger.interaction({
+      component: 'CandidateComparison',
+      action: `candidate_${action}`,
+      target: candidate?.specialist,
+      metadata: { candidateId: id }
+    })
+
     if (focusedId === id) {
       setFocusedId(null)
     } else {
@@ -66,10 +91,28 @@ export function CandidateComparison({
   }
 
   const handleRate = (candidateId: string, rating: number) => {
+    const candidate = candidates.find(c => c.id === candidateId)
+
+    logger.interaction({
+      component: 'CandidateComparison',
+      action: 'rate_candidate',
+      target: candidate?.specialist,
+      metadata: { candidateId, rating }
+    })
+
     onRate?.(candidateId, rating)
   }
 
   const handleSelect = (candidateId: string) => {
+    const candidate = candidates.find(c => c.id === candidateId)
+
+    logger.interaction({
+      component: 'CandidateComparison',
+      action: 'select_candidate',
+      target: candidate?.specialist,
+      metadata: { candidateId }
+    })
+
     setSelectedId(candidateId)
     onCopy?.(candidateId)
   }

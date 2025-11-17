@@ -1,8 +1,11 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Progress } from '@/components/ui/progress'
 import { StatusBadge, type Status } from '@/components/shared/StatusBadge'
 import { formatDuration } from '@/lib/time-utils'
 import { cn } from '@/lib/cn'
+import { createComponentLogger } from '@/lib/componentLogger'
+
+const logger = createComponentLogger('PipelineProgress')
 
 export interface PipelineStage {
   id: string
@@ -38,6 +41,37 @@ export function PipelineProgress({
   className,
   showStageLabels = true
 }: PipelineProgressProps) {
+  useEffect(() => {
+    logger.lifecycle('PipelineProgress', 'mount', {
+      stagesCount: stages.length,
+      currentStage,
+      progress
+    })
+
+    logger.info('Pipeline progress update', {
+      component: 'PipelineProgress',
+      action: 'progress_update'
+    }, {
+      progress: `${Math.round(progress)}%`,
+      currentStage,
+      estimatedTimeRemaining
+    })
+
+    return () => {
+      logger.lifecycle('PipelineProgress', 'unmount')
+    }
+  }, [])
+
+  useEffect(() => {
+    logger.debug('Pipeline stage changed', {
+      component: 'PipelineProgress',
+      action: 'stage_change'
+    }, {
+      currentStage,
+      progress
+    })
+  }, [currentStage, progress])
+
   return (
     <div className={cn("bg-white border border-gray-200 rounded-2xl shadow-sm p-6", className)}>
       {/* Stage indicators */}
