@@ -6,6 +6,7 @@ import { ChainOrchestrator } from '../services/orchestration/ChainOrchestrator';
 import { ChainConfig } from '../services/orchestration/types';
 import { getModelRegistry } from '../services/orchestration/ModelRegistry';
 import { logger } from '../utils/logger';
+import { models } from '../config/models';
 
 // Helper function to ensure user exists in demo mode
 function ensureDemoUser(ctx: any) {
@@ -32,21 +33,14 @@ function ensureDemoUser(ctx: any) {
 }
 
 /**
- * Builds chain configuration from environment variables
+ * Builds chain configuration from centralized model registry and environment variables
  */
 function buildChainConfig(): ChainConfig {
-  const analyzerModel = process.env.ANALYZER_MODEL || 'deepseek/deepseek-chat';
-  const routerModel = process.env.ROUTER_MODEL || 'anthropic/claude-3-haiku';
-  const validatorModel = process.env.VALIDATOR_MODEL || 'anthropic/claude-3-5-sonnet';
-
-  // Get available models from environment or use defaults
-  const modelsList = process.env.OPENROUTER_MODELS ||
-    'deepseek/deepseek-chat,anthropic/claude-3-haiku,anthropic/claude-3-5-sonnet,openai/gpt-4o-mini';
-
-  const availableModels = modelsList
-    .split(',')
-    .map(m => m.trim())
-    .filter(m => m.length > 0);
+  // Model configuration from centralized registry
+  const analyzerModel = models.analyzer;
+  const routerModel = models.router;
+  const validatorModel = models.validator;
+  const availableModels = models.available;
 
   const minComplexity = parseInt(process.env.CHAIN_ROUTING_MIN_COMPLEXITY || '5', 10);
   const maxRetries = parseInt(process.env.MAX_RETRIES || '2', 10);

@@ -56,7 +56,7 @@ interface SimplifiedChatViewProps {
     rejectProposal: () => void;
     shouldSuggestUpdate: (message: string) => boolean;
   };
-  projectDocuments?: Array<{ id: string; filename: string; content: string }>;
+  projectDocuments?: Array<{ id: string; filename: string }>;
 }
 
 export const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
@@ -91,7 +91,7 @@ export const SimplifiedChatView: React.FC<SimplifiedChatViewProps> = ({
   };
 
   // Smart document selection: find the most relevant document based on message content
-  const findRelevantDocument = (message: string, docs: Array<{ id: string; filename: string; content: string }>) => {
+  const findRelevantDocument = (message: string, docs: Array<{ id: string; filename: string }>) => {
     const lowerMessage = message.toLowerCase();
 
     // Try to find explicit file references

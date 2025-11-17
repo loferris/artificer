@@ -3,8 +3,8 @@ import { router, publicProcedure, protectedProcedure } from '../trpc';
 import { TRPCError } from '@trpc/server';
 import { createServicesFromContext } from '../services/ServiceFactory';
 import { ExportService, type ExportOptions } from '../services/export';
-import { DocumentConverter } from '../../../lib/document-converter/src/index.js';
-import type { ConvertedDocument } from '../../../lib/document-converter/src/types/index.js';
+import { DocumentConverter } from '../../../lib/document-converter/src/index';
+import type { ConvertedDocument } from '../../../lib/document-converter/src/types/index';
 
 const converter = new DocumentConverter();
 
@@ -172,7 +172,7 @@ export const exportRouter = router({
           result = await converter.export(combinedDoc, 'html', {
             includeMetadata: input.includeMetadata,
             includeStyles: true,
-          });
+          } as any); // HTML-specific options
           break;
         default:
           throw new TRPCError({
@@ -285,7 +285,7 @@ export const exportRouter = router({
           result = await converter.export(portableText, 'html', {
             includeMetadata: input.includeMetadata,
             includeStyles: true,
-          });
+          } as any); // HTML-specific options
           break;
         default:
           throw new TRPCError({

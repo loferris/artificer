@@ -1,8 +1,10 @@
 import { z } from 'zod';
 import { router, publicProcedure, protectedProcedure } from '../trpc';
+import { TRPCError } from '@trpc/server';
 import { ProjectService } from '../services/project/ProjectService';
 import { DocumentService } from '../services/project/DocumentService';
 import { DocumentUpdateService } from '../services/document/DocumentUpdateService';
+import { documentUpdateRateLimiter } from '../utils/rateLimit';
 
 /**
  * Helper to check if demo mode is active
@@ -465,6 +467,17 @@ export const projectsRouter = router({
       userRequest: z.string(),
     }))
     .mutation(async ({ ctx, input }) => {
+      // Rate limiting: 5 requests per minute per user
+      const identifier = ctx.user?.id || ctx.clientIp || 'anonymous';
+      const rateLimitResult = documentUpdateRateLimiter.check(identifier);
+
+      if (!rateLimitResult.allowed) {
+        throw new TRPCError({
+          code: 'TOO_MANY_REQUESTS',
+          message: `Rate limit exceeded. Please wait ${Math.ceil((rateLimitResult.resetAt - Date.now()) / 1000)} seconds before requesting another update.`,
+        });
+      }
+
       try {
         const documentService = new DocumentService(ensureDatabase(ctx));
         const updateService = new DocumentUpdateService();

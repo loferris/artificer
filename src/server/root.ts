@@ -12,6 +12,7 @@ import { searchRouter } from './routers/search';
 import { orchestrationRouter } from './routers/orchestration';
 import { imagesRouter } from './routers/images';
 import { batchRouter } from './routers/batch';
+import { modelAdminRouter } from './routers/modelAdmin';
 
 export const appRouter = router({
   chat: chatRouter,
@@ -26,6 +27,7 @@ export const appRouter = router({
   orchestration: orchestrationRouter,
   images: imagesRouter,
   batch: batchRouter,
+  modelAdmin: modelAdminRouter,
 });
 
 export type AppRouter = typeof appRouter;

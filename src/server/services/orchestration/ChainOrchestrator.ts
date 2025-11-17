@@ -393,7 +393,10 @@ export class ChainOrchestrator {
     const startTime = Date.now();
 
     // Use cheapest available model for simple tasks
-    const cheapModel = this.config.availableModels[0] || 'deepseek/deepseek-chat';
+    if (this.config.availableModels.length === 0) {
+      throw new Error('No models available for execution. Please configure OPENROUTER_MODELS in your .env file.');
+    }
+    const cheapModel = this.config.availableModels[0];
 
     const execution = await this.executeQuery(context, cheapModel);
     const validation = this.validator.validateSimple(execution);

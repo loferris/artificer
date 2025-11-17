@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import { TRPCError } from '@trpc/server';
 import type { PrismaClient } from '@prisma/client';
 import { DEMO_CONFIG } from '../../config/demo';
+import { models } from '../../config/models';
 
 export interface ConversationWithMessages {
   id: string;
@@ -117,16 +118,7 @@ export class DatabaseConversationService implements ConversationService {
       const newConv = await prisma.conversation.create({
         data: {
           title: conversationData.title ?? null,
-          model:
-            conversationData.model ||
-            (process.env.OPENROUTER_MODEL && process.env.OPENROUTER_MODEL.trim() !== ''
-              ? process.env.OPENROUTER_MODEL
-              : null) ||
-            (process.env.OPENROUTER_DEFAULT_MODEL &&
-            process.env.OPENROUTER_DEFAULT_MODEL.trim() !== ''
-              ? process.env.OPENROUTER_DEFAULT_MODEL
-              : null) ||
-            'deepseek-chat',
+          model: conversationData.model || models.chat,
           projectId: conversationData.projectId ?? null,
           systemPrompt: conversationData.systemPrompt ?? 'You are a helpful AI assistant.',
           temperature: conversationData.temperature ?? 0.7,

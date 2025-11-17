@@ -9,8 +9,8 @@ import type {
   ImportOptions,
   RoamBlock,
   RoamPage,
-} from '../types/index.js';
-import { ConversionError } from '../types/index.js';
+} from '../types/index';
+import { ConversionError } from '../types/index';
 import {
   createTextBlock,
   createSpan,
@@ -18,7 +18,7 @@ import {
   createImageBlock,
   generateKey,
   createMetadata,
-} from '../core/portable-text-utils.js';
+} from '../core/portable-text-utils';
 import type { PortableTextBlock, PortableTextSpan } from '@portabletext/types';
 
 export class RoamImporter implements ImporterPlugin {

@@ -10,6 +10,7 @@
  */
 
 import OpenAI from 'openai';
+import { models } from '../../config/models';
 
 export interface EmbeddingServiceConfig {
   apiKey?: string;
@@ -35,8 +36,8 @@ export class EmbeddingService {
       apiKey,
       dangerouslyAllowBrowser: process.env.NODE_ENV === 'test', // Allow in test environment
     });
-    this.model = config.model || 'text-embedding-3-small';
-    this.dimensions = config.dimensions || 1536;
+    this.model = config.model || models.embedding;
+    this.dimensions = config.dimensions || models.embeddingDimensions;
     this.batchSize = config.batchSize || 100;
   }
 

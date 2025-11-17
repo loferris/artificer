@@ -166,6 +166,98 @@ const metadataMap = registry.getMetadataMap(availableModels);
 // Returns: Map<string, ModelMetadata>
 ```
 
+## Dynamic Model Discovery
+
+**New Feature:** The system includes an advanced dynamic model discovery feature that automatically selects the best models for each role based on requirements and real-time pricing.
+
+### Model Discovery vs Model Registry
+
+The system uses two complementary services:
+
+**ModelDiscoveryService** (Configuration Layer):
+- **Purpose**: Select models for app configuration at startup
+- **When**: Application initialization
+- **Output**: Configured model names for each role (chat, analyzer, validator, etc.)
+- **Fallback**: API → File cache → Hardcoded defaults
+
+**ModelRegistry** (Orchestration Layer):
+- **Purpose**: Provide runtime metadata for routing decisions
+- **When**: During request processing
+- **Output**: Tier, strengths, cost metadata for any model
+- **Fallback**: API → Config file → Name inference
+
+### Enabling Dynamic Discovery
+
+Set in `.env`:
+```bash
+USE_DYNAMIC_MODEL_DISCOVERY=true
+```
+
+When enabled, the system:
+1. Fetches 300+ models from OpenRouter API
+2. Filters based on requirements (context, cost, capabilities)
+3. Scores and ranks candidates
+4. Selects best model for each role
+5. Falls back to env vars if discovery fails
+
+### Model Requirements
+
+Each role has specific requirements defined in `modelRequirements.ts`:
+
+```typescript
+// Example: Primary chat model requirements
+{
+  minInputTokens: 100000,      // Needs large context
+  minOutputTokens: 4000,        // Needs substantial output
+  preferQuality: true,          // Quality over cost
+  preferredProviders: ['anthropic', 'deepseek']
+}
+```
+
+**Quality Filters Applied:**
+- ❌ Excludes free tier models (rate limited)
+- ❌ Excludes tiny models (1B-3B parameters)
+- ❌ Enforces minimum cost floor ($0.10/1M for quality tasks)
+- ✅ Prefers latest versions and preferred providers
+
+### Model Selection Results
+
+With dynamic discovery enabled, typical selections:
+
+| Role | Selected Model | Reason |
+|------|---------------|--------|
+| Primary Chat | `anthropic/claude-sonnet-4.5` | Best quality, 1M context |
+| Fallback Chat | `deepseek/deepseek-chat-v3.1` | Cheap but capable (671B params) |
+| Analyzer | `deepseek/deepseek-r1-0528-qwen3-8b` | Fast, cheap, good for classification |
+| Validator | `anthropic/claude-sonnet-4.5` | Quality validation needs quality model |
+| Summarization | `mistralai/mistral-small-3.2-24b` | Balance of quality and cost |
+| Embedding | `text-embedding-3-small` | Fallback (OpenRouter has no embeddings) |
+
+**Env var overrides always take precedence** - set `CHAT_MODEL` to force a specific model.
+
+### Admin API
+
+Manage model discovery via tRPC endpoints:
+
+```typescript
+// Refresh model cache
+await trpc.modelAdmin.refreshModels.mutate();
+
+// Check cache status
+const status = await trpc.modelAdmin.getCacheStatus.query();
+
+// List available models
+const models = await trpc.modelAdmin.listModels.query({
+  provider: 'anthropic'
+});
+
+// Test requirements matching
+const test = await trpc.modelAdmin.testSelection.mutate({
+  role: 'chat',
+  customRequirements: { minInputTokens: 200000 }
+});
+```
+
 ## Configuration
 
 ### Environment Variables

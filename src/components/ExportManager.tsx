@@ -66,19 +66,28 @@ export function useExportManager({ currentConversationId, onStatusMessage }: Exp
         // Handle different export result types
         const exportResult = result.data; // Extract the actual ExportResult
         let downloadData: string;
-        if (exportResult.content) {
-          // Single file exports (markdown, json, html)
-          downloadData = exportResult.content;
-        } else if (exportResult.files) {
-          // Multi-file exports (obsidian) - create a zip or concatenate
-          downloadData = Object.entries(exportResult.files)
-            .map(([filename, content]) => `--- ${filename} ---\n${content}`)
-            .join('\n\n');
-        } else if (exportResult.data) {
-          // Structured exports (notion) - stringify
-          downloadData = Array.isArray(exportResult.data)
-            ? JSON.stringify(exportResult.data, null, 2)
-            : String(exportResult.data);
+
+        // If exportResult is a string, use it directly
+        if (typeof exportResult === 'string') {
+          downloadData = exportResult;
+        } else if (typeof exportResult === 'object' && exportResult !== null) {
+          // Handle object-based export results
+          if ('content' in exportResult) {
+            // Single file exports (markdown, json, html)
+            downloadData = exportResult.content as string;
+          } else if ('files' in exportResult) {
+            // Multi-file exports (obsidian) - create a zip or concatenate
+            downloadData = Object.entries(exportResult.files as Record<string, string>)
+              .map(([filename, content]) => `--- ${filename} ---\n${content}`)
+              .join('\n\n');
+          } else if ('data' in exportResult) {
+            // Structured exports (notion) - stringify
+            downloadData = Array.isArray(exportResult.data)
+              ? JSON.stringify(exportResult.data, null, 2)
+              : String(exportResult.data);
+          } else {
+            downloadData = 'No content available';
+          }
         } else {
           downloadData = 'No content available';
         }
@@ -121,19 +130,28 @@ export function useExportManager({ currentConversationId, onStatusMessage }: Exp
         // Handle different export result types
         const exportResult = result.data; // Extract the actual ExportResult
         let downloadData: string;
-        if (exportResult.content) {
-          // Single file exports (markdown, json, html)
-          downloadData = exportResult.content;
-        } else if (exportResult.files) {
-          // Multi-file exports (obsidian) - create a zip or concatenate
-          downloadData = Object.entries(exportResult.files)
-            .map(([filename, content]) => `--- ${filename} ---\n${content}`)
-            .join('\n\n');
-        } else if (exportResult.data) {
-          // Structured exports (notion) - stringify
-          downloadData = Array.isArray(exportResult.data)
-            ? JSON.stringify(exportResult.data, null, 2)
-            : String(exportResult.data);
+
+        // If exportResult is a string, use it directly
+        if (typeof exportResult === 'string') {
+          downloadData = exportResult;
+        } else if (typeof exportResult === 'object' && exportResult !== null) {
+          // Handle object-based export results
+          if ('content' in exportResult) {
+            // Single file exports (markdown, json, html)
+            downloadData = exportResult.content as string;
+          } else if ('files' in exportResult) {
+            // Multi-file exports (obsidian) - create a zip or concatenate
+            downloadData = Object.entries(exportResult.files as Record<string, string>)
+              .map(([filename, content]) => `--- ${filename} ---\n${content}`)
+              .join('\n\n');
+          } else if ('data' in exportResult) {
+            // Structured exports (notion) - stringify
+            downloadData = Array.isArray(exportResult.data)
+              ? JSON.stringify(exportResult.data, null, 2)
+              : String(exportResult.data);
+          } else {
+            downloadData = 'No content available';
+          }
         } else {
           downloadData = 'No content available';
         }

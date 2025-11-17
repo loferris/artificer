@@ -2,8 +2,8 @@
  * Service for detecting and generating document updates based on LLM conversations
  */
 
-import OpenAI from 'openai';
 import { logger } from '../../utils/logger';
+import { models } from '../../config/models';
 import {
   buildDocumentUpdatePrompt,
   buildDocumentUpdateDecisionPrompt,
@@ -27,16 +27,53 @@ export interface DocumentUpdateProposal {
 }
 
 export class DocumentUpdateService {
-  private openai: OpenAI;
+  private apiKey: string;
+  private baseUrl: string;
 
   constructor() {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY is required for DocumentUpdateService');
+    const apiKey = process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error('OPENROUTER_API_KEY or OPENAI_API_KEY is required for DocumentUpdateService');
     }
 
-    this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
+    this.apiKey = apiKey;
+    this.baseUrl = 'https://openrouter.ai/api/v1';
+  }
+
+  /**
+   * Make a request to OpenRouter API
+   */
+  private async makeRequest(
+    messages: Array<{ role: string; content: string }>,
+    model: string,
+    options: {
+      temperature?: number;
+      max_tokens?: number;
+      response_format?: { type: string };
+    } = {}
+  ): Promise<string> {
+    const response = await fetch(`${this.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+        'X-Title': 'AI Workflow Engine',
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        ...options,
+      }),
     });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`OpenRouter API error: ${response.status} - ${error}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0]?.message?.content || '';
   }
 
   /**
@@ -54,9 +91,8 @@ export class DocumentUpdateService {
 
       const prompt = buildDocumentUpdateDecisionPrompt(userMessage, projectDocuments);
 
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini', // Fast and cheap for decision making
-        messages: [
+      const content = await this.makeRequest(
+        [
           {
             role: 'system',
             content: 'You are an assistant that analyzes user messages to determine if project documents should be updated.',
@@ -66,28 +102,49 @@ export class DocumentUpdateService {
             content: prompt,
           },
         ],
-        response_format: { type: 'json_object' },
-        temperature: 0.3, // Low temperature for consistent decisions
-      });
+        models.documentUpdateDecision, // Fast and cheap for decision making
+        {
+          response_format: { type: 'json_object' },
+          temperature: 0.3, // Low temperature for consistent decisions
+        }
+      );
 
-      const decision = JSON.parse(
-        response.choices[0]?.message?.content || '{}'
-      ) as DocumentUpdateDecision;
+      // Safely parse JSON response with validation
+      if (!content || content.trim().length === 0) {
+        throw new Error('Empty response from LLM');
+      }
+
+      let decision: DocumentUpdateDecision;
+      try {
+        const parsed = JSON.parse(content);
+
+        // Validate required fields
+        if (typeof parsed.shouldUpdate !== 'boolean') {
+          throw new Error('Invalid decision format: missing shouldUpdate');
+        }
+
+        decision = {
+          shouldUpdate: parsed.shouldUpdate,
+          documentId: parsed.documentId || null,
+          reason: parsed.reason || 'No reason provided',
+          confidence: typeof parsed.confidence === 'number'
+            ? Math.min(Math.max(parsed.confidence, 0), 1) // Clamp 0-1
+            : 0,
+        };
+      } catch (parseError) {
+        logger.error('Failed to parse LLM decision', { content, parseError });
+        throw new Error('Invalid JSON response from LLM');
+      }
 
       logger.info('Update intent analysis complete', { ...decision } as Record<string, unknown>);
 
-      return {
-        shouldUpdate: decision.shouldUpdate || false,
-        documentId: decision.documentId || null,
-        reason: decision.reason || 'No reason provided',
-        confidence: decision.confidence || 0,
-      };
+      return decision;
     } catch (error) {
       logger.error('Failed to analyze update intent', error);
       return {
         shouldUpdate: false,
         documentId: null,
-        reason: 'Analysis failed',
+        reason: error instanceof Error ? error.message : 'Analysis failed',
         confidence: 0,
       };
     }
@@ -107,9 +164,8 @@ export class DocumentUpdateService {
 
       const prompt = buildDocumentUpdatePrompt(context);
 
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o', // Use better model for content generation
-        messages: [
+      const updatedContent = await this.makeRequest(
+        [
           {
             role: 'system',
             content: 'You are a technical writer helping to update project documentation. Preserve formatting, structure, and tone.',
@@ -119,11 +175,17 @@ export class DocumentUpdateService {
             content: prompt,
           },
         ],
-        temperature: 0.5, // Moderate creativity
-        max_tokens: 4000,
-      });
+        models.documentUpdateGeneration, // High-quality model for content generation
+        {
+          temperature: 0.5, // Moderate creativity
+          max_tokens: 4000,
+        }
+      );
 
-      const updatedContent = response.choices[0]?.message?.content || context.documentContent;
+      if (!updatedContent || updatedContent.trim().length === 0) {
+        logger.warn('Empty content generated, returning original');
+        return context.documentContent;
+      }
 
       logger.info('Document update generated', {
         originalLength: context.documentContent.length,
@@ -147,9 +209,8 @@ export class DocumentUpdateService {
     try {
       const prompt = buildChangeSummaryPrompt(originalContent, updatedContent);
 
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
+      const summary = await this.makeRequest(
+        [
           {
             role: 'system',
             content: 'You are a technical writer summarizing document changes.',
@@ -159,11 +220,14 @@ export class DocumentUpdateService {
             content: prompt,
           },
         ],
-        temperature: 0.3,
-        max_tokens: 500,
-      });
+        models.documentUpdateSummary, // Fast and cheap for summaries
+        {
+          temperature: 0.3,
+          max_tokens: 500,
+        }
+      );
 
-      return response.choices[0]?.message?.content || 'Unable to generate summary';
+      return summary || 'Unable to generate summary';
     } catch (error) {
       logger.error('Failed to generate change summary', error);
       return 'Summary generation failed';

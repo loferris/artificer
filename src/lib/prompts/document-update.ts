@@ -2,6 +2,8 @@
  * LLM prompts for document update operations
  */
 
+import { encoding_for_model } from 'tiktoken';
+
 export interface DocumentUpdateContext {
   documentName: string;
   documentContent: string;
@@ -10,18 +12,66 @@ export interface DocumentUpdateContext {
 }
 
 /**
+ * Truncate text to fit within token limit
+ */
+function truncateToTokens(text: string, maxTokens: number): string {
+  const encoder = encoding_for_model('gpt-4o');
+  const tokens = encoder.encode(text);
+
+  if (tokens.length <= maxTokens) {
+    encoder.free();
+    return text;
+  }
+
+  const truncatedTokens = tokens.slice(0, maxTokens);
+  const truncated = new TextDecoder().decode(encoder.decode(truncatedTokens));
+  encoder.free();
+
+  return truncated + '\n\n[... content truncated to fit token limit ...]';
+}
+
+/**
+ * Estimate token count for text
+ */
+function estimateTokens(text: string): number {
+  const encoder = encoding_for_model('gpt-4o');
+  const tokens = encoder.encode(text);
+  const count = tokens.length;
+  encoder.free();
+  return count;
+}
+
+/**
  * Prompt for generating updated document content based on conversation
  */
 export function buildDocumentUpdatePrompt(context: DocumentUpdateContext): string {
+  const maxContentTokens = 6000; // Leave room for response (max ~8k context for most models)
+  const maxConversationTokens = 2000;
+
+  // Validate and truncate if needed
+  let documentContent = context.documentContent;
+  let conversationContext = context.conversationContext;
+
+  const contentTokens = estimateTokens(documentContent);
+  const conversationTokens = estimateTokens(conversationContext);
+
+  if (contentTokens > maxContentTokens) {
+    documentContent = truncateToTokens(documentContent, maxContentTokens);
+  }
+
+  if (conversationTokens > maxConversationTokens) {
+    conversationContext = truncateToTokens(conversationContext, maxConversationTokens);
+  }
+
   return `You are a document editor helping to update project documentation based on a conversation.
 
 CURRENT DOCUMENT: ${context.documentName}
 ---
-${context.documentContent}
+${documentContent}
 ---
 
 RECENT CONVERSATION:
-${context.conversationContext}
+${conversationContext}
 
 USER REQUEST:
 ${context.userRequest}

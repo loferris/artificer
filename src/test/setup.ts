@@ -2,7 +2,8 @@ import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeAll, beforeEach, vi } from 'vitest';
 
 // CRITICAL: Set env vars FIRST before any imports that might use them
-process.env.OPENROUTER_DEFAULT_MODEL = 'deepseek-chat';
+process.env.CHAT_MODEL = 'anthropic/claude-sonnet-4.5';
+process.env.CHAT_FALLBACK_MODEL = 'deepseek/deepseek-chat-v3.1';
 process.env.OPENROUTER_API_KEY = 'test-api-key';
 process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
 process.env.NODE_ENV = 'test';

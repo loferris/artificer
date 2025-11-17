@@ -175,16 +175,16 @@ Track costs with built-in usage monitoring:
 
 ## Model Selection
 Set default model in .env:
-OPENROUTER_MODEL=anthropic/claude-3-haiku
+CHAT_MODEL=anthropic/claude-sonnet-4.5
 
 Or specify per conversation:
-await createConversation({ model: 'deepseek-chat' })
+await createConversation({ model: 'deepseek/deepseek-chat-v3.1' })
 
 ## Fallback Strategy
 Configure fallback models for reliability:
 1. Primary model (fastest/preferred)
 2. Fallback model (if primary fails)
-3. Default model (deepseek-chat)`,
+3. Default model (deepseek/deepseek-chat-v3.1)`,
   },
 ];
 
