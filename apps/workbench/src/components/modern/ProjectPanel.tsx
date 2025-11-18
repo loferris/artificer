@@ -84,8 +84,17 @@ export const ProjectPanel: React.FC<ProjectPanelProps> = ({ projectId, isOpen, o
     <>
       {/* Backdrop */}
       <div
+        role="button"
+        tabIndex={0}
         className="fixed inset-0 bg-black bg-opacity-50 z-40"
         onClick={onClose}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
+            e.preventDefault()
+            onClose()
+          }
+        }}
+        aria-label="Close project panel"
       ></div>
 
       {/* Panel */}

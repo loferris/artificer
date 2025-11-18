@@ -84,7 +84,8 @@ export function TranslationTimeline({
     return () => {
       logger.lifecycle('TranslationTimeline', 'unmount')
     }
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run on mount/unmount for lifecycle logging
 
   const handleJobClick = (jobId: string) => {
     logger.interaction({

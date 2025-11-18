@@ -147,7 +147,7 @@ export function useExpandableCollection(
   const openMany = useCallback(
     (ids: string[]) => {
       setOpenIdsState(prev => {
-        const next = singleOpen ? new Set() : new Set(prev)
+        const next = singleOpen ? new Set<string>() : new Set(prev)
         ids.forEach(id => next.add(id))
         return next
       })

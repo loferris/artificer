@@ -99,12 +99,13 @@ export function QualityMetrics({
 
     logger.info('Quality metrics', {
       component: 'QualityMetrics'
-    }, metrics)
+    }, metrics as Record<string, unknown>)
 
     return () => {
       logger.lifecycle('QualityMetrics', 'unmount')
     }
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run on mount/unmount for lifecycle logging
 
   const availableMetrics = metricConfigs.filter(config => metrics[config.key] !== undefined)
 

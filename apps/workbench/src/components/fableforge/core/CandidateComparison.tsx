@@ -63,7 +63,8 @@ export function CandidateComparison({
     return () => {
       logger.lifecycle('CandidateComparison', 'unmount')
     }
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run on mount/unmount for lifecycle logging
 
   const gridClasses = {
     '2x3': 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
@@ -191,7 +192,7 @@ export function CandidateComparison({
               <div>
                 <h3 className="font-semibold">Final Synthesis</h3>
                 <p className="text-xs text-gray-600">
-                  Senior editor's combined translation
+                  Senior editor&apos;s combined translation
                 </p>
               </div>
             </div>
@@ -215,8 +216,8 @@ export function CandidateComparison({
             <ul className="text-xs space-y-1 text-blue-800">
               <li>• Click any card to focus and see full details</li>
               <li>• Rate candidates to help improve future translations</li>
-              <li>• Use the "Copy" button to quickly grab a translation</li>
-              <li>• Check insights to understand each specialist's approach</li>
+              <li>• Use the &ldquo;Copy&rdquo; button to quickly grab a translation</li>
+              <li>• Check insights to understand each specialist&apos;s approach</li>
             </ul>
           </div>
         </div>

@@ -68,12 +68,6 @@ export function CandidateDiff({
           <p className="text-xs text-gray-600">Comparison</p>
         </div>
       )}
-      onGranularityChange={(newGranularity) => {
-        logInteraction('change_granularity', { granularity: newGranularity })
-      }}
-      onViewModeChange={(newMode) => {
-        logInteraction('toggle_view_mode', { mode: newMode })
-      }}
     />
   )
 }

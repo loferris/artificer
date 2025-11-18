@@ -141,22 +141,16 @@ export function DiffViewer<T>({
   const beforeText = useMemo(() => getBeforeText(before), [before, getBeforeText])
   const afterText = useMemo(() => getAfterText(after), [after, getAfterText])
 
-  const diffSegments = useMemo(() => {
+  const diffResult = useMemo(() => {
     return computeDiff(beforeText, afterText, diffGranularity)
   }, [beforeText, afterText, diffGranularity])
+
+  const diffSegments = diffResult.segments
+  const stats = diffResult.stats
 
   const similarity = useMemo(() => {
     return getSimilarityScore(beforeText, afterText)
   }, [beforeText, afterText])
-
-  const stats = useMemo(() => {
-    return {
-      additions: diffSegments.filter(s => s.type === 'added').length,
-      deletions: diffSegments.filter(s => s.type === 'removed').length,
-      unchanged: diffSegments.filter(s => s.type === 'unchanged').length,
-      modified: diffSegments.filter(s => s.type === 'modified').length
-    }
-  }, [diffSegments])
 
   const renderDiffText = (type: 'before' | 'after') => {
     return diffSegments.map((seg, idx) => {
@@ -347,9 +341,9 @@ export function DiffViewer<T>({
               <Badge variant="red" size="sm">
                 {stats.deletions} deletions
               </Badge>
-              {stats.modified > 0 && (
+              {stats.modifications > 0 && (
                 <Badge variant="yellow" size="sm">
-                  {stats.modified} modified
+                  {stats.modifications} modified
                 </Badge>
               )}
               <Badge variant="gray" size="sm">

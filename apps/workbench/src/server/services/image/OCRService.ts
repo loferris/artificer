@@ -89,7 +89,8 @@ export class OCRService implements OCRProvider {
     try {
       // Get PDF metadata to determine page count
       // Use dynamic import to handle ESM/CJS compatibility
-      const pdfParse = (await import('pdf-parse')).default as unknown as PdfParseFunction;
+      const pdfParseModule = await import('pdf-parse');
+      const pdfParse = (pdfParseModule as any).default || pdfParseModule as unknown as PdfParseFunction;
       const data = await pdfParse(buffer);
       const pageCount = data.numpages || 0;
 

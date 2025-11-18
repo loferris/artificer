@@ -74,7 +74,8 @@ export function MetadataExplorer({
     return () => {
       logger.lifecycle('MetadataExplorer', 'unmount')
     }
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run on mount/unmount for lifecycle logging
 
   const handleTabChange = (tab: TabType) => {
     logger.interaction({
@@ -162,7 +163,7 @@ export function MetadataExplorer({
                       <div className="space-y-2">
                         {profile.dialogueSamples.map((sample, i) => (
                           <div key={i} className="bg-gray-50 p-2 rounded text-xs">
-                            <p className="italic text-gray-800">"{sample.text}"</p>
+                            <p className="italic text-gray-800">&ldquo;{sample.text}&rdquo;</p>
                             <Badge variant="gray" className="mt-1 text-xs">
                               {sample.tone}
                             </Badge>

@@ -149,7 +149,7 @@ export function createThemeRecord<T extends string>(
 ): Record<T, Theme<T>> {
   const result: Record<string, Theme<T>> = {}
   Object.entries(themes).forEach(([id, theme]) => {
-    result[id] = { ...theme, id } as Theme<T>
+    result[id] = { ...(theme as object), id: id as T } as Theme<T>
   })
   return result as Record<T, Theme<T>>
 }

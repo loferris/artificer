@@ -8,7 +8,7 @@ const logger = createComponentLogger('StreamingMessage')
 export interface StreamingMessageProps {
   content: string
   status: 'streaming' | 'complete' | 'error'
-  role?: 'user' | 'assistant' | 'system'
+  messageRole?: 'user' | 'assistant' | 'system'
   showCursor?: boolean
   cursorChar?: string
   error?: string
@@ -29,7 +29,7 @@ export interface StreamingMessageProps {
 export function StreamingMessage({
   content,
   status,
-  role = 'assistant',
+  messageRole = 'assistant',
   showCursor = true,
   cursorChar = '▋',
   error,
@@ -41,7 +41,7 @@ export function StreamingMessage({
 
   useEffect(() => {
     logger.lifecycle('StreamingMessage', 'mount', {
-      role,
+      messageRole,
       status,
       contentLength: content.length
     })
@@ -49,7 +49,8 @@ export function StreamingMessage({
     return () => {
       logger.lifecycle('StreamingMessage', 'unmount')
     }
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run on mount/unmount for lifecycle logging
 
   // Update displayed content when content changes
   useEffect(() => {
@@ -82,7 +83,7 @@ export function StreamingMessage({
     <Card
       className={cn(
         'transition-all',
-        roleStyles[role],
+        roleStyles[messageRole],
         isError && 'border-red-300 bg-red-50',
         className
       )}

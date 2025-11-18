@@ -201,13 +201,13 @@ export default function HellbatDemoPage() {
             <StreamingMessage
               content="Creating your world... Let me add Cerelle, a brave knight who once swore an oath of loyalty but now questions everything she believed in."
               status="streaming"
-              role="assistant"
+              messageRole="assistant"
             />
 
             <StreamingMessage
               content="Tell me about Cerelle's backstory and her relationship with her mentor."
               status="complete"
-              role="user"
+              messageRole="user"
             />
           </div>
         </section>

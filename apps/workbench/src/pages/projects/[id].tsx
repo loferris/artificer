@@ -364,8 +364,17 @@ const ProjectDetailPage: React.FC = () => {
                 {conversations.slice(0, 5).map((conversation) => (
                   <div
                     key={conversation.id}
+                    role="button"
+                    tabIndex={0}
                     className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
                     onClick={() => router.push(`/?conversation=${conversation.id}`)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        router.push(`/?conversation=${conversation.id}`)
+                      }
+                    }}
+                    aria-label={`Open conversation: ${conversation.title || 'Untitled Conversation'}`}
                   >
                     <h4 className="font-medium text-gray-900 dark:text-gray-100">
                       {conversation.title || 'Untitled Conversation'}

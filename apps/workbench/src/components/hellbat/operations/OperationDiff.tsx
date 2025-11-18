@@ -76,12 +76,6 @@ export function OperationDiff({
           </div>
         </div>
       ) : null}
-      onGranularityChange={(newGranularity) => {
-        logInteraction('change_granularity', { granularity: newGranularity })
-      }}
-      onViewModeChange={(newMode) => {
-        logInteraction('toggle_view_mode', { mode: newMode })
-      }}
     />
   )
 }

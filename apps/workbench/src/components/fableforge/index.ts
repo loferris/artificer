@@ -19,11 +19,11 @@ export type { SpecialistCardProps } from './core/SpecialistCard'
 
 // Comparison Components
 export { CandidateDiff } from './comparison/CandidateDiff'
-export type { CandidateDiffProps, DiffCandidate, DiffGranularity, ViewMode } from './comparison/CandidateDiff'
+export type { CandidateDiffProps } from './comparison/CandidateDiff'
 
 // Metadata Components
 export { MetadataExplorer } from './metadata/MetadataExplorer'
-export type { MetadataExplorerProps, TranslationMetadata, Character, CulturalTerm, Relationship, SceneContext } from './metadata/MetadataExplorer'
+export type { MetadataExplorerProps } from './metadata/MetadataExplorer'
 
 // Analytics Components
 export { QualityMetrics } from './analytics/QualityMetrics'

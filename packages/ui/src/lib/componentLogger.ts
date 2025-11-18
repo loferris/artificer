@@ -33,7 +33,7 @@ export interface UserInteraction {
   metadata?: Record<string, unknown>
 }
 
-class ClientLogger {
+export class ClientLogger {
   private isDevelopment: boolean
   private enabledLevels: Set<LogLevel>
 

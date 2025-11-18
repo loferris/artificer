@@ -1,15 +1,7 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { trpc } from '../../lib/trpc/client';
-
-interface Project {
-  id: string;
-  name: string;
-  description?: string;
-  conversationCount?: number;
-  documentCount?: number;
-  updatedAt: string | Date;
-}
+import type { ProjectWithStats } from '../../server/services/project/ProjectService';
 
 interface Conversation {
   id: string;
@@ -48,8 +40,8 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
 
   // Filter conversations by current project
   const filteredConversations = currentProjectId
-    ? (conversations || []).filter(c => c.projectId === currentProjectId)
-    : (conversations || []).filter(c => !c.projectId); // Show unassigned when no project selected
+    ? (conversations || []).filter((c: Conversation) => c.projectId === currentProjectId)
+    : (conversations || []).filter((c: Conversation) => !c.projectId); // Show unassigned when no project selected
 
   const formatDate = (date: Date | string) => {
     try {
@@ -106,12 +98,21 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
       <div className="flex-1 overflow-y-auto">
         {/* No Project Option */}
         <div
+          role="button"
+          tabIndex={0}
           onClick={() => onProjectSelect(null)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              onProjectSelect(null)
+            }
+          }}
           className={`px-4 py-3 cursor-pointer transition-colors border-l-4 ${
             currentProjectId === null
               ? 'bg-blue-50 border-blue-500'
               : 'border-transparent hover:bg-gray-100'
           }`}
+          aria-label="Select general conversations"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -148,7 +149,18 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                   : 'border-transparent hover:bg-gray-100'
               }`}
             >
-              <div onClick={() => onProjectSelect(project.id)}>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => onProjectSelect(project.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    onProjectSelect(project.id)
+                  }
+                }}
+                aria-label={`Select project ${project.name}`}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2 flex-1 min-w-0">
                     <span className="text-gray-600">📁</span>
@@ -217,15 +229,24 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
               <p className="text-xs">No conversations yet</p>
             </div>
           ) : (
-            filteredConversations.map((conversation) => (
+            filteredConversations.map((conversation: Conversation) => (
               <div
                 key={conversation.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => onConversationSelect(conversation.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    onConversationSelect(conversation.id)
+                  }
+                }}
                 className={`px-4 py-2 cursor-pointer transition-colors group ${
                   currentConversationId === conversation.id
                     ? 'bg-blue-100'
                     : 'hover:bg-gray-100'
                 }`}
+                aria-label={`Select conversation ${conversation.id}`}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">

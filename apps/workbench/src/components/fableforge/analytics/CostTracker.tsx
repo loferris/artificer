@@ -109,7 +109,7 @@ export function CostTracker({
     logger.info('Cost tracking', {
       component: 'CostTracker'
     }, {
-      totalCost: calculateTotal(breakdown.map(b => b.cost)),
+      totalCost: breakdown.reduce((sum, b) => sum + b.cost, 0),
       budgetTotal: budget?.total,
       budgetRemaining: budget?.remaining
     })
@@ -117,9 +117,10 @@ export function CostTracker({
     return () => {
       logger.lifecycle('CostTracker', 'unmount')
     }
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run on mount/unmount for lifecycle logging
 
-  const totalCost = useMemo(() => calculateTotal(breakdown.map(b => b.cost)), [breakdown])
+  const totalCost = useMemo(() => breakdown.reduce((sum, b) => sum + b.cost, 0), [breakdown])
 
   const budgetStatus = useMemo(() => {
     if (!budget) return null
@@ -254,7 +255,7 @@ export function CostTracker({
                   {Math.round(monthlyStatus.percentUsed)}%
                 </div>
                 <div className="text-xs text-gray-600">
-                  {formatCost(budget.monthlySpent)} / {formatCost(budget.monthlyLimit!)}
+                  {formatCost(budget.monthlySpent ?? 0)} / {formatCost(budget.monthlyLimit ?? 0)}
                 </div>
               </div>
             </div>

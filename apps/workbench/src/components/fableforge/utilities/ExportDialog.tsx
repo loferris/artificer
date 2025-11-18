@@ -95,7 +95,8 @@ export function ExportDialog({
         availableFormats
       })
     }
-  }, [open])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]) // Only run when dialog opens for lifecycle logging
 
   const handleFormatSelect = (format: ExportFormat) => {
     logger.interaction({
@@ -176,6 +177,7 @@ export function ExportDialog({
           <div>
             <h3 className="text-sm font-medium text-gray-900 mb-3">Export Options</h3>
             <div className="space-y-2">
+              {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
               <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
                 <input
                   type="checkbox"
@@ -190,8 +192,10 @@ export function ExportDialog({
                 <Badge variant="blue">5 translations</Badge>
               </label>
 
-              <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
+              {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+              <label htmlFor="export-include-metadata" className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
                 <input
+                  id="export-include-metadata"
                   type="checkbox"
                   checked={options.includeMetadata}
                   onChange={() => handleOptionToggle('includeMetadata')}
@@ -203,8 +207,10 @@ export function ExportDialog({
                 </div>
               </label>
 
-              <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
+              {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+              <label htmlFor="export-include-original" className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
                 <input
+                  id="export-include-original"
                   type="checkbox"
                   checked={options.includeOriginal}
                   onChange={() => handleOptionToggle('includeOriginal')}

@@ -48,7 +48,8 @@ export function useChat() {
     if (messagesQuery.data) {
       store.setMessages(messagesQuery.data);
     }
-  }, [messagesQuery.data, store.setMessages]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messagesQuery.data]); // store.setMessages is stable, exclude to avoid re-renders
 
   const exportManager = useExportManager({
     currentConversationId: store.currentConversationId,
@@ -119,13 +120,14 @@ export function useChat() {
         }
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       store.streamingMode,
       store.currentConversationId,
       createConversationMutation,
       store.setCurrentConversation,
       sendMessageMutation,
-    ]
+    ] // Intentionally excluding messagesQuery, handleStreamingMessage, and store for stability
   );
 
   const handleMessageSubmit = useCallback(
@@ -210,6 +212,7 @@ export function useChat() {
         store.setStreamingError((error as Error).message);
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       createConversationMutation,
       streamingChat,
@@ -218,7 +221,7 @@ export function useChat() {
       store.setInput,
       store.setStreamingError,
       shouldUseOrchestration,
-    ]
+    ] // Intentionally excluding store for stability
   );
 
   const combinedMessages = useCallback((): Message[] => {

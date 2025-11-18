@@ -2,11 +2,12 @@ import React from 'react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/cn'
 
-export type Status = 'pending' | 'running' | 'completed' | 'failed' | 'retry' | 'idle'
+export type Status = 'pending' | 'running' | 'completed' | 'failed' | 'retry' | 'idle' | 'cancelled'
 
 export interface StatusBadgeProps {
   status: Status
   animated?: boolean
+  size?: 'sm' | 'md' | 'lg'
   className?: string
 }
 
@@ -46,6 +47,11 @@ const statusConfig: Record<Status, StatusConfig> = {
     label: 'Idle',
     variant: 'gray',
     icon: '○'
+  },
+  cancelled: {
+    label: 'Cancelled',
+    variant: 'gray',
+    icon: '⊘'
   }
 }
 
@@ -53,12 +59,13 @@ const statusConfig: Record<Status, StatusConfig> = {
  * Badge component for displaying status with icon
  * Used in: PipelineProgress, TranslationJobCard, and other status-displaying components
  */
-export function StatusBadge({ status, animated = false, className }: StatusBadgeProps) {
+export function StatusBadge({ status, animated = false, size = 'md', className }: StatusBadgeProps) {
   const config = statusConfig[status]
 
   return (
     <Badge
       variant={config.variant}
+      size={size}
       className={cn(
         animated && status === 'running' && 'animate-pulse',
         className

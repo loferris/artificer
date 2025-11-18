@@ -132,48 +132,49 @@ export default function FableForgeDemoPage() {
 
   const finalSynthesis = 'She bowed deeply, a graceful gesture of reverence for the elder—honoring a tradition that carried the weight of Korean customs.'
 
-  const metadata = {
-    characters: [
-      {
+  const metadata: import('@/components/fableforge/metadata/MetadataExplorer').NarrativeMetadata = {
+    characterProfiles: {
+      'Ji-hye': {
         name: 'Ji-hye',
-        traits: ['respectful', 'traditional', 'thoughtful'],
+        traits: 'respectful, traditional, thoughtful',
         voiceStyle: 'Formal, introspective',
         dialogueSamples: [
-          'I must honor the customs of my ancestors.',
-          'The weight of tradition guides my every step.'
+          { text: 'I must honor the customs of my ancestors.', tone: 'formal' },
+          { text: 'The weight of tradition guides my every step.', tone: 'introspective' }
         ]
       },
-      {
+      'Elder Park': {
         name: 'Elder Park',
-        traits: ['wise', 'authoritative', 'gentle'],
-        voiceStyle: 'Calm, measured, sagacious'
+        traits: 'wise, authoritative, gentle',
+        voiceStyle: 'Calm, measured, sagacious',
+        dialogueSamples: []
       }
-    ],
-    culturalTerms: [
-      {
+    },
+    culturalTerms: {
+      'Jeol (절)': {
         term: 'Jeol (절)',
+        translation: 'A bow',
         explanation: 'A traditional Korean bow showing respect',
         context: 'Used to greet elders, at ceremonies, and during ancestral rites'
       },
-      {
+      'Hyo (효)': {
         term: 'Hyo (효)',
-        explanation: 'Filial piety - respect for parents and elders',
+        translation: 'Filial piety',
+        explanation: 'Respect for parents and elders - a core Confucian value in Korean society',
         context: 'A core Confucian value in Korean society'
       }
-    ],
-    relationships: [
+    },
+    relationshipDynamics: [
       {
         from: 'Ji-hye',
         to: 'Elder Park',
-        type: 'student-elder',
-        dynamics: 'Deep respect mixed with admiration. Ji-hye seeks wisdom while honoring tradition.'
+        dynamic: 'Student-elder relationship. Deep respect mixed with admiration. Ji-hye seeks wisdom while honoring tradition.'
       }
     ],
-    scene: {
+    sceneContext: {
       setting: 'Traditional Korean hanok house with wooden floors and paper doors',
-      tone: 'Reverent and contemplative',
-      timeOfDay: 'Early morning',
-      atmosphere: 'Quiet, filled with the scent of incense'
+      mood: 'Reverent and contemplative',
+      timeline: 'Early morning'
     }
   }
 
@@ -360,15 +361,15 @@ export default function FableForgeDemoPage() {
           </div>
 
           <CandidateDiff
-            candidate1={{
+            candidateA={{
+              id: 'cultural_specialist',
               specialist: 'cultural_specialist',
-              translation: candidates[0].translation,
-              label: 'Cultural Specialist'
+              translation: candidates[0].translation
             }}
-            candidate2={{
+            candidateB={{
+              id: 'prose_stylist',
               specialist: 'prose_stylist',
-              translation: candidates[1].translation,
-              label: 'Prose Stylist'
+              translation: candidates[1].translation
             }}
           />
         </section>

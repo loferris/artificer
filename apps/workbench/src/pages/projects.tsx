@@ -302,25 +302,26 @@ const ProjectsPage: React.FC = () => {
               
               <form onSubmit={handleCreateProject} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label htmlFor="new-project-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Project Name *
                   </label>
                   <input
+                    id="new-project-name"
                     type="text"
                     value={newProjectName}
                     onChange={(e) => setNewProjectName(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"
                     placeholder="My Fantasy Novel"
                     required
-                    autoFocus
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label htmlFor="new-project-description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Description
                   </label>
                   <textarea
+                    id="new-project-description"
                     value={newProjectDescription}
                     onChange={(e) => setNewProjectDescription(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700"

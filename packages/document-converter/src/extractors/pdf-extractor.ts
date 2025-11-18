@@ -21,7 +21,8 @@ export class PdfExtractor {
   async extractText(buffer: Buffer): Promise<PdfExtractionResult> {
     try {
       // Use dynamic import to handle ESM/CJS compatibility
-      const pdfParse = (await import('pdf-parse')).default as unknown as PdfParseFunction;
+      const pdfParseModule = await import('pdf-parse');
+      const pdfParse = ((pdfParseModule as any).default || pdfParseModule) as unknown as PdfParseFunction;
       const data = await pdfParse(buffer);
 
       // Parse metadata

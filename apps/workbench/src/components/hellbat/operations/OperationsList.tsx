@@ -62,7 +62,8 @@ export function OperationsList({
     return () => {
       logger.lifecycle('OperationsList', 'unmount')
     }
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run on mount/unmount for lifecycle logging
 
   const toggleOperation = (opId: string) => {
     setExpandedOps(prev => {

@@ -101,7 +101,8 @@ export function WorldExportDialog({
         conversationId
       })
     }
-  }, [open])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]) // Only run when dialog opens for lifecycle logging
 
   const handleFormatSelect = (format: WorldExportFormat) => {
     setSelectedFormat(format)
@@ -220,8 +221,10 @@ export function WorldExportDialog({
             <div>
               <h4 className="text-sm font-medium text-gray-900 mb-3">Export Options</h4>
               <div className="space-y-2">
-                <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
+                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                <label htmlFor="world-export-include-operations" className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
                   <input
+                    id="world-export-include-operations"
                     type="checkbox"
                     checked={options.includeOperations}
                     onChange={() => handleOptionToggle('includeOperations')}
@@ -233,8 +236,10 @@ export function WorldExportDialog({
                   </div>
                 </label>
 
-                <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
+                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                <label htmlFor="world-export-include-metadata" className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
                   <input
+                    id="world-export-include-metadata"
                     type="checkbox"
                     checked={options.includeMetadata}
                     onChange={() => handleOptionToggle('includeMetadata')}
@@ -246,8 +251,10 @@ export function WorldExportDialog({
                   </div>
                 </label>
 
-                <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
+                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                <label htmlFor="world-export-include-validation" className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
                   <input
+                    id="world-export-include-validation"
                     type="checkbox"
                     checked={options.includeValidation}
                     onChange={() => handleOptionToggle('includeValidation')}
@@ -259,8 +266,10 @@ export function WorldExportDialog({
                   </div>
                 </label>
 
-                <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
+                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                <label htmlFor="world-export-flatten-operations" className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer">
                   <input
+                    id="world-export-flatten-operations"
                     type="checkbox"
                     checked={options.flattenOperations}
                     onChange={() => handleOptionToggle('flattenOperations')}

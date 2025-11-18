@@ -59,7 +59,8 @@ export function SourceAttribution({
     return () => {
       logger.lifecycle('SourceAttribution', 'unmount')
     }
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run on mount/unmount for lifecycle logging
 
   const toggleSource = (sourceId: string) => {
     setExpandedSources(prev => {
@@ -149,7 +150,7 @@ export function SourceAttribution({
 
                       {highlightMatches && source.matchedText && !isExpanded && (
                         <div className="text-xs text-gray-600 line-clamp-2">
-                          "{source.matchedText}"
+                          &ldquo;{source.matchedText}&rdquo;
                         </div>
                       )}
                     </button>
@@ -223,7 +224,7 @@ export function SourceAttribution({
               )}
               {source.matchedText && (
                 <div className="text-xs text-gray-600 mt-2 line-clamp-2">
-                  "{source.matchedText}"
+                  &ldquo;{source.matchedText}&rdquo;
                 </div>
               )}
             </button>
