@@ -259,40 +259,6 @@ export class ImageUtils {
   }
 
   /**
-   * Convert PDF page to image using sharp's PDF support
-   * Note: sharp has limited PDF support, pdf2pic is better for multi-page PDFs
-   */
-  static async pdfPageToImage(
-    pdfBuffer: Buffer,
-    options: { dpi?: number; format?: 'png' | 'jpeg' } = {}
-  ): Promise<Buffer> {
-    try {
-      const format = options.format || 'png';
-      const dpi = options.dpi || 200;
-
-      // Sharp can only extract the first page of PDFs
-      let image = sharp(pdfBuffer, {
-        density: dpi,
-      });
-
-      if (format === 'jpeg') {
-        image = image.jpeg({ quality: 90 });
-      } else {
-        image = image.png();
-      }
-
-      return await image.toBuffer();
-    } catch (error) {
-      logger.error('Failed to convert PDF page to image', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      throw new Error(
-        `Failed to convert PDF page to image: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
-    }
-  }
-
-  /**
    * Apply rotation to image
    */
   static async rotate(buffer: Buffer, degrees: number): Promise<Buffer> {

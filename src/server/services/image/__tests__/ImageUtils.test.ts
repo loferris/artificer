@@ -280,33 +280,4 @@ describe('ImageUtils', () => {
       expect(info.height).toBe(100);
     });
   });
-
-  describe('pdfPageToImage', () => {
-    it('should handle PDF conversion or throw appropriate error', async () => {
-      // Note: sharp has limited PDF support - it may not work for all PDFs
-      // This test verifies the method exists and handles errors gracefully
-      const pdfPath = path.join(fixturesDir, 'sample-2page.pdf');
-
-      if (fs.existsSync(pdfPath)) {
-        const pdfBuffer = fs.readFileSync(pdfPath);
-
-        try {
-          const image = await ImageUtils.pdfPageToImage(pdfBuffer, {
-            dpi: 150,
-            format: 'png',
-          });
-
-          const info = await ImageUtils.getInfo(image);
-          expect(info.format).toBe('png');
-          expect(info.width).toBeGreaterThan(0);
-          expect(info.height).toBeGreaterThan(0);
-        } catch (error) {
-          // Sharp may not support PDF conversion - that's OK
-          // The important thing is it throws a clear error
-          expect(error).toBeInstanceOf(Error);
-          expect((error as Error).message).toMatch(/Failed to convert PDF page to image/);
-        }
-      }
-    });
-  });
 });

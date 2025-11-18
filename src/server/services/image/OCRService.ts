@@ -7,7 +7,6 @@
 import { OpenAI } from 'openai';
 import type { OCRProvider, OCRResult } from '@ai-workflow/document-converter';
 import { logger } from '../../utils/logger';
-import { fromBuffer } from 'pdf2pic';
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
@@ -248,7 +247,7 @@ export class OCRService implements OCRProvider {
 
   /**
    * Convert PDF pages to images for OCR processing
-   * Uses Python service (2-10x faster) with fallback to Node.js pdf2pic
+   * Requires Python service (2-10x faster than previous pdf2pic fallback)
    * @private
    */
   private async extractPdfPagesToImages(
@@ -280,64 +279,19 @@ export class OCRService implements OCRProvider {
 
         return pageImages;
       } catch (error) {
-        logger.warn('Python PDF to image conversion failed, falling back to pdf2pic', {
+        logger.error('Python PDF to image conversion failed', {
           error: error instanceof Error ? error.message : 'Unknown error',
         });
-        // Fall through to pdf2pic fallback
+        throw new Error(
+          `PDF to image conversion requires Python service. Python error: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
       }
     }
 
-    // Fallback to Node.js pdf2pic (slower but reliable)
-    logger.info('Using Node.js pdf2pic for PDF to image conversion', { pageCount });
-    const converter = fromBuffer(buffer, {
-      density: 200, // DPI - higher = better quality but larger files
-      saveFilename: 'page',
-      savePath: tempDir,
-      format: 'png',
-      width: 2000, // Max width in pixels
-      height: 2000, // Max height in pixels
-    });
-
-    const pageImages: Array<{ buffer: Buffer; contentType: string }> = [];
-
-    // Convert each page to an image
-    for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
-      try {
-        const result = await converter(pageNum, { responseType: 'buffer' });
-
-        if (!result?.buffer) {
-          logger.warn('Failed to convert PDF page to image', { pageNum });
-          // Create placeholder for failed page
-          pageImages.push({
-            buffer: Buffer.from('[Failed to extract page image]'),
-            contentType: 'text/plain',
-          });
-          continue;
-        }
-
-        pageImages.push({
-          buffer: result.buffer,
-          contentType: 'image/png',
-        });
-
-        logger.debug('PDF page converted to image', {
-          pageNum,
-          imageSize: result.buffer.length,
-        });
-      } catch (error) {
-        logger.warn('Error converting PDF page to image', {
-          pageNum,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
-        // Create placeholder for failed page
-        pageImages.push({
-          buffer: Buffer.from(`[Failed to extract page ${pageNum}]`),
-          contentType: 'text/plain',
-        });
-      }
-    }
-
-    return pageImages;
+    // Python service not available
+    throw new Error(
+      'PDF to image conversion requires Python service. Please ensure Python OCR service is running.'
+    );
   }
 
   /**

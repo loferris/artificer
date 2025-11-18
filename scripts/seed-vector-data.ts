@@ -5,7 +5,8 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import { VectorService, ChunkingService, EmbeddingService } from '../src/server/services/vector';
+import { VectorService, EmbeddingService } from '../src/server/services/vector';
+import { pythonTextClient } from '../src/server/services/python/PythonTextClient';
 
 const prisma = new PrismaClient();
 
@@ -229,12 +230,14 @@ async function seedProjects() {
   const skipEmbeddings = process.env.SKIP_EMBEDDINGS === 'true';
 
   let embeddingService: EmbeddingService | undefined;
-  let chunkingService: ChunkingService | undefined;
   let vectorService: VectorService | undefined;
 
   if (!skipEmbeddings) {
+    if (!pythonTextClient.isAvailable()) {
+      console.error('❌ Python text service is required for chunking. Please start the Python service.');
+      process.exit(1);
+    }
     embeddingService = new EmbeddingService();
-    chunkingService = new ChunkingService();
     vectorService = new VectorService(prisma);
     console.log('🧠 Embeddings enabled - will generate and store in Chroma\n');
   } else {
@@ -265,14 +268,15 @@ async function seedProjects() {
       console.log(`  📄 Created document: ${docData.filename}`);
 
       // Only generate embeddings if not skipped
-      if (!skipEmbeddings && chunkingService && embeddingService && vectorService) {
-        // Chunk the document
-        const chunks = chunkingService.chunkDocument(
+      if (!skipEmbeddings && embeddingService && vectorService) {
+        // Chunk the document using Python service
+        const result = await pythonTextClient.chunkDocument(
           document.id,
           assignment.project.id,
           docData.content,
           docData.filename
         );
+        const chunks = result.chunks;
 
         console.log(`    ✂️  Created ${chunks.length} chunks`);
 
