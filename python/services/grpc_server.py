@@ -23,12 +23,18 @@ import time
 # from grpc_reflection.v1alpha import reflection
 
 # Import service handlers
-from services.grpc.conversion_service import ConversionServiceHandler
-from services.grpc.metrics_service import MetricsServiceHandler
+from services.grpc_handlers.conversion_service import ConversionServiceHandler
+from services.grpc_handlers.metrics_service import MetricsServiceHandler
+from services.grpc_handlers.pdf_service import PDFServiceHandler
+from services.grpc_handlers.image_service import ImageServiceHandler
+from services.grpc_handlers.text_service import TextServiceHandler
 
 # Import generated servicers
 from generated.artificer import conversion_service_pb2_grpc
 from generated.artificer import metrics_service_pb2_grpc
+from generated.artificer import pdf_service_pb2_grpc
+from generated.artificer import image_service_pb2_grpc
+from generated.artificer import text_service_pb2_grpc
 
 # Configure logging
 logging.basicConfig(
@@ -64,6 +70,15 @@ class GRPCServer:
         metrics_service_pb2_grpc.add_MetricsServiceServicer_to_server(
             MetricsServiceHandler(), self.server
         )
+        pdf_service_pb2_grpc.add_PDFServiceServicer_to_server(
+            PDFServiceHandler(), self.server
+        )
+        image_service_pb2_grpc.add_ImageServiceServicer_to_server(
+            ImageServiceHandler(), self.server
+        )
+        text_service_pb2_grpc.add_TextServiceServicer_to_server(
+            TextServiceHandler(), self.server
+        )
 
         # Enable server reflection for grpcurl/grpc_cli (temporarily disabled)
         # SERVICE_NAMES = (
@@ -85,6 +100,10 @@ class GRPCServer:
         logger.info("Services:")
         logger.info("  - ConversionService (7 RPCs)")
         logger.info("  - MetricsService (2 RPCs)")
+        logger.info("  - PDFService (4 RPCs)")
+        logger.info("  - ImageService (2 RPCs)")
+        logger.info("  - TextService (6 RPCs)")
+        logger.info("Total: 21 RPCs across 5 services")
         logger.info("Server reflection: Disabled (TODO: fix import issue)")
         logger.info("=" * 60)
 
