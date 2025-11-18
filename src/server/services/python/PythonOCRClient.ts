@@ -3,9 +3,16 @@
  *
  * Connects to Python microservice for high-performance PDF/image processing.
  * Falls back to TypeScript implementation if Python service unavailable.
+ *
+ * Features:
+ * - Circuit breaker pattern for fast failure
+ * - Periodic health checks with auto-recovery
+ * - Configurable via environment variables
+ * - Detailed error logging for debugging
  */
 
 import { logger } from '../../utils/logger';
+import { CircuitBreaker } from '../../utils/CircuitBreaker';
 
 export interface PythonPDFResult {
   text: string;
@@ -71,44 +78,88 @@ export class PythonOCRClient {
   private baseUrl: string;
   private timeout: number;
   private available: boolean = false;
+  private circuitBreaker: CircuitBreaker;
+  private healthCheckInterval?: NodeJS.Timeout;
+  private forceDisabled: boolean;
 
   constructor(
     baseUrl: string = process.env.PYTHON_OCR_URL || 'http://localhost:8000',
-    timeout: number = 30000
+    timeout: number = parseInt(process.env.PYTHON_TIMEOUT_MS || '30000', 10)
   ) {
     this.baseUrl = baseUrl;
     this.timeout = timeout;
+    this.forceDisabled = process.env.FORCE_TYPESCRIPT_MODE === 'true';
 
-    // Check availability on startup
+    // Circuit breaker protects against repeated failures
+    this.circuitBreaker = new CircuitBreaker({
+      name: 'python-ocr-service',
+      failureThreshold: 5,
+      successThreshold: 2,
+      timeout: 60000, // 1 minute
+    });
+
+    if (this.forceDisabled) {
+      logger.warn('Python OCR service DISABLED by FORCE_TYPESCRIPT_MODE environment variable');
+      this.available = false;
+      return;
+    }
+
+    // Initial health check
     this.checkAvailability();
+
+    // Periodic health checks every 30 seconds
+    this.healthCheckInterval = setInterval(() => {
+      this.checkAvailability();
+    }, 30000);
   }
 
   /**
    * Check if Python service is available
    */
   private async checkAvailability(): Promise<void> {
+    if (this.forceDisabled) {
+      return;
+    }
+
     try {
       const response = await fetch(`${this.baseUrl}/health`, {
         method: 'GET',
         signal: AbortSignal.timeout(5000),
       });
 
-      if (response.ok) {
-        this.available = true;
-        logger.info('Python OCR service is available', { url: this.baseUrl });
-      } else {
-        this.available = false;
-        logger.warn('Python OCR service returned non-OK status', {
+      const wasAvailable = this.available;
+      this.available = response.ok;
+
+      // Log state changes only
+      if (!wasAvailable && this.available) {
+        logger.info('Python OCR service recovered', {
+          url: this.baseUrl,
+          circuitState: this.circuitBreaker.getState(),
+        });
+      } else if (wasAvailable && !this.available) {
+        logger.warn('Python OCR service went down', {
+          url: this.baseUrl,
           status: response.status,
-          url: this.baseUrl
+          circuitState: this.circuitBreaker.getState(),
+        });
+      } else if (!this.available) {
+        // Only log at debug level if still unavailable
+        logger.debug('Python OCR service health check failed', {
+          status: response.status,
         });
       }
     } catch (error) {
+      const wasAvailable = this.available;
       this.available = false;
-      logger.warn('Python OCR service not available', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        url: this.baseUrl
-      });
+
+      // Only log state changes
+      if (wasAvailable) {
+        logger.warn('Python OCR service became unavailable', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          url: this.baseUrl,
+          circuitState: this.circuitBreaker.getState(),
+        });
+      }
     }
   }
 
@@ -116,7 +167,29 @@ export class PythonOCRClient {
    * Check if service is available
    */
   isAvailable(): boolean {
-    return this.available;
+    return !this.forceDisabled && this.available && this.circuitBreaker.getState() !== 'OPEN';
+  }
+
+  /**
+   * Get service statistics
+   */
+  getStats() {
+    return {
+      available: this.available,
+      forceDisabled: this.forceDisabled,
+      baseUrl: this.baseUrl,
+      circuitBreaker: this.circuitBreaker.getStats(),
+    };
+  }
+
+  /**
+   * Cleanup resources (stop health check interval)
+   */
+  destroy(): void {
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval);
+      this.healthCheckInterval = undefined;
+    }
   }
 
   /**
@@ -129,58 +202,79 @@ export class PythonOCRClient {
       minTextThreshold?: number;
     } = {}
   ): Promise<PythonPDFResult> {
-    if (!this.available) {
-      throw new Error('Python OCR service not available');
+    if (!this.isAvailable()) {
+      const reason = this.forceDisabled
+        ? 'FORCE_TYPESCRIPT_MODE enabled'
+        : this.circuitBreaker.getState() === 'OPEN'
+          ? 'circuit breaker is OPEN'
+          : 'service not available';
+
+      throw new Error(`Python OCR service unavailable: ${reason}`);
     }
 
-    try {
-      const base64Data = pdfBuffer.toString('base64');
+    return this.circuitBreaker.execute(async () => {
+      const startTime = Date.now();
 
-      const response = await fetch(`${this.baseUrl}/api/pdf/extract`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          pdf_data: base64Data,
-          force_ocr: options.forceOCR || false,
-          min_text_threshold: options.minTextThreshold || 100,
-        }),
-        signal: AbortSignal.timeout(this.timeout),
-      });
+      try {
+        const base64Data = pdfBuffer.toString('base64');
 
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Python service error: ${response.status} - ${error}`);
-      }
+        const response = await fetch(`${this.baseUrl}/api/pdf/extract`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            pdf_data: base64Data,
+            force_ocr: options.forceOCR || false,
+            min_text_threshold: options.minTextThreshold || 100,
+          }),
+          signal: AbortSignal.timeout(this.timeout),
+        });
 
-      const result = await response.json();
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
 
-      logger.info('PDF processed by Python service', {
-        pages: result.metadata.pages,
-        textLength: result.text.length,
-        processingTime: result.metadata.processingTime,
-        method: result.metadata.method,
-      });
+        const result = await response.json();
+        const totalTime = Date.now() - startTime;
 
-      return {
-        text: result.text,
-        metadata: {
+        logger.info('PDF processed by Python service', {
           pages: result.metadata.pages,
+          textLength: result.text.length,
+          pythonProcessingTime: result.metadata.processing_time,
+          totalRequestTime: totalTime,
           method: result.metadata.method,
-          hasTextContent: result.metadata.has_text_content,
-          processingTime: result.metadata.processing_time,
-          title: result.metadata.title,
-          author: result.metadata.author,
-          creator: result.metadata.creator,
-        },
-      };
-    } catch (error) {
-      logger.error('Python PDF extraction failed', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      throw error;
-    }
+        });
+
+        return {
+          text: result.text,
+          metadata: {
+            pages: result.metadata.pages,
+            method: result.metadata.method,
+            hasTextContent: result.metadata.has_text_content,
+            processingTime: result.metadata.processing_time,
+            title: result.metadata.title,
+            author: result.metadata.author,
+            creator: result.metadata.creator,
+          },
+        };
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const totalTime = Date.now() - startTime;
+
+        logger.error('Python PDF extraction failed', {
+          error: errorMessage,
+          pdfSize: pdfBuffer.length,
+          totalRequestTime: totalTime,
+          url: `${this.baseUrl}/api/pdf/extract`,
+          timeout: this.timeout,
+          options,
+        });
+
+        throw error;
+      }
+    });
   }
 
   /**

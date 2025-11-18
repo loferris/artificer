@@ -58,7 +58,11 @@ export class PdfService {
     // Try Python service first (10-20x faster!)
     if (pythonOCRClient.isAvailable()) {
       try {
-        logger.info('Using Python OCR service for PDF processing');
+        logger.info('Using Python OCR service for PDF processing', {
+          size: buffer.length,
+          forceOCR,
+        });
+
         const pythonResult = await pythonOCRClient.extractPdfText(buffer, {
           forceOCR,
           minTextThreshold,
@@ -78,11 +82,22 @@ export class PdfService {
           },
         };
       } catch (error) {
+        const pythonStats = pythonOCRClient.getStats();
         logger.warn('Python service failed, falling back to TypeScript', {
           error: error instanceof Error ? error.message : 'Unknown error',
+          pythonUrl: pythonStats.baseUrl,
+          circuitState: pythonStats.circuitBreaker.state,
+          pdfSize: buffer.length,
         });
         // Fall through to TypeScript implementation
       }
+    } else {
+      const pythonStats = pythonOCRClient.getStats();
+      logger.debug('Python service not available, using TypeScript', {
+        available: pythonStats.available,
+        forceDisabled: pythonStats.forceDisabled,
+        circuitState: pythonStats.circuitBreaker.state,
+      });
     }
 
     try {
