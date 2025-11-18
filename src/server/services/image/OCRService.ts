@@ -1,7 +1,7 @@
 /**
  * OCR Service
  * Implements text extraction from images using AI vision models
- * Supports OpenAI Vision API with fallback options
+ * Supports OpenAI Vision, Google Vision, and Tesseract OCR with intelligent fallbacks
  */
 
 import { OpenAI } from 'openai';
@@ -12,6 +12,9 @@ import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import { circuitBreakerRegistry } from '../../utils/CircuitBreaker';
+import { pythonOCRClient } from '../python/PythonOCRClient';
+import { GoogleVisionOCR, type GoogleVisionConfig } from './GoogleVisionOCR';
+import { TesseractOCR, type TesseractConfig } from './TesseractOCR';
 
 // Type for pdf-parse function
 type PdfParseResult = {
@@ -27,14 +30,18 @@ const API_TIMEOUT_MS = 30 * 1000; // 30 seconds for OpenAI API calls
 const MAX_PDF_PAGES_FOR_OCR = 100; // Maximum pages to OCR (safety limit)
 
 export interface OCRServiceConfig {
-  provider: 'openai-vision' | 'tesseract';
+  provider: 'openai-vision' | 'google-vision' | 'tesseract';
   openaiApiKey?: string;
   model?: string; // 'gpt-4o' or 'gpt-4o-mini'
   maxRetries?: number;
+  googleVisionConfig?: GoogleVisionConfig;
+  tesseractConfig?: TesseractConfig;
 }
 
 export class OCRService implements OCRProvider {
   private openai?: OpenAI;
+  private googleVision?: GoogleVisionOCR;
+  private tesseract?: TesseractOCR;
   private config: Required<OCRServiceConfig>;
 
   constructor(config: OCRServiceConfig) {
@@ -43,27 +50,77 @@ export class OCRService implements OCRProvider {
       openaiApiKey: config.openaiApiKey || process.env.OPENAI_API_KEY || '',
       model: config.model || 'gpt-4o-mini',
       maxRetries: config.maxRetries || 3,
+      googleVisionConfig: config.googleVisionConfig || {},
+      tesseractConfig: config.tesseractConfig || {},
     };
 
+    // Initialize OpenAI Vision if configured
     if (this.config.provider === 'openai-vision' && this.config.openaiApiKey) {
       this.openai = new OpenAI({
         apiKey: this.config.openaiApiKey,
       });
     }
+
+    // Initialize Google Vision if configured
+    if (this.config.provider === 'google-vision') {
+      this.googleVision = new GoogleVisionOCR(this.config.googleVisionConfig);
+    }
+
+    // Initialize Tesseract (always available as offline fallback)
+    if (this.config.provider === 'tesseract') {
+      this.tesseract = new TesseractOCR(this.config.tesseractConfig);
+    }
+
+    // Also create Tesseract as fallback for other providers
+    if (!this.tesseract && this.config.provider !== 'tesseract') {
+      this.tesseract = new TesseractOCR({ language: 'eng' });
+    }
   }
 
   /**
-   * Extract text from image using configured provider
+   * Extract text from image using configured provider with intelligent fallbacks
    */
   async extractText(buffer: Buffer, contentType: string): Promise<OCRResult> {
     const startTime = Date.now();
 
     try {
-      if (this.config.provider === 'openai-vision') {
-        return await this.extractWithOpenAI(buffer, contentType, startTime);
-      } else {
-        throw new Error(`OCR provider '${this.config.provider}' not yet implemented`);
+      // Try primary provider first
+      switch (this.config.provider) {
+        case 'openai-vision':
+          return await this.extractWithOpenAI(buffer, contentType, startTime);
+
+        case 'google-vision':
+          if (this.googleVision && this.googleVision.isAvailable()) {
+            try {
+              logger.debug('Using Google Vision OCR');
+              return await this.googleVision.extractText(buffer, contentType);
+            } catch (error) {
+              logger.warn('Google Vision OCR failed, trying Tesseract fallback', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+              });
+              // Fall through to Tesseract fallback
+            }
+          }
+          break;
+
+        case 'tesseract':
+          if (this.tesseract) {
+            logger.debug('Using Tesseract OCR');
+            return await this.tesseract.extractText(buffer, contentType);
+          }
+          break;
+
+        default:
+          throw new Error(`Unknown OCR provider: ${this.config.provider}`);
       }
+
+      // If primary provider failed, try Tesseract as ultimate fallback
+      if (this.tesseract) {
+        logger.info('Falling back to Tesseract OCR');
+        return await this.tesseract.extractText(buffer, contentType);
+      }
+
+      throw new Error('No OCR provider available');
     } catch (error) {
       logger.error('OCR extraction failed', {
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -191,6 +248,7 @@ export class OCRService implements OCRProvider {
 
   /**
    * Convert PDF pages to images for OCR processing
+   * Uses Python service (2-10x faster) with fallback to Node.js pdf2pic
    * @private
    */
   private async extractPdfPagesToImages(
@@ -198,6 +256,39 @@ export class OCRService implements OCRProvider {
     tempDir: string,
     pageCount: number
   ): Promise<Array<{ buffer: Buffer; contentType: string }>> {
+    // Try Python service first (2-10x faster)
+    if (pythonOCRClient.isAvailable()) {
+      try {
+        logger.info('Using Python service for PDF to image conversion', { pageCount });
+        const result = await pythonOCRClient.extractPdfPagesToImages(buffer, {
+          dpi: 200,
+          format: 'png',
+          maxWidth: 2000,
+          maxHeight: 2000,
+        });
+
+        // Convert base64 images to buffers
+        const pageImages = result.pages.map((page) => ({
+          buffer: Buffer.from(page.imageData, 'base64'),
+          contentType: page.contentType,
+        }));
+
+        logger.info('Python PDF to image conversion completed', {
+          pageCount: result.totalPages,
+          processingTime: result.processingTime,
+        });
+
+        return pageImages;
+      } catch (error) {
+        logger.warn('Python PDF to image conversion failed, falling back to pdf2pic', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        // Fall through to pdf2pic fallback
+      }
+    }
+
+    // Fallback to Node.js pdf2pic (slower but reliable)
+    logger.info('Using Node.js pdf2pic for PDF to image conversion', { pageCount });
     const converter = fromBuffer(buffer, {
       density: 200, // DPI - higher = better quality but larger files
       saveFilename: 'page',
@@ -521,9 +612,25 @@ export class OCRService implements OCRProvider {
    * Check if OCR service is properly configured
    */
   isConfigured(): boolean {
-    if (this.config.provider === 'openai-vision') {
-      return !!this.openai && !!this.config.openaiApiKey;
+    switch (this.config.provider) {
+      case 'openai-vision':
+        return !!this.openai && !!this.config.openaiApiKey;
+      case 'google-vision':
+        return !!this.googleVision && this.googleVision.isAvailable();
+      case 'tesseract':
+        return !!this.tesseract && this.tesseract.isAvailable();
+      default:
+        return false;
     }
-    return false;
+  }
+
+  /**
+   * Clean up resources (important for Tesseract workers)
+   */
+  async cleanup(): Promise<void> {
+    if (this.tesseract) {
+      await this.tesseract.terminate();
+      logger.info('OCR service cleaned up');
+    }
   }
 }

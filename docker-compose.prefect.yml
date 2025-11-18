@@ -1,0 +1,134 @@
+version: '3.8'
+
+services:
+  # Prefect Server
+  prefect-server:
+    image: prefecthq/prefect:2-python3.11
+    container_name: artificer-prefect-server
+    command: prefect server start --host 0.0.0.0
+    ports:
+      - "4200:4200"  # Prefect UI
+    environment:
+      - PREFECT_SERVER_API_HOST=0.0.0.0
+      - PREFECT_API_DATABASE_CONNECTION_URL=postgresql+asyncpg://prefect:prefect@postgres:5432/prefect
+      - PREFECT_API_URL=http://localhost:4200/api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4200/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - artificer-network
+
+  # PostgreSQL for Prefect
+  postgres:
+    image: postgres:15-alpine
+    container_name: artificer-postgres
+    environment:
+      - POSTGRES_USER=prefect
+      - POSTGRES_PASSWORD=prefect
+      - POSTGRES_DB=prefect
+    volumes:
+      - prefect-db:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U prefect"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - artificer-network
+
+  # Artificer gRPC Server
+  artificer-grpc:
+    build:
+      context: ./python
+      dockerfile: Dockerfile
+    container_name: artificer-grpc
+    command: python services/grpc_server.py
+    ports:
+      - "50051:50051"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OCR_MODEL=${OCR_MODEL:-gpt-4o-mini}
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import grpc; grpc.channel_ready_future(grpc.insecure_channel(\"localhost:50051\")).result(timeout=5)'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - artificer-network
+
+  # Artificer REST Server (FastAPI)
+  artificer-rest:
+    build:
+      context: ./python
+      dockerfile: Dockerfile
+    container_name: artificer-rest
+    command: python -m uvicorn services.ocr_service:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OCR_MODEL=${OCR_MODEL:-gpt-4o-mini}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - artificer-network
+
+  # Prefect Agent (runs flows)
+  prefect-agent:
+    image: prefecthq/prefect:2-python3.11
+    container_name: artificer-prefect-agent
+    command: >
+      sh -c "
+        pip install grpcio>=1.60.0 protobuf>=4.25.0 httpx &&
+        prefect config set PREFECT_API_URL=http://prefect-server:4200/api &&
+        prefect agent start -q default
+      "
+    environment:
+      - PREFECT_API_URL=http://prefect-server:4200/api
+      - ARTIFICER_GRPC_HOST=artificer-grpc:50051
+      - FABLEFORGE_URL=http://fableforge:8080
+    depends_on:
+      prefect-server:
+        condition: service_healthy
+      artificer-grpc:
+        condition: service_healthy
+    volumes:
+      - ./python:/workspace
+    working_dir: /workspace
+    networks:
+      - artificer-network
+
+  # Optional: FableForge Mock Service (for testing)
+  fableforge-mock:
+    image: python:3.11-slim
+    container_name: fableforge-mock
+    command: >
+      sh -c "
+        pip install fastapi uvicorn &&
+        python /app/mock_server.py
+      "
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./python/flows/examples/fableforge_mock.py:/app/mock_server.py
+    networks:
+      - artificer-network
+
+networks:
+  artificer-network:
+    driver: bridge
+
+volumes:
+  prefect-db:
+    driver: local

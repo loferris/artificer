@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { router, publicProcedure } from '../trpc';
 import { VectorService, ChunkingService, EmbeddingService } from '../services/vector';
 import { TRPCError } from '@trpc/server';
+import { pythonTextClient } from '../services/python/PythonTextClient';
 
 export const searchRouter = router({
   /**
@@ -179,14 +180,38 @@ export const searchRouter = router({
         const vectorService = new VectorService(ctx.db);
         await vectorService.deleteDocument(document.projectId, document.id);
 
-        // Chunk document
-        const chunkingService = new ChunkingService();
-        const chunks = chunkingService.chunkDocument(
-          document.id,
-          document.projectId,
-          document.content,
-          document.filename
-        );
+        // Chunk document (try Python service first for 3-5x speedup)
+        let chunks;
+
+        if (pythonTextClient.isAvailable()) {
+          try {
+            const result = await pythonTextClient.chunkDocument(
+              document.id,
+              document.projectId,
+              document.content,
+              document.filename
+            );
+            chunks = result.chunks;
+          } catch (error) {
+            // Fallback to TypeScript
+            const chunkingService = new ChunkingService();
+            chunks = chunkingService.chunkDocument(
+              document.id,
+              document.projectId,
+              document.content,
+              document.filename
+            );
+          }
+        } else {
+          // Python service not available, use TypeScript
+          const chunkingService = new ChunkingService();
+          chunks = chunkingService.chunkDocument(
+            document.id,
+            document.projectId,
+            document.content,
+            document.filename
+          );
+        }
 
         // Generate embeddings
         const embeddingService = new EmbeddingService();
