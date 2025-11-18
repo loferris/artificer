@@ -5,8 +5,8 @@
  */
 
 import React, { ReactNode } from 'react'
-import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
-import { cn } from '@/lib/cn'
+import { Card, CardHeader, CardContent, CardFooter } from '../shadcn/card'
+import { cn } from '../lib/cn'
 import type { Theme } from '../types'
 
 export interface ThemedCardProps<T extends string = string> {

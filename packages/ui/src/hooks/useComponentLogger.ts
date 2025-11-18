@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useMemo, useCallback } from 'react'
-import { createComponentLogger, type ClientLogger } from '@/lib/componentLogger'
+import { createComponentLogger, type ClientLogger } from '../lib/componentLogger'
 
 export interface UseComponentLoggerOptions {
   /**

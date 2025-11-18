@@ -14,11 +14,11 @@ import {
   DialogDescription,
   DialogBody,
   DialogFooter
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/cn'
+} from '../shadcn/dialog'
+import { Button } from '../shadcn/button'
+import { cn } from '../lib/cn'
 import type { ExportFormat, ExportOption } from '../types'
-import { createComponentLogger } from '@/lib/componentLogger'
+import { createComponentLogger } from '../lib/componentLogger'
 
 const logger = createComponentLogger('ExportDialog')
 

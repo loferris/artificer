@@ -5,8 +5,8 @@
  */
 
 import React, { ReactNode } from 'react'
-import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/cn'
+import { Badge } from '../shadcn/badge'
+import { cn } from '../lib/cn'
 import type { Theme } from '../types'
 
 export interface ThemedBadgeProps<T extends string = string> {

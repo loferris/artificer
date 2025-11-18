@@ -6,10 +6,10 @@
  */
 
 import React, { useMemo, ReactNode } from 'react'
-import { cn } from '@/lib/cn'
+import { cn } from '../lib/cn'
 import type { Theme } from '../types'
 import type { ThemeRegistry } from '../theme/core'
-import { createComponentLogger } from '@/lib/componentLogger'
+import { createComponentLogger } from '../lib/componentLogger'
 
 const logger = createComponentLogger('GroupedList')
 

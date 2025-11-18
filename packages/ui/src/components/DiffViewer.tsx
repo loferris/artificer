@@ -6,14 +6,14 @@
  */
 
 import React, { useState, useMemo, ReactNode } from 'react'
-import { Card, CardHeader, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { CopyButton } from '@/components/shared/CopyButton'
-import { cn } from '@/lib/cn'
-import { computeDiff, getSimilarityScore, type DiffGranularity } from '@/lib/diff-engine'
+import { Card, CardHeader, CardContent } from '../shadcn/card'
+import { Button } from '../shadcn/button'
+import { Badge } from '../shadcn/badge'
+import { CopyButton } from '../shadcn/CopyButton'
+import { cn } from '../lib/cn'
+import { computeDiff, getSimilarityScore, type DiffGranularity } from '../lib/diff-engine'
 import type { Theme } from '../types'
-import { createComponentLogger } from '@/lib/componentLogger'
+import { createComponentLogger } from '../lib/componentLogger'
 
 const logger = createComponentLogger('DiffViewer')
 

@@ -95,8 +95,8 @@ export {
   getSimilarityScore,
   highlightDifferences,
   mergeSegments
-} from '@/lib/diff-engine'
-export type { DiffGranularity } from '@/lib/diff-engine'
+} from './lib/diff-engine'
+export type { DiffGranularity } from './lib/diff-engine'
 
 // Time utilities
 export {
@@ -104,14 +104,14 @@ export {
   formatDuration,
   estimateRemainingTime,
   formatTimestamp
-} from '@/lib/time-utils'
+} from './lib/time-utils'
 
 // CN utility
-export { cn } from '@/lib/cn'
+export { cn } from './lib/cn'
 
 // Component logger
-export { createComponentLogger } from '@/lib/componentLogger'
-export type { ClientLogger } from '@/lib/componentLogger'
+export { createComponentLogger } from './lib/componentLogger'
+export type { ClientLogger } from './lib/componentLogger'
 
 // ============================================================================
 // Library Metadata
