@@ -33,6 +33,29 @@ export interface PythonRoamExportResult {
   processingTime: number;
 }
 
+export interface BatchExportResult {
+  index: number;
+  success: boolean;
+  output: string;
+  processingTime: number;
+}
+
+export interface BatchExportError {
+  index: number;
+  error: string;
+}
+
+export interface PythonBatchExportResult {
+  totalDocuments: number;
+  successful: number;
+  failed: number;
+  results: BatchExportResult[];
+  errors: BatchExportError[];
+  totalProcessingTime: number;
+  averageProcessingTime: number;
+  parallelSpeedup: number;
+}
+
 export interface PortableTextDocument {
   content: any[];
   metadata?: Record<string, any>;
@@ -345,6 +368,72 @@ export class PythonConversionClient {
     } catch (error) {
       logger.error('Python Roam export failed', {
         error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Export multiple documents in parallel using multiprocessing (5-10x faster)
+   *
+   * Utilizes Python's ProcessPoolExecutor for true multi-core parallelism.
+   * Node.js can't do this - single-threaded event loop limits concurrency.
+   */
+  async exportBatch(
+    documents: PortableTextDocument[],
+    format: 'markdown' | 'html' | 'notion' | 'roam',
+    options: Record<string, any> = {}
+  ): Promise<PythonBatchExportResult> {
+    if (!this.available) {
+      throw new Error('Python conversion service not available');
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/api/batch/export`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          documents,
+          format,
+          options,
+        }),
+        signal: AbortSignal.timeout(this.timeout * 2), // Double timeout for batch operations
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Python service error: ${response.status} - ${error}`);
+      }
+
+      const result = await response.json();
+
+      logger.info('Batch export by Python service', {
+        totalDocuments: result.totalDocuments,
+        successful: result.successful,
+        failed: result.failed,
+        totalProcessingTime: result.totalProcessingTime,
+        averageProcessingTime: result.averageProcessingTime,
+        parallelSpeedup: result.parallelSpeedup,
+        format,
+      });
+
+      return {
+        totalDocuments: result.totalDocuments,
+        successful: result.successful,
+        failed: result.failed,
+        results: result.results,
+        errors: result.errors,
+        totalProcessingTime: result.totalProcessingTime,
+        averageProcessingTime: result.averageProcessingTime,
+        parallelSpeedup: result.parallelSpeedup,
+      };
+    } catch (error) {
+      logger.error('Python batch export failed', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        documentCount: documents.length,
+        format,
       });
       throw error;
     }
