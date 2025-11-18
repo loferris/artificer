@@ -2,6 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
   output: 'standalone', // Required for Docker/Railway deployment
+  transpilePackages: [
+    '@artificer/ui',
+    '@artificer/hellbat',
+  ],
   // Production-ready configuration
   typescript: {
     ignoreBuildErrors: false,
