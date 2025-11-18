@@ -10,6 +10,7 @@ from .batch import Batch
 from .images import Images
 from .export import Export
 from .monitoring import Monitoring
+from .workflows import Workflows
 
 __all__ = [
     "Projects",
@@ -20,4 +21,5 @@ __all__ = [
     "Images",
     "Export",
     "Monitoring",
+    "Workflows",
 ]

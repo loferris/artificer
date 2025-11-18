@@ -21,6 +21,7 @@ from .resources import (
     Images,
     Export,
     Monitoring,
+    Workflows,
 )
 from .exceptions import ArtificerError
 
@@ -110,6 +111,7 @@ class ArtificerClient:
         self.images = Images(self)
         self.export = Export(self)
         self.monitoring = Monitoring(self)
+        self.workflows = Workflows(self)
 
     def __enter__(self):
         """Context manager support."""

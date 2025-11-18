@@ -8,6 +8,7 @@ A unified Python SDK for the Artificer API, providing access to all features:
 - **Batch Processing** - Multi-phase batch workflows with checkpointing
 - **OCR & Images** - Extract text from PDFs and images (10-20x faster with Python service)
 - **Export** - Export to Markdown, Notion, Roam, Obsidian, HTML, JSON
+- **Workflows** - Execute Prefect orchestration workflows (DAG pipelines)
 
 ## Installation
 
@@ -280,6 +281,86 @@ for model, stats in usage.items():
 caps = client.monitoring.get_model_capabilities()
 for model in caps['models']:
     print(f"{model['name']}: ${model['pricing']['input']} per 1M tokens")
+```
+
+### Workflows (Prefect Orchestration)
+
+```python
+import base64
+
+# List available workflows
+workflows = client.workflows.list()
+print(f"Prefect available: {workflows['available']}")
+for wf in workflows['workflows']:
+    print(f"{wf['id']}: {wf['description']}")
+
+# PDF to HTML pipeline
+with open("document.pdf", "rb") as f:
+    pdf_data = base64.b64encode(f.read()).decode()
+
+result = client.workflows.execute_pdf_to_html(
+    pdf_data,
+    include_styles=True,
+    title="My Document"
+)
+html = result['result']['html']
+
+# PDF with OCR and chunking
+result = client.workflows.execute_pdf_with_ocr(
+    pdf_data,
+    chunk_size=1000,
+    chunk_overlap=200
+)
+chunks = result['result']['chunks']
+print(f"Extracted {len(chunks)} chunks")
+
+# Batch PDF processing (parallel)
+pdf_files = [
+    {"filename": "doc1.pdf", "data": base64_pdf1},
+    {"filename": "doc2.pdf", "data": base64_pdf2},
+    {"filename": "doc3.pdf", "data": base64_pdf3}
+]
+result = client.workflows.execute_batch_pdf(
+    pdf_files,
+    max_workers=5
+)
+for item in result['result']['results']:
+    print(f"{item['filename']}: {item['status']}")
+
+# Translation with specialists (consensus)
+result = client.workflows.execute_translation(
+    text="Hello, world!",
+    target_language="es",
+    use_specialists=True
+)
+print(f"Translation: {result['result']['translation']}")
+print(f"Confidence: {result['result']['confidence']}")
+print(f"Models used: {result['result']['models_used']}")
+
+# Image OCR
+with open("receipt.jpg", "rb") as f:
+    image_data = base64.b64encode(f.read()).decode()
+
+result = client.workflows.execute_image_ocr(
+    image_data,
+    language="eng"
+)
+print(f"Text: {result['result']['text']}")
+print(f"Confidence: {result['result']['confidence']}")
+
+# Execute any workflow with custom inputs
+result = client.workflows.execute(
+    "pdf-to-html",
+    {
+        "pdf_data": pdf_data,
+        "include_styles": True,
+        "title": "Custom Title"
+    }
+)
+
+# Check Prefect service health
+health = client.workflows.health_check()
+print(f"Available: {health['available']}")
 ```
 
 ## Context Manager Support
