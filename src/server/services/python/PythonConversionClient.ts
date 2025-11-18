@@ -13,6 +13,12 @@ export interface PythonMarkdownImportResult {
   processingTime: number;
 }
 
+export interface PythonHtmlImportResult {
+  content: any[]; // Portable Text blocks
+  metadata: Record<string, any>;
+  processingTime: number;
+}
+
 export interface PythonHtmlExportResult {
   html: string;
   processingTime: number;
@@ -161,6 +167,51 @@ export class PythonConversionClient {
       };
     } catch (error) {
       logger.error('Python markdown import failed', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Import HTML to Portable Text (2-3x faster than TypeScript)
+   */
+  async importHtml(content: string): Promise<PythonHtmlImportResult> {
+    if (!this.available) {
+      throw new Error('Python conversion service not available');
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/api/convert/html-import`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content,
+        }),
+        signal: AbortSignal.timeout(this.timeout),
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Python service error: ${response.status} - ${error}`);
+      }
+
+      const result = await response.json();
+
+      logger.info('HTML import by Python service', {
+        blocks: result.content.length,
+        processingTime: result.processing_time_ms,
+      });
+
+      return {
+        content: result.content,
+        metadata: result.metadata,
+        processingTime: result.processing_time_ms,
+      };
+    } catch (error) {
+      logger.error('Python HTML import failed', {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;

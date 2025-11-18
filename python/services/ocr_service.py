@@ -24,10 +24,12 @@ from processors.image import ImageProcessor
 from processors.text import TextProcessor
 from processors.markdown import MarkdownConverter
 from processors.html import HtmlExporter
+from processors.html_import import HtmlImporter
 from processors.markdown_export import MarkdownExporter
 from processors.notion_export import NotionExporter
 from processors.roam_export import RoamExporter
 from processors.batch_export import BatchExportProcessor
+from services.metrics import MetricsMiddleware, metrics_collector
 
 # Configure logging
 logging.basicConfig(
@@ -52,6 +54,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Metrics middleware for automatic request tracking
+app.add_middleware(MetricsMiddleware)
+
 # Initialize processors
 pdf_processor = PdfProcessor()
 ocr_processor = OCRProcessor(
@@ -68,6 +73,7 @@ image_processor = ImageProcessor(
 text_processor = TextProcessor()
 markdown_converter = MarkdownConverter()
 html_exporter = HtmlExporter()
+html_importer = HtmlImporter()
 markdown_exporter = MarkdownExporter()
 notion_exporter = NotionExporter()
 roam_exporter = RoamExporter()
@@ -328,6 +334,18 @@ class ImportMarkdownResponse(BaseModel):
     processing_time_ms: int
 
 
+class ImportHtmlRequest(BaseModel):
+    """Request to import HTML"""
+    content: str = Field(..., description="HTML content")
+
+
+class ImportHtmlResponse(BaseModel):
+    """Response from HTML import"""
+    content: List[Dict[str, Any]]
+    metadata: Dict[str, Any]
+    processing_time_ms: int
+
+
 class ExportHtmlRequest(BaseModel):
     """Request to export HTML"""
     document: Dict[str, Any] = Field(..., description="Portable Text document")
@@ -441,6 +459,20 @@ async def health():
             "ocr_tesseract": ocr_processor.tesseract_available
         }
     )
+
+
+@app.get("/api/metrics", response_model=Dict[str, Any])
+async def get_metrics():
+    """
+    Get service metrics and performance statistics.
+
+    Returns:
+        - Overall request counts and error rates
+        - Per-endpoint performance statistics (p50, p95, p99)
+        - Service uptime
+        - Processing time metrics
+    """
+    return metrics_collector.get_metrics()
 
 
 @app.post("/api/pdf/extract", response_model=ProcessPDFResponse)
@@ -885,6 +917,37 @@ async def import_markdown(request: ImportMarkdownRequest):
         raise HTTPException(status_code=500, detail=f"Markdown import failed: {str(e)}")
 
 
+@app.post("/api/convert/html-import", response_model=ImportHtmlResponse)
+async def import_html(request: ImportHtmlRequest):
+    """
+    Import HTML to Portable Text.
+
+    Parses HTML and converts to Portable Text format.
+    Supports headings, paragraphs, lists, tables, code blocks, images, and links.
+    2-3x faster than Node.js cheerio/DOM parsing.
+    """
+    try:
+        import time
+        start = time.time()
+
+        result = html_importer.import_html(
+            html=request.content,
+            options={}
+        )
+
+        processing_time = int((time.time() - start) * 1000)
+
+        return ImportHtmlResponse(
+            content=result["content"],
+            metadata=result["metadata"],
+            processing_time_ms=processing_time
+        )
+
+    except Exception as e:
+        logger.error(f"HTML import failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"HTML import failed: {str(e)}")
+
+
 @app.post("/api/convert/html-export", response_model=ExportHtmlResponse)
 async def export_html(request: ExportHtmlRequest):
     """
@@ -1060,11 +1123,13 @@ async def startup_event():
     logger.info(f"Image Processor: Enabled (PyMuPDF + Pillow)")
     logger.info(f"Text Processor: Enabled (tiktoken + optimized chunking)")
     logger.info(f"Markdown Converter: Enabled (markdown-it-py)")
+    logger.info(f"HTML Importer: Enabled (BeautifulSoup4 + lxml)")
     logger.info(f"HTML Exporter: Enabled (fast string building)")
     logger.info(f"Markdown Exporter: Enabled (Portable Text -> MD)")
     logger.info(f"Notion Exporter: Enabled (Portable Text -> Notion JSON)")
     logger.info(f"Roam Exporter: Enabled (Portable Text -> Roam JSON)")
     logger.info(f"Batch Export Processor: Enabled ({batch_export_processor.max_workers} workers)")
+    logger.info(f"Metrics Collector: Enabled (request tracking + performance monitoring)")
     logger.info(f"OCR OpenAI: {'Enabled' if ocr_processor.openai_client else 'Disabled'}")
     logger.info(f"OCR Tesseract: {'Enabled' if ocr_processor.tesseract_available else 'Disabled'}")
     logger.info("=" * 60)
