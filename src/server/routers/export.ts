@@ -91,7 +91,7 @@ export const exportRouter = router({
   exportAll: protectedProcedure
     .input(
       z.object({
-        format: z.enum(['markdown', 'notion', 'obsidian', 'google-docs', 'json', 'html']),
+        format: z.enum(['markdown', 'notion', 'roam', 'obsidian', 'google-docs', 'json', 'html']),
         includeMetadata: z.boolean().default(true),
         includeTimestamps: z.boolean().default(true),
         includeCosts: z.boolean().default(true),
@@ -221,6 +221,48 @@ export const exportRouter = router({
             result = await ExportService.exportToNotion(conversationsWithMessages, options);
           }
           break;
+        case 'roam':
+          // Try Python service first for 2-3x speedup
+          const allRoamPortableText = conversationsWithMessages.map(convertConversationToPortableText);
+          // Combine all blocks from all conversations
+          const combinedRoamBlocks = allRoamPortableText.flatMap(doc => doc.content);
+          const combinedRoamDoc: ConvertedDocument = {
+            content: combinedRoamBlocks,
+            metadata: {
+              title: 'All Conversations',
+              source: 'ai-workflow-engine',
+              exportDate: new Date().toISOString(),
+              totalConversations: conversationsWithMessages.length,
+            },
+          };
+
+          if (pythonConversionClient.isAvailable()) {
+            try {
+              logger.debug('Using Python conversion service for Roam export');
+              const pythonResult = await pythonConversionClient.exportRoam(combinedRoamDoc, {
+                prettyPrint: false,
+              });
+              result = pythonResult.json;
+              logger.info('Python Roam export completed', {
+                processingTime: pythonResult.processingTime,
+                jsonLength: result.length,
+              });
+            } catch (error) {
+              logger.warn('Python Roam export failed, falling back to TypeScript', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+              });
+              // Fallback to TypeScript
+              result = await converter.export(combinedRoamDoc, 'roam', {
+                prettyPrint: false,
+              } as any);
+            }
+          } else {
+            // Python service not available, use TypeScript
+            result = await converter.export(combinedRoamDoc, 'roam', {
+              prettyPrint: false,
+            } as any);
+          }
+          break;
         case 'google-docs':
           result = await ExportService.exportToGoogleDocs(conversationsWithMessages, options);
           break;
@@ -310,7 +352,7 @@ export const exportRouter = router({
     .input(
       z.object({
         conversationId: z.string().min(1, 'Conversation ID is required'),
-        format: z.enum(['markdown', 'notion', 'obsidian', 'google-docs', 'json', 'html']),
+        format: z.enum(['markdown', 'notion', 'roam', 'obsidian', 'google-docs', 'json', 'html']),
         includeMetadata: z.boolean().default(true),
         includeTimestamps: z.boolean().default(true),
         includeCosts: z.boolean().default(true),
@@ -421,6 +463,38 @@ export const exportRouter = router({
             result = await ExportService.exportToNotion([conversationWithMessages], options);
           }
           break;
+        case 'roam':
+          // Use document converter for Roam export
+          const roamPortableText = convertConversationToPortableText(conversationWithMessages);
+
+          // Try Python service first for 2-3x speedup
+          if (pythonConversionClient.isAvailable()) {
+            try {
+              logger.debug('Using Python conversion service for Roam export');
+              const pythonResult = await pythonConversionClient.exportRoam(roamPortableText, {
+                prettyPrint: false,
+              });
+              result = pythonResult.json;
+              logger.info('Python Roam export completed', {
+                processingTime: pythonResult.processingTime,
+                jsonLength: result.length,
+              });
+            } catch (error) {
+              logger.warn('Python Roam export failed, falling back to TypeScript', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+              });
+              // Fallback to TypeScript
+              result = await converter.export(roamPortableText, 'roam', {
+                prettyPrint: false,
+              } as any);
+            }
+          } else {
+            // Python service not available, use TypeScript
+            result = await converter.export(roamPortableText, 'roam', {
+              prettyPrint: false,
+            } as any);
+          }
+          break;
         case 'google-docs':
           result = await ExportService.exportToGoogleDocs([conversationWithMessages], options);
           break;
@@ -506,6 +580,12 @@ export const exportRouter = router({
           id: 'notion',
           name: 'Notion',
           description: 'JSON format for Notion API integration',
+          extensions: ['.json'],
+        },
+        {
+          id: 'roam',
+          name: 'Roam Research',
+          description: 'JSON format for Roam Research import',
           extensions: ['.json'],
         },
         {
