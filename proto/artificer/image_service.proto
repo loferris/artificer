@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package artificer;
+
+import "artificer/common.proto";
+
+// Image Processing and OCR Service
+service ImageService {
+  // Extract text from image using OCR
+  rpc ExtractTextFromImage(ExtractTextFromImageRequest) returns (ExtractTextFromImageResponse);
+
+  // Convert/resize image
+  rpc ConvertImage(ConvertImageRequest) returns (ConvertImageResponse);
+}
+
+// Extract text from image request
+message ExtractTextFromImageRequest {
+  bytes image_data = 1;
+  string content_type = 2;  // "image/png", "image/jpeg", etc.
+}
+
+// Extract text from image response
+message ExtractTextFromImageResponse {
+  string text = 1;
+  double confidence = 2;
+  OCRMetadata metadata = 3;
+}
+
+// Convert image request
+message ConvertImageRequest {
+  bytes image_data = 1;
+  string output_format = 2;  // "png", "jpeg", "webp"
+  int32 max_width = 3;
+  int32 max_height = 4;
+  int32 quality = 5;  // 1-100 for JPEG/WebP
+}
+
+// Convert image response
+message ConvertImageResponse {
+  bytes image_data = 1;
+  string content_type = 2;
+  int32 width = 3;
+  int32 height = 4;
+  int32 size_bytes = 5;
+  string format = 6;
+  int32 processing_time_ms = 7;
+}
+
+// OCR metadata
+message OCRMetadata {
+  int32 processing_time_ms = 1;
+  string provider = 2;  // "openai", "tesseract", "google"
+  string model = 3;
+  int32 tokens_used = 4;
+  double cost = 5;
+}

@@ -37,7 +37,10 @@
     "highlight:logs": "docker compose -f docker-compose.highlight.yml logs -f",
     "highlight:restart": "docker compose -f docker-compose.highlight.yml restart",
     "highlight:clean": "docker compose -f docker-compose.highlight.yml down -v",
-    "dev:with-highlight": "npm run highlight:up && npm run dev"
+    "dev:with-highlight": "npm run highlight:up && npm run dev",
+    "proto:generate": "npm run proto:generate:python && npm run proto:generate:ts",
+    "proto:generate:python": "python -m grpc_tools.protoc -I./proto --python_out=./python/generated --grpc_python_out=./python/generated --pyi_out=./python/generated ./proto/artificer/*.proto",
+    "proto:generate:ts": "proto-loader-gen-types --grpcLib=@grpc/grpc-js --outDir=src/generated/grpc proto/artificer/*.proto"
   },
   "dependencies": {
     "@axiomhq/js": "^1.3.1",
@@ -89,7 +92,11 @@
     "unist-util-visit": "^5.0.0",
     "ws": "^8.18.3",
     "zod": "^4.1.12",
-    "zustand": "^5.0.8"
+    "zustand": "^5.0.8",
+    "@grpc/grpc-js": "^1.12.4",
+    "@grpc/proto-loader": "^0.7.15",
+    "nice-grpc": "^2.1.0",
+    "nice-grpc-common": "^2.0.0"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.1",

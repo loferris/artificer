@@ -1,0 +1,91 @@
+syntax = "proto3";
+
+package artificer;
+
+import "artificer/common.proto";
+
+// PDF Processing Service
+service PDFService {
+  // Extract text from PDF (direct extraction, no OCR)
+  rpc ExtractText(ExtractTextRequest) returns (ExtractTextResponse);
+
+  // Process PDF with smart OCR fallback
+  rpc ProcessPDF(ProcessPDFRequest) returns (ProcessPDFResponse);
+
+  // Check if PDF needs OCR and estimate cost
+  rpc CheckNeedsOCR(CheckNeedsOCRRequest) returns (CheckNeedsOCRResponse);
+
+  // Extract PDF pages as images
+  rpc ExtractPagesToImages(ExtractPagesToImagesRequest) returns (stream PageImage);
+}
+
+// Extract text request
+message ExtractTextRequest {
+  bytes pdf_data = 1;
+}
+
+// Extract text response
+message ExtractTextResponse {
+  string text = 1;
+  PDFMetadata metadata = 2;
+}
+
+// Process PDF request
+message ProcessPDFRequest {
+  bytes pdf_data = 1;
+  bool force_ocr = 2;
+  int32 min_text_threshold = 3;
+}
+
+// Process PDF response
+message ProcessPDFResponse {
+  string text = 1;
+  PDFMetadata metadata = 2;
+}
+
+// Check needs OCR request
+message CheckNeedsOCRRequest {
+  bytes pdf_data = 1;
+  int32 min_text_threshold = 2;
+}
+
+// Check needs OCR response
+message CheckNeedsOCRResponse {
+  bool needs_ocr = 1;
+  bool has_text_content = 2;
+  int32 pages = 3;
+  int32 text_length = 4;
+  int32 avg_text_per_page = 5;
+  double estimated_ocr_cost = 6;
+}
+
+// Extract pages to images request
+message ExtractPagesToImagesRequest {
+  bytes pdf_data = 1;
+  int32 dpi = 2;
+  string format = 3;  // "png", "jpeg", "webp"
+  int32 max_width = 4;
+  int32 max_height = 5;
+}
+
+// Page image (streamed)
+message PageImage {
+  int32 page_number = 1;
+  bytes image_data = 2;
+  string content_type = 3;
+  int32 width = 4;
+  int32 height = 5;
+  int32 size_bytes = 6;
+  string format = 7;
+}
+
+// PDF metadata
+message PDFMetadata {
+  int32 pages = 1;
+  string method = 2;  // "direct", "ocr"
+  bool has_text_content = 3;
+  int32 processing_time_ms = 4;
+  string title = 5;
+  string author = 6;
+  string creator = 7;
+}

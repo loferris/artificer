@@ -1,0 +1,165 @@
+syntax = "proto3";
+
+package artificer;
+
+// Text Processing Service
+service TextService {
+  // Chunk a document into overlapping segments
+  rpc ChunkDocument(ChunkDocumentRequest) returns (ChunkDocumentResponse);
+
+  // Chunk multiple documents in batch
+  rpc ChunkDocumentsBatch(ChunkDocumentsBatchRequest) returns (ChunkDocumentsBatchResponse);
+
+  // Count tokens in text
+  rpc CountTokens(CountTokensRequest) returns (CountTokensResponse);
+
+  // Count tokens in conversation with message overhead
+  rpc CountConversationTokens(CountConversationTokensRequest) returns (CountConversationTokensResponse);
+
+  // Estimate how many messages fit within token budget
+  rpc EstimateMessageFit(EstimateMessageFitRequest) returns (EstimateMessageFitResponse);
+
+  // Calculate optimal context window configuration
+  rpc CalculateContextWindow(CalculateContextWindowRequest) returns (CalculateContextWindowResponse);
+}
+
+// Chunk document request
+message ChunkDocumentRequest {
+  string document_id = 1;
+  string project_id = 2;
+  string content = 3;
+  string filename = 4;
+  int32 chunk_size = 5;
+  int32 chunk_overlap = 6;
+  repeated string separators = 7;
+}
+
+// Chunk document response
+message ChunkDocumentResponse {
+  repeated DocumentChunk chunks = 1;
+  int32 total_chunks = 2;
+}
+
+// Chunk documents batch request
+message ChunkDocumentsBatchRequest {
+  repeated DocumentInput documents = 1;
+  int32 chunk_size = 2;
+  int32 chunk_overlap = 3;
+  repeated string separators = 4;
+}
+
+// Chunk documents batch response
+message ChunkDocumentsBatchResponse {
+  map<string, DocumentChunks> chunks_map = 1;
+  int32 total_documents = 2;
+  int32 processing_time_ms = 3;
+}
+
+// Document input for batch chunking
+message DocumentInput {
+  string document_id = 1;
+  string project_id = 2;
+  string content = 3;
+  string filename = 4;
+}
+
+// Document chunks wrapper
+message DocumentChunks {
+  repeated DocumentChunk chunks = 1;
+}
+
+// Document chunk
+message DocumentChunk {
+  string id = 1;
+  string document_id = 2;
+  string project_id = 3;
+  string content = 4;
+  ChunkMetadata metadata = 5;
+}
+
+// Chunk metadata
+message ChunkMetadata {
+  string filename = 1;
+  int32 chunk_index = 2;
+  int32 total_chunks = 3;
+  int32 start_char = 4;
+  int32 end_char = 5;
+}
+
+// Count tokens request
+message CountTokensRequest {
+  string content = 1;
+  string model = 2;
+}
+
+// Count tokens response
+message CountTokensResponse {
+  int32 token_count = 1;
+  string model = 2;
+  int32 processing_time_ms = 3;
+}
+
+// Count conversation tokens request
+message CountConversationTokensRequest {
+  repeated Message messages = 1;
+  string model = 2;
+  int32 message_overhead = 3;
+  int32 conversation_overhead = 4;
+}
+
+// Count conversation tokens response
+message CountConversationTokensResponse {
+  int32 total_tokens = 1;
+  int32 message_count = 2;
+  repeated MessageTokenBreakdown message_tokens = 3;
+  string model = 4;
+  int32 processing_time_ms = 5;
+}
+
+// Message
+message Message {
+  string role = 1;
+  string content = 2;
+}
+
+// Message token breakdown
+message MessageTokenBreakdown {
+  int32 content_tokens = 1;
+  int32 role_tokens = 2;
+  int32 total_tokens = 3;
+}
+
+// Estimate message fit request
+message EstimateMessageFitRequest {
+  repeated Message messages = 1;
+  int32 max_tokens = 2;
+  string model = 3;
+  int32 message_overhead = 4;
+  int32 conversation_overhead = 5;
+}
+
+// Estimate message fit response
+message EstimateMessageFitResponse {
+  int32 count = 1;
+  int32 total_tokens = 2;
+  int32 max_tokens = 3;
+  string model = 4;
+  int32 processing_time_ms = 5;
+}
+
+// Calculate context window request
+message CalculateContextWindowRequest {
+  int32 model_context_window = 1;
+  int32 output_tokens = 2;
+  int32 system_tokens = 3;
+}
+
+// Calculate context window response
+message CalculateContextWindowResponse {
+  int32 model_context_window = 1;
+  int32 reserved_for_output = 2;
+  int32 reserved_for_system = 3;
+  int32 available_for_history = 4;
+  int32 recent_messages_window = 5;
+  int32 summary_window = 6;
+}

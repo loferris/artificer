@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package artificer;
+
+// Metrics and Monitoring Service
+service MetricsService {
+  // Get service metrics and performance statistics
+  rpc GetMetrics(GetMetricsRequest) returns (GetMetricsResponse);
+
+  // Health check
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+// Get metrics request
+message GetMetricsRequest {
+  // Empty for now, could add filters later
+}
+
+// Get metrics response
+message GetMetricsResponse {
+  ServiceInfo service = 1;
+  OverallMetrics overall = 2;
+  map<string, EndpointMetrics> endpoints = 3;
+}
+
+// Service info
+message ServiceInfo {
+  string name = 1;
+  string version = 2;
+  Uptime uptime = 3;
+}
+
+// Uptime info
+message Uptime {
+  int64 seconds = 1;
+  string formatted = 2;
+  string start_time = 3;  // ISO 8601
+}
+
+// Overall metrics
+message OverallMetrics {
+  int64 total_requests = 1;
+  int64 total_errors = 2;
+  double error_rate = 3;
+  double avg_processing_time_ms = 4;
+  double requests_per_second = 5;
+}
+
+// Endpoint metrics
+message EndpointMetrics {
+  int64 request_count = 1;
+  int64 error_count = 2;
+  double error_rate = 3;
+  string last_request = 4;  // ISO 8601
+  double avg_processing_time_ms = 5;
+  double p50_ms = 6;
+  double p95_ms = 7;
+  double p99_ms = 8;
+  double min_time_ms = 9;
+  double max_time_ms = 10;
+}
+
+// Health check request
+message HealthCheckRequest {
+  // Empty
+}
+
+// Health check response
+message HealthCheckResponse {
+  string status = 1;  // "ok", "degraded", "unhealthy"
+  string service = 2;
+  string version = 3;
+  map<string, bool> processors = 4;
+}
