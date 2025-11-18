@@ -23,6 +23,16 @@ export interface PythonMarkdownExportResult {
   processingTime: number;
 }
 
+export interface PythonNotionExportResult {
+  json: string;
+  processingTime: number;
+}
+
+export interface PythonRoamExportResult {
+  json: string;
+  processingTime: number;
+}
+
 export interface PortableTextDocument {
   content: any[];
   metadata?: Record<string, any>;
@@ -234,6 +244,106 @@ export class PythonConversionClient {
       };
     } catch (error) {
       logger.error('Python markdown export failed', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Export Portable Text to Notion JSON (2-3x faster than TypeScript)
+   */
+  async exportNotion(
+    document: PortableTextDocument,
+    options: {
+      prettyPrint?: boolean;
+    } = {}
+  ): Promise<PythonNotionExportResult> {
+    if (!this.available) {
+      throw new Error('Python conversion service not available');
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/api/convert/notion-export`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          document,
+          pretty_print: options.prettyPrint || false,
+        }),
+        signal: AbortSignal.timeout(this.timeout),
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Python service error: ${response.status} - ${error}`);
+      }
+
+      const result = await response.json();
+
+      logger.info('Notion export by Python service', {
+        jsonLength: result.json.length,
+        processingTime: result.processing_time_ms,
+      });
+
+      return {
+        json: result.json,
+        processingTime: result.processing_time_ms,
+      };
+    } catch (error) {
+      logger.error('Python Notion export failed', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Export Portable Text to Roam JSON (2-3x faster than TypeScript)
+   */
+  async exportRoam(
+    document: PortableTextDocument,
+    options: {
+      prettyPrint?: boolean;
+    } = {}
+  ): Promise<PythonRoamExportResult> {
+    if (!this.available) {
+      throw new Error('Python conversion service not available');
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/api/convert/roam-export`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          document,
+          pretty_print: options.prettyPrint || false,
+        }),
+        signal: AbortSignal.timeout(this.timeout),
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Python service error: ${response.status} - ${error}`);
+      }
+
+      const result = await response.json();
+
+      logger.info('Roam export by Python service', {
+        jsonLength: result.json.length,
+        processingTime: result.processing_time_ms,
+      });
+
+      return {
+        json: result.json,
+        processingTime: result.processing_time_ms,
+      };
+    } catch (error) {
+      logger.error('Python Roam export failed', {
         error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;

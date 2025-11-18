@@ -184,7 +184,42 @@ export const exportRouter = router({
           result = await ExportService.exportToObsidian(conversationsWithMessages, options);
           break;
         case 'notion':
-          result = await ExportService.exportToNotion(conversationsWithMessages, options);
+          // Try Python service first for 2-3x speedup
+          const allNotionPortableText = conversationsWithMessages.map(convertConversationToPortableText);
+          // Combine all blocks from all conversations
+          const combinedNotionBlocks = allNotionPortableText.flatMap(doc => doc.content);
+          const combinedNotionDoc: ConvertedDocument = {
+            content: combinedNotionBlocks,
+            metadata: {
+              title: 'All Conversations',
+              source: 'ai-workflow-engine',
+              exportDate: new Date().toISOString(),
+              totalConversations: conversationsWithMessages.length,
+            },
+          };
+
+          if (pythonConversionClient.isAvailable()) {
+            try {
+              logger.debug('Using Python conversion service for Notion export');
+              const pythonResult = await pythonConversionClient.exportNotion(combinedNotionDoc, {
+                prettyPrint: false,
+              });
+              result = pythonResult.json;
+              logger.info('Python Notion export completed', {
+                processingTime: pythonResult.processingTime,
+                jsonLength: result.length,
+              });
+            } catch (error) {
+              logger.warn('Python Notion export failed, falling back to TypeScript', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+              });
+              // Fallback to TypeScript
+              result = await ExportService.exportToNotion(conversationsWithMessages, options);
+            }
+          } else {
+            // Python service not available, use TypeScript
+            result = await ExportService.exportToNotion(conversationsWithMessages, options);
+          }
           break;
         case 'google-docs':
           result = await ExportService.exportToGoogleDocs(conversationsWithMessages, options);
@@ -359,7 +394,32 @@ export const exportRouter = router({
           result = await ExportService.exportToObsidian([conversationWithMessages], options);
           break;
         case 'notion':
-          result = await ExportService.exportToNotion([conversationWithMessages], options);
+          // Use document converter for Notion export
+          const notionPortableText = convertConversationToPortableText(conversationWithMessages);
+
+          // Try Python service first for 2-3x speedup
+          if (pythonConversionClient.isAvailable()) {
+            try {
+              logger.debug('Using Python conversion service for Notion export');
+              const pythonResult = await pythonConversionClient.exportNotion(notionPortableText, {
+                prettyPrint: false,
+              });
+              result = pythonResult.json;
+              logger.info('Python Notion export completed', {
+                processingTime: pythonResult.processingTime,
+                jsonLength: result.length,
+              });
+            } catch (error) {
+              logger.warn('Python Notion export failed, falling back to TypeScript', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+              });
+              // Fallback to TypeScript
+              result = await ExportService.exportToNotion([conversationWithMessages], options);
+            }
+          } else {
+            // Python service not available, use TypeScript
+            result = await ExportService.exportToNotion([conversationWithMessages], options);
+          }
           break;
         case 'google-docs':
           result = await ExportService.exportToGoogleDocs([conversationWithMessages], options);
