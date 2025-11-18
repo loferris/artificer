@@ -143,7 +143,42 @@ export const exportRouter = router({
       let result;
       switch (input.format) {
         case 'markdown':
-          result = await ExportService.exportToMarkdown(conversationsWithMessages, options);
+          // Try Python service first for 2-3x speedup
+          const allMarkdownPortableText = conversationsWithMessages.map(convertConversationToPortableText);
+          // Combine all blocks from all conversations
+          const combinedMarkdownBlocks = allMarkdownPortableText.flatMap(doc => doc.content);
+          const combinedMarkdownDoc: ConvertedDocument = {
+            content: combinedMarkdownBlocks,
+            metadata: {
+              title: 'All Conversations',
+              source: 'ai-workflow-engine',
+              exportDate: new Date().toISOString(),
+              totalConversations: conversationsWithMessages.length,
+            },
+          };
+
+          if (pythonConversionClient.isAvailable()) {
+            try {
+              logger.debug('Using Python conversion service for Markdown export');
+              const pythonResult = await pythonConversionClient.exportMarkdown(combinedMarkdownDoc, {
+                includeMetadata: input.includeMetadata,
+              });
+              result = pythonResult.markdown;
+              logger.info('Python Markdown export completed', {
+                processingTime: pythonResult.processingTime,
+                markdownLength: result.length,
+              });
+            } catch (error) {
+              logger.warn('Python Markdown export failed, falling back to TypeScript', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+              });
+              // Fallback to TypeScript
+              result = await ExportService.exportToMarkdown(conversationsWithMessages, options);
+            }
+          } else {
+            // Python service not available, use TypeScript
+            result = await ExportService.exportToMarkdown(conversationsWithMessages, options);
+          }
           break;
         case 'obsidian':
           result = await ExportService.exportToObsidian(conversationsWithMessages, options);
@@ -295,7 +330,30 @@ export const exportRouter = router({
       let result;
       switch (input.format) {
         case 'markdown':
-          result = await ExportService.exportToMarkdown([conversationWithMessages], options);
+          // Try Python service first for 2-3x speedup
+          const markdownPortableText = convertConversationToPortableText(conversationWithMessages);
+          if (pythonConversionClient.isAvailable()) {
+            try {
+              logger.debug('Using Python conversion service for Markdown export');
+              const pythonResult = await pythonConversionClient.exportMarkdown(markdownPortableText, {
+                includeMetadata: input.includeMetadata,
+              });
+              result = pythonResult.markdown;
+              logger.info('Python Markdown export completed', {
+                processingTime: pythonResult.processingTime,
+                markdownLength: result.length,
+              });
+            } catch (error) {
+              logger.warn('Python Markdown export failed, falling back to TypeScript', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+              });
+              // Fallback to TypeScript
+              result = await ExportService.exportToMarkdown([conversationWithMessages], options);
+            }
+          } else {
+            // Python service not available, use TypeScript
+            result = await ExportService.exportToMarkdown([conversationWithMessages], options);
+          }
           break;
         case 'obsidian':
           result = await ExportService.exportToObsidian([conversationWithMessages], options);
@@ -312,10 +370,38 @@ export const exportRouter = router({
         case 'html':
           // Use document converter for HTML export
           const portableText = convertConversationToPortableText(conversationWithMessages);
-          result = await converter.export(portableText, 'html', {
-            includeMetadata: input.includeMetadata,
-            includeStyles: true,
-          } as any); // HTML-specific options
+
+          // Try Python service first for 2-3x speedup
+          if (pythonConversionClient.isAvailable()) {
+            try {
+              logger.debug('Using Python conversion service for HTML export');
+              const pythonResult = await pythonConversionClient.exportHtml(portableText, {
+                includeMetadata: input.includeMetadata,
+                includeStyles: true,
+                title: conversationWithMessages.title,
+              });
+              result = pythonResult.html;
+              logger.info('Python HTML export completed', {
+                processingTime: pythonResult.processingTime,
+                htmlLength: result.length,
+              });
+            } catch (error) {
+              logger.warn('Python HTML export failed, falling back to TypeScript', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+              });
+              // Fallback to TypeScript
+              result = await converter.export(portableText, 'html', {
+                includeMetadata: input.includeMetadata,
+                includeStyles: true,
+              } as any);
+            }
+          } else {
+            // Python service not available, use TypeScript
+            result = await converter.export(portableText, 'html', {
+              includeMetadata: input.includeMetadata,
+              includeStyles: true,
+            } as any);
+          }
           break;
         default:
           throw new TRPCError({
