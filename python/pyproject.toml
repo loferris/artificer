@@ -43,3 +43,40 @@ testpaths = ["tests"]
 python_files = "test_*.py"
 python_functions = "test_*"
 asyncio_mode = "auto"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false  # Start lenient, will enable later
+check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+ignore_missing_imports = true
+
+# Gradually increase strictness
+[[tool.mypy.overrides]]
+module = "processors.*"
+disallow_untyped_defs = false
+check_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = "services.*"
+disallow_untyped_defs = false
+check_untyped_defs = true
+
+# Ignore external libraries without stubs
+[[tool.mypy.overrides]]
+module = [
+    "fitz.*",
+    "pytesseract.*",
+    "cv2.*",
+    "PIL.*",
+    "pdf2image.*",
+    "yaml.*",
+]
+ignore_missing_imports = true
+

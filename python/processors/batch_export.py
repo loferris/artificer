@@ -10,7 +10,7 @@ Node.js is single-threaded; Python can truly parallelize CPU-bound tasks.
 import logging
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Dict, Any, List, Optional, Tuple, Union
 import multiprocessing
 
 # Import exporters for worker processes
