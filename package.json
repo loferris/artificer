@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "Artificer monorepo - UI libraries and applications",
-  "license": "MIT",
+  "license": "BUSL-1.1",
   "scripts": {
     "dev": "pnpm --filter @artificer/workbench dev",
     "dev:fableforge": "pnpm --filter @artificer/fableforge-demo dev",

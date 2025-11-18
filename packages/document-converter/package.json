@@ -41,7 +41,7 @@
     "obsidian-md"
   ],
   "author": "AI Workflow Engine Contributors",
-  "license": "MIT",
+  "license": "BUSL-1.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/yourusername/ai-workflow-engine.git",
