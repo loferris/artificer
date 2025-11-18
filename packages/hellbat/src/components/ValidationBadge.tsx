@@ -7,9 +7,9 @@
 
 'use client'
 
-import { ThemedBadge } from '@/lib/artificer-ui'
+import { ThemedBadge } from '@artificer/ui'
 import { validationThemes, type Severity } from '../themes/validation'
-import { useComponentLogger } from '@/lib/artificer-ui'
+import { useComponentLogger } from '@artificer/ui'
 
 export interface ValidationBadgeProps {
   /**

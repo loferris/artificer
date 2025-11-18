@@ -5,7 +5,7 @@
  * Built on Artificer UI ThemeRegistry for type-safe theme management
  */
 
-import { ThemeRegistry } from '@/lib/artificer-ui'
+import { ThemeRegistry } from '@artificer/ui'
 
 export type OperationIntent =
   | 'CREATE_ENTITY'
