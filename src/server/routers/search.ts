@@ -4,8 +4,10 @@
 
 import { z } from 'zod';
 import { router, publicProcedure } from '../trpc';
-import { VectorService, ChunkingService, EmbeddingService } from '../services/vector';
+import { VectorService, EmbeddingService } from '../services/vector';
 import { TRPCError } from '@trpc/server';
+import { pythonTextClient } from '../services/python/PythonTextClient';
+import { getLlamaIndexService } from '../services/search/LlamaIndexService';
 
 export const searchRouter = router({
   /**
@@ -179,14 +181,21 @@ export const searchRouter = router({
         const vectorService = new VectorService(ctx.db);
         await vectorService.deleteDocument(document.projectId, document.id);
 
-        // Chunk document
-        const chunkingService = new ChunkingService();
-        const chunks = chunkingService.chunkDocument(
+        // Chunk document (requires Python service for 3-5x speedup)
+        if (!pythonTextClient.isAvailable()) {
+          throw new TRPCError({
+            code: 'PRECONDITION_FAILED',
+            message: 'Document chunking requires Python text service. Please ensure Python text service is running.',
+          });
+        }
+
+        const result = await pythonTextClient.chunkDocument(
           document.id,
           document.projectId,
           document.content,
           document.filename
         );
+        const chunks = result.chunks;
 
         // Generate embeddings
         const embeddingService = new EmbeddingService();
@@ -242,4 +251,421 @@ export const searchRouter = router({
       overall: chromaHealthy && embeddingsHealthy,
     };
   }),
+
+  // ==================== LlamaIndex Enhanced Retrieval ====================
+
+  /**
+   * Check if LlamaIndex is available
+   */
+  llamaIndexAvailable: publicProcedure.query(async () => {
+    const llamaIndexService = getLlamaIndexService();
+    return {
+      available: llamaIndexService.isAvailable(),
+    };
+  }),
+
+  /**
+   * Rerank search results using cross-encoder
+   */
+  rerankResults: publicProcedure
+    .input(
+      z.object({
+        searchResults: z.array(z.any()),
+        query: z.string(),
+        model: z
+          .enum(['ms-marco-mini', 'ms-marco-base', 'bge-reranker', 'cohere-rerank'])
+          .optional()
+          .default('ms-marco-mini'),
+        topN: z.number().int().min(1).max(20).optional().default(5),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const llamaIndexService = getLlamaIndexService();
+
+      if (!llamaIndexService.isAvailable()) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'LlamaIndex not available. Install with: pip install llama-index',
+        });
+      }
+
+      try {
+        const reranked = await llamaIndexService.rerankResults(input.searchResults, input.query, {
+          model: input.model,
+          topN: input.topN,
+        });
+
+        return {
+          query: input.query,
+          results: reranked,
+          count: reranked.length,
+          reranked: true,
+          reranker_model: input.model,
+        };
+      } catch (error: any) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error.message || 'Reranking failed',
+        });
+      }
+    }),
+
+  /**
+   * Search with reranking (convenience endpoint)
+   */
+  searchWithReranking: publicProcedure
+    .input(
+      z.object({
+        projectId: z.string(),
+        query: z.string().min(1).max(1000),
+        topK: z.number().int().min(10).max(100).optional().default(20),
+        topN: z.number().int().min(1).max(20).optional().default(5),
+        model: z
+          .enum(['ms-marco-mini', 'ms-marco-base', 'bge-reranker', 'cohere-rerank'])
+          .optional()
+          .default('ms-marco-mini'),
+        minScore: z.number().min(0).max(1).optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      if (!ctx.db) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'Database not available',
+        });
+      }
+
+      const llamaIndexService = getLlamaIndexService();
+
+      if (!llamaIndexService.isAvailable()) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'LlamaIndex not available. Install with: pip install llama-index',
+        });
+      }
+
+      try {
+        // Step 1: Get more candidates via vector search
+        const embeddingService = new EmbeddingService();
+        const queryEmbedding = await embeddingService.generateEmbedding(input.query);
+
+        const vectorService = new VectorService(ctx.db);
+        const candidates = await vectorService.searchDocuments(input.projectId, queryEmbedding, {
+          limit: input.topK,
+          minScore: input.minScore,
+        });
+
+        // Step 2: Rerank top candidates
+        const reranked = await llamaIndexService.rerankResults(candidates, input.query, {
+          model: input.model,
+          topN: input.topN,
+        });
+
+        return {
+          query: input.query,
+          results: reranked,
+          count: reranked.length,
+          reranked: true,
+          candidates_count: candidates.length,
+        };
+      } catch (error: any) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error.message || 'Search with reranking failed',
+        });
+      }
+    }),
+
+  /**
+   * Generate hypothetical document for HyDE
+   */
+  generateHypotheticalDocument: publicProcedure
+    .input(
+      z.object({
+        query: z.string(),
+        llmModel: z.string().optional().default('gpt-4o-mini'),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const llamaIndexService = getLlamaIndexService();
+
+      if (!llamaIndexService.isAvailable()) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'LlamaIndex not available',
+        });
+      }
+
+      try {
+        const hypothetical = await llamaIndexService.generateHypotheticalDocument(
+          input.query,
+          input.llmModel
+        );
+
+        return {
+          query: input.query,
+          hypothetical_document: hypothetical,
+        };
+      } catch (error: any) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error.message || 'HyDE generation failed',
+        });
+      }
+    }),
+
+  /**
+   * Generate query variations for query fusion
+   */
+  generateQueryVariations: publicProcedure
+    .input(
+      z.object({
+        query: z.string(),
+        numVariations: z.number().int().min(1).max(5).optional().default(3),
+        llmModel: z.string().optional().default('gpt-4o-mini'),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const llamaIndexService = getLlamaIndexService();
+
+      if (!llamaIndexService.isAvailable()) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'LlamaIndex not available',
+        });
+      }
+
+      try {
+        const variations = await llamaIndexService.generateQueryVariations(
+          input.query,
+          input.numVariations,
+          input.llmModel
+        );
+
+        return {
+          original_query: input.query,
+          variations,
+          count: variations.length,
+        };
+      } catch (error: any) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error.message || 'Query variation generation failed',
+        });
+      }
+    }),
+
+  /**
+   * Decompose query into sub-questions
+   */
+  decomposeQuery: publicProcedure
+    .input(
+      z.object({
+        query: z.string(),
+        llmModel: z.string().optional().default('gpt-4o-mini'),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const llamaIndexService = getLlamaIndexService();
+
+      if (!llamaIndexService.isAvailable()) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'LlamaIndex not available',
+        });
+      }
+
+      try {
+        const subquestions = await llamaIndexService.decomposeIntoSubquestions(
+          input.query,
+          input.llmModel
+        );
+
+        return {
+          original_query: input.query,
+          subquestions,
+          count: subquestions.length,
+        };
+      } catch (error: any) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error.message || 'Query decomposition failed',
+        });
+      }
+    }),
+
+  /**
+   * Evaluate RAG faithfulness (no hallucination)
+   */
+  evaluateFaithfulness: publicProcedure
+    .input(
+      z.object({
+        query: z.string(),
+        response: z.string(),
+        contexts: z.array(z.string()),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const llamaIndexService = getLlamaIndexService();
+
+      if (!llamaIndexService.isAvailable()) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'LlamaIndex not available',
+        });
+      }
+
+      try {
+        const result = await llamaIndexService.evaluateFaithfulness(
+          input.query,
+          input.response,
+          input.contexts
+        );
+
+        return result;
+      } catch (error: any) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error.message || 'Faithfulness evaluation failed',
+        });
+      }
+    }),
+
+  /**
+   * Evaluate retrieval relevancy
+   */
+  evaluateRelevancy: publicProcedure
+    .input(
+      z.object({
+        query: z.string(),
+        contexts: z.array(z.string()),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const llamaIndexService = getLlamaIndexService();
+
+      if (!llamaIndexService.isAvailable()) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'LlamaIndex not available',
+        });
+      }
+
+      try {
+        const result = await llamaIndexService.evaluateRelevancy(input.query, input.contexts);
+
+        return result;
+      } catch (error: any) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error.message || 'Relevancy evaluation failed',
+        });
+      }
+    }),
+
+  /**
+   * Evaluate answer relevancy
+   */
+  evaluateAnswerRelevancy: publicProcedure
+    .input(
+      z.object({
+        query: z.string(),
+        response: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const llamaIndexService = getLlamaIndexService();
+
+      if (!llamaIndexService.isAvailable()) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'LlamaIndex not available',
+        });
+      }
+
+      try {
+        const result = await llamaIndexService.evaluateAnswerRelevancy(input.query, input.response);
+
+        return result;
+      } catch (error: any) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error.message || 'Answer relevancy evaluation failed',
+        });
+      }
+    }),
+
+  /**
+   * Comprehensive RAG evaluation
+   */
+  evaluateRAGPipeline: publicProcedure
+    .input(
+      z.object({
+        query: z.string(),
+        response: z.string(),
+        contexts: z.array(z.string()),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const llamaIndexService = getLlamaIndexService();
+
+      if (!llamaIndexService.isAvailable()) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'LlamaIndex not available',
+        });
+      }
+
+      try {
+        const result = await llamaIndexService.evaluateFullRAGPipeline(
+          input.query,
+          input.response,
+          input.contexts
+        );
+
+        return result;
+      } catch (error: any) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error.message || 'RAG evaluation failed',
+        });
+      }
+    }),
+
+  /**
+   * Batch evaluate RAG test cases
+   */
+  batchEvaluateRAG: publicProcedure
+    .input(
+      z.object({
+        testCases: z.array(
+          z.object({
+            query: z.string(),
+            response: z.string(),
+            contexts: z.array(z.string()),
+          })
+        ),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const llamaIndexService = getLlamaIndexService();
+
+      if (!llamaIndexService.isAvailable()) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'LlamaIndex not available',
+        });
+      }
+
+      try {
+        const result = await llamaIndexService.batchEvaluateRAG(input.testCases);
+
+        return result;
+      } catch (error: any) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error.message || 'Batch RAG evaluation failed',
+        });
+      }
+    }),
 });

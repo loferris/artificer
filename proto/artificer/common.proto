@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package artificer;
+
+// Common types used across services
+
+// Portable Text document structure
+message PortableTextDocument {
+  repeated PortableTextBlock content = 1;
+  map<string, string> metadata = 2;
+}
+
+// Portable Text block (paragraph, heading, etc.)
+message PortableTextBlock {
+  string type = 1;  // "block", "code", "image", "table"
+  string key = 2;
+  string style = 3;  // "normal", "h1", "h2", etc.
+  repeated PortableTextSpan children = 4;
+  repeated MarkDefinition mark_defs = 5;
+  string list_item = 6;  // "bullet", "number"
+  int32 level = 7;
+
+  // For code blocks
+  string code = 10;
+  string language = 11;
+
+  // For images
+  string url = 12;
+  string alt = 13;
+  string caption = 14;
+
+  // For tables
+  repeated TableRow rows = 15;
+}
+
+// Portable Text span (inline text with formatting)
+message PortableTextSpan {
+  string type = 1;  // "span"
+  string key = 2;
+  string text = 3;
+  repeated string marks = 4;
+}
+
+// Mark definition (links, etc.)
+message MarkDefinition {
+  string key = 1;
+  string type = 2;
+  string href = 3;
+}
+
+// Table row
+message TableRow {
+  string type = 1;
+  string key = 2;
+  repeated TableCell cells = 3;
+}
+
+// Table cell
+message TableCell {
+  string type = 1;
+  string key = 2;
+  repeated PortableTextSpan content = 3;
+}
+
+// Generic metadata
+message DocumentMetadata {
+  string title = 1;
+  string author = 2;
+  string description = 3;
+  string creator = 4;
+  map<string, string> custom = 5;
+}
+
+// Processing metrics
+message ProcessingMetrics {
+  int32 processing_time_ms = 1;
+  int32 tokens_used = 2;
+  double cost = 3;
+  string provider = 4;
+  string model = 5;
+}
+
+// Error details
+message ErrorDetails {
+  string code = 1;
+  string message = 2;
+  map<string, string> details = 3;
+}

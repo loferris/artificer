@@ -1,0 +1,82 @@
+[project]
+name = "artificer-python"
+version = "0.1.0"
+description = "Python microservices for AI Workflow Engine - OCR and document processing"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.104.1",
+    "uvicorn[standard]>=0.24.0",
+    "pydantic>=2.5.0",
+    "PyMuPDF>=1.23.8",
+    "pdf2image>=1.16.3",
+    "pillow>=10.1.0",
+    "opencv-python>=4.8.1",
+    "pytesseract>=0.3.10",
+    "openai>=1.3.0",
+    "httpx>=0.25.0",
+    "python-multipart>=0.0.6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.7.0",
+]
+
+[build-system]
+requires = ["setuptools>=68.0.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_functions = "test_*"
+asyncio_mode = "auto"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false  # Start lenient, will enable later
+check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+ignore_missing_imports = true
+
+# Gradually increase strictness
+[[tool.mypy.overrides]]
+module = "processors.*"
+disallow_untyped_defs = false
+check_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = "services.*"
+disallow_untyped_defs = false
+check_untyped_defs = true
+
+# Ignore external libraries without stubs
+[[tool.mypy.overrides]]
+module = [
+    "fitz.*",
+    "pytesseract.*",
+    "cv2.*",
+    "PIL.*",
+    "pdf2image.*",
+    "yaml.*",
+]
+ignore_missing_imports = true
+

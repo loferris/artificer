@@ -1,0 +1,142 @@
+syntax = "proto3";
+
+package artificer;
+
+import "artificer/common.proto";
+
+// Document Conversion Service (Import/Export)
+service ConversionService {
+  // Import markdown to Portable Text
+  rpc ImportMarkdown(ImportMarkdownRequest) returns (ImportMarkdownResponse);
+
+  // Import HTML to Portable Text
+  rpc ImportHTML(ImportHTMLRequest) returns (ImportHTMLResponse);
+
+  // Export Portable Text to HTML
+  rpc ExportHTML(ExportHTMLRequest) returns (ExportHTMLResponse);
+
+  // Export Portable Text to Markdown
+  rpc ExportMarkdown(ExportMarkdownRequest) returns (ExportMarkdownResponse);
+
+  // Export Portable Text to Notion JSON
+  rpc ExportNotion(ExportNotionRequest) returns (ExportNotionResponse);
+
+  // Export Portable Text to Roam JSON
+  rpc ExportRoam(ExportRoamRequest) returns (ExportRoamResponse);
+
+  // Batch export multiple documents (streaming)
+  rpc BatchExport(BatchExportRequest) returns (stream BatchExportResult);
+}
+
+// Import markdown request
+message ImportMarkdownRequest {
+  string content = 1;
+  bool strict_mode = 2;
+  bool include_metadata = 3;
+}
+
+// Import markdown response
+message ImportMarkdownResponse {
+  PortableTextDocument document = 1;
+  int32 processing_time_ms = 2;
+}
+
+// Import HTML request
+message ImportHTMLRequest {
+  string content = 1;
+}
+
+// Import HTML response
+message ImportHTMLResponse {
+  PortableTextDocument document = 1;
+  int32 processing_time_ms = 2;
+}
+
+// Export HTML request
+message ExportHTMLRequest {
+  PortableTextDocument document = 1;
+  bool include_styles = 2;
+  bool include_metadata = 3;
+  string class_name = 4;
+  string title = 5;
+}
+
+// Export HTML response
+message ExportHTMLResponse {
+  string html = 1;
+  int32 processing_time_ms = 2;
+}
+
+// Export markdown request
+message ExportMarkdownRequest {
+  PortableTextDocument document = 1;
+  bool include_metadata = 2;
+}
+
+// Export markdown response
+message ExportMarkdownResponse {
+  string markdown = 1;
+  int32 processing_time_ms = 2;
+}
+
+// Export Notion request
+message ExportNotionRequest {
+  PortableTextDocument document = 1;
+  bool pretty_print = 2;
+}
+
+// Export Notion response
+message ExportNotionResponse {
+  string json = 1;
+  int32 processing_time_ms = 2;
+}
+
+// Export Roam request
+message ExportRoamRequest {
+  PortableTextDocument document = 1;
+  bool pretty_print = 2;
+}
+
+// Export Roam response
+message ExportRoamResponse {
+  string json = 1;
+  int32 processing_time_ms = 2;
+}
+
+// Batch export request
+message BatchExportRequest {
+  repeated PortableTextDocument documents = 1;
+  ExportFormat format = 2;
+  map<string, string> options = 3;
+}
+
+// Batch export result (streamed)
+message BatchExportResult {
+  int32 index = 1;
+  bool success = 2;
+  string output = 3;
+  int32 processing_time_ms = 4;
+  string error = 5;
+
+  // Progress info (sent on final message)
+  BatchExportSummary summary = 10;
+}
+
+// Batch export summary
+message BatchExportSummary {
+  int32 total_documents = 1;
+  int32 successful = 2;
+  int32 failed = 3;
+  int32 total_processing_time_ms = 4;
+  int32 average_processing_time_ms = 5;
+  double parallel_speedup = 6;
+}
+
+// Export format enum
+enum ExportFormat {
+  EXPORT_FORMAT_UNSPECIFIED = 0;
+  EXPORT_FORMAT_MARKDOWN = 1;
+  EXPORT_FORMAT_HTML = 2;
+  EXPORT_FORMAT_NOTION = 3;
+  EXPORT_FORMAT_ROAM = 4;
+}

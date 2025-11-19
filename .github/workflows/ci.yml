@@ -7,6 +7,37 @@ on:
     branches: [main, dev]
 
 jobs:
+  python-checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: 'python/requirements.txt'
+
+      - name: Install dependencies
+        run: |
+          cd python
+          pip install -r requirements.txt
+          pip install mypy pytest pytest-asyncio types-PyYAML
+
+      - name: Run type checking with mypy
+        run: |
+          cd python
+          python -m mypy services/ processors/ --config-file=../pyproject.toml || true
+        continue-on-error: true
+
+      - name: Run Python tests
+        run: |
+          cd python
+          python -m pytest tests/ -v
+
   test:
     runs-on: ubuntu-latest
 

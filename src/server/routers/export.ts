@@ -5,6 +5,8 @@ import { createServicesFromContext } from '../services/ServiceFactory';
 import { ExportService, type ExportOptions } from '../services/export';
 import { DocumentConverter } from '../../../lib/document-converter/src/index';
 import type { ConvertedDocument } from '../../../lib/document-converter/src/types/index';
+import { pythonConversionClient } from '../services/python/PythonConversionClient';
+import { logger } from '../utils/logger';
 
 const converter = new DocumentConverter();
 
@@ -89,7 +91,7 @@ export const exportRouter = router({
   exportAll: protectedProcedure
     .input(
       z.object({
-        format: z.enum(['markdown', 'notion', 'obsidian', 'google-docs', 'json', 'html']),
+        format: z.enum(['markdown', 'notion', 'roam', 'obsidian', 'google-docs', 'json', 'html']),
         includeMetadata: z.boolean().default(true),
         includeTimestamps: z.boolean().default(true),
         includeCosts: z.boolean().default(true),
@@ -141,13 +143,125 @@ export const exportRouter = router({
       let result;
       switch (input.format) {
         case 'markdown':
-          result = await ExportService.exportToMarkdown(conversationsWithMessages, options);
+          // Try Python service first for 2-3x speedup
+          const allMarkdownPortableText = conversationsWithMessages.map(convertConversationToPortableText);
+          // Combine all blocks from all conversations
+          const combinedMarkdownBlocks = allMarkdownPortableText.flatMap(doc => doc.content);
+          const combinedMarkdownDoc: ConvertedDocument = {
+            content: combinedMarkdownBlocks,
+            metadata: {
+              title: 'All Conversations',
+              source: 'ai-workflow-engine',
+              exportDate: new Date().toISOString(),
+              totalConversations: conversationsWithMessages.length,
+            },
+          };
+
+          if (pythonConversionClient.isAvailable()) {
+            try {
+              logger.debug('Using Python conversion service for Markdown export');
+              const pythonResult = await pythonConversionClient.exportMarkdown(combinedMarkdownDoc, {
+                includeMetadata: input.includeMetadata,
+              });
+              result = pythonResult.markdown;
+              logger.info('Python Markdown export completed', {
+                processingTime: pythonResult.processingTime,
+                markdownLength: result.length,
+              });
+            } catch (error) {
+              logger.warn('Python Markdown export failed, falling back to TypeScript', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+              });
+              // Fallback to TypeScript
+              result = await ExportService.exportToMarkdown(conversationsWithMessages, options);
+            }
+          } else {
+            // Python service not available, use TypeScript
+            result = await ExportService.exportToMarkdown(conversationsWithMessages, options);
+          }
           break;
         case 'obsidian':
           result = await ExportService.exportToObsidian(conversationsWithMessages, options);
           break;
         case 'notion':
-          result = await ExportService.exportToNotion(conversationsWithMessages, options);
+          // Try Python service first for 2-3x speedup
+          const allNotionPortableText = conversationsWithMessages.map(convertConversationToPortableText);
+          // Combine all blocks from all conversations
+          const combinedNotionBlocks = allNotionPortableText.flatMap(doc => doc.content);
+          const combinedNotionDoc: ConvertedDocument = {
+            content: combinedNotionBlocks,
+            metadata: {
+              title: 'All Conversations',
+              source: 'ai-workflow-engine',
+              exportDate: new Date().toISOString(),
+              totalConversations: conversationsWithMessages.length,
+            },
+          };
+
+          if (pythonConversionClient.isAvailable()) {
+            try {
+              logger.debug('Using Python conversion service for Notion export');
+              const pythonResult = await pythonConversionClient.exportNotion(combinedNotionDoc, {
+                prettyPrint: false,
+              });
+              result = pythonResult.json;
+              logger.info('Python Notion export completed', {
+                processingTime: pythonResult.processingTime,
+                jsonLength: result.length,
+              });
+            } catch (error) {
+              logger.warn('Python Notion export failed, falling back to TypeScript', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+              });
+              // Fallback to TypeScript
+              result = await ExportService.exportToNotion(conversationsWithMessages, options);
+            }
+          } else {
+            // Python service not available, use TypeScript
+            result = await ExportService.exportToNotion(conversationsWithMessages, options);
+          }
+          break;
+        case 'roam':
+          // Try Python service first for 2-3x speedup
+          const allRoamPortableText = conversationsWithMessages.map(convertConversationToPortableText);
+          // Combine all blocks from all conversations
+          const combinedRoamBlocks = allRoamPortableText.flatMap(doc => doc.content);
+          const combinedRoamDoc: ConvertedDocument = {
+            content: combinedRoamBlocks,
+            metadata: {
+              title: 'All Conversations',
+              source: 'ai-workflow-engine',
+              exportDate: new Date().toISOString(),
+              totalConversations: conversationsWithMessages.length,
+            },
+          };
+
+          if (pythonConversionClient.isAvailable()) {
+            try {
+              logger.debug('Using Python conversion service for Roam export');
+              const pythonResult = await pythonConversionClient.exportRoam(combinedRoamDoc, {
+                prettyPrint: false,
+              });
+              result = pythonResult.json;
+              logger.info('Python Roam export completed', {
+                processingTime: pythonResult.processingTime,
+                jsonLength: result.length,
+              });
+            } catch (error) {
+              logger.warn('Python Roam export failed, falling back to TypeScript', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+              });
+              // Fallback to TypeScript
+              result = await converter.export(combinedRoamDoc, 'roam', {
+                prettyPrint: false,
+              } as any);
+            }
+          } else {
+            // Python service not available, use TypeScript
+            result = await converter.export(combinedRoamDoc, 'roam', {
+              prettyPrint: false,
+            } as any);
+          }
           break;
         case 'google-docs':
           result = await ExportService.exportToGoogleDocs(conversationsWithMessages, options);
@@ -169,10 +283,38 @@ export const exportRouter = router({
               totalConversations: conversationsWithMessages.length,
             },
           };
-          result = await converter.export(combinedDoc, 'html', {
-            includeMetadata: input.includeMetadata,
-            includeStyles: true,
-          } as any); // HTML-specific options
+
+          // Try Python service first for 2-3x speedup
+          if (pythonConversionClient.isAvailable()) {
+            try {
+              logger.debug('Using Python conversion service for HTML export');
+              const pythonResult = await pythonConversionClient.exportHtml(combinedDoc, {
+                includeMetadata: input.includeMetadata,
+                includeStyles: true,
+                title: 'All Conversations',
+              });
+              result = pythonResult.html;
+              logger.info('Python HTML export completed', {
+                processingTime: pythonResult.processingTime,
+                htmlLength: result.length,
+              });
+            } catch (error) {
+              logger.warn('Python HTML export failed, falling back to TypeScript', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+              });
+              // Fallback to TypeScript
+              result = await converter.export(combinedDoc, 'html', {
+                includeMetadata: input.includeMetadata,
+                includeStyles: true,
+              } as any);
+            }
+          } else {
+            // Python service not available, use TypeScript
+            result = await converter.export(combinedDoc, 'html', {
+              includeMetadata: input.includeMetadata,
+              includeStyles: true,
+            } as any);
+          }
           break;
         default:
           throw new TRPCError({
@@ -210,7 +352,7 @@ export const exportRouter = router({
     .input(
       z.object({
         conversationId: z.string().min(1, 'Conversation ID is required'),
-        format: z.enum(['markdown', 'notion', 'obsidian', 'google-docs', 'json', 'html']),
+        format: z.enum(['markdown', 'notion', 'roam', 'obsidian', 'google-docs', 'json', 'html']),
         includeMetadata: z.boolean().default(true),
         includeTimestamps: z.boolean().default(true),
         includeCosts: z.boolean().default(true),
@@ -265,13 +407,93 @@ export const exportRouter = router({
       let result;
       switch (input.format) {
         case 'markdown':
-          result = await ExportService.exportToMarkdown([conversationWithMessages], options);
+          // Try Python service first for 2-3x speedup
+          const markdownPortableText = convertConversationToPortableText(conversationWithMessages);
+          if (pythonConversionClient.isAvailable()) {
+            try {
+              logger.debug('Using Python conversion service for Markdown export');
+              const pythonResult = await pythonConversionClient.exportMarkdown(markdownPortableText, {
+                includeMetadata: input.includeMetadata,
+              });
+              result = pythonResult.markdown;
+              logger.info('Python Markdown export completed', {
+                processingTime: pythonResult.processingTime,
+                markdownLength: result.length,
+              });
+            } catch (error) {
+              logger.warn('Python Markdown export failed, falling back to TypeScript', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+              });
+              // Fallback to TypeScript
+              result = await ExportService.exportToMarkdown([conversationWithMessages], options);
+            }
+          } else {
+            // Python service not available, use TypeScript
+            result = await ExportService.exportToMarkdown([conversationWithMessages], options);
+          }
           break;
         case 'obsidian':
           result = await ExportService.exportToObsidian([conversationWithMessages], options);
           break;
         case 'notion':
-          result = await ExportService.exportToNotion([conversationWithMessages], options);
+          // Use document converter for Notion export
+          const notionPortableText = convertConversationToPortableText(conversationWithMessages);
+
+          // Try Python service first for 2-3x speedup
+          if (pythonConversionClient.isAvailable()) {
+            try {
+              logger.debug('Using Python conversion service for Notion export');
+              const pythonResult = await pythonConversionClient.exportNotion(notionPortableText, {
+                prettyPrint: false,
+              });
+              result = pythonResult.json;
+              logger.info('Python Notion export completed', {
+                processingTime: pythonResult.processingTime,
+                jsonLength: result.length,
+              });
+            } catch (error) {
+              logger.warn('Python Notion export failed, falling back to TypeScript', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+              });
+              // Fallback to TypeScript
+              result = await ExportService.exportToNotion([conversationWithMessages], options);
+            }
+          } else {
+            // Python service not available, use TypeScript
+            result = await ExportService.exportToNotion([conversationWithMessages], options);
+          }
+          break;
+        case 'roam':
+          // Use document converter for Roam export
+          const roamPortableText = convertConversationToPortableText(conversationWithMessages);
+
+          // Try Python service first for 2-3x speedup
+          if (pythonConversionClient.isAvailable()) {
+            try {
+              logger.debug('Using Python conversion service for Roam export');
+              const pythonResult = await pythonConversionClient.exportRoam(roamPortableText, {
+                prettyPrint: false,
+              });
+              result = pythonResult.json;
+              logger.info('Python Roam export completed', {
+                processingTime: pythonResult.processingTime,
+                jsonLength: result.length,
+              });
+            } catch (error) {
+              logger.warn('Python Roam export failed, falling back to TypeScript', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+              });
+              // Fallback to TypeScript
+              result = await converter.export(roamPortableText, 'roam', {
+                prettyPrint: false,
+              } as any);
+            }
+          } else {
+            // Python service not available, use TypeScript
+            result = await converter.export(roamPortableText, 'roam', {
+              prettyPrint: false,
+            } as any);
+          }
           break;
         case 'google-docs':
           result = await ExportService.exportToGoogleDocs([conversationWithMessages], options);
@@ -282,10 +504,38 @@ export const exportRouter = router({
         case 'html':
           // Use document converter for HTML export
           const portableText = convertConversationToPortableText(conversationWithMessages);
-          result = await converter.export(portableText, 'html', {
-            includeMetadata: input.includeMetadata,
-            includeStyles: true,
-          } as any); // HTML-specific options
+
+          // Try Python service first for 2-3x speedup
+          if (pythonConversionClient.isAvailable()) {
+            try {
+              logger.debug('Using Python conversion service for HTML export');
+              const pythonResult = await pythonConversionClient.exportHtml(portableText, {
+                includeMetadata: input.includeMetadata,
+                includeStyles: true,
+                title: conversationWithMessages.title,
+              });
+              result = pythonResult.html;
+              logger.info('Python HTML export completed', {
+                processingTime: pythonResult.processingTime,
+                htmlLength: result.length,
+              });
+            } catch (error) {
+              logger.warn('Python HTML export failed, falling back to TypeScript', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+              });
+              // Fallback to TypeScript
+              result = await converter.export(portableText, 'html', {
+                includeMetadata: input.includeMetadata,
+                includeStyles: true,
+              } as any);
+            }
+          } else {
+            // Python service not available, use TypeScript
+            result = await converter.export(portableText, 'html', {
+              includeMetadata: input.includeMetadata,
+              includeStyles: true,
+            } as any);
+          }
           break;
         default:
           throw new TRPCError({
@@ -330,6 +580,12 @@ export const exportRouter = router({
           id: 'notion',
           name: 'Notion',
           description: 'JSON format for Notion API integration',
+          extensions: ['.json'],
+        },
+        {
+          id: 'roam',
+          name: 'Roam Research',
+          description: 'JSON format for Roam Research import',
           extensions: ['.json'],
         },
         {
