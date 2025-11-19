@@ -576,7 +576,7 @@ describe('Export Router', () => {
       const caller = exportRouter.createCaller(mockContext);
       const result = await caller.getFormats();
 
-      expect(result.formats).toHaveLength(6);
+      expect(result.formats).toHaveLength(7);
       expect(result.formats).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
@@ -598,9 +598,21 @@ describe('Export Router', () => {
             extensions: ['.json'],
           }),
           expect.objectContaining({
+            id: 'roam',
+            name: 'Roam Research',
+            description: 'JSON format for Roam Research import',
+            extensions: ['.json'],
+          }),
+          expect.objectContaining({
             id: 'google-docs',
             name: 'Google Docs',
             description: 'HTML format for Google Docs API',
+            extensions: ['.html'],
+          }),
+          expect.objectContaining({
+            id: 'html',
+            name: 'HTML',
+            description: 'Styled HTML document for viewing in browser',
             extensions: ['.html'],
           }),
           expect.objectContaining({

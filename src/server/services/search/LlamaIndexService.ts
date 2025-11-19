@@ -348,7 +348,7 @@ except Exception as e:
     sys.exit(1)
 `;
 
-    try:
+    try {
       const output = await this.executeCommand(this.pythonPath, ['-c', pythonScript]);
       return JSON.parse(output.trim());
     } catch (error: any) {
