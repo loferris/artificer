@@ -236,4 +236,171 @@ export const workflowsRouter = router({
         : 'Prefect is not installed or not accessible',
     };
   }),
+
+  /**
+   * CUSTOM WORKFLOWS - Phase 2: Declarative config → Prefect translation
+   */
+
+  /**
+   * Register a custom workflow definition
+   */
+  registerCustomWorkflow: publicProcedure
+    .input(
+      z.object({
+        workflowId: z.string().describe('Unique workflow ID'),
+        definition: z.object({
+          name: z.string(),
+          description: z.string().optional(),
+          version: z.string().optional(),
+          tasks: z.array(
+            z.object({
+              id: z.string(),
+              type: z.string(),
+              inputs: z.record(z.any()),
+              depends_on: z.array(z.string()).optional(),
+              outputs: z.array(z.string()).optional(),
+            })
+          ),
+          output: z.record(z.string()).optional(),
+          options: z
+            .object({
+              parallel: z.boolean().optional(),
+              retry_failed_tasks: z.boolean().optional(),
+              timeout: z.number().optional(),
+              task_runner: z.enum(['concurrent', 'sequential', 'dask']).optional(),
+              max_retries: z.number().optional(),
+            })
+            .optional(),
+          metadata: z.record(z.any()).optional(),
+        }),
+      })
+    )
+    .mutation(async ({ input }) => {
+      // Validate workflow definition
+      const validation = await prefectService.validateWorkflowDefinition(input.definition);
+
+      if (!validation.valid) {
+        throw new Error(`Invalid workflow definition: ${validation.error}`);
+      }
+
+      // Register workflow
+      prefectService.registerCustomWorkflow(input.workflowId, input.definition);
+
+      return {
+        success: true,
+        workflowId: input.workflowId,
+        message: `Custom workflow ${input.definition.name} registered successfully`,
+      };
+    }),
+
+  /**
+   * List all custom workflows
+   */
+  listCustomWorkflows: publicProcedure.query(() => {
+    return {
+      workflows: prefectService.listCustomWorkflows(),
+    };
+  }),
+
+  /**
+   * Get a custom workflow definition
+   */
+  getCustomWorkflow: publicProcedure
+    .input(
+      z.object({
+        workflowId: z.string().describe('Workflow ID'),
+      })
+    )
+    .query(({ input }) => {
+      const workflow = prefectService.getCustomWorkflow(input.workflowId);
+
+      if (!workflow) {
+        throw new Error(`Custom workflow not found: ${input.workflowId}`);
+      }
+
+      return {
+        id: input.workflowId,
+        ...workflow,
+      };
+    }),
+
+  /**
+   * Execute a custom workflow
+   */
+  executeCustomWorkflow: publicProcedure
+    .input(
+      z.object({
+        workflowId: z.string().describe('Workflow ID'),
+        inputs: z.record(z.any()).describe('Workflow inputs'),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const result = await prefectService.executeCustomWorkflow(
+        input.workflowId,
+        input.inputs
+      );
+
+      if (!result.success) {
+        throw new Error(result.error || 'Workflow execution failed');
+      }
+
+      return result;
+    }),
+
+  /**
+   * Delete a custom workflow
+   */
+  deleteCustomWorkflow: publicProcedure
+    .input(
+      z.object({
+        workflowId: z.string().describe('Workflow ID'),
+      })
+    )
+    .mutation(({ input }) => {
+      const deleted = prefectService.deleteCustomWorkflow(input.workflowId);
+
+      if (!deleted) {
+        throw new Error(`Custom workflow not found: ${input.workflowId}`);
+      }
+
+      return {
+        success: true,
+        workflowId: input.workflowId,
+        message: 'Custom workflow deleted successfully',
+      };
+    }),
+
+  /**
+   * Validate a workflow definition without registering
+   */
+  validateWorkflowDefinition: publicProcedure
+    .input(
+      z.object({
+        definition: z.object({
+          name: z.string(),
+          description: z.string().optional(),
+          version: z.string().optional(),
+          tasks: z.array(
+            z.object({
+              id: z.string(),
+              type: z.string(),
+              inputs: z.record(z.any()),
+              depends_on: z.array(z.string()).optional(),
+              outputs: z.array(z.string()).optional(),
+            })
+          ),
+          output: z.record(z.string()).optional(),
+          options: z.record(z.any()).optional(),
+          metadata: z.record(z.any()).optional(),
+        }),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const validation = await prefectService.validateWorkflowDefinition(input.definition);
+
+      return {
+        valid: validation.valid,
+        error: validation.error,
+      };
+    }),
 });

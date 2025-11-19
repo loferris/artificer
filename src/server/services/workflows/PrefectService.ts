@@ -109,14 +109,38 @@ export const AVAILABLE_WORKFLOWS = {
 
 export type WorkflowName = keyof typeof AVAILABLE_WORKFLOWS;
 
+export interface CustomWorkflowDefinition {
+  name: string;
+  description?: string;
+  version?: string;
+  tasks: Array<{
+    id: string;
+    type: string;
+    inputs: Record<string, any>;
+    depends_on?: string[];
+    outputs?: string[];
+  }>;
+  output?: Record<string, string>;
+  options?: {
+    parallel?: boolean;
+    retry_failed_tasks?: boolean;
+    timeout?: number;
+    task_runner?: 'concurrent' | 'sequential' | 'dask';
+    max_retries?: number;
+  };
+  metadata?: Record<string, any>;
+}
+
 export class PrefectService {
   private pythonPath: string;
   private flowsPath: string;
+  private customWorkflows: Map<string, CustomWorkflowDefinition>;
 
   constructor() {
     // Path to Python flows directory
     this.flowsPath = path.join(process.cwd(), 'python', 'flows');
     this.pythonPath = process.env.PYTHON_PATH || 'python3';
+    this.customWorkflows = new Map();
   }
 
   /**
@@ -319,5 +343,202 @@ if __name__ == "__main__":
         reject(error);
       });
     });
+  }
+
+  /**
+   * Register a custom workflow definition
+   */
+  registerCustomWorkflow(
+    workflowId: string,
+    definition: CustomWorkflowDefinition
+  ): void {
+    logger.info('Registering custom workflow', {
+      workflowId,
+      name: definition.name,
+    });
+
+    this.customWorkflows.set(workflowId, definition);
+  }
+
+  /**
+   * Get a custom workflow definition
+   */
+  getCustomWorkflow(workflowId: string): CustomWorkflowDefinition | null {
+    return this.customWorkflows.get(workflowId) || null;
+  }
+
+  /**
+   * List all custom workflows
+   */
+  listCustomWorkflows(): Array<{
+    id: string;
+    name: string;
+    description?: string;
+    version?: string;
+    taskCount: number;
+  }> {
+    return Array.from(this.customWorkflows.entries()).map(([id, definition]) => ({
+      id,
+      name: definition.name,
+      description: definition.description,
+      version: definition.version,
+      taskCount: definition.tasks.length,
+    }));
+  }
+
+  /**
+   * Delete a custom workflow
+   */
+  deleteCustomWorkflow(workflowId: string): boolean {
+    return this.customWorkflows.delete(workflowId);
+  }
+
+  /**
+   * Execute a custom workflow definition
+   */
+  async executeCustomWorkflow(
+    workflowId: string,
+    inputs: WorkflowInput
+  ): Promise<WorkflowResult> {
+    const startTime = Date.now();
+
+    const definition = this.getCustomWorkflow(workflowId);
+    if (!definition) {
+      throw new Error(`Custom workflow not found: ${workflowId}`);
+    }
+
+    logger.info('Executing custom workflow', {
+      workflowId,
+      name: definition.name,
+    });
+
+    try {
+      // Execute via workflow generator
+      const result = await this.executePythonCustomWorkflow(definition, inputs);
+
+      const executionTime = Date.now() - startTime;
+
+      logger.info('Custom workflow completed successfully', {
+        workflowId,
+        name: definition.name,
+        executionTime,
+      });
+
+      return {
+        success: true,
+        result,
+        metadata: {
+          workflowName: definition.name,
+          executionTime,
+          timestamp: new Date().toISOString(),
+        },
+      };
+    } catch (error) {
+      const executionTime = Date.now() - startTime;
+
+      logger.error('Custom workflow execution failed', {
+        workflowId,
+        name: definition.name,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        executionTime,
+      });
+
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        metadata: {
+          workflowName: definition.name,
+          executionTime,
+          timestamp: new Date().toISOString(),
+        },
+      };
+    }
+  }
+
+  /**
+   * Execute custom workflow via Python workflow generator
+   */
+  private async executePythonCustomWorkflow(
+    definition: CustomWorkflowDefinition,
+    inputs: WorkflowInput
+  ): Promise<any> {
+    // Create Python script to execute custom workflow
+    const pythonScript = `
+import sys
+import json
+from pathlib import Path
+
+# Add flows directory to path
+sys.path.insert(0, '${this.flowsPath}')
+
+# Import workflow generator
+from workflow_generator import create_workflow_from_dict
+
+# Parse workflow definition and inputs
+workflow_def = json.loads('''${JSON.stringify(definition)}''')
+workflow_input = json.loads('''${JSON.stringify(inputs)}''')
+
+# Create and execute workflow
+executor = create_workflow_from_dict(workflow_def)
+result = executor.execute(workflow_input)
+
+# Output result
+print(json.dumps(result))
+`;
+
+    // Execute Python script
+    const output = await this.executeCommand(this.pythonPath, ['-c', pythonScript]);
+
+    // Parse JSON result
+    try {
+      return JSON.parse(output);
+    } catch (error) {
+      logger.warn('Failed to parse custom workflow output as JSON', { output });
+      return { raw_output: output };
+    }
+  }
+
+  /**
+   * Validate a custom workflow definition
+   */
+  async validateWorkflowDefinition(
+    definition: CustomWorkflowDefinition
+  ): Promise<{ valid: boolean; error?: string }> {
+    try {
+      // Use Python validator
+      const pythonScript = `
+import sys
+import json
+from pathlib import Path
+
+# Add flows directory to path
+sys.path.insert(0, '${this.flowsPath}')
+
+# Import validator
+from workflow_schema import validate_workflow_definition
+
+# Parse workflow definition
+workflow_def = json.loads('''${JSON.stringify(definition)}''')
+
+# Validate
+is_valid, error = validate_workflow_definition(workflow_def)
+
+# Output result
+print(json.dumps({"valid": is_valid, "error": error}))
+`;
+
+      const output = await this.executeCommand(this.pythonPath, ['-c', pythonScript]);
+      const result = JSON.parse(output);
+
+      return {
+        valid: result.valid,
+        error: result.error || undefined,
+      };
+    } catch (error) {
+      return {
+        valid: false,
+        error: error instanceof Error ? error.message : 'Validation failed',
+      };
+    }
   }
 }

@@ -342,3 +342,187 @@ class Workflows(BaseResource):
             >>> print(f"Version: {health.get('version', 'unknown')}")
         """
         return self._trpc_request("workflows.healthCheck")
+
+    # ========================================
+    # CUSTOM WORKFLOWS - Phase 2
+    # ========================================
+
+    def register_custom_workflow(
+        self,
+        workflow_id: str,
+        definition: Dict[str, Any]
+    ) -> dict:
+        """
+        Register a custom workflow definition.
+
+        Allows defining custom DAG workflows using declarative configuration
+        that gets translated into executable Prefect flows.
+
+        Args:
+            workflow_id: Unique workflow identifier
+            definition: Workflow definition dictionary with:
+                - name: Workflow name
+                - description: Optional description
+                - version: Optional version (semver)
+                - tasks: List of task definitions
+                - output: Output mapping
+                - options: Execution options (parallel, timeout, etc.)
+
+        Returns:
+            Registration result
+
+        Example:
+            >>> workflow_def = {
+            ...     "name": "pdf-extract-and-chunk",
+            ...     "description": "Extract PDF and chunk into segments",
+            ...     "version": "1.0.0",
+            ...     "tasks": [
+            ...         {
+            ...             "id": "extract",
+            ...             "type": "extract_pdf_text",
+            ...             "inputs": {"pdf_data": "{{workflow.input.pdf_data}}"}
+            ...         },
+            ...         {
+            ...             "id": "chunk",
+            ...             "type": "chunk_document",
+            ...             "depends_on": ["extract"],
+            ...             "inputs": {
+            ...                 "document_id": "{{workflow.input.document_id}}",
+            ...                 "project_id": "{{workflow.input.project_id}}",
+            ...                 "content": "{{extract.text}}",
+            ...                 "chunk_size": 1000,
+            ...                 "chunk_overlap": 200
+            ...             }
+            ...         }
+            ...     ],
+            ...     "output": {
+            ...         "chunks": "{{chunk.chunks}}",
+            ...         "metadata": "{{extract.metadata}}"
+            ...     }
+            ... }
+            >>> result = client.workflows.register_custom_workflow(
+            ...     "my-pdf-workflow",
+            ...     workflow_def
+            ... )
+            >>> print(f"Registered: {result['workflowId']}")
+        """
+        return self._trpc_request("workflows.registerCustomWorkflow", {
+            "workflowId": workflow_id,
+            "definition": definition
+        })
+
+    def list_custom_workflows(self) -> dict:
+        """
+        List all registered custom workflows.
+
+        Returns:
+            List of custom workflows with metadata
+
+        Example:
+            >>> workflows = client.workflows.list_custom_workflows()
+            >>> for wf in workflows['workflows']:
+            ...     print(f"{wf['id']}: {wf['name']} ({wf['taskCount']} tasks)")
+        """
+        return self._trpc_request("workflows.listCustomWorkflows")
+
+    def get_custom_workflow(self, workflow_id: str) -> dict:
+        """
+        Get a custom workflow definition.
+
+        Args:
+            workflow_id: Workflow ID
+
+        Returns:
+            Workflow definition
+
+        Example:
+            >>> workflow = client.workflows.get_custom_workflow("my-pdf-workflow")
+            >>> print(f"Name: {workflow['name']}")
+            >>> print(f"Tasks: {len(workflow['tasks'])}")
+        """
+        return self._trpc_request("workflows.getCustomWorkflow", {
+            "workflowId": workflow_id
+        })
+
+    def execute_custom_workflow(
+        self,
+        workflow_id: str,
+        inputs: Dict[str, Any]
+    ) -> dict:
+        """
+        Execute a registered custom workflow.
+
+        Args:
+            workflow_id: Workflow ID
+            inputs: Workflow inputs (referenced as {{workflow.input.key}})
+
+        Returns:
+            Workflow execution result
+
+        Example:
+            >>> result = client.workflows.execute_custom_workflow(
+            ...     "my-pdf-workflow",
+            ...     {
+            ...         "pdf_data": base64_encoded_pdf,
+            ...         "document_id": "doc123",
+            ...         "project_id": "proj456"
+            ...     }
+            ... )
+            >>> chunks = result['result']['chunks']
+            >>> print(f"Processed into {len(chunks)} chunks")
+        """
+        return self._trpc_request("workflows.executeCustomWorkflow", {
+            "workflowId": workflow_id,
+            "inputs": inputs
+        })
+
+    def delete_custom_workflow(self, workflow_id: str) -> dict:
+        """
+        Delete a custom workflow.
+
+        Args:
+            workflow_id: Workflow ID
+
+        Returns:
+            Deletion result
+
+        Example:
+            >>> result = client.workflows.delete_custom_workflow("my-pdf-workflow")
+            >>> print(result['message'])
+        """
+        return self._trpc_request("workflows.deleteCustomWorkflow", {
+            "workflowId": workflow_id
+        })
+
+    def validate_workflow_definition(self, definition: Dict[str, Any]) -> dict:
+        """
+        Validate a workflow definition without registering it.
+
+        Useful for checking if a workflow definition is valid before registration.
+
+        Args:
+            definition: Workflow definition dictionary
+
+        Returns:
+            Validation result with 'valid' boolean and optional 'error' message
+
+        Example:
+            >>> workflow_def = {
+            ...     "name": "test-workflow",
+            ...     "tasks": [
+            ...         {
+            ...             "id": "task1",
+            ...             "type": "extract_pdf_text",
+            ...             "inputs": {"pdf_data": "{{workflow.input.pdf}}"}
+            ...         }
+            ...     ]
+            ... }
+            >>> result = client.workflows.validate_workflow_definition(workflow_def)
+            >>> if result['valid']:
+            ...     print("✓ Workflow definition is valid")
+            ... else:
+            ...     print(f"✗ Validation failed: {result['error']}")
+        """
+        return self._trpc_request("workflows.validateWorkflowDefinition", {
+            "definition": definition
+        })

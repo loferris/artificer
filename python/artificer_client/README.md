@@ -363,6 +363,101 @@ health = client.workflows.health_check()
 print(f"Available: {health['available']}")
 ```
 
+#### Custom Workflows (Declarative DAGs)
+
+Define custom DAG workflows using declarative configuration:
+
+```python
+# Define a custom workflow
+workflow_def = {
+    "name": "pdf-extract-and-chunk",
+    "description": "Extract PDF and chunk into segments",
+    "version": "1.0.0",
+    "tasks": [
+        {
+            "id": "extract",
+            "type": "extract_pdf_text",
+            "inputs": {
+                "pdf_data": "{{workflow.input.pdf_data}}"
+            }
+        },
+        {
+            "id": "chunk",
+            "type": "chunk_document",
+            "depends_on": ["extract"],
+            "inputs": {
+                "document_id": "{{workflow.input.document_id}}",
+                "project_id": "{{workflow.input.project_id}}",
+                "content": "{{extract.text}}",
+                "chunk_size": 1000,
+                "chunk_overlap": 200
+            }
+        }
+    ],
+    "output": {
+        "chunks": "{{chunk.chunks}}",
+        "metadata": "{{extract.metadata}}"
+    },
+    "options": {
+        "parallel": False,
+        "timeout": 300
+    }
+}
+
+# Validate workflow definition
+validation = client.workflows.validate_workflow_definition(workflow_def)
+if not validation['valid']:
+    print(f"Error: {validation['error']}")
+
+# Register custom workflow
+client.workflows.register_custom_workflow(
+    "my-pdf-workflow",
+    workflow_def
+)
+
+# Execute custom workflow
+result = client.workflows.execute_custom_workflow(
+    "my-pdf-workflow",
+    {
+        "pdf_data": pdf_data,
+        "document_id": "doc_123",
+        "project_id": "proj_456"
+    }
+)
+print(f"Processed: {len(result['result']['chunks'])} chunks")
+
+# List custom workflows
+workflows = client.workflows.list_custom_workflows()
+for wf in workflows['workflows']:
+    print(f"{wf['id']}: {wf['name']} ({wf['taskCount']} tasks)")
+
+# Get workflow definition
+workflow = client.workflows.get_custom_workflow("my-pdf-workflow")
+
+# Delete workflow
+client.workflows.delete_custom_workflow("my-pdf-workflow")
+```
+
+**Available Task Types:**
+- `extract_pdf_text` - Extract text from PDF
+- `process_pdf` - Process PDF with OCR fallback
+- `chunk_document` - Chunk document into overlapping segments
+- `import_markdown` - Import markdown to Portable Text
+- `import_html` - Import HTML to Portable Text
+- `export_html` - Export Portable Text to HTML
+- `export_markdown` - Export Portable Text to Markdown
+- `count_tokens` - Count tokens in content
+- `ocr_image` - Extract text from image using OCR
+- `health_check` - Check Artificer service health
+
+**Workflow Features:**
+- DAG structure with `depends_on` relationships
+- Input references: `{{workflow.input.key}}`
+- Task output references: `{{task_id.output_key}}`
+- Parallel execution: Set `options.parallel = True`
+- Retry configuration: `options.retry_failed_tasks`, `options.max_retries`
+- Timeout control: `options.timeout` (seconds)
+
 ## Context Manager Support
 
 ```python
