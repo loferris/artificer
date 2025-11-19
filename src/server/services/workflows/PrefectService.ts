@@ -541,4 +541,170 @@ print(json.dumps({"valid": is_valid, "error": error}))
       };
     }
   }
+
+  /**
+   * WORKFLOW TEMPLATES - Phase 3
+   */
+
+  /**
+   * List all workflow templates
+   */
+  async listTemplates(category?: string): Promise<
+    Array<{
+      id: string;
+      name: string;
+      description: string;
+      category: string;
+      version: string;
+      parameters: Record<string, any>;
+    }>
+  > {
+    try {
+      const pythonScript = `
+import sys
+import json
+from pathlib import Path
+
+# Add flows directory to path
+sys.path.insert(0, '${this.flowsPath}')
+
+# Import template registry
+from workflow_templates import list_templates
+
+# List templates
+category = ${category ? `"${category}"` : 'None'}
+templates = list_templates(category=category)
+
+# Output result
+print(json.dumps(templates))
+`;
+
+      const output = await this.executeCommand(this.pythonPath, ['-c', pythonScript]);
+      return JSON.parse(output);
+    } catch (error) {
+      logger.error('Failed to list workflow templates', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return [];
+    }
+  }
+
+  /**
+   * Get a workflow template
+   */
+  async getTemplate(templateId: string): Promise<{
+    id: string;
+    name: string;
+    description: string;
+    category: string;
+    version: string;
+    parameters: Record<string, any>;
+    definition: CustomWorkflowDefinition;
+  } | null> {
+    try {
+      const pythonScript = `
+import sys
+import json
+from pathlib import Path
+
+# Add flows directory to path
+sys.path.insert(0, '${this.flowsPath}')
+
+# Import template registry
+from workflow_templates import get_template
+
+# Get template
+template = get_template("${templateId}")
+if template:
+    result = {
+        "id": template.template_id,
+        "name": template.name,
+        "description": template.description,
+        "category": template.category,
+        "version": template.version,
+        "parameters": template.get_parameters(),
+        "definition": template.get_definition()
+    }
+    print(json.dumps(result))
+else:
+    print(json.dumps(None))
+`;
+
+      const output = await this.executeCommand(this.pythonPath, ['-c', pythonScript]);
+      const result = JSON.parse(output);
+      return result;
+    } catch (error) {
+      logger.error('Failed to get workflow template', {
+        templateId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Get template categories
+   */
+  async getTemplateCategories(): Promise<string[]> {
+    try {
+      const pythonScript = `
+import sys
+import json
+from pathlib import Path
+
+# Add flows directory to path
+sys.path.insert(0, '${this.flowsPath}')
+
+# Import template registry
+from workflow_templates import get_template_categories
+
+# Get categories
+categories = get_template_categories()
+print(json.dumps(categories))
+`;
+
+      const output = await this.executeCommand(this.pythonPath, ['-c', pythonScript]);
+      return JSON.parse(output);
+    } catch (error) {
+      logger.error('Failed to get template categories', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      return [];
+    }
+  }
+
+  /**
+   * Instantiate a template with parameters
+   */
+  async instantiateTemplate(
+    templateId: string,
+    params: Record<string, any>
+  ): Promise<CustomWorkflowDefinition> {
+    try {
+      const pythonScript = `
+import sys
+import json
+from pathlib import Path
+
+# Add flows directory to path
+sys.path.insert(0, '${this.flowsPath}')
+
+# Import template registry
+from workflow_templates import instantiate_template
+
+# Instantiate template
+params = json.loads('''${JSON.stringify(params)}''')
+definition = instantiate_template("${templateId}", params)
+
+print(json.dumps(definition))
+`;
+
+      const output = await this.executeCommand(this.pythonPath, ['-c', pythonScript]);
+      return JSON.parse(output);
+    } catch (error) {
+      throw new Error(
+        `Failed to instantiate template: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
 }

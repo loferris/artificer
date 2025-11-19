@@ -458,6 +458,70 @@ client.workflows.delete_custom_workflow("my-pdf-workflow")
 - Retry configuration: `options.retry_failed_tasks`, `options.max_retries`
 - Timeout control: `options.timeout` (seconds)
 
+#### Workflow Templates (Pre-built Patterns)
+
+Use pre-built templates for common use cases:
+
+```python
+# Browse available templates
+templates = client.workflows.list_templates()
+for tmpl in templates['templates']:
+    print(f"{tmpl['id']}: {tmpl['name']}")
+    print(f"  Category: {tmpl['category']}")
+    print(f"  Parameters: {list(tmpl['parameters'].keys())}")
+
+# Get template details
+template = client.workflows.get_template("rag-ingestion")
+print(f"Description: {template['description']}")
+print(f"Parameters: {template['parameters']}")
+
+# Instantiate template with custom parameters
+result = client.workflows.instantiate_template(
+    "rag-ingestion",
+    {
+        "chunk_size": 500,
+        "chunk_overlap": 100,
+        "force_ocr": False
+    },
+    auto_register=True,
+    workflow_id="my-rag-pipeline"
+)
+
+# Execute instantiated template
+result = client.workflows.execute_custom_workflow(
+    "my-rag-pipeline",
+    {
+        "pdf_data": pdf_data,
+        "document_id": "doc_123",
+        "project_id": "proj_456",
+        "chunk_size": 500,
+        "chunk_overlap": 100,
+        "force_ocr": False
+    }
+)
+chunks = result['result']['chunks']
+```
+
+**Available Templates:**
+
+*Document Processing:*
+- `rag-ingestion` - Extract PDF → Chunk for vector search/RAG
+- `multi-format-conversion` - PDF → HTML + Markdown + Portable Text
+- `document-analysis` - Extract → Count tokens → Analyze structure
+
+*Content Processing:*
+- `content-enhancement` - Extract → Clean → Export multiple formats
+- `metadata-extraction` - Extract comprehensive document metadata
+
+*Batch Processing:*
+- `batch-rag-ingestion` - Process multiple PDFs in parallel for RAG
+
+Templates provide:
+- Ready-to-use patterns for common use cases
+- Parameterization for customization
+- Best practices built-in
+- Quick setup vs custom workflows
+
 ## Context Manager Support
 
 ```python

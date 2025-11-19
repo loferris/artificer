@@ -403,4 +403,102 @@ export const workflowsRouter = router({
         error: validation.error,
       };
     }),
+
+  /**
+   * WORKFLOW TEMPLATES - Phase 3: Pre-built workflow patterns
+   */
+
+  /**
+   * List all workflow templates
+   */
+  listTemplates: publicProcedure
+    .input(
+      z
+        .object({
+          category: z.string().optional().describe('Filter by category'),
+        })
+        .optional()
+    )
+    .query(async ({ input }) => {
+      const templates = await prefectService.listTemplates(input?.category);
+
+      return {
+        templates,
+        categories: await prefectService.getTemplateCategories(),
+      };
+    }),
+
+  /**
+   * Get a workflow template
+   */
+  getTemplate: publicProcedure
+    .input(
+      z.object({
+        templateId: z.string().describe('Template ID'),
+      })
+    )
+    .query(async ({ input }) => {
+      const template = await prefectService.getTemplate(input.templateId);
+
+      if (!template) {
+        throw new Error(`Template not found: ${input.templateId}`);
+      }
+
+      return template;
+    }),
+
+  /**
+   * Get template categories
+   */
+  getTemplateCategories: publicProcedure.query(async () => {
+    const categories = await prefectService.getTemplateCategories();
+
+    return {
+      categories,
+    };
+  }),
+
+  /**
+   * Instantiate a template with parameters
+   */
+  instantiateTemplate: publicProcedure
+    .input(
+      z.object({
+        templateId: z.string().describe('Template ID'),
+        params: z.record(z.any()).describe('Template parameters'),
+        autoRegister: z.boolean().optional().describe('Automatically register the workflow'),
+        workflowId: z.string().optional().describe('Workflow ID for auto-registration'),
+      })
+    )
+    .mutation(async ({ input }) => {
+      // Instantiate template
+      const definition = await prefectService.instantiateTemplate(
+        input.templateId,
+        input.params
+      );
+
+      // Optionally auto-register
+      if (input.autoRegister && input.workflowId) {
+        // Validate
+        const validation = await prefectService.validateWorkflowDefinition(definition);
+
+        if (!validation.valid) {
+          throw new Error(`Invalid workflow definition: ${validation.error}`);
+        }
+
+        // Register
+        prefectService.registerCustomWorkflow(input.workflowId, definition);
+
+        return {
+          definition,
+          registered: true,
+          workflowId: input.workflowId,
+        };
+      }
+
+      return {
+        definition,
+        registered: false,
+      };
+    }),
 });

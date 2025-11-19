@@ -526,3 +526,122 @@ class Workflows(BaseResource):
         return self._trpc_request("workflows.validateWorkflowDefinition", {
             "definition": definition
         })
+
+    # ========================================
+    # WORKFLOW TEMPLATES - Phase 3
+    # ========================================
+
+    def list_templates(self, category: Optional[str] = None) -> dict:
+        """
+        List all available workflow templates.
+
+        Templates are pre-built workflow patterns for common use cases
+        that can be instantiated with custom parameters.
+
+        Args:
+            category: Optional category filter
+
+        Returns:
+            List of templates and categories
+
+        Example:
+            >>> templates = client.workflows.list_templates()
+            >>> for tmpl in templates['templates']:
+            ...     print(f"{tmpl['id']}: {tmpl['name']}")
+            ...     print(f"  Category: {tmpl['category']}")
+            ...     print(f"  Parameters: {list(tmpl['parameters'].keys())}")
+        """
+        input_data = {}
+        if category:
+            input_data["category"] = category
+
+        return self._trpc_request("workflows.listTemplates", input_data if input_data else None)
+
+    def get_template(self, template_id: str) -> dict:
+        """
+        Get a workflow template details.
+
+        Args:
+            template_id: Template ID
+
+        Returns:
+            Template details including parameters and definition
+
+        Example:
+            >>> template = client.workflows.get_template("rag-ingestion")
+            >>> print(f"Name: {template['name']}")
+            >>> print(f"Description: {template['description']}")
+            >>> print(f"Parameters:")
+            >>> for param, schema in template['parameters'].items():
+            ...     print(f"  - {param}: {schema.get('description')}")
+        """
+        return self._trpc_request("workflows.getTemplate", {
+            "templateId": template_id
+        })
+
+    def get_template_categories(self) -> dict:
+        """
+        Get all template categories.
+
+        Returns:
+            List of categories
+
+        Example:
+            >>> categories = client.workflows.get_template_categories()
+            >>> print(f"Categories: {categories['categories']}")
+        """
+        return self._trpc_request("workflows.getTemplateCategories")
+
+    def instantiate_template(
+        self,
+        template_id: str,
+        params: Dict[str, Any],
+        auto_register: bool = False,
+        workflow_id: Optional[str] = None
+    ) -> dict:
+        """
+        Instantiate a workflow template with specific parameters.
+
+        Args:
+            template_id: Template ID
+            params: Template parameters
+            auto_register: Automatically register the instantiated workflow
+            workflow_id: Workflow ID for auto-registration (required if auto_register=True)
+
+        Returns:
+            Instantiated workflow definition (and registration info if auto_register=True)
+
+        Example:
+            >>> # Instantiate without registering
+            >>> result = client.workflows.instantiate_template(
+            ...     "rag-ingestion",
+            ...     {
+            ...         "chunk_size": 500,
+            ...         "chunk_overlap": 100,
+            ...         "force_ocr": False
+            ...     }
+            ... )
+            >>> definition = result['definition']
+            >>>
+            >>> # Instantiate and auto-register
+            >>> result = client.workflows.instantiate_template(
+            ...     "rag-ingestion",
+            ...     {"chunk_size": 500, "chunk_overlap": 100},
+            ...     auto_register=True,
+            ...     workflow_id="my-rag-pipeline"
+            ... )
+            >>> print(f"Registered: {result['registered']}")
+            >>> print(f"Workflow ID: {result['workflowId']}")
+        """
+        input_data: Dict[str, Any] = {
+            "templateId": template_id,
+            "params": params
+        }
+
+        if auto_register:
+            if not workflow_id:
+                raise ValueError("workflow_id is required when auto_register=True")
+            input_data["autoRegister"] = True
+            input_data["workflowId"] = workflow_id
+
+        return self._trpc_request("workflows.instantiateTemplate", input_data)
