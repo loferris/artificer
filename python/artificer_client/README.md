@@ -700,6 +700,383 @@ print(f"Processed {len(results)} files")
 - Queue statistics and monitoring
 - Works with all workflow types (pre-built, custom, templates)
 
+#### LangGraph Integration (Stateful Agent Workflows)
+
+LangGraph enables cyclic, stateful workflows with agents, conditional routing, and human-in-the-loop. Unlike Prefect's DAG workflows, LangGraph supports loops, conditional branching, and multi-agent collaboration.
+
+**Installation:**
+```bash
+pip install langgraph langchain-openai langchain-anthropic
+```
+
+**Simple Agent Graph:**
+
+```python
+# Define a graph with agent node
+graph_def = {
+    "name": "qa-agent",
+    "description": "Q&A agent",
+    "version": "1.0.0",
+    "state_schema": {
+        "fields": {
+            "messages": {"type": "array"},
+            "last_response": {"type": "string"}
+        }
+    },
+    "nodes": [
+        {
+            "id": "agent",
+            "type": "agent",
+            "model": "gpt-4o-mini",
+            "system_prompt": "You are a helpful AI assistant.",
+            "description": "Main agent"
+        }
+    ],
+    "edges": [],
+    "entry_point": "agent",
+    "finish_points": ["agent"]
+}
+
+# Register graph
+client.workflows.register_graph("qa-agent", graph_def)
+
+# Execute
+result = client.workflows.execute_graph(
+    "qa-agent",
+    inputs={
+        "messages": [
+            {"role": "user", "content": "What is Python?"}
+        ]
+    }
+)
+
+print(result['final_state']['last_response'])
+```
+
+**Conditional Routing:**
+
+```python
+# Graph with conditional routing
+graph_def = {
+    "name": "router",
+    "description": "Route to different agents based on input",
+    "version": "1.0.0",
+    "state_schema": {
+        "fields": {
+            "input_type": {"type": "string"},
+            "question": {"type": "string"},
+            "answer": {"type": "string"}
+        }
+    },
+    "nodes": [
+        {
+            "id": "classifier",
+            "type": "conditional",
+            "condition_code": """
+if state.get('input_type') == 'technical':
+    next_node = 'tech_agent'
+else:
+    next_node = 'general_agent'
+""",
+            "description": "Route based on type"
+        },
+        {
+            "id": "tech_agent",
+            "type": "agent",
+            "model": "gpt-4o",
+            "system_prompt": "You are a technical expert.",
+            "description": "Technical agent"
+        },
+        {
+            "id": "general_agent",
+            "type": "agent",
+            "model": "gpt-4o-mini",
+            "system_prompt": "You are a general assistant.",
+            "description": "General agent"
+        }
+    ],
+    "edges": [
+        {
+            "from_node": "classifier",
+            "to_node": {
+                "technical": "tech_agent",
+                "general": "general_agent"
+            },
+            "type": "conditional"
+        }
+    ],
+    "entry_point": "classifier",
+    "finish_points": ["tech_agent", "general_agent"]
+}
+
+client.workflows.register_graph("router", graph_def)
+
+result = client.workflows.execute_graph(
+    "router",
+    inputs={
+        "input_type": "technical",
+        "question": "Explain async/await in Python"
+    }
+)
+```
+
+**Multi-Agent Collaboration:**
+
+```python
+# Research team with multiple agents
+graph_def = {
+    "name": "research-team",
+    "description": "Multi-agent research workflow",
+    "version": "1.0.0",
+    "state_schema": {
+        "fields": {
+            "topic": {"type": "string"},
+            "research": {"type": "string"},
+            "critique": {"type": "string"},
+            "report": {"type": "string"}
+        }
+    },
+    "nodes": [
+        {
+            "id": "researcher",
+            "type": "agent",
+            "model": "gpt-4o",
+            "system_prompt": "Research the topic thoroughly.",
+            "tools": ["web_search", "search_documents"]
+        },
+        {
+            "id": "critic",
+            "type": "agent",
+            "model": "gpt-4o",
+            "system_prompt": "Critically review the research."
+        },
+        {
+            "id": "writer",
+            "type": "agent",
+            "model": "gpt-4o",
+            "system_prompt": "Write a comprehensive report."
+        }
+    ],
+    "edges": [
+        {"from_node": "researcher", "to_node": "critic"},
+        {"from_node": "critic", "to_node": "writer"}
+    ],
+    "entry_point": "researcher",
+    "finish_points": ["writer"]
+}
+
+result = client.workflows.execute_graph(
+    "research-team",
+    inputs={"topic": "Future of AI in healthcare"}
+)
+```
+
+**Human-in-the-Loop:**
+
+```python
+# Workflow with human approval
+graph_def = {
+    "name": "approval-flow",
+    "description": "Workflow requiring human approval",
+    "version": "1.0.0",
+    "state_schema": {
+        "fields": {
+            "proposal": {"type": "string"},
+            "analysis": {"type": "string"},
+            "approved": {"type": "boolean"}
+        }
+    },
+    "nodes": [
+        {
+            "id": "analyzer",
+            "type": "agent",
+            "model": "gpt-4o-mini",
+            "system_prompt": "Analyze the proposal."
+        },
+        {
+            "id": "human_review",
+            "type": "human",
+            "prompt_message": "Please review and approve/reject."
+        },
+        {
+            "id": "finalizer",
+            "type": "agent",
+            "model": "gpt-4o-mini",
+            "system_prompt": "Finalize based on approval."
+        }
+    ],
+    "edges": [
+        {"from_node": "analyzer", "to_node": "human_review"},
+        {"from_node": "human_review", "to_node": "finalizer"}
+    ],
+    "entry_point": "analyzer",
+    "finish_points": ["finalizer"]
+}
+
+# Execute with thread_id for checkpointing
+result = client.workflows.execute_graph(
+    "approval-flow",
+    inputs={"proposal": "Launch new feature"},
+    config={"thread_id": "session-123"}
+)
+
+if result.get('requires_human_input'):
+    # Workflow paused - resume later with human input
+    checkpoint_id = result['checkpoint_id']
+
+    # Later: resume with human decision
+    result = client.workflows.resume_graph(
+        "approval-flow",
+        checkpoint_id=checkpoint_id,
+        human_input={
+            "approved": True,
+            "feedback": "Approved!"
+        }
+    )
+```
+
+**Cyclic Workflows (Iterative Refinement):**
+
+```python
+# Iterative improvement loop
+graph_def = {
+    "name": "iterative-writer",
+    "description": "Iteratively improve content",
+    "version": "1.0.0",
+    "state_schema": {
+        "fields": {
+            "draft": {"type": "string"},
+            "iteration": {"type": "integer"},
+            "quality_score": {"type": "number"}
+        }
+    },
+    "nodes": [
+        {
+            "id": "writer",
+            "type": "agent",
+            "model": "gpt-4o",
+            "system_prompt": "Write or improve content."
+        },
+        {
+            "id": "evaluator",
+            "type": "agent",
+            "model": "gpt-4o-mini",
+            "system_prompt": "Rate content quality (0-10)."
+        },
+        {
+            "id": "should_continue",
+            "type": "conditional",
+            "condition_code": """
+if state.get('iteration', 0) >= 3 or state.get('quality_score', 0) >= 8:
+    next_node = 'END'
+else:
+    next_node = 'writer'
+"""
+        }
+    ],
+    "edges": [
+        {"from_node": "writer", "to_node": "evaluator"},
+        {"from_node": "evaluator", "to_node": "should_continue"},
+        # Loop back to writer if not done
+        {"from_node": "should_continue", "to_node": "writer"}
+    ],
+    "entry_point": "writer",
+    "finish_points": ["should_continue"]
+}
+
+result = client.workflows.execute_graph(
+    "iterative-writer",
+    inputs={"draft": "Write about renewable energy"}
+)
+```
+
+**Agent with Tools:**
+
+```python
+# List available tools
+tools = client.workflows.list_builtin_tools()
+for tool in tools['tools']:
+    print(f"{tool['name']}: {tool['description']}")
+
+# Agent with tool use
+graph_def = {
+    "name": "research-agent",
+    "description": "Agent with research tools",
+    "version": "1.0.0",
+    "state_schema": {
+        "fields": {
+            "query": {"type": "string"},
+            "results": {"type": "array"}
+        }
+    },
+    "nodes": [
+        {
+            "id": "researcher",
+            "type": "agent",
+            "model": "gpt-4o",
+            "system_prompt": "Research using available tools.",
+            "tools": ["search_documents", "web_search", "extract_pdf"]
+        }
+    ],
+    "edges": [],
+    "entry_point": "researcher",
+    "finish_points": ["researcher"]
+}
+```
+
+**Graph Management:**
+
+```python
+# List graphs
+graphs = client.workflows.list_graphs()
+for graph in graphs['graphs']:
+    print(f"{graph['id']}: {graph['name']} ({graph['nodeCount']} nodes)")
+
+# Get graph definition
+graph = client.workflows.get_graph("qa-agent")
+
+# Get graph summary
+summary = client.workflows.get_graph_summary("qa-agent")
+print(summary['summary'])
+
+# Validate before registering
+validation = client.workflows.validate_graph(graph_def)
+if validation['valid']:
+    client.workflows.register_graph("my-graph", graph_def)
+
+# Delete graph
+client.workflows.delete_graph("my-graph")
+```
+
+**Node Types:**
+- `agent` - LLM-powered agent with optional tools
+- `tool` - Custom function execution
+- `conditional` - Routing logic (Python code)
+- `human` - Human-in-the-loop checkpoint
+- `passthrough` - No-op node
+
+**Built-in Tools:**
+- `search_documents` - Semantic document search
+- `extract_pdf` - PDF text extraction
+- `chunk_text` - Text chunking
+- `web_search` - Web search
+- `http_request` - HTTP requests
+
+**Features:**
+- Cyclic graphs (loops, iterations)
+- Conditional routing based on state
+- Multi-agent collaboration
+- Human-in-the-loop with checkpointing
+- Tool use (built-in and custom)
+- State management (TypedDict)
+- Graph validation
+
+**LangGraph vs Prefect:**
+- **Prefect**: DAG workflows, no cycles, data processing pipelines
+- **LangGraph**: Cyclic workflows, agents, conditional routing, agentic behavior
+
+Use Prefect for data pipelines, LangGraph for agentic workflows.
+
 ## Context Manager Support
 
 ```python

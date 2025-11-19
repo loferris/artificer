@@ -11,8 +11,10 @@
 import { z } from 'zod';
 import { router, publicProcedure } from '../trpc';
 import { PrefectService, WorkflowInput } from '../services/workflows/PrefectService';
+import { getLangGraphService } from '../services/workflows/LangGraphService';
 
 const prefectService = new PrefectService();
+const langGraphService = getLangGraphService();
 
 export const workflowsRouter = router({
   /**
@@ -669,4 +671,207 @@ export const workflowsRouter = router({
   getJobStats: publicProcedure.query(() => {
     return prefectService.getJobStats();
   }),
+
+  // ==================== LangGraph Endpoints ====================
+
+  /**
+   * Check if LangGraph is available
+   */
+  langGraphAvailable: publicProcedure.query(async () => {
+    return {
+      available: langGraphService.isAvailable(),
+    };
+  }),
+
+  /**
+   * Validate a graph definition
+   */
+  validateGraph: publicProcedure
+    .input(
+      z.object({
+        definition: z.object({
+          name: z.string(),
+          description: z.string(),
+          version: z.string(),
+          state_schema: z.object({
+            fields: z.record(z.any()),
+          }),
+          nodes: z.array(z.any()),
+          edges: z.array(z.any()),
+          entry_point: z.string(),
+          finish_points: z.array(z.string()),
+          options: z.record(z.any()).optional(),
+        }),
+      })
+    )
+    .mutation(async ({ input }) => {
+      return await langGraphService.validateGraph(input.definition as any);
+    }),
+
+  /**
+   * Register a graph
+   */
+  registerGraph: publicProcedure
+    .input(
+      z.object({
+        graphId: z.string(),
+        definition: z.object({
+          name: z.string(),
+          description: z.string(),
+          version: z.string(),
+          state_schema: z.object({
+            fields: z.record(z.any()),
+          }),
+          nodes: z.array(z.any()),
+          edges: z.array(z.any()),
+          entry_point: z.string(),
+          finish_points: z.array(z.string()),
+          options: z.record(z.any()).optional(),
+        }),
+      })
+    )
+    .mutation(({ input }) => {
+      langGraphService.registerGraph(input.graphId, input.definition as any);
+      return {
+        success: true,
+        graphId: input.graphId,
+        message: 'Graph registered successfully',
+      };
+    }),
+
+  /**
+   * List all registered graphs
+   */
+  listGraphs: publicProcedure.query(() => {
+    return {
+      graphs: langGraphService.listGraphs(),
+    };
+  }),
+
+  /**
+   * Get a registered graph
+   */
+  getGraph: publicProcedure
+    .input(
+      z.object({
+        graphId: z.string(),
+      })
+    )
+    .query(({ input }) => {
+      const graph = langGraphService.getGraph(input.graphId);
+
+      if (!graph) {
+        throw new Error(`Graph not found: ${input.graphId}`);
+      }
+
+      return {
+        graphId: input.graphId,
+        definition: graph,
+      };
+    }),
+
+  /**
+   * Delete a graph
+   */
+  deleteGraph: publicProcedure
+    .input(
+      z.object({
+        graphId: z.string(),
+      })
+    )
+    .mutation(({ input }) => {
+      const deleted = langGraphService.deleteGraph(input.graphId);
+
+      if (!deleted) {
+        throw new Error(`Graph not found: ${input.graphId}`);
+      }
+
+      return {
+        success: true,
+        graphId: input.graphId,
+        message: 'Graph deleted successfully',
+      };
+    }),
+
+  /**
+   * Execute a graph
+   */
+  executeGraph: publicProcedure
+    .input(
+      z.object({
+        graphId: z.string(),
+        inputs: z.record(z.any()),
+        config: z
+          .object({
+            thread_id: z.string().optional(),
+            human_input: z.record(z.any()).optional(),
+            streaming: z.boolean().optional(),
+          })
+          .optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const result = await langGraphService.executeGraph(
+        input.graphId,
+        input.inputs,
+        input.config
+      );
+
+      if (!result.success) {
+        throw new Error(result.error || 'Graph execution failed');
+      }
+
+      return result;
+    }),
+
+  /**
+   * Resume a graph from checkpoint (e.g., after human input)
+   */
+  resumeGraph: publicProcedure
+    .input(
+      z.object({
+        graphId: z.string(),
+        checkpointId: z.string(),
+        humanInput: z.record(z.any()),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const result = await langGraphService.resumeGraph(
+        input.graphId,
+        input.checkpointId,
+        input.humanInput
+      );
+
+      if (!result.success) {
+        throw new Error(result.error || 'Graph resumption failed');
+      }
+
+      return result;
+    }),
+
+  /**
+   * List built-in tools available for graphs
+   */
+  listBuiltinTools: publicProcedure.query(async () => {
+    return {
+      tools: await langGraphService.listBuiltinTools(),
+    };
+  }),
+
+  /**
+   * Get graph summary
+   */
+  getGraphSummary: publicProcedure
+    .input(
+      z.object({
+        graphId: z.string(),
+      })
+    )
+    .query(async ({ input }) => {
+      const summary = await langGraphService.getGraphSummary(input.graphId);
+      return {
+        graphId: input.graphId,
+        summary,
+      };
+    }),
 });

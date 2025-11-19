@@ -922,3 +922,213 @@ class Workflows(BaseResource):
 
             # Wait before next poll
             time.sleep(poll_interval)
+
+    # ==================== LangGraph Methods ====================
+
+    def langgraph_available(self) -> bool:
+        """
+        Check if LangGraph is available.
+
+        Returns:
+            bool: True if LangGraph is available
+
+        Example:
+            >>> if client.workflows.langgraph_available():
+            ...     print("LangGraph is ready!")
+        """
+        result = self._trpc_request("workflows.langGraphAvailable", {})
+        return result.get('available', False)
+
+    def validate_graph(self, definition: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Validate a graph definition.
+
+        Args:
+            definition: Graph definition dict
+
+        Returns:
+            dict: Validation result with 'valid' and optional 'error'
+
+        Example:
+            >>> graph_def = {
+            ...     "name": "my-graph",
+            ...     "description": "Test graph",
+            ...     "version": "1.0.0",
+            ...     "state_schema": {"fields": {"messages": {"type": "array"}}},
+            ...     "nodes": [...],
+            ...     "edges": [...],
+            ...     "entry_point": "start",
+            ...     "finish_points": ["end"]
+            ... }
+            >>> result = client.workflows.validate_graph(graph_def)
+            >>> if result['valid']:
+            ...     print("Graph is valid!")
+        """
+        return self._trpc_request("workflows.validateGraph", {"definition": definition})
+
+    def register_graph(self, graph_id: str, definition: Dict[str, Any]) -> dict:
+        """
+        Register a LangGraph workflow.
+
+        Args:
+            graph_id: Unique graph ID
+            definition: Graph definition
+
+        Returns:
+            dict: Success response
+
+        Example:
+            >>> graph_def = {...}  # See validate_graph for structure
+            >>> client.workflows.register_graph("my-agent-graph", graph_def)
+            {'success': True, 'graphId': 'my-agent-graph', 'message': '...'}
+        """
+        return self._trpc_request("workflows.registerGraph", {
+            "graphId": graph_id,
+            "definition": definition
+        })
+
+    def list_graphs(self) -> List[Dict[str, Any]]:
+        """
+        List all registered graphs.
+
+        Returns:
+            list: List of graph summaries
+
+        Example:
+            >>> graphs = client.workflows.list_graphs()
+            >>> for graph in graphs['graphs']:
+            ...     print(f"{graph['id']}: {graph['name']} ({graph['nodeCount']} nodes)")
+        """
+        return self._trpc_request("workflows.listGraphs", {})
+
+    def get_graph(self, graph_id: str) -> Dict[str, Any]:
+        """
+        Get a registered graph definition.
+
+        Args:
+            graph_id: Graph ID
+
+        Returns:
+            dict: Graph definition
+
+        Example:
+            >>> graph = client.workflows.get_graph("my-agent-graph")
+            >>> print(graph['definition']['name'])
+        """
+        return self._trpc_request("workflows.getGraph", {"graphId": graph_id})
+
+    def delete_graph(self, graph_id: str) -> dict:
+        """
+        Delete a registered graph.
+
+        Args:
+            graph_id: Graph ID
+
+        Returns:
+            dict: Success response
+
+        Example:
+            >>> client.workflows.delete_graph("my-agent-graph")
+            {'success': True, 'graphId': 'my-agent-graph', 'message': '...'}
+        """
+        return self._trpc_request("workflows.deleteGraph", {"graphId": graph_id})
+
+    def execute_graph(
+        self,
+        graph_id: str,
+        inputs: Dict[str, Any],
+        config: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Execute a LangGraph workflow.
+
+        Args:
+            graph_id: Graph ID to execute
+            inputs: Initial state inputs
+            config: Execution config (thread_id for checkpointing, etc.)
+
+        Returns:
+            dict: Execution result with 'success', 'final_state', etc.
+
+        Example:
+            >>> result = client.workflows.execute_graph(
+            ...     "research-agent",
+            ...     inputs={"messages": [{"role": "user", "content": "Research AI"}]},
+            ...     config={"thread_id": "session-123"}
+            ... )
+            >>> if result['success']:
+            ...     print(result['final_state'])
+            >>> if result.get('requires_human_input'):
+            ...     # Resume later with human input
+            ...     checkpoint_id = result['checkpoint_id']
+        """
+        input_data: Dict[str, Any] = {
+            "graphId": graph_id,
+            "inputs": inputs
+        }
+        if config:
+            input_data["config"] = config
+
+        return self._trpc_request("workflows.executeGraph", input_data)
+
+    def resume_graph(
+        self,
+        graph_id: str,
+        checkpoint_id: str,
+        human_input: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Resume a graph from checkpoint (e.g., after human input).
+
+        Args:
+            graph_id: Graph ID
+            checkpoint_id: Checkpoint/thread ID
+            human_input: Human input to inject into state
+
+        Returns:
+            dict: Execution result
+
+        Example:
+            >>> # After graph pauses for human input
+            >>> result = client.workflows.resume_graph(
+            ...     "approval-workflow",
+            ...     checkpoint_id="session-123",
+            ...     human_input={"approved": True, "comment": "Looks good"}
+            ... )
+            >>> print(result['final_state'])
+        """
+        return self._trpc_request("workflows.resumeGraph", {
+            "graphId": graph_id,
+            "checkpointId": checkpoint_id,
+            "humanInput": human_input
+        })
+
+    def list_builtin_tools(self) -> List[Dict[str, Any]]:
+        """
+        List built-in tools available for graph nodes.
+
+        Returns:
+            list: List of tool definitions
+
+        Example:
+            >>> tools = client.workflows.list_builtin_tools()
+            >>> for tool in tools['tools']:
+            ...     print(f"{tool['name']}: {tool['description']}")
+        """
+        return self._trpc_request("workflows.listBuiltinTools", {})
+
+    def get_graph_summary(self, graph_id: str) -> str:
+        """
+        Get a human-readable summary of a graph.
+
+        Args:
+            graph_id: Graph ID
+
+        Returns:
+            str: Formatted graph summary
+
+        Example:
+            >>> summary = client.workflows.get_graph_summary("my-agent-graph")
+            >>> print(summary['summary'])
+        """
+        return self._trpc_request("workflows.getGraphSummary", {"graphId": graph_id})
