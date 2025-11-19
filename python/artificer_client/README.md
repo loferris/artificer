@@ -522,6 +522,184 @@ Templates provide:
 - Best practices built-in
 - Quick setup vs custom workflows
 
+#### Async Workflow Execution (Background Jobs)
+
+Execute workflows asynchronously for long-running operations:
+
+```python
+# Execute workflow asynchronously
+job = client.workflows.execute_async(
+    workflow_id="pdf-to-html",
+    inputs={
+        "pdf_data": pdf_data,
+        "include_styles": True,
+        "title": "My Document"
+    }
+)
+
+print(f"Job ID: {job['jobId']}")  # Returns immediately
+print(f"Status: {job['status']}")  # PENDING
+
+# Poll for job status
+import time
+while True:
+    status = client.workflows.get_job_status(job['jobId'])
+    print(f"Status: {status['status']} - {status['progress']['percentComplete']}%")
+
+    if status['status'] == 'COMPLETED':
+        result = status['result']
+        print(f"Result: {result}")
+        break
+    elif status['status'] in ['FAILED', 'CANCELLED', 'TIMEOUT']:
+        print(f"Job {status['status']}: {status.get('error', '')}")
+        break
+
+    time.sleep(2)
+
+# Or use blocking wait helper
+completed_job = client.workflows.wait_for_job(
+    job_id=job['jobId'],
+    poll_interval=2,  # Check every 2 seconds
+    timeout=300  # Timeout after 5 minutes
+)
+print(f"Result: {completed_job['result']}")
+```
+
+**Webhook Callbacks (Fire-and-Forget):**
+
+```python
+# Execute with webhook notification
+job = client.workflows.execute_async(
+    workflow_id="batch-pdf-processing",
+    inputs={"files": pdf_files},
+    webhook={
+        "url": "https://your-api.com/webhook/workflow-complete",
+        "method": "POST",
+        "headers": {
+            "Authorization": "Bearer your-secret-token",
+            "X-Custom-Header": "workflow-callback"
+        }
+    }
+)
+
+# Job runs in background and POSTs to webhook when complete:
+# {
+#   "jobId": "...",
+#   "workflowId": "batch-pdf-processing",
+#   "status": "COMPLETED",
+#   "result": {...},
+#   "metadata": {
+#     "createdAt": "...",
+#     "completedAt": "...",
+#     "executionTime": 45000
+#   }
+# }
+```
+
+**Priority Queuing:**
+
+```python
+# High-priority job (queue front)
+urgent_job = client.workflows.execute_async(
+    workflow_id="document-analysis",
+    inputs={"pdf_data": pdf_data},
+    priority="high"  # "low" | "normal" | "high"
+)
+
+# Normal priority (default)
+normal_job = client.workflows.execute_async(
+    workflow_id="pdf-to-html",
+    inputs={"pdf_data": pdf_data}
+)
+```
+
+**Job Management:**
+
+```python
+# List all jobs
+jobs = client.workflows.list_jobs()
+print(f"Total jobs: {jobs['total']}")
+
+# Filter by status
+pending = client.workflows.list_jobs(status="PENDING")
+running = client.workflows.list_jobs(status="RUNNING")
+completed = client.workflows.list_jobs(status="COMPLETED")
+
+# Filter by workflow
+pdf_jobs = client.workflows.list_jobs(workflow_id="pdf-to-html")
+
+# Filter by workflow type
+custom_jobs = client.workflows.list_jobs(workflow_type="custom")
+
+# Cancel a running job
+client.workflows.cancel_job(job_id="job_123")
+
+# Delete a completed job
+client.workflows.delete_job(job_id="job_456")
+
+# Get queue statistics
+stats = client.workflows.get_job_stats()
+print(f"Pending: {stats['byStatus']['PENDING']}")
+print(f"Running: {stats['byStatus']['RUNNING']}")
+print(f"Queue length: {stats['queue']['length']}")
+print(f"Max concurrent: {stats['queue']['maxConcurrent']}")
+```
+
+**Execute Custom Workflows Asynchronously:**
+
+```python
+# Same async support for custom workflows
+job = client.workflows.execute_custom_async(
+    workflow_id="my-custom-workflow",
+    inputs={
+        "pdf_data": pdf_data,
+        "document_id": "doc_123"
+    },
+    webhook={
+        "url": "https://your-api.com/webhook"
+    },
+    priority="high"
+)
+```
+
+**Batch Async Execution:**
+
+```python
+# Submit multiple jobs
+job_ids = []
+for pdf_file in pdf_files:
+    job = client.workflows.execute_async(
+        workflow_id="pdf-to-html",
+        inputs={"pdf_data": pdf_file}
+    )
+    job_ids.append(job['jobId'])
+
+# Wait for all to complete
+results = []
+for job_id in job_ids:
+    completed = client.workflows.wait_for_job(job_id, timeout=120)
+    results.append(completed['result'])
+
+print(f"Processed {len(results)} files")
+```
+
+**Job States:**
+- `PENDING` - Queued for execution
+- `RUNNING` - Currently executing
+- `COMPLETED` - Finished successfully
+- `FAILED` - Execution error
+- `CANCELLED` - Cancelled by user
+- `TIMEOUT` - Exceeded timeout limit
+
+**Features:**
+- Non-blocking execution
+- Webhook callbacks for completion
+- Priority-based queuing
+- Progress tracking (percent complete)
+- Job lifecycle management
+- Queue statistics and monitoring
+- Works with all workflow types (pre-built, custom, templates)
+
 ## Context Manager Support
 
 ```python

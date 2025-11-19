@@ -8,6 +8,12 @@
 import { spawn } from 'child_process';
 import { logger } from '../../utils/logger';
 import path from 'path';
+import {
+  WorkflowJobManager,
+  JobExecutionOptions,
+  WorkflowJob,
+  JobStatus,
+} from './WorkflowJobManager';
 
 export interface WorkflowInput {
   [key: string]: any;
@@ -135,12 +141,21 @@ export class PrefectService {
   private pythonPath: string;
   private flowsPath: string;
   private customWorkflows: Map<string, CustomWorkflowDefinition>;
+  private jobManager: WorkflowJobManager;
+  private processingQueue: boolean;
 
   constructor() {
     // Path to Python flows directory
     this.flowsPath = path.join(process.cwd(), 'python', 'flows');
     this.pythonPath = process.env.PYTHON_PATH || 'python3';
     this.customWorkflows = new Map();
+    this.jobManager = new WorkflowJobManager(3); // Max 3 concurrent workflows
+    this.processingQueue = false;
+
+    // Listen to queue events
+    this.jobManager.on('queue:process', () => {
+      this.processExecutionQueue();
+    });
   }
 
   /**
@@ -706,5 +721,201 @@ print(json.dumps(definition))
         `Failed to instantiate template: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
+  }
+
+  /**
+   * ASYNC/BACKGROUND EXECUTION - Phase 4
+   */
+
+  /**
+   * Execute workflow asynchronously (background)
+   */
+  async executeWorkflowAsync(
+    workflowId: string,
+    inputs: WorkflowInput,
+    options?: JobExecutionOptions
+  ): Promise<string> {
+    const jobId = this.jobManager.createJob(workflowId, 'pre-built', inputs, options);
+
+    // Start queue processing
+    this.processExecutionQueue();
+
+    return jobId;
+  }
+
+  /**
+   * Execute custom workflow asynchronously
+   */
+  async executeCustomWorkflowAsync(
+    workflowId: string,
+    inputs: WorkflowInput,
+    options?: JobExecutionOptions
+  ): Promise<string> {
+    const jobId = this.jobManager.createJob(workflowId, 'custom', inputs, options);
+
+    // Start queue processing
+    this.processExecutionQueue();
+
+    return jobId;
+  }
+
+  /**
+   * Process execution queue
+   */
+  private async processExecutionQueue(): Promise<void> {
+    // Prevent concurrent queue processing
+    if (this.processingQueue) {
+      return;
+    }
+
+    this.processingQueue = true;
+
+    try {
+      while (this.jobManager.canExecute()) {
+        const jobId = this.jobManager.getNextJob();
+        if (!jobId) break;
+
+        // Execute job in background
+        this.executeJobInBackground(jobId);
+      }
+    } finally {
+      this.processingQueue = false;
+    }
+  }
+
+  /**
+   * Execute a job in the background
+   */
+  private async executeJobInBackground(jobId: string): Promise<void> {
+    const job = this.jobManager.getJob(jobId);
+    if (!job) return;
+
+    this.jobManager.markJobRunning(jobId);
+
+    logger.info('Starting background job execution', {
+      jobId,
+      workflowId: job.workflowId,
+      workflowType: job.workflowType,
+    });
+
+    try {
+      let result: any;
+
+      // Execute based on workflow type
+      if (job.workflowType === 'pre-built') {
+        result = await this.executeWorkflow(job.workflowId, job.inputs);
+      } else if (job.workflowType === 'custom') {
+        result = await this.executeCustomWorkflow(job.workflowId, job.inputs);
+      } else if (job.workflowType === 'template') {
+        // Template workflows are converted to custom workflows
+        result = await this.executeCustomWorkflow(job.workflowId, job.inputs);
+      }
+
+      // Set result
+      this.jobManager.setJobResult(jobId, result);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error('Background job failed', {
+        jobId,
+        error: errorMessage,
+      });
+
+      this.jobManager.setJobError(jobId, errorMessage);
+    }
+  }
+
+  /**
+   * Get job status
+   */
+  getJobStatus(jobId: string): WorkflowJob | null {
+    return this.jobManager.getJob(jobId);
+  }
+
+  /**
+   * List jobs
+   */
+  listJobs(filters?: {
+    status?: JobStatus;
+    workflowId?: string;
+    workflowType?: 'pre-built' | 'custom' | 'template';
+    limit?: number;
+  }): WorkflowJob[] {
+    return this.jobManager.listJobs(filters);
+  }
+
+  /**
+   * Cancel job
+   */
+  cancelJob(jobId: string): boolean {
+    return this.jobManager.cancelJob(jobId);
+  }
+
+  /**
+   * Delete job
+   */
+  deleteJob(jobId: string): boolean {
+    return this.jobManager.deleteJob(jobId);
+  }
+
+  /**
+   * Get job manager stats
+   */
+  getJobStats() {
+    return this.jobManager.getStats();
+  }
+
+  /**
+   * Wait for job completion (polling helper)
+   */
+  async waitForJob(
+    jobId: string,
+    options?: {
+      timeout?: number;
+      pollInterval?: number;
+    }
+  ): Promise<WorkflowJob> {
+    const timeout = options?.timeout || 300000; // 5 minutes default
+    const pollInterval = options?.pollInterval || 1000; // 1 second
+
+    const startTime = Date.now();
+
+    return new Promise((resolve, reject) => {
+      const check = () => {
+        const job = this.jobManager.getJob(jobId);
+
+        if (!job) {
+          reject(new Error(`Job not found: ${jobId}`));
+          return;
+        }
+
+        // Check if completed
+        if (job.status === 'COMPLETED') {
+          resolve(job);
+          return;
+        }
+
+        if (job.status === 'FAILED') {
+          reject(new Error(job.error || 'Job failed'));
+          return;
+        }
+
+        if (job.status === 'CANCELLED') {
+          reject(new Error('Job was cancelled'));
+          return;
+        }
+
+        // Check timeout
+        if (Date.now() - startTime > timeout) {
+          this.jobManager.updateJobStatus(jobId, 'TIMEOUT');
+          reject(new Error('Job timeout'));
+          return;
+        }
+
+        // Continue polling
+        setTimeout(check, pollInterval);
+      };
+
+      check();
+    });
   }
 }

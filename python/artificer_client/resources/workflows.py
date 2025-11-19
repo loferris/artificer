@@ -645,3 +645,280 @@ class Workflows(BaseResource):
             input_data["workflowId"] = workflow_id
 
         return self._trpc_request("workflows.instantiateTemplate", input_data)
+
+    # ========================================
+    # ASYNC EXECUTION - Phase 4
+    # ========================================
+
+    def execute_async(
+        self,
+        workflow_id: str,
+        inputs: Dict[str, Any],
+        webhook: Optional[Dict[str, Any]] = None,
+        priority: str = "normal"
+    ) -> dict:
+        """
+        Execute workflow asynchronously (background).
+
+        Instead of blocking until completion, returns a job ID immediately.
+        Poll job status or configure webhook for completion notification.
+
+        Args:
+            workflow_id: Workflow ID (pre-built or custom)
+            inputs: Workflow inputs
+            webhook: Optional webhook for completion notification with:
+                - url: Webhook URL
+                - method: HTTP method (POST or PUT, default: POST)
+                - headers: Optional custom headers
+            priority: Job priority (low, normal, high)
+
+        Returns:
+            Job information with jobId
+
+        Example:
+            >>> # Execute async without webhook
+            >>> result = client.workflows.execute_async(
+            ...     "pdf-to-html",
+            ...     {"pdf_data": pdf_data, "title": "Document"}
+            ... )
+            >>> job_id = result['jobId']
+            >>>
+            >>> # Execute async with webhook
+            >>> result = client.workflows.execute_async(
+            ...     "pdf-to-html",
+            ...     {"pdf_data": pdf_data},
+            ...     webhook={
+            ...         "url": "https://myapp.com/webhook/workflow-complete",
+            ...         "method": "POST",
+            ...         "headers": {"X-API-Key": "secret"}
+            ...     },
+            ...     priority="high"
+            ... )
+            >>> job_id = result['jobId']
+        """
+        input_data: Dict[str, Any] = {
+            "workflowId": workflow_id,
+            "inputs": inputs,
+            "priority": priority
+        }
+
+        if webhook:
+            input_data["webhook"] = webhook
+
+        return self._trpc_request("workflows.executeAsync", input_data)
+
+    def execute_custom_async(
+        self,
+        workflow_id: str,
+        inputs: Dict[str, Any],
+        webhook: Optional[Dict[str, Any]] = None,
+        priority: str = "normal"
+    ) -> dict:
+        """
+        Execute custom workflow asynchronously (background).
+
+        Args:
+            workflow_id: Custom workflow ID
+            inputs: Workflow inputs
+            webhook: Optional webhook for completion
+            priority: Job priority (low, normal, high)
+
+        Returns:
+            Job information with jobId
+
+        Example:
+            >>> result = client.workflows.execute_custom_async(
+            ...     "my-rag-pipeline",
+            ...     {
+            ...         "pdf_data": pdf_data,
+            ...         "document_id": "doc123",
+            ...         "project_id": "proj456"
+            ...     },
+            ...     priority="high"
+            ... )
+            >>> job_id = result['jobId']
+        """
+        input_data: Dict[str, Any] = {
+            "workflowId": workflow_id,
+            "inputs": inputs,
+            "priority": priority
+        }
+
+        if webhook:
+            input_data["webhook"] = webhook
+
+        return self._trpc_request("workflows.executeCustomAsync", input_data)
+
+    def get_job_status(self, job_id: str) -> dict:
+        """
+        Get job status and details.
+
+        Args:
+            job_id: Job ID from async execution
+
+        Returns:
+            Job details including status, progress, result (if completed)
+
+        Example:
+            >>> job = client.workflows.get_job_status(job_id)
+            >>> print(f"Status: {job['status']}")
+            >>> print(f"Progress: {job['progress']['percentComplete']}%")
+            >>>
+            >>> if job['status'] == 'COMPLETED':
+            ...     result = job['result']
+            ...     print("Job completed successfully")
+            >>> elif job['status'] == 'FAILED':
+            ...     print(f"Job failed: {job['error']}")
+        """
+        return self._trpc_request("workflows.getJobStatus", {"jobId": job_id})
+
+    def list_jobs(
+        self,
+        status: Optional[str] = None,
+        workflow_id: Optional[str] = None,
+        workflow_type: Optional[str] = None,
+        limit: Optional[int] = None
+    ) -> dict:
+        """
+        List workflow jobs.
+
+        Args:
+            status: Filter by status (PENDING, RUNNING, COMPLETED, FAILED, CANCELLED, TIMEOUT)
+            workflow_id: Filter by workflow ID
+            workflow_type: Filter by type (pre-built, custom, template)
+            limit: Maximum jobs to return
+
+        Returns:
+            List of jobs
+
+        Example:
+            >>> # List all jobs
+            >>> jobs = client.workflows.list_jobs()
+            >>> for job in jobs['jobs']:
+            ...     print(f"{job['jobId']}: {job['status']}")
+            >>>
+            >>> # List running jobs
+            >>> running = client.workflows.list_jobs(status="RUNNING")
+            >>>
+            >>> # List jobs for specific workflow
+            >>> jobs = client.workflows.list_jobs(workflow_id="my-rag-pipeline", limit=10)
+        """
+        input_data: Dict[str, Any] = {}
+
+        if status:
+            input_data["status"] = status
+        if workflow_id:
+            input_data["workflowId"] = workflow_id
+        if workflow_type:
+            input_data["workflowType"] = workflow_type
+        if limit:
+            input_data["limit"] = limit
+
+        return self._trpc_request("workflows.listJobs", input_data if input_data else None)
+
+    def cancel_job(self, job_id: str) -> dict:
+        """
+        Cancel a pending or running job.
+
+        Args:
+            job_id: Job ID to cancel
+
+        Returns:
+            Cancellation result
+
+        Example:
+            >>> result = client.workflows.cancel_job(job_id)
+            >>> print(result['message'])
+        """
+        return self._trpc_request("workflows.cancelJob", {"jobId": job_id})
+
+    def delete_job(self, job_id: str) -> dict:
+        """
+        Delete a job (cannot delete running jobs).
+
+        Args:
+            job_id: Job ID to delete
+
+        Returns:
+            Deletion result
+
+        Example:
+            >>> result = client.workflows.delete_job(job_id)
+            >>> print(result['message'])
+        """
+        return self._trpc_request("workflows.deleteJob", {"jobId": job_id})
+
+    def get_job_stats(self) -> dict:
+        """
+        Get job queue statistics.
+
+        Returns:
+            Queue stats including totals by status
+
+        Example:
+            >>> stats = client.workflows.get_job_stats()
+            >>> print(f"Total jobs: {stats['totalJobs']}")
+            >>> print(f"Running: {stats['runningJobs']}")
+            >>> print(f"Pending: {stats['pendingJobs']}")
+            >>> print(f"By status: {stats['jobsByStatus']}")
+        """
+        return self._trpc_request("workflows.getJobStats")
+
+    def wait_for_job(
+        self,
+        job_id: str,
+        poll_interval: int = 2,
+        timeout: int = 300
+    ) -> dict:
+        """
+        Wait for job completion with polling (blocking).
+
+        Polls job status until completed, failed, or timeout.
+
+        Args:
+            job_id: Job ID to wait for
+            poll_interval: Seconds between polls (default: 2)
+            timeout: Maximum wait time in seconds (default: 300)
+
+        Returns:
+            Completed job details
+
+        Raises:
+            TimeoutError: If job doesn't complete within timeout
+            RuntimeError: If job fails
+
+        Example:
+            >>> # Start async job
+            >>> result = client.workflows.execute_async("pdf-to-html", inputs)
+            >>> job_id = result['jobId']
+            >>>
+            >>> # Wait for completion
+            >>> job = client.workflows.wait_for_job(job_id, poll_interval=1, timeout=600)
+            >>> print(f"Job completed in {job['metadata']['executionTime']}ms")
+            >>> result = job['result']
+        """
+        import time
+
+        start_time = time.time()
+
+        while True:
+            job = self.get_job_status(job_id)
+
+            if job['status'] == 'COMPLETED':
+                return job
+
+            if job['status'] == 'FAILED':
+                raise RuntimeError(f"Job failed: {job.get('error', 'Unknown error')}")
+
+            if job['status'] == 'CANCELLED':
+                raise RuntimeError("Job was cancelled")
+
+            if job['status'] == 'TIMEOUT':
+                raise TimeoutError("Job timeout")
+
+            # Check client-side timeout
+            if time.time() - start_time > timeout:
+                raise TimeoutError(f"Job did not complete within {timeout} seconds")
+
+            # Wait before next poll
+            time.sleep(poll_interval)

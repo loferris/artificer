@@ -501,4 +501,172 @@ export const workflowsRouter = router({
         registered: false,
       };
     }),
+
+  /**
+   * ASYNC EXECUTION - Phase 4: Hybrid execution model
+   */
+
+  /**
+   * Execute workflow asynchronously (background)
+   */
+  executeAsync: publicProcedure
+    .input(
+      z.object({
+        workflowId: z.string().describe('Workflow ID'),
+        inputs: z.record(z.any()).describe('Workflow inputs'),
+        webhook: z
+          .object({
+            url: z.string().url(),
+            method: z.enum(['POST', 'PUT']).optional(),
+            headers: z.record(z.string()).optional(),
+          })
+          .optional()
+          .describe('Webhook for completion notification'),
+        priority: z.enum(['low', 'normal', 'high']).optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const jobId = await prefectService.executeWorkflowAsync(input.workflowId, input.inputs, {
+        webhook: input.webhook,
+        priority: input.priority,
+      });
+
+      return {
+        jobId,
+        status: 'PENDING',
+        message: 'Workflow queued for execution',
+      };
+    }),
+
+  /**
+   * Execute custom workflow asynchronously
+   */
+  executeCustomAsync: publicProcedure
+    .input(
+      z.object({
+        workflowId: z.string().describe('Custom workflow ID'),
+        inputs: z.record(z.any()).describe('Workflow inputs'),
+        webhook: z
+          .object({
+            url: z.string().url(),
+            method: z.enum(['POST', 'PUT']).optional(),
+            headers: z.record(z.string()).optional(),
+          })
+          .optional(),
+        priority: z.enum(['low', 'normal', 'high']).optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const jobId = await prefectService.executeCustomWorkflowAsync(
+        input.workflowId,
+        input.inputs,
+        {
+          webhook: input.webhook,
+          priority: input.priority,
+        }
+      );
+
+      return {
+        jobId,
+        status: 'PENDING',
+        message: 'Custom workflow queued for execution',
+      };
+    }),
+
+  /**
+   * Get job status
+   */
+  getJobStatus: publicProcedure
+    .input(
+      z.object({
+        jobId: z.string().describe('Job ID'),
+      })
+    )
+    .query(({ input }) => {
+      const job = prefectService.getJobStatus(input.jobId);
+
+      if (!job) {
+        throw new Error(`Job not found: ${input.jobId}`);
+      }
+
+      return job;
+    }),
+
+  /**
+   * List jobs
+   */
+  listJobs: publicProcedure
+    .input(
+      z
+        .object({
+          status: z
+            .enum(['PENDING', 'RUNNING', 'COMPLETED', 'FAILED', 'CANCELLED', 'TIMEOUT'])
+            .optional(),
+          workflowId: z.string().optional(),
+          workflowType: z.enum(['pre-built', 'custom', 'template']).optional(),
+          limit: z.number().optional(),
+        })
+        .optional()
+    )
+    .query(({ input }) => {
+      const jobs = prefectService.listJobs(input);
+
+      return {
+        jobs,
+        total: jobs.length,
+      };
+    }),
+
+  /**
+   * Cancel job
+   */
+  cancelJob: publicProcedure
+    .input(
+      z.object({
+        jobId: z.string().describe('Job ID'),
+      })
+    )
+    .mutation(({ input }) => {
+      const cancelled = prefectService.cancelJob(input.jobId);
+
+      if (!cancelled) {
+        throw new Error(`Cannot cancel job: ${input.jobId}`);
+      }
+
+      return {
+        success: true,
+        jobId: input.jobId,
+        message: 'Job cancelled successfully',
+      };
+    }),
+
+  /**
+   * Delete job
+   */
+  deleteJob: publicProcedure
+    .input(
+      z.object({
+        jobId: z.string().describe('Job ID'),
+      })
+    )
+    .mutation(({ input }) => {
+      const deleted = prefectService.deleteJob(input.jobId);
+
+      if (!deleted) {
+        throw new Error(`Cannot delete job: ${input.jobId}`);
+      }
+
+      return {
+        success: true,
+        jobId: input.jobId,
+        message: 'Job deleted successfully',
+      };
+    }),
+
+  /**
+   * Get job queue stats
+   */
+  getJobStats: publicProcedure.query(() => {
+    return prefectService.getJobStats();
+  }),
 });
