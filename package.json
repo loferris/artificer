@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "description": "Artificer monorepo - UI libraries and applications",
-  "license": "MIT",
+  "license": "BUSL-1.1",
+  "type": "module",
   "scripts": {
     "dev": "pnpm --filter @artificer/workbench dev",
     "dev:translator": "pnpm --filter @artificer/translator-demo dev",
