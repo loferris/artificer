@@ -154,12 +154,19 @@ export class LlamaIndexService {
 
   /**
    * Rerank search results using cross-encoder.
+   * Returns original results if Python is unavailable.
    */
   async rerankResults(
     searchResults: SearchResult[],
     query: string,
     config: RerankerConfig = {}
   ): Promise<SearchResult[]> {
+    // Graceful degradation: return original results if unavailable
+    if (!this.available) {
+      console.warn('LlamaIndex not available - returning unranked results');
+      return searchResults;
+    }
+
     const encodedData = this.safeEncode({ searchResults, query, config });
     const pythonScript = `
 import sys
@@ -195,8 +202,15 @@ except Exception as e:
 
   /**
    * Generate hypothetical document for HyDE.
+   * Returns the original query if Python is unavailable.
    */
   async generateHypotheticalDocument(query: string, llmModel: string = 'gpt-4o-mini'): Promise<string> {
+    // Graceful degradation: return original query if unavailable
+    if (!this.available) {
+      console.warn('LlamaIndex not available - HyDE disabled, using original query');
+      return query;
+    }
+
     const encodedData = this.safeEncode({ query, llmModel });
     const pythonScript = `
 import sys
@@ -226,12 +240,19 @@ except Exception as e:
 
   /**
    * Generate query variations for query fusion.
+   * Returns just the original query if Python is unavailable.
    */
   async generateQueryVariations(
     query: string,
     numVariations: number = 3,
     llmModel: string = 'gpt-4o-mini'
   ): Promise<string[]> {
+    // Graceful degradation: return original query only if unavailable
+    if (!this.available) {
+      console.warn('LlamaIndex not available - returning original query only');
+      return [query];
+    }
+
     const encodedData = this.safeEncode({ query, numVariations, llmModel });
     const pythonScript = `
 import sys
@@ -262,11 +283,18 @@ except Exception as e:
 
   /**
    * Decompose query into sub-questions.
+   * Returns just the original query if Python is unavailable.
    */
   async decomposeIntoSubquestions(
     query: string,
     llmModel: string = 'gpt-4o-mini'
   ): Promise<string[]> {
+    // Graceful degradation: return original query only if unavailable
+    if (!this.available) {
+      console.warn('LlamaIndex not available - returning original query only');
+      return [query];
+    }
+
     const encodedData = this.safeEncode({ query, llmModel });
     const pythonScript = `
 import sys
@@ -296,12 +324,23 @@ except Exception as e:
 
   /**
    * Evaluate RAG faithfulness (no hallucination).
+   * Returns unavailable status if Python is not configured.
    */
   async evaluateFaithfulness(
     query: string,
     response: string,
     contexts: string[]
   ): Promise<RAGEvaluation> {
+    // Graceful degradation: return unavailable evaluation if not configured
+    if (!this.available) {
+      return {
+        score: null,
+        passing: false,
+        feedback: 'Evaluation unavailable - LlamaIndex Python service not configured',
+        metric: 'faithfulness',
+      };
+    }
+
     const encodedData = this.safeEncode({ query, response, contexts });
     const pythonScript = `
 import sys
@@ -333,8 +372,19 @@ except Exception as e:
 
   /**
    * Evaluate retrieval relevancy.
+   * Returns unavailable status if Python is not configured.
    */
   async evaluateRelevancy(query: string, contexts: string[]): Promise<RAGEvaluation> {
+    // Graceful degradation: return unavailable evaluation if not configured
+    if (!this.available) {
+      return {
+        score: null,
+        passing: false,
+        feedback: 'Evaluation unavailable - LlamaIndex Python service not configured',
+        metric: 'relevancy',
+      };
+    }
+
     const encodedData = this.safeEncode({ query, contexts });
     const pythonScript = `
 import sys
@@ -365,8 +415,19 @@ except Exception as e:
 
   /**
    * Evaluate answer relevancy.
+   * Returns unavailable status if Python is not configured.
    */
   async evaluateAnswerRelevancy(query: string, response: string): Promise<RAGEvaluation> {
+    // Graceful degradation: return unavailable evaluation if not configured
+    if (!this.available) {
+      return {
+        score: null,
+        passing: false,
+        feedback: 'Evaluation unavailable - LlamaIndex Python service not configured',
+        metric: 'answer_relevancy',
+      };
+    }
+
     const encodedData = this.safeEncode({ query, response });
     const pythonScript = `
 import sys
@@ -397,12 +458,35 @@ except Exception as e:
 
   /**
    * Full RAG pipeline evaluation.
+   * Returns unavailable status if Python is not configured.
    */
   async evaluateFullRAGPipeline(
     query: string,
     response: string,
     contexts: string[]
   ): Promise<FullRAGEvaluation> {
+    // Graceful degradation: return unavailable evaluation if not configured
+    if (!this.available) {
+      const unavailableEval: RAGEvaluation = {
+        score: null,
+        passing: false,
+        feedback: 'Evaluation unavailable - LlamaIndex Python service not configured',
+        metric: '',
+      };
+      return {
+        query,
+        response,
+        num_contexts: contexts.length,
+        evaluations: {
+          faithfulness: { ...unavailableEval, metric: 'faithfulness' },
+          relevancy: { ...unavailableEval, metric: 'relevancy' },
+          answer_relevancy: { ...unavailableEval, metric: 'answer_relevancy' },
+        },
+        overall_score: null,
+        all_passing: false,
+      };
+    }
+
     const encodedData = this.safeEncode({ query, response, contexts });
     const pythonScript = `
 import sys
@@ -434,10 +518,23 @@ except Exception as e:
 
   /**
    * Batch evaluate multiple test cases.
+   * Returns unavailable status if Python is not configured.
    */
   async batchEvaluateRAG(
     testCases: Array<{ query: string; response: string; contexts: string[] }>
   ): Promise<any> {
+    // Graceful degradation: return empty results if not configured
+    if (!this.available) {
+      return {
+        results: [],
+        summary: {
+          total: testCases.length,
+          evaluated: 0,
+          error: 'Batch evaluation unavailable - LlamaIndex Python service not configured',
+        },
+      };
+    }
+
     const encodedData = this.safeEncode({ testCases });
     const pythonScript = `
 import sys

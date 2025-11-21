@@ -173,8 +173,16 @@ export class LangGraphService {
 
   /**
    * Validate a graph definition.
+   * Returns unavailable status if Python/LangGraph is not configured.
    */
   async validateGraph(definition: GraphDefinition): Promise<{ valid: boolean; error?: string }> {
+    if (!this.available) {
+      return {
+        valid: false,
+        error: 'LangGraph validation unavailable - Python LangGraph not configured',
+      };
+    }
+
     const encodedData = this.safeEncode({ definition });
     const pythonScript = `
 import sys
@@ -241,12 +249,20 @@ print(json.dumps(result))
 
   /**
    * Execute a graph.
+   * Returns unavailable status if Python/LangGraph is not configured.
    */
   async executeGraph(
     graphId: string,
     inputs: Record<string, any>,
     config?: GraphExecutionConfig
   ): Promise<GraphExecutionResult> {
+    if (!this.available) {
+      return {
+        success: false,
+        error: 'Graph execution unavailable - Python LangGraph not configured',
+      };
+    }
+
     const definition = this.getGraph(graphId);
     if (!definition) {
       throw new Error(`Graph not found: ${graphId}`);
@@ -302,12 +318,21 @@ print(json.dumps(output))
 
   /**
    * Execute graph with streaming.
+   * Yields error state if Python/LangGraph is not configured.
    */
   async* executeGraphStreaming(
     graphId: string,
     inputs: Record<string, any>,
     config?: GraphExecutionConfig
   ): AsyncGenerator<Record<string, any>> {
+    if (!this.available) {
+      yield {
+        error: 'Graph streaming unavailable - Python LangGraph not configured',
+        success: false,
+      };
+      return;
+    }
+
     const definition = this.getGraph(graphId);
     if (!definition) {
       throw new Error(`Graph not found: ${graphId}`);
@@ -375,12 +400,20 @@ for state in execute_graph_streaming(graph_id, inputs, config):
 
   /**
    * Resume graph from checkpoint (e.g., after human input).
+   * Returns unavailable status if Python/LangGraph is not configured.
    */
   async resumeGraph(
     graphId: string,
     checkpointId: string,
     humanInput: Record<string, any>
   ): Promise<GraphExecutionResult> {
+    if (!this.available) {
+      return {
+        success: false,
+        error: 'Graph resume unavailable - Python LangGraph not configured',
+      };
+    }
+
     const definition = this.getGraph(graphId);
     if (!definition) {
       throw new Error(`Graph not found: ${graphId}`);
@@ -428,8 +461,13 @@ print(json.dumps(output))
 
   /**
    * List built-in tools.
+   * Returns empty array if Python/LangGraph is not configured.
    */
   async listBuiltinTools(): Promise<Array<Record<string, any>>> {
+    if (!this.available) {
+      return [];
+    }
+
     const pythonScript = `
 import json
 from langgraph_schema import list_builtin_tools
@@ -448,8 +486,13 @@ print(json.dumps(tools))
 
   /**
    * Get graph summary.
+   * Returns unavailable message if Python/LangGraph is not configured.
    */
   async getGraphSummary(graphId: string): Promise<string> {
+    if (!this.available) {
+      return 'Graph summary unavailable - Python LangGraph not configured';
+    }
+
     const definition = this.getGraph(graphId);
     if (!definition) {
       throw new Error(`Graph not found: ${graphId}`);
