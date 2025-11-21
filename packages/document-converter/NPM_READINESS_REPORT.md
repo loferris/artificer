@@ -1,5 +1,5 @@
 # NPM Package Readiness Report
-**@ai-workflow/document-converter v0.1.0**
+**@artificer/document-converter v0.1.0**
 
 Generated: 2025-11-15
 
@@ -11,7 +11,7 @@ The package is now **100% ready** for npm publication. All critical requirements
 
 ## Package Overview
 
-- **Name**: `@ai-workflow/document-converter`
+- **Name**: `@artificer/document-converter`
 - **Version**: 0.1.0
 - **Package Size**: 51 KB (compressed)
 - **Unpacked Size**: 263.6 KB

@@ -5,13 +5,13 @@ Get up and running with the Document Converter in 5 minutes!
 ## Installation
 
 ```bash
-npm install @ai-workflow/document-converter
+npm install @artificer/document-converter
 ```
 
 ## Your First Conversion
 
 ```typescript
-import { DocumentConverter } from '@ai-workflow/document-converter';
+import { DocumentConverter } from '@artificer/document-converter';
 
 const converter = new DocumentConverter();
 
@@ -78,7 +78,7 @@ const obsidianMd = await converter.convert(roamExport, 'markdown', {
 ## Integration with Your App
 
 ```typescript
-import { DocumentConverter } from '@ai-workflow/document-converter';
+import { DocumentConverter } from '@artificer/document-converter';
 
 class DocumentService {
   private converter = new DocumentConverter();

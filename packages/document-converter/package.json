@@ -1,5 +1,5 @@
 {
-  "name": "@ai-workflow/document-converter",
+  "name": "@artificer/document-converter",
   "version": "0.1.0",
   "description": "A format-agnostic document conversion library using Portable Text as the intermediate format. Supports Obsidian, Notion, Roam, and more.",
   "type": "module",

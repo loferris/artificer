@@ -13,7 +13,7 @@ const nextConfig = {
     '@artificer/ui',
     '@artificer/translator',
     '@artificer/worldbuilder',
-    '@ai-workflow/document-converter',
+    '@artificer/document-converter',
   ],
   // Production-ready configuration
   typescript: {

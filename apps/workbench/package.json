@@ -35,7 +35,7 @@
     "revoke-api-key": "node --env-file=.env --import tsx scripts/revoke-api-key.ts"
   },
   "dependencies": {
-    "@ai-workflow/document-converter": "workspace:*",
+    "@artificer/document-converter": "workspace:*",
     "@artificer/translator": "workspace:*",
     "@artificer/worldbuilder": "workspace:*",
     "@artificer/ui": "workspace:*",

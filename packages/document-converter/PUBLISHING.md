@@ -1,6 +1,6 @@
 # Publishing Guide
 
-This document outlines the steps to publish `@ai-workflow/document-converter` to npm.
+This document outlines the steps to publish `@artificer/document-converter` to npm.
 
 ## Pre-Publishing Checklist
 
@@ -45,7 +45,7 @@ npm whoami
 
 ### 3. Scope Setup (Optional)
 
-If keeping the `@ai-workflow` scope:
+If keeping the `@artificer` scope:
 - Ensure the scope exists in your npm account
 - Or remove the scope: change name to `document-converter`
 
@@ -123,12 +123,12 @@ npm publish
 
 ```bash
 # Check on npm
-npm view @ai-workflow/document-converter
+npm view @artificer/document-converter
 
 # Test installation in a new project
 mkdir test-install && cd test-install
 npm init -y
-npm install @ai-workflow/document-converter
+npm install @artificer/document-converter
 ```
 
 ### 6. Push to Git
@@ -215,7 +215,7 @@ npm version prerelease --preid=beta
 npm publish --tag beta
 
 # Users install with:
-npm install @ai-workflow/document-converter@beta
+npm install @artificer/document-converter@beta
 ```
 
 ## Unpublishing (Emergency Only)
@@ -224,10 +224,10 @@ npm install @ai-workflow/document-converter@beta
 
 ```bash
 # Unpublish a specific version (within 72 hours of publish)
-npm unpublish @ai-workflow/document-converter@0.1.0
+npm unpublish @artificer/document-converter@0.1.0
 
 # Deprecate instead (preferred)
-npm deprecate @ai-workflow/document-converter@0.1.0 "Critical bug, use 0.1.1 instead"
+npm deprecate @artificer/document-converter@0.1.0 "Critical bug, use 0.1.1 instead"
 ```
 
 ## Troubleshooting

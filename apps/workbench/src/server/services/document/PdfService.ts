@@ -4,7 +4,7 @@
  * Uses library extractors and app-specific OCR service
  */
 
-import { PdfExtractor, type PdfExtractionResult } from '@ai-workflow/document-converter';
+import { PdfExtractor, type PdfExtractionResult } from '@artificer/document-converter';
 import { OCRService } from '../image/OCRService';
 import { logger } from '../../utils/logger';
 

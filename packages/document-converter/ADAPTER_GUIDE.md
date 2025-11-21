@@ -58,7 +58,7 @@ The Document Converter library now supports **pluggable intermediate formats** t
 ### Default Usage (Portable Text)
 
 ```typescript
-import { DocumentConverter } from '@ai-workflow/document-converter';
+import { DocumentConverter } from '@artificer/document-converter';
 
 // Uses Portable Text by default
 const converter = new DocumentConverter();
@@ -70,7 +70,7 @@ const notion = await converter.export(doc, 'notion');
 ### Using a Custom Adapter
 
 ```typescript
-import { DocumentConverter, BaseFormatAdapter } from '@ai-workflow/document-converter';
+import { DocumentConverter, BaseFormatAdapter } from '@artificer/document-converter';
 
 // Create your custom adapter
 class MyAdapter extends BaseFormatAdapter {
@@ -98,7 +98,7 @@ const doc = await converter.import(markdownContent);
 ### Step 1: Extend BaseFormatAdapter
 
 ```typescript
-import { BaseFormatAdapter, type BlockStyle, type CalloutType } from '@ai-workflow/document-converter';
+import { BaseFormatAdapter, type BlockStyle, type CalloutType } from '@artificer/document-converter';
 
 export class MyCustomAdapter extends BaseFormatAdapter {
   readonly name = 'my-custom-format';
@@ -211,7 +211,7 @@ createWikiLinkMark(target: string, alias?: string): { key: string; def: any } {
 ## Complete Example: ProseMirror Adapter
 
 ```typescript
-import { BaseFormatAdapter, type BlockStyle } from '@ai-workflow/document-converter';
+import { BaseFormatAdapter, type BlockStyle } from '@artificer/document-converter';
 
 /**
  * ProseMirror adapter for Document Converter
@@ -370,7 +370,7 @@ export class ProseMirrorAdapter extends BaseFormatAdapter {
 ### Usage
 
 ```typescript
-import { DocumentConverter } from '@ai-workflow/document-converter';
+import { DocumentConverter } from '@artificer/document-converter';
 import { ProseMirrorAdapter } from './prosemirror-adapter';
 
 const converter = new DocumentConverter({
@@ -445,7 +445,7 @@ const doc: ConvertedDocument = await converter.import(md);
 **Before (tightly coupled to Portable Text):**
 
 ```typescript
-import { DocumentConverter } from '@ai-workflow/document-converter';
+import { DocumentConverter } from '@artificer/document-converter';
 
 const converter = new DocumentConverter();
 const doc = await converter.import(markdown);
@@ -456,7 +456,7 @@ const doc = await converter.import(markdown);
 **After (adapter-based):**
 
 ```typescript
-import { DocumentConverter, MyAdapter } from '@ai-workflow/document-converter';
+import { DocumentConverter, MyAdapter } from '@artificer/document-converter';
 
 // Default: Portable Text (no changes needed)
 const ptConverter = new DocumentConverter();

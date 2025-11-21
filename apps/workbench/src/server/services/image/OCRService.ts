@@ -5,7 +5,7 @@
  */
 
 import { OpenAI } from 'openai';
-import type { OCRProvider, OCRResult } from '@ai-workflow/document-converter';
+import type { OCRProvider, OCRResult } from '@artificer/document-converter';
 import { logger } from '../../utils/logger';
 import { fromBuffer } from 'pdf2pic';
 import fs from 'fs/promises';

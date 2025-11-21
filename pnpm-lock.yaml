@@ -223,7 +223,7 @@ importers:
 
   apps/workbench:
     dependencies:
-      '@ai-workflow/document-converter':
+      '@artificer/document-converter':
         specifier: workspace:*
         version: link:../../packages/document-converter
       '@artificer/translator':

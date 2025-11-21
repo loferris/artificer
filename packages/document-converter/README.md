@@ -1,6 +1,6 @@
 # Document Converter
 
-[![npm version](https://img.shields.io/npm/v/@ai-workflow/document-converter.svg)](https://www.npmjs.com/package/@ai-workflow/document-converter)
+[![npm version](https://img.shields.io/npm/v/@artificer/document-converter.svg)](https://www.npmjs.com/package/@artificer/document-converter)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js->=18-green.svg)](https://nodejs.org/)
@@ -48,7 +48,7 @@ A format-agnostic document conversion library with **pluggable intermediate form
 ## Installation
 
 ```bash
-npm install @ai-workflow/document-converter
+npm install @artificer/document-converter
 ```
 
 ## Usage
@@ -56,7 +56,7 @@ npm install @ai-workflow/document-converter
 ### Basic Import/Export
 
 ```typescript
-import { DocumentConverter } from '@ai-workflow/document-converter';
+import { DocumentConverter } from '@artificer/document-converter';
 
 const converter = new DocumentConverter();
 
@@ -257,7 +257,7 @@ console.log(`Converted with ${errors.length} errors`);
 **NEW!** You can now swap out the intermediate format without changing any importers or exporters:
 
 ```typescript
-import { DocumentConverter, BaseFormatAdapter } from '@ai-workflow/document-converter';
+import { DocumentConverter, BaseFormatAdapter } from '@artificer/document-converter';
 
 // Create a custom adapter (e.g., for ProseMirror, Slate, etc.)
 class MyAdapter extends BaseFormatAdapter {
@@ -292,7 +292,7 @@ See the **[Adapter Guide](./ADAPTER_GUIDE.md)** for complete documentation, exam
 By default, documents are converted to Portable Text, a JSON-based rich text specification:
 
 ```typescript
-import type { ConvertedDocument } from '@ai-workflow/document-converter';
+import type { ConvertedDocument } from '@artificer/document-converter';
 
 const doc: ConvertedDocument = {
   content: [
@@ -338,7 +338,7 @@ const doc: ConvertedDocument = {
 ### Custom Importer
 
 ```typescript
-import type { ImporterPlugin, ConvertedDocument } from '@ai-workflow/document-converter';
+import type { ImporterPlugin, ConvertedDocument } from '@artificer/document-converter';
 
 class CustomImporter implements ImporterPlugin {
   name = 'custom';
@@ -365,7 +365,7 @@ converter.registerImporter(new CustomImporter());
 ### Custom Exporter
 
 ```typescript
-import type { ExporterPlugin, ConvertedDocument } from '@ai-workflow/document-converter';
+import type { ExporterPlugin, ConvertedDocument } from '@artificer/document-converter';
 
 class CustomExporter implements ExporterPlugin {
   name = 'custom';
@@ -439,7 +439,7 @@ converter.registerExporter(new CustomExporter());
 Integrate with your document storage system:
 
 ```typescript
-import { DocumentConverter } from '@ai-workflow/document-converter';
+import { DocumentConverter } from '@artificer/document-converter';
 import { DocumentService } from './services/DocumentService';
 
 class DocumentManager {
@@ -477,7 +477,7 @@ class DocumentManager {
 ### Batch Conversion
 
 ```typescript
-import { DocumentConverter } from '@ai-workflow/document-converter';
+import { DocumentConverter } from '@artificer/document-converter';
 import { readdir, readFile, writeFile } from 'fs/promises';
 
 const converter = new DocumentConverter();
