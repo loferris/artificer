@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import Head from 'next/head';
 import { trpc } from '../lib/trpc/client';
-import { PipelineProgress } from '@/components/fableforge/core/PipelineProgress';
-import type { PipelineStage } from '@/components/fableforge/core/PipelineProgress';
-import type { Candidate } from '@/components/fableforge/core/CandidateComparison';
+import { PipelineProgress } from '@/components/translator/core/PipelineProgress';
+import type { PipelineStage } from '@/components/translator/core/PipelineProgress';
+import type { Candidate } from '@/components/translator/core/CandidateComparison';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
@@ -12,17 +12,17 @@ import { clientLogger } from '../utils/clientLogger';
 
 // Lazy load heavy components
 const CandidateComparison = dynamic(
-  () => import('@/components/fableforge/core/CandidateComparison').then(mod => ({ default: mod.CandidateComparison })),
+  () => import('@/components/translator/core/CandidateComparison').then(mod => ({ default: mod.CandidateComparison })),
   { loading: () => <div className="p-8 text-center text-gray-500">Loading comparison...</div> }
 );
 
 const QualityMetrics = dynamic(
-  () => import('@/components/fableforge/analytics/QualityMetrics').then(mod => ({ default: mod.QualityMetrics })),
+  () => import('@/components/translator/analytics/QualityMetrics').then(mod => ({ default: mod.QualityMetrics })),
   { loading: () => <div className="p-8 text-center text-gray-500">Loading metrics...</div> }
 );
 
 const CostTracker = dynamic(
-  () => import('@/components/fableforge/analytics/CostTracker').then(mod => ({ default: mod.CostTracker })),
+  () => import('@/components/translator/analytics/CostTracker').then(mod => ({ default: mod.CostTracker })),
   { loading: () => <div className="p-8 text-center text-gray-500">Loading cost tracker...</div> }
 );
 

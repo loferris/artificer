@@ -11,7 +11,7 @@ import {
   hasErrors,
   isValid as checkIsValid,
   sortBySeverity
-} from '@artificer/hellbat'
+} from '@artificer/worldbuilder'
 
 export interface UseValidationOptions {
   initialResults?: ValidationResult[]

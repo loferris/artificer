@@ -1,5 +1,5 @@
 /**
- * Cost formatting and calculation utilities for FableForge components
+ * Cost formatting and calculation utilities for Translator components
  * Used in: CostTracker, SpecialistCard, ABTestComparison
  */
 

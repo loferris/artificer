@@ -1,5 +1,5 @@
 /**
- * Time formatting utilities for FableForge components
+ * Time formatting utilities for Translator components
  * Used in: PipelineProgress, TranslationJobCard, TranslationTimeline
  */
 

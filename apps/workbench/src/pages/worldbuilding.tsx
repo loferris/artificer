@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import { trpc } from '../lib/trpc/client';
-import { StreamingMessage } from '@/components/hellbat/chat/StreamingMessage';
-import { OperationsList } from '@/components/hellbat/operations/OperationsList';
-import { ValidationPanel } from '@/components/hellbat/validation/ValidationPanel';
+import { StreamingMessage } from '@/components/worldbuilder/chat/StreamingMessage';
+import { OperationsList } from '@/components/worldbuilder/operations/OperationsList';
+import { ValidationPanel } from '@/components/worldbuilder/validation/ValidationPanel';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
-import { parseOperationsFromText, type Operation } from '@artificer/hellbat';
+import { parseOperationsFromText, type Operation } from '@artificer/worldbuilder';
 import { cn } from '@artificer/ui';
 import { clientLogger } from '../utils/clientLogger';
 

@@ -4,7 +4,7 @@
 
 ## Overview
 
-Artificer UI consolidates common patterns from FableForge (translation) and Hellbat (worldbuilding) into a cohesive, reusable library. It provides:
+Artificer UI consolidates common patterns from Translator (translation) and Worldbuilder (worldbuilding) into a cohesive, reusable library. It provides:
 
 - **Generic components** that work across domains
 - **Unified theme system** for consistent styling
@@ -26,7 +26,7 @@ Artificer UI consolidates common patterns from FableForge (translation) and Hell
         ↑               ↑
         │               │
 ┌───────┴────┐    ┌────┴─────────┐
-│ FableForge │    │   Hellbat    │
+│ Translator │    │   Worldbuilder    │
 │  Extension │    │  Extension   │
 └────────────┘    └──────────────┘
 ```
@@ -182,11 +182,11 @@ const handleClick = () => {
 
 ## Usage Examples
 
-### FableForge Domain
+### Translator Domain
 
 ```tsx
 import { GroupedList, ThemedCard, DiffViewer } from '@/lib/artificer-ui'
-import { specialistThemes } from '@/lib/fableforge/themes'
+import { specialistThemes } from '@/lib/translator/themes'
 
 export function CandidateComparison({ candidates }) {
   return (
@@ -204,11 +204,11 @@ export function CandidateComparison({ candidates }) {
 }
 ```
 
-### Hellbat Domain
+### Worldbuilder Domain
 
 ```tsx
 import { GroupedList, ThemedBadge } from '@/lib/artificer-ui'
-import { operationThemes } from '@/lib/hellbat/themes'
+import { operationThemes } from '@/lib/worldbuilder/themes'
 
 export function OperationsList({ operations }) {
   return (
@@ -289,7 +289,7 @@ export function formatCodeSnippet(code: string): string {
 
 ### Before (CandidateDiff)
 ```tsx
-import { CandidateDiff } from '@/components/fableforge/comparison/CandidateDiff'
+import { CandidateDiff } from '@/components/translator/comparison/CandidateDiff'
 
 <CandidateDiff candidateA={a} candidateB={b} />
 ```
@@ -297,7 +297,7 @@ import { CandidateDiff } from '@/components/fableforge/comparison/CandidateDiff'
 ### After (DiffViewer)
 ```tsx
 import { DiffViewer } from '@/lib/artificer-ui'
-import { specialistThemes } from '@/lib/fableforge/themes'
+import { specialistThemes } from '@/lib/translator/themes'
 
 <DiffViewer
   before={a}

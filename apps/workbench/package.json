@@ -36,8 +36,8 @@
   },
   "dependencies": {
     "@ai-workflow/document-converter": "workspace:*",
-    "@artificer/fableforge": "workspace:*",
-    "@artificer/hellbat": "workspace:*",
+    "@artificer/translator": "workspace:*",
+    "@artificer/worldbuilder": "workspace:*",
     "@artificer/ui": "workspace:*",
     "@axiomhq/js": "^1.3.1",
     "@highlight-run/next": "^7.9.38",

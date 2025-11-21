@@ -19,8 +19,8 @@ const navLinks: NavLink[] = [
 ];
 
 const demoLinks: NavLink[] = [
-  { href: '/fableforge-demo', label: 'FableForge Components' },
-  { href: '/hellbat-demo', label: 'Hellbat Components' },
+  { href: '/translator-demo', label: 'Translator Components' },
+  { href: '/worldbuilder-demo', label: 'Worldbuilder Components' },
 ];
 
 export function Navigation() {

@@ -11,8 +11,8 @@ const nextConfig = {
   // Transpile workspace packages (monorepo support)
   transpilePackages: [
     '@artificer/ui',
-    '@artificer/fableforge',
-    '@artificer/hellbat',
+    '@artificer/translator',
+    '@artificer/worldbuilder',
     '@ai-workflow/document-converter',
   ],
   // Production-ready configuration

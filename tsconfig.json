@@ -5,8 +5,8 @@
   },
   "references": [
     { "path": "./packages/ui" },
-    { "path": "./packages/fableforge" },
-    { "path": "./packages/hellbat" },
+    { "path": "./packages/translator" },
+    { "path": "./packages/worldbuilder" },
     { "path": "./packages/document-converter" },
     { "path": "./apps/workbench" }
   ],

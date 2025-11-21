@@ -1,5 +1,5 @@
 /**
- * Client-side logger for FableForge components
+ * Client-side logger for Translator components
  *
  * Provides structured logging for browser environments with:
  * - Component interaction tracking

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import type { Message as BaseMessage } from '@/types'
-import type { Operation, ValidationResult } from '@artificer/hellbat'
+import type { Operation, ValidationResult } from '@artificer/worldbuilder'
 
 export interface Message extends BaseMessage {
   sources?: Source[]

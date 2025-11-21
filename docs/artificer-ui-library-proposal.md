@@ -2,13 +2,13 @@
 
 **Date:** 2025-01-17
 **Status:** Architectural Proposal
-**Goal:** Consolidate FableForge + Hellbat into one cohesive, domain-agnostic React library
+**Goal:** Consolidate Translator + Worldbuilder into one cohesive, domain-agnostic React library
 
 ---
 
 ## Executive Summary
 
-Analysis of the codebase reveals **~50% code duplication** across FableForge and Hellbat domains, with identical patterns implemented separately. This proposal outlines **Artificer UI** - a unified component library that:
+Analysis of the codebase reveals **~50% code duplication** across Translator and Worldbuilder domains, with identical patterns implemented separately. This proposal outlines **Artificer UI** - a unified component library that:
 
 - **Abstracts common patterns** into generic, reusable components
 - **Maintains domain separation** for business logic
@@ -40,7 +40,7 @@ Analysis of the codebase reveals **~50% code duplication** across FableForge and
               ↑           ↑
               │           │
     ┌─────────┴───┐   ┌───┴──────────┐
-    │ FABLEFORGE   │   │   HELLBAT    │
+    │ TRANSLATOR   │   │   WORLDBUILDER    │
     │  Translation │   │ Worldbuilding│
     │   Domain     │   │    Domain    │
     └──────────────┘   └──────────────┘
@@ -194,7 +194,7 @@ export function GroupedList<T, K extends string>({
 }
 ```
 
-**Usage in FableForge:**
+**Usage in Translator:**
 ```typescript
 <GroupedList
   items={candidates}
@@ -213,7 +213,7 @@ export function GroupedList<T, K extends string>({
 />
 ```
 
-**Usage in Hellbat:**
+**Usage in Worldbuilder:**
 ```typescript
 <GroupedList
   items={operations}
@@ -302,7 +302,7 @@ export function DiffViewer<T>({
 }
 ```
 
-**Usage in FableForge:**
+**Usage in Translator:**
 ```typescript
 <DiffViewer
   before={candidateA}
@@ -319,7 +319,7 @@ export function DiffViewer<T>({
 />
 ```
 
-**Usage in Hellbat:**
+**Usage in Worldbuilder:**
 ```typescript
 <DiffViewer
   before={beforeOp}
@@ -410,7 +410,7 @@ export function ExportDialog<T>({
 }
 ```
 
-**Usage in FableForge:**
+**Usage in Translator:**
 ```typescript
 const fableForgeFormats: ExportFormat<TranslationResult>[] = [
   {
@@ -440,9 +440,9 @@ const fableForgeFormats: ExportFormat<TranslationResult>[] = [
 <ExportDialog data={translationResult} formats={fableForgeFormats} />
 ```
 
-**Usage in Hellbat:**
+**Usage in Worldbuilder:**
 ```typescript
-const hellbatFormats: ExportFormat<WorldData>[] = [
+const worldbuilderFormats: ExportFormat<WorldData>[] = [
   {
     id: 'markdown',
     label: 'Markdown',
@@ -459,7 +459,7 @@ const hellbatFormats: ExportFormat<WorldData>[] = [
   }
 ]
 
-<ExportDialog data={worldData} formats={hellbatFormats} />
+<ExportDialog data={worldData} formats={worldbuilderFormats} />
 ```
 
 **Benefits:**
@@ -593,7 +593,7 @@ export function useComponentLogger(componentName: string, metadata?: Record<stri
 
 ## 2. Domain Extensions
 
-### 2.1 FableForge Domain (`@artificer/fableforge`)
+### 2.1 Translator Domain (`@artificer/translator`)
 
 **Domain-specific components:**
 - SpecialistCard (uses ThemedCard + ThemedBadge)
@@ -627,7 +627,7 @@ export function CandidateComparison({ candidates }) {
 }
 ```
 
-### 2.2 Hellbat Domain (`@artificer/hellbat`)
+### 2.2 Worldbuilder Domain (`@artificer/worldbuilder`)
 
 **Domain-specific components:**
 - StreamingMessage
@@ -696,7 +696,7 @@ src/
 │   │   │   └── index.ts          # Common types
 │   │   └── index.ts              # Main export
 │   │
-│   ├── fableforge/              # DOMAIN EXTENSION
+│   ├── translator/              # DOMAIN EXTENSION
 │   │   ├── components/
 │   │   │   ├── SpecialistCard.tsx
 │   │   │   ├── PipelineProgress.tsx
@@ -708,7 +708,7 @@ src/
 │   │   │   └── language-utils.ts
 │   │   └── index.ts
 │   │
-│   └── hellbat/                 # DOMAIN EXTENSION
+│   └── worldbuilder/                 # DOMAIN EXTENSION
 │       ├── components/
 │       │   ├── StreamingMessage.tsx
 │       │   ├── OperationsList.tsx
@@ -754,7 +754,7 @@ src/
 
 ```json
 {
-  "name": "@artificer/fableforge",
+  "name": "@artificer/translator",
   "peerDependencies": {
     "@artificer/ui": "^1.0.0"
   }
@@ -763,7 +763,7 @@ src/
 
 ```json
 {
-  "name": "@artificer/hellbat",
+  "name": "@artificer/worldbuilder",
   "peerDependencies": {
     "@artificer/ui": "^1.0.0"
   }
@@ -806,8 +806,8 @@ src/
 - [ ] Setup monorepo with Lerna/Turborepo
 - [ ] Configure build pipeline
 - [ ] Publish @artificer/ui
-- [ ] Publish @artificer/fableforge
-- [ ] Publish @artificer/hellbat
+- [ ] Publish @artificer/translator
+- [ ] Publish @artificer/worldbuilder
 
 ---
 
@@ -936,18 +936,18 @@ import {
 
 ```typescript
 import {
-  // FableForge
+  // Translator
   SpecialistCard,
   CandidateComparison,
   specialistThemes
-} from '@artificer/fableforge'
+} from '@artificer/translator'
 
 import {
-  // Hellbat
+  // Worldbuilder
   OperationsList,
   ValidationPanel,
   operationThemes
-} from '@artificer/hellbat'
+} from '@artificer/worldbuilder'
 ```
 
 ---
@@ -963,11 +963,11 @@ import {
 ### Example Migration
 ```typescript
 // OLD
-import { CandidateDiff } from '@/components/fableforge/comparison/CandidateDiff'
+import { CandidateDiff } from '@/components/translator/comparison/CandidateDiff'
 
 // NEW
 import { DiffViewer } from '@artificer/ui'
-import { specialistThemes } from '@artificer/fableforge'
+import { specialistThemes } from '@artificer/translator'
 
 // Both work during transition
 ```
@@ -997,7 +997,7 @@ import { specialistThemes } from '@artificer/fableforge'
 
 ## Conclusion
 
-**Artificer UI** consolidates FableForge and Hellbat into a cohesive, reusable library that:
+**Artificer UI** consolidates Translator and Worldbuilder into a cohesive, reusable library that:
 
 ✅ Reduces code duplication by 30-40%
 ✅ Provides consistent developer experience

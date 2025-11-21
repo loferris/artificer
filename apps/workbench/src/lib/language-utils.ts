@@ -1,5 +1,5 @@
 /**
- * Language utilities for FableForge components
+ * Language utilities for Translator components
  * Used in: TranslationJobCard, MetadataExplorer
  */
 

@@ -1,5 +1,5 @@
 /**
- * Diff Engine for FableForge
+ * Diff Engine for Translator
  *
  * Provides text diffing capabilities at word, sentence, and paragraph level
  * Used in: CandidateComparison, CandidateDiff, InteractiveDiff, ABTestComparison

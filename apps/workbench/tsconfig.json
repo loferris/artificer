@@ -6,8 +6,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "@artificer/ui": ["../../packages/ui/src"],
-      "@artificer/fableforge": ["../../packages/fableforge/src"],
-      "@artificer/hellbat": ["../../packages/hellbat/src"]
+      "@artificer/translator": ["../../packages/translator/src"],
+      "@artificer/worldbuilder": ["../../packages/worldbuilder/src"]
     },
     "incremental": true,
     "plugins": [
