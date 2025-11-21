@@ -6,8 +6,8 @@ Production-ready API key authentication with IP whitelisting for the AI Workflow
 
 The authentication system provides two-tier access control:
 
-- **Demo Mode** (Vercel): No authentication required - public access for demos
-- **Production Mode** (Digital Ocean/VPS): API key + IP whitelist required
+- **Demo Mode**: No authentication required - public access for demos
+- **Production Mode**: API key + IP whitelist required
 
 ## Architecture
 
@@ -53,7 +53,7 @@ IP_WHITELIST=192.168.1.1,203.0.113.0
 ADMIN_EMAIL=admin@example.com
 ```
 
-### Demo Mode (Vercel)
+### Demo Mode
 
 ```bash
 REQUIRE_AUTH=false  # or omit entirely
@@ -61,7 +61,7 @@ REQUIRE_AUTH=false  # or omit entirely
 
 All endpoints work without authentication.
 
-### Production Mode (Digital Ocean/VPS)
+### Production Mode
 
 ```bash
 REQUIRE_AUTH=true
@@ -234,7 +234,7 @@ curl -H "Authorization: Bearer sk_xxx..." \
 - [ ] Configure LibreChat/Open WebUI with API key
 - [ ] Set up monitoring alerts
 
-### Demo Deployment (Vercel)
+### Demo Deployment
 
 - [ ] Ensure `REQUIRE_AUTH` is not set or set to `false`
 - [ ] Deploy without API key requirements
