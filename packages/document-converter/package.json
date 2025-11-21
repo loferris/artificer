@@ -1,0 +1,82 @@
+{
+  "name": "@artificer/document-converter",
+  "version": "0.1.0",
+  "description": "A format-agnostic document conversion library using Portable Text as the intermediate format. Supports Obsidian, Notion, Roam, and more.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types/index.ts"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "QUICKSTART.md",
+    "ADAPTER_GUIDE.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build && npm test",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ci": "vitest run --coverage"
+  },
+  "keywords": [
+    "document",
+    "converter",
+    "markdown",
+    "notion",
+    "obsidian",
+    "roam",
+    "portable-text",
+    "pandoc",
+    "format-converter",
+    "knowledge-management",
+    "pkm",
+    "roam-research",
+    "obsidian-md"
+  ],
+  "author": "AI Workflow Engine Contributors",
+  "license": "BUSL-1.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/ai-workflow-engine.git",
+    "directory": "lib/document-converter"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/ai-workflow-engine/issues"
+  },
+  "homepage": "https://github.com/yourusername/ai-workflow-engine/tree/main/lib/document-converter#readme",
+  "peerDependencies": {
+    "remark": "^15.0.0",
+    "remark-frontmatter": "^5.0.0",
+    "remark-gfm": "^4.0.0",
+    "remark-parse": "^11.0.0",
+    "remark-stringify": "^11.0.0",
+    "unified": "^11.0.0"
+  },
+  "dependencies": {
+    "@portabletext/types": "^3.0.0",
+    "mdast-util-from-markdown": "^2.0.2",
+    "mdast-util-frontmatter": "^2.0.1",
+    "mdast-util-to-markdown": "^2.1.2",
+    "pdf-parse": "^1.1.1",
+    "sharp": "^0.33.5",
+    "unist-builder": "^4.0.0",
+    "unist-util-visit": "^5.0.0",
+    "yaml": "^2.8.1"
+  },
+  "devDependencies": {
+    "@types/mdast": "^4.0.4",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

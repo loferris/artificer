@@ -1,21 +1,6 @@
 # AI Workflow Engine
 
-**[View Live Demo](https://ai-workflow-engine.vercel.app/) - Full-featured demo without API dependencies**
-
 A structured conversation system for AI models that transforms scattered chat sessions into organized, exportable knowledge. Built to solve workflow fragmentation across multiple AI models and interfaces while preserving conversation context and insights.
-
-## 🎯 Demo Features
-
-The **live demo** showcases all major features without requiring API keys or database setup:
-
-- **🎨 Modern Chat UI**: Clean, focused interface optimized for research and writing workflows
-- **📁 Project Organization**: Projects displayed in sidebar with conversations grouped by project
-- **🔍 RAG Transparency**: Inline source attribution showing which documents informed AI responses
-- **📱 Responsive Design**: Works seamlessly across desktop, tablet, and mobile devices
-- **💾 Export Functionality**: Download conversations in Markdown or JSON formats
-- **📚 Document Management**: Upload and organize documents within projects for context-aware conversations
-
-**Try the demo**: Explore project-based conversations and see how RAG enhances AI responses with document context!
 
 ## What This System Does
 
@@ -46,7 +31,7 @@ The system is designed API-first with a clean service layer, making it suitable 
 - Type-safe API layer with tRPC
 - **Standalone orchestration server** for external integrations (Python, CLI tools, etc.)
 - Comprehensive rate limiting and session management
-- **592 tests** with full test coverage for critical components
+- **880+ tests** with full test coverage for critical components
 - **Project & document management** for organizing conversations and knowledge
 
 **User Interface**
@@ -73,7 +58,7 @@ The system is designed API-first with a clean service layer, making it suitable 
 - **Real-time**: WebSocket subscriptions + SSE endpoints with unified ChatService backend
 - **AI Integration**: OpenRouter API supporting multiple models (Claude, DeepSeek, Qwen, etc.) + OpenAI for embeddings
 - **Token Management**: tiktoken for accurate token counting and context window management
-- **Testing**: Vitest with 546 tests and comprehensive coverage
+- **Testing**: Vitest with 880+ tests and comprehensive coverage
 - **Styling**: Tailwind CSS 3.4 with responsive design
 - **Logging**: Centralized clientLogger (frontend) + structured pino logger (backend)
 
@@ -114,7 +99,7 @@ The service layer is designed for integration with external tools:
 - Project-first conversation organization
 - Cost optimization and tracking with real-time usage monitoring
 - Professional logging (clientLogger + pino)
-- 592 automated tests with comprehensive coverage
+- 880+ automated tests with comprehensive coverage
 
 **🔄 Backend Complete, Frontend In Progress**
 - Conversation branching system (database schema and services ready)
@@ -252,7 +237,7 @@ npm run test:ui
 npm test -- src/components/__tests__/CostTracker.test.tsx
 ```
 
-**Current Test Coverage**: 592 tests across 45 test files covering:
+**Current Test Coverage**: 800+ tests across 55+ test files covering:
 - Component functionality and rendering
 - Service layer business logic (70-100% coverage for core services)
 - API endpoints and error handling
