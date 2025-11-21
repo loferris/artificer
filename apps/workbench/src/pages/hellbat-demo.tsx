@@ -1,14 +1,24 @@
 import React, { useState } from 'react'
+import dynamic from 'next/dynamic'
 import { StreamingMessage } from '@/components/hellbat/chat/StreamingMessage'
 import { SourceAttribution } from '@/components/hellbat/chat/SourceAttribution'
-import { ValidationPanel } from '@/components/hellbat/validation/ValidationPanel'
-import { OperationsList } from '@/components/hellbat/operations/OperationsList'
-import { OperationDiff } from '@/components/hellbat/operations/OperationDiff'
-import { WorldExportDialog } from '@/components/hellbat/utilities/WorldExportDialog'
 import { Button } from '@/components/ui/button'
 import type { Source } from '@/components/hellbat/chat/SourceAttribution'
-import type { ValidationResult } from '@/lib/validation-utils'
-import type { Operation } from '@/lib/operation-utils'
+import type { ValidationResult, Operation } from '@artificer/hellbat'
+
+// Lazy load heavy components
+const ValidationPanel = dynamic(() => import('@/components/hellbat/validation/ValidationPanel').then(mod => ({ default: mod.ValidationPanel })), {
+  loading: () => <div className="p-8 text-center text-gray-500">Loading validation...</div>
+})
+const OperationsList = dynamic(() => import('@/components/hellbat/operations/OperationsList').then(mod => ({ default: mod.OperationsList })), {
+  loading: () => <div className="p-8 text-center text-gray-500">Loading operations...</div>
+})
+const OperationDiff = dynamic(() => import('@/components/hellbat/operations/OperationDiff').then(mod => ({ default: mod.OperationDiff })), {
+  loading: () => <div className="p-8 text-center text-gray-500">Loading diff...</div>
+})
+const WorldExportDialog = dynamic(() => import('@/components/hellbat/utilities/WorldExportDialog').then(mod => ({ default: mod.WorldExportDialog })), {
+  loading: () => <div>Loading...</div>
+})
 
 /**
  * Hellbat Component Demo Page

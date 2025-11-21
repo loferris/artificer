@@ -179,8 +179,7 @@ export class DocumentService {
 
   async searchContent(projectId: string, query: string, limit = 5): Promise<DocumentSearchResult[]> {
     try {
-      // TODO: Implement proper vector similarity search
-      // For now, we'll do a simple text search
+      // Simple text search fallback - vector similarity search is handled by RAGService
       const documents = await this.prisma.document.findMany({
         where: {
           projectId,

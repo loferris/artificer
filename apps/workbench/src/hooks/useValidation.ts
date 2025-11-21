@@ -4,14 +4,14 @@ import {
   type Severity,
   groupBySeverity,
   groupByValidator,
-  groupByEntity,
+  groupValidationsByEntity as groupByEntity,
   filterBySeverity,
   filterFixable,
   getValidationCounts,
   hasErrors,
   isValid as checkIsValid,
   sortBySeverity
-} from '@/lib/validation-utils'
+} from '@artificer/hellbat'
 
 export interface UseValidationOptions {
   initialResults?: ValidationResult[]

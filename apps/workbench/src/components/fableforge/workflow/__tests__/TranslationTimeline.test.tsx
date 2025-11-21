@@ -7,8 +7,8 @@ describe('TranslationTimeline', () => {
     {
       id: '1',
       title: 'Novel Chapter 1',
-      sourceLang: 'en',
-      targetLang: 'ja',
+      sourceLang: 'eng',
+      targetLang: 'jpn',
       status: 'completed' as const,
       createdAt: new Date('2024-01-15'),
       completedAt: new Date('2024-01-15'),
@@ -21,8 +21,8 @@ describe('TranslationTimeline', () => {
     {
       id: '2',
       title: 'Novel Chapter 2',
-      sourceLang: 'en',
-      targetLang: 'ja',
+      sourceLang: 'eng',
+      targetLang: 'jpn',
       status: 'running' as const,
       createdAt: new Date('2024-01-16'),
       wordCount: 1200
@@ -30,8 +30,8 @@ describe('TranslationTimeline', () => {
     {
       id: '3',
       title: 'Novel Chapter 3',
-      sourceLang: 'en',
-      targetLang: 'ja',
+      sourceLang: 'eng',
+      targetLang: 'jpn',
       status: 'failed' as const,
       createdAt: new Date('2024-01-17'),
       error: 'API timeout'
@@ -71,7 +71,7 @@ describe('TranslationTimeline', () => {
   it('shows cost information', () => {
     render(<TranslationTimeline jobs={mockJobs} />)
 
-    expect(screen.getByText('$0.50')).toBeInTheDocument()
+    expect(screen.getByText('$0.5000')).toBeInTheDocument()
   })
 
   it('displays quality scores', () => {
@@ -227,8 +227,8 @@ describe('TranslationTimeline', () => {
       {
         id: '1',
         title: 'Simple Job',
-        sourceLang: 'en',
-        targetLang: 'ja',
+        sourceLang: 'eng',
+        targetLang: 'jpn',
         status: 'pending' as const,
         createdAt: new Date()
       }

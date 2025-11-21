@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { isClientSideDemo } from '../utils/demo';
 
 export const DemoBanner: React.FC = () => {
   const [showBanner, setShowBanner] = useState(false);
@@ -9,10 +10,10 @@ export const DemoBanner: React.FC = () => {
 
     // Check demo mode on client side only to avoid hydration mismatch
     const hostname = typeof window !== 'undefined' ? window.location?.hostname : undefined;
-    const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true' ||
-                       (hostname && (hostname.includes('vercel.app') || hostname.includes('demo')));
+    const isDemo = isClientSideDemo() ||
+                   (hostname && hostname.includes('demo'));
 
-    setShowBanner(Boolean(isDemoMode));
+    setShowBanner(Boolean(isDemo));
   }, []);
 
   // Don't render anything on server side or if not demo mode

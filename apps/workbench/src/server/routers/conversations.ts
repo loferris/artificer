@@ -2,22 +2,21 @@ import { z } from 'zod';
 import { router, publicProcedure, protectedProcedure } from '../../server/trpc';
 import { TRPCError } from '@trpc/server';
 import { createServicesFromContext } from '../services/ServiceFactory';
+import { isDemoMode } from '../../utils/demo';
 
 // Helper function to ensure user exists in demo mode
 function ensureDemoUser(ctx: any) {
-  const isDemoMode = process.env.DEMO_MODE === 'true' || 
-                    process.env.NEXT_PUBLIC_DEMO_MODE === 'true' || 
-                    !ctx.db;
+  const isDemo = isDemoMode() || !ctx.db;
   
   let user = ctx.user;
-  if (!user && isDemoMode) {
+  if (!user && isDemo) {
     user = {
       id: 'demo-user',
       sessionId: 'demo-session',
     };
   }
 
-  if (!user && !isDemoMode) {
+  if (!user && !isDemo) {
     throw new TRPCError({
       code: 'UNAUTHORIZED',
       message: 'Session required',

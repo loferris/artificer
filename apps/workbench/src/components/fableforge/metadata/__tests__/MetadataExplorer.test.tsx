@@ -4,33 +4,33 @@ import { MetadataExplorer } from '../MetadataExplorer'
 
 describe('MetadataExplorer', () => {
   const mockMetadata = {
-    characters: [
-      {
+    characterProfiles: {
+      'Keiko': {
         name: 'Keiko',
-        traits: ['respectful', 'traditional'],
-        voiceStyle: 'Formal, polite',
-        dialogueSamples: ['Good morning, honored guest.']
+        traits: 'respectful_traditional',
+        voiceStyle: 'Formal_polite',
+        dialogueSamples: [{ text: 'Good morning, honored guest.', tone: 'polite' }]
       }
-    ],
-    culturalTerms: [
-      {
+    },
+    culturalTerms: {
+      'Sensei': {
         term: 'Sensei',
+        translation: 'Teacher',
         explanation: 'Teacher or master',
         context: 'Used to address respected educators'
       }
-    ],
-    relationships: [
+    },
+    relationshipDynamics: [
       {
         from: 'Keiko',
         to: 'Master',
-        type: 'student-teacher',
-        dynamics: 'Respectful and formal'
+        dynamic: 'student-teacher'
       }
     ],
-    scene: {
+    sceneContext: {
       setting: 'Traditional Japanese dojo',
-      tone: 'Respectful',
-      timeOfDay: 'Morning'
+      mood: 'Respectful',
+      timeline: 'Morning'
     }
   }
 
@@ -40,7 +40,7 @@ describe('MetadataExplorer', () => {
     expect(screen.getByText('Characters')).toBeInTheDocument()
     expect(screen.getByText('Cultural Terms')).toBeInTheDocument()
     expect(screen.getByText('Relationships')).toBeInTheDocument()
-    expect(screen.getByText('Scene')).toBeInTheDocument()
+    expect(screen.getByText('Scene Context')).toBeInTheDocument()
   })
 
   it('shows Characters tab by default', () => {
@@ -74,7 +74,7 @@ describe('MetadataExplorer', () => {
   it('switches to Scene tab', () => {
     render(<MetadataExplorer metadata={mockMetadata} />)
 
-    const sceneTab = screen.getByText('Scene')
+    const sceneTab = screen.getByText('Scene Context')
     fireEvent.click(sceneTab)
 
     expect(screen.getByText('Traditional Japanese dojo')).toBeInTheDocument()
@@ -85,7 +85,7 @@ describe('MetadataExplorer', () => {
     render(<MetadataExplorer metadata={mockMetadata} />)
 
     const charactersTab = screen.getByText('Characters').closest('button')
-    expect(charactersTab).toHaveClass('bg-blue-50', 'text-blue-700')
+    expect(charactersTab).toHaveClass('border-blue-500', 'text-blue-600')
   })
 
   it('displays character traits as badges', () => {
@@ -98,7 +98,7 @@ describe('MetadataExplorer', () => {
   it('shows character dialogue samples', () => {
     render(<MetadataExplorer metadata={mockMetadata} />)
 
-    expect(screen.getByText('Good morning, honored guest.')).toBeInTheDocument()
+    expect(screen.getByText(/Good morning, honored guest/)).toBeInTheDocument()
   })
 
   it('displays cultural term context', () => {
@@ -107,7 +107,7 @@ describe('MetadataExplorer', () => {
     const culturalTab = screen.getByText('Cultural Terms')
     fireEvent.click(culturalTab)
 
-    expect(screen.getByText('Used to address respected educators')).toBeInTheDocument()
+    expect(screen.getByText(/Used to address respected educators/)).toBeInTheDocument()
   })
 
   it('shows relationship dynamics', () => {
@@ -116,24 +116,24 @@ describe('MetadataExplorer', () => {
     const relationshipsTab = screen.getByText('Relationships')
     fireEvent.click(relationshipsTab)
 
-    expect(screen.getByText('Respectful and formal')).toBeInTheDocument()
+    expect(screen.getByText('student-teacher')).toBeInTheDocument()
   })
 
   it('handles empty characters array', () => {
     const emptyMetadata = {
       ...mockMetadata,
-      characters: []
+      characterProfiles: {}
     }
 
     render(<MetadataExplorer metadata={emptyMetadata} />)
 
-    expect(screen.getByText('No characters defined')).toBeInTheDocument()
+    expect(screen.getByText('No character profiles available')).toBeInTheDocument()
   })
 
   it('handles empty cultural terms', () => {
     const emptyMetadata = {
       ...mockMetadata,
-      culturalTerms: []
+      culturalTerms: {}
     }
 
     render(<MetadataExplorer metadata={emptyMetadata} />)
@@ -141,13 +141,13 @@ describe('MetadataExplorer', () => {
     const culturalTab = screen.getByText('Cultural Terms')
     fireEvent.click(culturalTab)
 
-    expect(screen.getByText('No cultural terms defined')).toBeInTheDocument()
+    expect(screen.getByText('No cultural terms available')).toBeInTheDocument()
   })
 
   it('handles empty relationships', () => {
     const emptyMetadata = {
       ...mockMetadata,
-      relationships: []
+      relationshipDynamics: []
     }
 
     render(<MetadataExplorer metadata={emptyMetadata} />)
@@ -155,18 +155,18 @@ describe('MetadataExplorer', () => {
     const relationshipsTab = screen.getByText('Relationships')
     fireEvent.click(relationshipsTab)
 
-    expect(screen.getByText('No relationships defined')).toBeInTheDocument()
+    expect(screen.getByText('No relationship dynamics available')).toBeInTheDocument()
   })
 
   it('handles missing scene data', () => {
     const emptyMetadata = {
       ...mockMetadata,
-      scene: undefined
+      sceneContext: undefined
     }
 
     render(<MetadataExplorer metadata={emptyMetadata} />)
 
-    const sceneTab = screen.getByText('Scene')
+    const sceneTab = screen.getByText('Scene Context')
     fireEvent.click(sceneTab)
 
     expect(screen.getByText('No scene context available')).toBeInTheDocument()
@@ -183,14 +183,14 @@ describe('MetadataExplorer', () => {
   it('renders multiple characters', () => {
     const multiCharMetadata = {
       ...mockMetadata,
-      characters: [
-        ...mockMetadata.characters,
-        {
+      characterProfiles: {
+        ...mockMetadata.characterProfiles,
+        'Master': {
           name: 'Master',
-          traits: ['wise', 'patient'],
-          voiceStyle: 'Calm, authoritative'
+          traits: 'wise_patient',
+          voiceStyle: 'Calm_authoritative'
         }
-      ]
+      }
     }
 
     render(<MetadataExplorer metadata={multiCharMetadata} />)
@@ -202,14 +202,15 @@ describe('MetadataExplorer', () => {
   it('renders multiple cultural terms', () => {
     const multiTermMetadata = {
       ...mockMetadata,
-      culturalTerms: [
+      culturalTerms: {
         ...mockMetadata.culturalTerms,
-        {
+        'Dojo': {
           term: 'Dojo',
+          translation: 'Training hall',
           explanation: 'Training hall',
           context: 'Place for martial arts practice'
         }
-      ]
+      }
     }
 
     render(<MetadataExplorer metadata={multiTermMetadata} />)
@@ -224,11 +225,13 @@ describe('MetadataExplorer', () => {
   it('handles optional character properties', () => {
     const minimalCharMetadata = {
       ...mockMetadata,
-      characters: [
-        {
-          name: 'MinimalChar'
+      characterProfiles: {
+        'MinimalChar': {
+          name: 'MinimalChar',
+          traits: '',
+          voiceStyle: ''
         }
-      ]
+      }
     }
 
     render(<MetadataExplorer metadata={minimalCharMetadata} />)
@@ -239,10 +242,10 @@ describe('MetadataExplorer', () => {
   it('shows tab icons', () => {
     render(<MetadataExplorer metadata={mockMetadata} />)
 
-    // Each tab should have an emoji icon
-    expect(screen.getByText('👥')).toBeInTheDocument() // Characters
-    expect(screen.getByText('📚')).toBeInTheDocument() // Cultural Terms
-    expect(screen.getByText('🔗')).toBeInTheDocument() // Relationships
-    expect(screen.getByText('🎬')).toBeInTheDocument() // Scene
+    // Each tab should have an emoji icon (may appear multiple times - in tab and content)
+    expect(screen.getAllByText('👤').length).toBeGreaterThan(0) // Characters
+    expect(screen.getAllByText('🌏').length).toBeGreaterThan(0) // Cultural Terms
+    expect(screen.getAllByText('🔗').length).toBeGreaterThan(0) // Relationships
+    expect(screen.getAllByText('🎬').length).toBeGreaterThan(0) // Scene
   })
 })

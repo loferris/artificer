@@ -1,20 +1,20 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { BadgeGroup } from '@/components/shared/BadgeGroup'
-import { StatusBadge } from '@/components/shared/StatusBadge'
-import { cn } from '@/lib/cn'
+import { BadgeGroup } from '@artificer/ui'
+import { StatusBadge } from '@artificer/ui'
+import { cn } from '@artificer/ui'
 import {
   type Operation,
-  getOperationTheme,
+  operationThemes,
   formatOperation,
   groupByIntent,
   groupByEntity,
   groupBySession
-} from '@/lib/operation-utils'
-import { formatTimeAgo } from '@/lib/time-utils'
-import { getSeverityTheme } from '@/lib/validation-utils'
-import { createComponentLogger } from '@/lib/componentLogger'
+} from '@artificer/hellbat'
+import { formatTimeAgo } from '@artificer/ui'
+import { validationThemes } from '@artificer/hellbat'
+import { createComponentLogger } from '@artificer/ui'
 
 const logger = createComponentLogger('OperationsList')
 
@@ -52,17 +52,18 @@ export function OperationsList({
 }: OperationsListProps) {
   const [expandedOps, setExpandedOps] = useState<Set<string>>(new Set())
 
+  const initialPropsRef = useRef({ operationsLength: operations.length, format, groupBy })
   useEffect(() => {
+    const { operationsLength, format: initialFormat, groupBy: initialGroupBy } = initialPropsRef.current
     logger.lifecycle('OperationsList', 'mount', {
-      operationsCount: operations.length,
-      format,
-      groupBy
+      operationsCount: operationsLength,
+      format: initialFormat,
+      groupBy: initialGroupBy
     })
 
     return () => {
       logger.lifecycle('OperationsList', 'unmount')
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Only run on mount/unmount for lifecycle logging
 
   const toggleOperation = (opId: string) => {
@@ -112,7 +113,7 @@ export function OperationsList({
   const displayOps = maxItems ? operations.slice(0, maxItems) : operations
 
   const renderOperation = (operation: Operation, index: number) => {
-    const theme = getOperationTheme(operation.intent)
+    const theme = operationThemes.get(operation.intent)!
     const isExpanded = expandedOps.has(operation.id)
     const hasValidation = showValidation && operation.validation && operation.validation.length > 0
     const hasErrors = hasValidation && operation.validation!.some(v => v.severity === 'error')
@@ -224,7 +225,7 @@ export function OperationsList({
               {hasValidation && isExpanded && (
                 <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
                   {operation.validation!.map((validation) => {
-                    const vTheme = getSeverityTheme(validation.severity)
+                    const vTheme = validationThemes.get(validation.severity)!
                     return (
                       <div
                         key={validation.id}

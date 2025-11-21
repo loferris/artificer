@@ -3,14 +3,16 @@ import React, { Component } from 'react';
 import type { AppProps } from 'next/app';
 import { trpc } from '../lib/trpc/client';
 import { DemoBanner } from '../components/DemoBanner';
+import { Navigation } from '../components/layout/Navigation';
 import { clientLogger } from '../utils/clientLogger';
 import '../styles/index.css';
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
     <ErrorBoundary>
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-gray-50">
         <DemoBanner />
+        <Navigation />
         <Component {...pageProps} />
       </div>
     </ErrorBoundary>

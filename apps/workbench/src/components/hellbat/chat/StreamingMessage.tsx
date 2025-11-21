@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
-import { cn } from '@/lib/cn'
-import { createComponentLogger } from '@/lib/componentLogger'
+import { cn } from '@artificer/ui'
+import { createComponentLogger } from '@artificer/ui'
 
 const logger = createComponentLogger('StreamingMessage')
 
@@ -39,17 +39,18 @@ export function StreamingMessage({
   const [displayedContent, setDisplayedContent] = useState(content)
   const [previousStatus, setPreviousStatus] = useState(status)
 
+  const initialPropsRef = useRef({ messageRole, status, contentLength: content.length })
   useEffect(() => {
+    const { messageRole: initialRole, status: initialStatus, contentLength } = initialPropsRef.current
     logger.lifecycle('StreamingMessage', 'mount', {
-      messageRole,
-      status,
-      contentLength: content.length
+      messageRole: initialRole,
+      status: initialStatus,
+      contentLength
     })
 
     return () => {
       logger.lifecycle('StreamingMessage', 'unmount')
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Only run on mount/unmount for lifecycle logging
 
   // Update displayed content when content changes
@@ -110,7 +111,7 @@ export function StreamingMessage({
 
         {/* Role indicator */}
         <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
-          <span className="capitalize">{role}</span>
+          <span className="capitalize">{messageRole}</span>
           {isStreaming && (
             <>
               <span>•</span>

@@ -152,14 +152,13 @@ export function DiffViewer<T>({
     return getSimilarityScore(beforeText, afterText)
   }, [beforeText, afterText])
 
-  const renderDiffText = (type: 'before' | 'after') => {
+  // Memoize diff rendering for both before and after views
+  const beforeDiffContent = useMemo(() => {
     return diffSegments.map((seg, idx) => {
-      // Skip segments not relevant to this view
-      if (type === 'before' && seg.type === 'added') return null
-      if (type === 'after' && seg.type === 'removed') return null
+      // Skip segments not relevant to before view
+      if (seg.type === 'added') return null
 
       let bgColor = ''
-      if (seg.type === 'added') bgColor = 'bg-green-100'
       if (seg.type === 'removed') bgColor = 'bg-red-100'
       if (seg.type === 'modified') bgColor = 'bg-yellow-100'
 
@@ -169,6 +168,27 @@ export function DiffViewer<T>({
         </span>
       )
     })
+  }, [diffSegments])
+
+  const afterDiffContent = useMemo(() => {
+    return diffSegments.map((seg, idx) => {
+      // Skip segments not relevant to after view
+      if (seg.type === 'removed') return null
+
+      let bgColor = ''
+      if (seg.type === 'added') bgColor = 'bg-green-100'
+      if (seg.type === 'modified') bgColor = 'bg-yellow-100'
+
+      return (
+        <span key={idx} className={bgColor}>
+          {seg.value}
+        </span>
+      )
+    })
+  }, [diffSegments])
+
+  const renderDiffText = (type: 'before' | 'after') => {
+    return type === 'before' ? beforeDiffContent : afterDiffContent
   }
 
   return (

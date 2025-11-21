@@ -2,6 +2,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '../../../server/db/client';
 import { logger } from '../../../server/utils/logger';
+import { isServerSideDemo } from '../../../utils/demo';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -10,9 +11,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     // Check if database is available
-    const isDemoMode = process.env.DEMO_MODE === 'true' || !prisma;
+    const isDemo = isServerSideDemo() || !prisma;
 
-    if (isDemoMode) {
+    if (isDemo) {
       return res.status(200).json({
         message: 'Metrics not available in demo mode',
         demoMode: true,

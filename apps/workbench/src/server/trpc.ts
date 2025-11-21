@@ -7,6 +7,7 @@ import { createRateLimitMiddleware, RATE_LIMITS } from './middleware/rateLimiter
 import { logger } from './utils/logger';
 import { ApiKeyService } from './services/auth';
 import { initializeServer } from './init';
+import { isDemoMode } from '../utils/demo';
 
 /**
  * Get client IP address from request
@@ -73,10 +74,9 @@ export const createContext = async (opts: CreateNextContextOptions) => {
     });
 
     // In demo mode, skip database testing entirely
-    const isDemoMode =
-      process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+    const isDemo = isDemoMode();
 
-    if (!isDemoMode && process.env.NODE_ENV === 'production') {
+    if (!isDemo && process.env.NODE_ENV === 'production') {
       try {
         await prisma.$queryRaw`SELECT 1`;
       } catch (dbError) {
@@ -88,7 +88,7 @@ export const createContext = async (opts: CreateNextContextOptions) => {
     // API key validation (if auth is required)
     let authenticatedUser: { id: string; keyId: string; scopes: string[] } | null = null;
 
-    if (isAuthRequired() && !isDemoMode) {
+    if (isAuthRequired() && !isDemo) {
       // Extract API key from Authorization header
       const authHeader = opts.req.headers.authorization;
 
@@ -110,7 +110,7 @@ export const createContext = async (opts: CreateNextContextOptions) => {
     return {
       req: opts.req,
       res: opts.res,
-      db: isDemoMode ? null : prisma, // Don't provide prisma in demo mode
+      db: isDemo ? null : prisma, // Don't provide prisma in demo mode
       user,
       authenticatedUser, // API key auth
       clientIp,
@@ -120,14 +120,13 @@ export const createContext = async (opts: CreateNextContextOptions) => {
     logger.error('Context creation failed', error as Error);
 
     // Return a minimal context to prevent complete failure
-    const isDemoMode =
-      process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+    const isDemo = isDemoMode();
     const controller = new AbortController();
 
     return {
       req: opts.req,
       res: opts.res,
-      db: isDemoMode ? null : prisma, // Don't provide prisma in demo mode
+      db: isDemo ? null : prisma, // Don't provide prisma in demo mode
       user: null,
       authenticatedUser: null,
       clientIp: getClientIp(opts.req),
@@ -209,10 +208,7 @@ const rateLimitMiddleware = t.middleware(({ ctx, next, path }) => {
 // Authentication middleware
 const authMiddleware = t.middleware(({ ctx, next }) => {
   // Skip auth check if auth is not required or in demo mode
-  const isDemoMode =
-    process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
-
-  if (!isAuthRequired() || isDemoMode) {
+  if (!isAuthRequired() || isDemoMode()) {
     return next();
   }
 

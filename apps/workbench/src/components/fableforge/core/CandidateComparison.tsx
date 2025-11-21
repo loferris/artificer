@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { SpecialistCard } from './SpecialistCard'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { getSpecialistTheme, type SpecialistType } from '@/lib/specialist-theme'
-import { cn } from '@/lib/cn'
-import { createComponentLogger } from '@/lib/componentLogger'
+import { specialistThemes, type SpecialistType } from '@artificer/fableforge'
+import { cn } from '@artificer/ui'
+import { createComponentLogger } from '@artificer/ui'
 
 const logger = createComponentLogger('CandidateComparison')
 
@@ -41,7 +41,7 @@ export interface CandidateComparisonProps {
  * - "Use as base" button
  * - Visual indicator for final synthesis
  */
-export function CandidateComparison({
+export const CandidateComparison = React.memo(function CandidateComparison({
   candidates,
   finalSynthesis,
   onRate,
@@ -53,17 +53,22 @@ export function CandidateComparison({
   const [focusedId, setFocusedId] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
+  const initialPropsRef = useRef({
+    candidatesCount: candidates.length,
+    hasFinalSynthesis: !!finalSynthesis,
+    layout
+  })
   useEffect(() => {
+    const { candidatesCount, hasFinalSynthesis, layout: initialLayout } = initialPropsRef.current
     logger.lifecycle('CandidateComparison', 'mount', {
-      candidatesCount: candidates.length,
-      hasFinalSynthesis: !!finalSynthesis,
-      layout
+      candidatesCount,
+      hasFinalSynthesis,
+      layout: initialLayout
     })
 
     return () => {
       logger.lifecycle('CandidateComparison', 'unmount')
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Only run on mount/unmount for lifecycle logging
 
   const gridClasses = {
@@ -188,7 +193,7 @@ export function CandidateComparison({
         <Card className="border-2 border-emerald-200 bg-emerald-50/30">
           <CardHeader className="border-b border-emerald-200">
             <div className="flex items-center gap-2">
-              <span className="text-2xl">{getSpecialistTheme('final_synthesis').icon}</span>
+              <span className="text-2xl">{specialistThemes.get('final_synthesis')!.icon}</span>
               <div>
                 <h3 className="font-semibold">Final Synthesis</h3>
                 <p className="text-xs text-gray-600">
@@ -224,4 +229,5 @@ export function CandidateComparison({
       </div>
     </div>
   )
-}
+})
+CandidateComparison.displayName = 'CandidateComparison'

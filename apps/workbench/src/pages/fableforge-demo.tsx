@@ -1,17 +1,35 @@
 import React, { useState } from 'react'
+import dynamic from 'next/dynamic'
 import { PipelineProgress } from '@/components/fableforge/core/PipelineProgress'
 import { SpecialistCard } from '@/components/fableforge/core/SpecialistCard'
 import { TranslationJobCard } from '@/components/fableforge/core/TranslationJobCard'
-import { CandidateComparison, type Candidate } from '@/components/fableforge/core/CandidateComparison'
-import { CandidateDiff } from '@/components/fableforge/comparison/CandidateDiff'
-import { MetadataExplorer } from '@/components/fableforge/metadata/MetadataExplorer'
-import { ExportDialog } from '@/components/fableforge/utilities/ExportDialog'
-import { QualityMetrics } from '@/components/fableforge/analytics/QualityMetrics'
-import { CostTracker } from '@/components/fableforge/analytics/CostTracker'
-import { TranslationTimeline } from '@/components/fableforge/workflow/TranslationTimeline'
 import { Button } from '@/components/ui/button'
 import type { PipelineStage } from '@/components/fableforge/core/PipelineProgress'
 import type { TranslationJob } from '@/components/fableforge/core/TranslationJobCard'
+import type { Candidate } from '@/components/fableforge/core/CandidateComparison'
+
+// Lazy load heavy components
+const CandidateComparison = dynamic(() => import('@/components/fableforge/core/CandidateComparison').then(mod => ({ default: mod.CandidateComparison })), {
+  loading: () => <div className="p-8 text-center text-gray-500">Loading comparison...</div>
+})
+const CandidateDiff = dynamic(() => import('@/components/fableforge/comparison/CandidateDiff').then(mod => ({ default: mod.CandidateDiff })), {
+  loading: () => <div className="p-8 text-center text-gray-500">Loading diff...</div>
+})
+const MetadataExplorer = dynamic(() => import('@/components/fableforge/metadata/MetadataExplorer').then(mod => ({ default: mod.MetadataExplorer })), {
+  loading: () => <div className="p-8 text-center text-gray-500">Loading metadata...</div>
+})
+const ExportDialog = dynamic(() => import('@/components/fableforge/utilities/ExportDialog').then(mod => ({ default: mod.ExportDialog })), {
+  loading: () => <div>Loading...</div>
+})
+const QualityMetrics = dynamic(() => import('@/components/fableforge/analytics/QualityMetrics').then(mod => ({ default: mod.QualityMetrics })), {
+  loading: () => <div className="p-8 text-center text-gray-500">Loading metrics...</div>
+})
+const CostTracker = dynamic(() => import('@/components/fableforge/analytics/CostTracker').then(mod => ({ default: mod.CostTracker })), {
+  loading: () => <div className="p-8 text-center text-gray-500">Loading cost tracker...</div>
+})
+const TranslationTimeline = dynamic(() => import('@/components/fableforge/workflow/TranslationTimeline').then(mod => ({ default: mod.TranslationTimeline })), {
+  loading: () => <div className="p-8 text-center text-gray-500">Loading timeline...</div>
+})
 
 /**
  * FableForge Component Demo Page

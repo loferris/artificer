@@ -11,12 +11,17 @@ export interface CostItem {
 /**
  * Format a cost amount as USD with appropriate precision
  */
-export function formatCost(amount: number, precision: number = 4): string {
+export function formatCost(amount: number, precision?: number): string {
   if (amount === 0) return '$0.00'
+
+  // If precision is explicitly provided, use it
+  if (precision !== undefined) {
+    return `$${amount.toFixed(precision)}`
+  }
 
   // For very small amounts, use more precision
   if (amount < 0.01) {
-    return `$${amount.toFixed(precision)}`
+    return `$${amount.toFixed(4)}`
   }
 
   // For larger amounts, use 2 decimal places
@@ -24,8 +29,8 @@ export function formatCost(amount: number, precision: number = 4): string {
     return `$${amount.toFixed(2)}`
   }
 
-  // For amounts between 0.01 and 1, use 3-4 decimal places
-  return `$${amount.toFixed(Math.min(precision, 4))}`
+  // For amounts between 0.01 and 1, use 4 decimal places
+  return `$${amount.toFixed(4)}`
 }
 
 /**
@@ -46,8 +51,9 @@ export function compareCosts(
   const diff = costA - costB
 
   if (format === 'absolute') {
-    const sign = diff >= 0 ? '+' : ''
-    return `${sign}${formatCost(diff)}`
+    const sign = diff >= 0 ? '+' : '-'
+    const absDiff = Math.abs(diff)
+    return `${sign}${formatCost(absDiff)}`
   }
 
   if (costB === 0) return 'N/A'
@@ -100,7 +106,8 @@ export function calculateRemainingBudget(spent: number, budget: number): {
   status: 'safe' | 'warning' | 'critical'
 } {
   const remaining = budget - spent
-  const percentage = (spent / budget) * 100
+  // Round to avoid floating point precision issues
+  const percentage = Math.round((spent / budget) * 100 * 100) / 100
 
   let status: 'safe' | 'warning' | 'critical'
   if (percentage < 70) {

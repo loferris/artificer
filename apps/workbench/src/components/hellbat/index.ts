@@ -26,11 +26,8 @@ export type { OperationDiffProps } from './operations/OperationDiff'
 export { WorldExportDialog } from './utilities/WorldExportDialog'
 export type { WorldExportDialogProps, WorldExportFormat, WorldExportOptions } from './utilities/WorldExportDialog'
 
-// Re-export shared components from FableForge
-export { CopyButton } from '../shared/CopyButton'
-export { StatusBadge } from '../shared/StatusBadge'
-export { BadgeGroup } from '../shared/BadgeGroup'
-export { ExpandableSection } from '../shared/ExpandableSection'
+// Re-export shared components from @artificer/ui
+export { CopyButton, StatusBadge, BadgeGroup, ExpandableSection, type Status } from '@artificer/ui'
 
 // Re-export UI components
 export { Badge } from '../ui/badge'
@@ -43,8 +40,7 @@ export { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, Dialog
 export {
   type Operation,
   type OperationIntent,
-  type OperationTheme,
-  getOperationTheme,
+  operationThemes,
   formatOperation,
   groupByIntent,
   groupByEntity,
@@ -56,18 +52,19 @@ export {
   getUniqueEntities,
   getOperationsForEntity,
   sortByTimestamp,
-  parseOperationsFromText
-} from '@/lib/operation-utils'
+  parseOperationsFromText,
+  isOperationIntent,
+  getAllOperationIntents
+} from '@artificer/hellbat'
 
 export {
   type ValidationResult,
   type Severity,
-  type SeverityTheme,
-  severityTheme,
-  getSeverityTheme,
+  type GroupedValidation,
+  validationThemes,
   groupBySeverity,
   groupByValidator,
-  groupByEntity as groupValidationsByEntity,
+  groupValidationsByEntity,
   filterBySeverity,
   filterFixable,
   getValidationCounts,
@@ -75,8 +72,14 @@ export {
   isValid,
   getHighestSeverity,
   sortBySeverity,
-  formatValidationSummary
-} from '@/lib/validation-utils'
+  formatValidationSummary,
+  getSeverityIcon,
+  getSeverityLabel,
+  getSeverityColorClass,
+  isSeverity,
+  getAllSeverities,
+  getSeverityOrder
+} from '@artificer/hellbat'
 
 export {
   type StreamChunk,
@@ -88,10 +91,10 @@ export {
 } from '@/lib/streaming-utils'
 
 // Re-export time-utils from FableForge
-export { formatTimeAgo, formatDuration, formatTimestamp } from '@/lib/time-utils'
+export { formatTimeAgo, formatDuration, formatTimestamp } from '@artificer/ui'
 
 // Re-export diff-engine from FableForge
-export { computeDiff, getSimilarityScore, highlightDifferences } from '@/lib/diff-engine'
+export { computeDiff, getSimilarityScore, highlightDifferences } from '@artificer/ui'
 
 // Re-export hooks
 export { useConversation } from '@/hooks/useConversation'
@@ -104,5 +107,5 @@ export { useValidation } from '@/hooks/useValidation'
 export type { UseValidationOptions, UseValidationReturn } from '@/hooks/useValidation'
 
 // Re-export copy hooks from FableForge
-export { useCopyToClipboard } from '@/hooks/useCopyToClipboard'
-export { useExpandable, useMultiExpandable } from '@/hooks/useExpandable'
+export { useCopyToClipboard } from '@artificer/ui'
+export { useExpandable, useMultiExpandable } from '@artificer/ui'

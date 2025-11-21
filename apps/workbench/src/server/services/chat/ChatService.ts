@@ -4,7 +4,7 @@ import { logger } from '../../utils/logger';
 import { TRPCError } from '@trpc/server';
 import type { ConversationService } from '../conversation/ConversationService';
 import type { MessageService } from '../message/MessageService';
-import type { Assistant, AssistantResponse } from '../assistant';
+import type { Assistant, AssistantResponse, ModelCapabilities, ModelHealthCheck } from '../assistant';
 import type { RAGService } from '../rag/RAGService';
 import type { ConversationSummarizationService } from '../summarization/ConversationSummarizationService';
 import { generateDemoResponse } from '../../../utils/demo';
@@ -88,6 +88,26 @@ export interface ChatService {
    * Validate that a user message is acceptable
    */
   validateMessage(content: string): void;
+
+  /**
+   * Get model usage statistics for monitoring
+   */
+  getModelUsageStats(): Array<{ model: string; count: number; percentage: number }>;
+
+  /**
+   * Get model capabilities for monitoring
+   */
+  getModelCapabilities(): Map<string, ModelCapabilities> | Record<string, ModelCapabilities>;
+
+  /**
+   * Check health status of all models
+   */
+  checkAllModelsHealth(): Promise<ModelHealthCheck[]>;
+
+  /**
+   * Get health status for a specific model
+   */
+  getModelHealthStatus(modelId: string): ModelHealthCheck | null;
 }
 
 export class DatabaseChatService implements ChatService {
@@ -479,6 +499,57 @@ export class DatabaseChatService implements ChatService {
   }
 
   /**
+   * Get model usage statistics for monitoring
+   */
+  getModelUsageStats(): Array<{ model: string; count: number; percentage: number }> {
+    return this.assistant.getModelUsageStats?.() || [];
+  }
+
+  /**
+   * Get model capabilities for monitoring
+   */
+  getModelCapabilities(): Map<string, ModelCapabilities> | Record<string, ModelCapabilities> {
+    const capabilities = this.assistant.getModelCapabilities?.();
+    if (!capabilities) {
+      return {};
+    }
+    // If it's a single ModelCapabilities object, wrap it
+    if (!(capabilities instanceof Map) && !('maxTokens' in capabilities)) {
+      return capabilities as Map<string, ModelCapabilities>;
+    }
+    // If it has maxTokens, it's a single capability object - shouldn't happen but handle it
+    if ('maxTokens' in capabilities) {
+      return {};
+    }
+    return capabilities;
+  }
+
+  /**
+   * Check health status of all models
+   */
+  async checkAllModelsHealth(): Promise<ModelHealthCheck[]> {
+    if (!this.assistant.checkAllModelsHealth) {
+      return [];
+    }
+    return this.assistant.checkAllModelsHealth();
+  }
+
+  /**
+   * Get health status for a specific model
+   */
+  getModelHealthStatus(modelId: string): ModelHealthCheck | null {
+    const status = this.assistant.getModelHealthStatus?.(modelId);
+    if (!status) {
+      return null;
+    }
+    // If it's a Map, extract the specific model's status
+    if (status instanceof Map) {
+      return status.get(modelId) || null;
+    }
+    return status;
+  }
+
+  /**
    * Check if conversation needs summarization and trigger it in background
    * Non-blocking - runs asynchronously without waiting
    */
@@ -684,5 +755,21 @@ export class DemoChatService implements ChatService {
         message: 'Message content too long (max 10,000 characters)',
       });
     }
+  }
+
+  getModelUsageStats(): Array<{ model: string; count: number; percentage: number }> {
+    return [{ model: 'demo', count: 1, percentage: 100 }];
+  }
+
+  getModelCapabilities(): Record<string, ModelCapabilities> {
+    return {};
+  }
+
+  async checkAllModelsHealth(): Promise<ModelHealthCheck[]> {
+    return [];
+  }
+
+  getModelHealthStatus(_modelId: string): ModelHealthCheck | null {
+    return null;
   }
 }

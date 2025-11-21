@@ -12,28 +12,15 @@ export const monitoringRouter = router({
   getModelMonitoring: publicProcedure.query(async ({ ctx }) => {
     try {
       const { chatService } = createServicesFromContext(ctx);
-      
-      // Get the assistant instance from the chat service
-      const assistant = (chatService as any).assistant;
-      
-      if (!assistant) {
-        return {
-          usage: [],
-          health: [],
-          capabilities: {},
-          error: 'Assistant not available',
-          timestamp: new Date().toISOString(),
-        };
-      }
 
-      // Collect all monitoring data
-      const usage = assistant.getModelUsageStats?.() || [];
-      const capabilities = assistant.getModelCapabilities?.() || new Map();
-      const health = assistant.checkAllModelsHealth ? await assistant.checkAllModelsHealth() : [];
+      // Collect all monitoring data using proper interface methods
+      const usage = chatService.getModelUsageStats();
+      const capabilities = chatService.getModelCapabilities();
+      const health = await chatService.checkAllModelsHealth();
 
       // Convert capabilities Map to object for JSON serialization
-      const capabilitiesObj = capabilities instanceof Map 
-        ? Object.fromEntries(capabilities) 
+      const capabilitiesObj = capabilities instanceof Map
+        ? Object.fromEntries(capabilities)
         : capabilities;
 
       return {
@@ -59,18 +46,9 @@ export const monitoringRouter = router({
   getUsageStats: publicProcedure.query(async ({ ctx }) => {
     try {
       const { chatService } = createServicesFromContext(ctx);
-      const assistant = (chatService as any).assistant;
-      
-      if (!assistant?.getModelUsageStats) {
-        return { 
-          usage: [], 
-          error: 'Usage stats not available',
-          timestamp: new Date().toISOString(),
-        };
-      }
 
       return {
-        usage: assistant.getModelUsageStats(),
+        usage: chatService.getModelUsageStats(),
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
@@ -88,18 +66,8 @@ export const monitoringRouter = router({
   getHealthStatus: publicProcedure.query(async ({ ctx }) => {
     try {
       const { chatService } = createServicesFromContext(ctx);
-      const assistant = (chatService as any).assistant;
-      
-      if (!assistant?.checkAllModelsHealth) {
-        return { 
-          health: [], 
-          error: 'Health monitoring not available',
-          timestamp: new Date().toISOString(),
-        };
-      }
+      const health = await chatService.checkAllModelsHealth();
 
-      const health = await assistant.checkAllModelsHealth();
-      
       return {
         health,
         timestamp: new Date().toISOString(),
@@ -119,21 +87,11 @@ export const monitoringRouter = router({
   getCapabilities: publicProcedure.query(async ({ ctx }) => {
     try {
       const { chatService } = createServicesFromContext(ctx);
-      const assistant = (chatService as any).assistant;
-      
-      if (!assistant?.getModelCapabilities) {
-        return { 
-          capabilities: {}, 
-          error: 'Capabilities not available',
-          timestamp: new Date().toISOString(),
-        };
-      }
+      const capabilities = chatService.getModelCapabilities();
 
-      const capabilities = assistant.getModelCapabilities();
-      
       // Convert Map to object for JSON serialization
-      const capabilitiesObj = capabilities instanceof Map 
-        ? Object.fromEntries(capabilities) 
+      const capabilitiesObj = capabilities instanceof Map
+        ? Object.fromEntries(capabilities)
         : capabilities;
 
       return {
@@ -157,21 +115,10 @@ export const monitoringRouter = router({
     .mutation(async ({ ctx, input }) => {
       try {
         const { chatService } = createServicesFromContext(ctx);
-        const assistant = (chatService as any).assistant;
-        
-        if (!assistant?.getModelHealthStatus) {
-          return { 
-            health: null, 
-            error: 'Health monitoring not available',
-            timestamp: new Date().toISOString(),
-          };
-        }
+        const health = chatService.getModelHealthStatus(input.modelId);
 
-        // Get current health status for the model
-        const health = assistant.getModelHealthStatus(input.modelId);
-        
         return {
-          health: health instanceof Map ? Object.fromEntries(health) : health,
+          health,
           timestamp: new Date().toISOString(),
         };
       } catch (error) {

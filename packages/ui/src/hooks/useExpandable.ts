@@ -2,7 +2,6 @@ import { useState, useCallback } from 'react'
 
 /**
  * Hook for managing expandable/collapsible state
- * Used in: SpecialistCard, MetadataExplorer, CharacterProfileCard, CollaborationPanel, and 2+ more
  *
  * @param defaultOpen - Initial expanded state
  * @returns Object with state and control functions
@@ -33,6 +32,14 @@ export function useExpandable(defaultOpen: boolean = false) {
     close,
     set
   }
+}
+
+export interface UseExpandableReturn {
+  isOpen: boolean
+  toggle: () => void
+  open: () => void
+  close: () => void
+  set: (value: boolean) => void
 }
 
 /**
@@ -89,4 +96,14 @@ export function useMultiExpandable(defaultOpenIds: string[] = []) {
     openAll,
     closeAll
   }
+}
+
+export interface UseMultiExpandableReturn {
+  openIds: Set<string>
+  toggle: (id: string) => void
+  open: (id: string) => void
+  close: (id: string) => void
+  isOpen: (id: string) => boolean
+  openAll: (ids: string[]) => void
+  closeAll: () => void
 }

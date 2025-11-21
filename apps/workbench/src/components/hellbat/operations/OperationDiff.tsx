@@ -1,7 +1,7 @@
 import { DiffViewer } from '@artificer/ui'
 import { operationThemes, formatOperation, type Operation } from '@artificer/hellbat'
 import { useComponentLogger } from '@artificer/ui'
-import type { DiffGranularity } from '@/lib/diff-engine'
+import type { DiffGranularity } from '@artificer/ui'
 
 export interface OperationDiffProps {
   before: Operation

@@ -184,10 +184,13 @@ Individual specialist translation display.
 ### Specialist Theme
 
 ```tsx
-import { getSpecialistTheme } from '@/lib/specialist-theme'
+import { specialistThemes, getSpecialistTagline } from '@artificer/fableforge'
 
-const theme = getSpecialistTheme('cultural_specialist')
+const theme = specialistThemes.get('cultural_specialist')
 // { icon: '🌏', color: 'blue', label: 'Cultural Specialist', ... }
+
+const tagline = getSpecialistTagline('cultural_specialist')
+// "Preserves cultural authenticity"
 ```
 
 ### Time Formatting

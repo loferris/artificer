@@ -18,6 +18,7 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import { openApiSpec } from './openapi-spec';
 import { ShutdownManager } from './services/batch/ShutdownManager';
 import { CheckpointService } from './services/batch/CheckpointService';
+import { isDemoMode } from '../utils/demo';
 
 const cors = corsLib.default;
 
@@ -31,10 +32,9 @@ console.log('[INFO] Starting AI Workflow Engine Standalone Server...');
 
 // Create context for standalone server (tRPC - needs req/res)
 const createTrpcContext = async (opts: { req: IncomingMessage; res: ServerResponse }) => {
-  const isDemoMode =
-    process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+  const isDemo = isDemoMode();
 
-  if (!isDemoMode) {
+  if (!isDemo) {
     try {
       await prisma.$queryRaw`SELECT 1`;
       logger.info('✅ Database connected successfully');
@@ -47,7 +47,7 @@ const createTrpcContext = async (opts: { req: IncomingMessage; res: ServerRespon
   return {
     req: opts.req,
     res: opts.res,
-    db: isDemoMode ? null : prisma,
+    db: isDemo ? null : prisma,
     user: {
       id: 'standalone-user',
       sessionId: 'standalone-session',
@@ -58,11 +58,10 @@ const createTrpcContext = async (opts: { req: IncomingMessage; res: ServerRespon
 
 // Create context for OpenAPI (doesn't need req/res)
 const createOpenApiContext = async () => {
-  const isDemoMode =
-    process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+  const isDemo = isDemoMode();
 
   return {
-    db: isDemoMode ? null : prisma,
+    db: isDemo ? null : prisma,
     user: {
       id: 'standalone-user',
       sessionId: 'standalone-session',
@@ -145,16 +144,16 @@ const server = createHTTPServer({
     if (req.url === '/health') {
       res.setHeader('Content-Type', 'application/json');
 
-      const isDemoMode = process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+      const isDemo = isDemoMode();
       const healthStatus: any = {
         status: 'ok',
         timestamp: new Date().toISOString(),
-        mode: isDemoMode ? 'demo' : 'database',
+        mode: isDemo ? 'demo' : 'database',
         services: {},
       };
 
       // Check database connection
-      if (!isDemoMode) {
+      if (!isDemo) {
         try {
           await prisma.$queryRaw`SELECT 1`;
           healthStatus.services.database = { status: 'healthy' };
@@ -225,7 +224,7 @@ server.listen(PORT, HOST, () => {
 ║  🚀 AI Workflow Engine - Standalone Orchestration Server     ║
 ╠═══════════════════════════════════════════════════════════════╣
 ║  Status:     Running                                          ║
-║  Mode:       ${process.env.DEMO_MODE === 'true' ? 'Demo (In-Memory)' : 'Database'}                                   ║
+║  Mode:       ${isDemoMode() ? 'Demo (In-Memory)' : 'Database'}                                   ║
 ║  Host:       ${HOST}                                          ║
 ║  Port:       ${PORT}                                          ║
 ║                                                               ║
@@ -240,8 +239,7 @@ server.listen(PORT, HOST, () => {
   logger.info('Ready to accept requests from external applications');
 
   // Initialize graceful shutdown for batch jobs (only in database mode)
-  const isDemoMode = process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
-  if (!isDemoMode) {
+  if (!isDemoMode()) {
     const checkpointService = new CheckpointService(prisma);
     const shutdownManager = new ShutdownManager(prisma, checkpointService);
     shutdownManager.registerHandlers();

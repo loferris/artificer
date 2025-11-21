@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Progress } from '@/components/ui/progress'
-import { StatusBadge, type Status } from '@/components/shared/StatusBadge'
-import { formatDuration } from '@/lib/time-utils'
-import { cn } from '@/lib/cn'
-import { createComponentLogger } from '@/lib/componentLogger'
+import { StatusBadge, type Status } from '@artificer/ui'
+import { formatDuration } from '@artificer/ui'
+import { cn } from '@artificer/ui'
+import { createComponentLogger } from '@artificer/ui'
 
 const logger = createComponentLogger('PipelineProgress')
 
@@ -41,26 +41,32 @@ export function PipelineProgress({
   className,
   showStageLabels = true
 }: PipelineProgressProps) {
+  const initialPropsRef = useRef({
+    stagesCount: stages.length,
+    currentStage,
+    progress,
+    estimatedTimeRemaining
+  })
   useEffect(() => {
+    const { stagesCount, currentStage: initialStage, progress: initialProgress, estimatedTimeRemaining: initialEta } = initialPropsRef.current
     logger.lifecycle('PipelineProgress', 'mount', {
-      stagesCount: stages.length,
-      currentStage,
-      progress
+      stagesCount,
+      currentStage: initialStage,
+      progress: initialProgress
     })
 
     logger.info('Pipeline progress update', {
       component: 'PipelineProgress',
       action: 'progress_update'
     }, {
-      progress: `${Math.round(progress)}%`,
-      currentStage,
-      estimatedTimeRemaining
+      progress: `${Math.round(initialProgress)}%`,
+      currentStage: initialStage,
+      estimatedTimeRemaining: initialEta
     })
 
     return () => {
       logger.lifecycle('PipelineProgress', 'unmount')
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Only run on mount/unmount for lifecycle logging
 
   useEffect(() => {

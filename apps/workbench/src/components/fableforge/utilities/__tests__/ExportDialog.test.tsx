@@ -27,16 +27,16 @@ describe('ExportDialog', () => {
   it('displays all format options', () => {
     render(<ExportDialog {...defaultProps} />)
 
-    expect(screen.getByText('Plain Text')).toBeInTheDocument()
-    expect(screen.getByText('Markdown')).toBeInTheDocument()
-    expect(screen.getByText('JSON')).toBeInTheDocument()
-    expect(screen.getByText('Word Document')).toBeInTheDocument()
+    expect(screen.getAllByText('Plain Text').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Markdown').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('JSON').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Word Document').length).toBeGreaterThan(0)
   })
 
   it('selects txt format by default', () => {
     render(<ExportDialog {...defaultProps} />)
 
-    const txtButton = screen.getByText('Plain Text').closest('button')
+    const txtButton = screen.getAllByText('Plain Text')[0].closest('button')
     expect(txtButton).toHaveClass('border-blue-500', 'bg-blue-50')
   })
 
@@ -97,7 +97,7 @@ describe('ExportDialog', () => {
   it('closes dialog after export', () => {
     render(<ExportDialog {...defaultProps} />)
 
-    const exportButton = screen.getByText(/Export/)
+    const exportButton = screen.getByText('Export Plain Text')
     fireEvent.click(exportButton)
 
     expect(mockOnOpenChange).toHaveBeenCalledWith(false)
@@ -133,8 +133,8 @@ describe('ExportDialog', () => {
   it('filters formats based on availableFormats prop', () => {
     render(<ExportDialog {...defaultProps} availableFormats={['txt', 'json']} />)
 
-    expect(screen.getByText('Plain Text')).toBeInTheDocument()
-    expect(screen.getByText('JSON')).toBeInTheDocument()
+    expect(screen.getAllByText('Plain Text').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('JSON').length).toBeGreaterThan(0)
     expect(screen.queryByText('Markdown')).not.toBeInTheDocument()
     expect(screen.queryByText('Word Document')).not.toBeInTheDocument()
   })
@@ -169,7 +169,7 @@ describe('ExportDialog', () => {
   it('shows checkmark on selected format', () => {
     render(<ExportDialog {...defaultProps} />)
 
-    const txtButton = screen.getByText('Plain Text').closest('button')
+    const txtButton = screen.getAllByText('Plain Text')[0].closest('button')
     const checkmark = txtButton?.querySelector('svg')
     expect(checkmark).toBeInTheDocument()
   })

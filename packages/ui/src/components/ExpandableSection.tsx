@@ -1,6 +1,12 @@
+/**
+ * Artificer UI - Expandable Section Component
+ *
+ * Component for expandable/collapsible content sections
+ */
+
 import React from 'react'
-import { useExpandable } from '@/hooks/useExpandable'
-import { cn } from '@/lib/cn'
+import { useExpandable } from '../hooks/useExpandable'
+import { cn } from '../lib/cn'
 
 export interface ExpandableSectionProps {
   preview: React.ReactNode

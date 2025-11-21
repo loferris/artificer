@@ -192,5 +192,5 @@ Use **/cost** command or check the floating toolbar for current session statisti
   ],
 
   // Demo environment detection
-  IS_DEMO: process.env.VERCEL_ENV === 'preview' || process.env.DEMO_MODE === 'true',
+  IS_DEMO: process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true',
 } as const;

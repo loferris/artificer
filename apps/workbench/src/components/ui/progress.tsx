@@ -1,5 +1,5 @@
 import * as React from "react"
-import { cn } from "@/lib/cn"
+import { cn } from "@artificer/ui"
 
 export interface ProgressProps extends React.HTMLAttributes<HTMLDivElement> {
   value?: number
@@ -32,6 +32,10 @@ const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
     return (
       <div
         ref={ref}
+        role="progressbar"
+        aria-valuenow={value}
+        aria-valuemin={0}
+        aria-valuemax={100}
         className={cn(
           "relative w-full overflow-hidden rounded-full bg-gray-200",
           sizes[size],

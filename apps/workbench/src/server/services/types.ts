@@ -1,21 +1,4 @@
-export interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-  model?: string; // Optional: track which model generated the response
-  cost?: number; // Optional: track cost of the response
-}
+import type { Message, AssistantResponse, AssistantService } from '../../types';
 
-export interface AssistantResponse {
-  response: string;
-  model: string;
-  cost: number;
-}
-
-export interface AssistantService {
-  getResponse(
-    userMessage: string,
-    conversationHistory?: Message[],
-  ): Promise<string | AssistantResponse>;
-}
+// Re-export types for backwards compatibility
+export type { Message, AssistantResponse, AssistantService };

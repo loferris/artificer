@@ -15,3 +15,11 @@ export type {
   UseComponentLoggerOptions,
   UseComponentLoggerReturn
 } from './useComponentLogger'
+
+export { useExpandable, useMultiExpandable } from './useExpandable'
+export type {
+  UseExpandableReturn,
+  UseMultiExpandableReturn
+} from './useExpandable'
+
+export { useCopyToClipboard } from './useCopyToClipboard'

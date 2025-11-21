@@ -1,16 +1,12 @@
 import { useState, useCallback } from 'react'
-import type { Operation } from '@/lib/operation-utils'
-import type { ValidationResult } from '@/lib/validation-utils'
+import type { Message as BaseMessage } from '@/types'
+import type { Operation, ValidationResult } from '@artificer/hellbat'
 
-export interface Message {
-  id: string
-  role: 'user' | 'assistant' | 'system'
-  content: string
+export interface Message extends BaseMessage {
   sources?: Source[]
   operations?: Operation[]
   validation?: ValidationResult[]
   streaming?: boolean
-  timestamp: Date
 }
 
 export interface Source {

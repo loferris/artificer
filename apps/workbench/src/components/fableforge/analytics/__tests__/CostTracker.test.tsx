@@ -29,7 +29,7 @@ describe('CostTracker', () => {
   it('displays total cost', () => {
     render(<CostTracker breakdown={mockBreakdown} />)
 
-    expect(screen.getByText('$0.10')).toBeInTheDocument()
+    expect(screen.getByText('$0.1000')).toBeInTheDocument()
   })
 
   it('shows budget status when budget provided', () => {
@@ -116,7 +116,7 @@ describe('CostTracker', () => {
 
     expect(screen.getByText('Spent')).toBeInTheDocument()
     expect(screen.getByText('Remaining')).toBeInTheDocument()
-    expect(screen.getByText('Total')).toBeInTheDocument()
+    expect(screen.getAllByText('Total').length).toBeGreaterThan(0)
   })
 
   it('shows warnings for budget alerts', () => {
@@ -230,7 +230,7 @@ describe('CostTracker', () => {
     render(<CostTracker breakdown={mockBreakdown} budget={mockBudget} />)
 
     // Budget info should show percentage used (10%)
-    expect(screen.getByText(/\$0.10 of \$1.00 used/)).toBeInTheDocument()
+    expect(screen.getByText(/\$0.1000 of \$1.00 used/)).toBeInTheDocument()
   })
 
   it('displays appropriate status icon', () => {

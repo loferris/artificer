@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, memo } from 'react';
 import type { Message as BaseMessage } from '../../types';
 import { OrchestrationProgress } from './OrchestrationProgress';
 
@@ -34,7 +34,7 @@ interface MessageListProps {
   className?: string;
 }
 
-const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
+const MessageBubble: React.FC<{ message: Message }> = memo(({ message }) => {
   const [showContext, setShowContext] = useState(false);
   const isUser = message.role === 'user';
   const hasRAG = message.ragSources && message.ragSources.length > 0;
@@ -146,9 +146,11 @@ const MessageBubble: React.FC<{ message: Message }> = ({ message }) => {
       </div>
     </div>
   );
-};
+});
 
-export const MessageList: React.FC<MessageListProps> = ({
+MessageBubble.displayName = 'MessageBubble';
+
+export const MessageList: React.FC<MessageListProps> = memo(({
   messages,
   isLoading = false,
   orchestrationState = null,
@@ -208,4 +210,6 @@ export const MessageList: React.FC<MessageListProps> = ({
       <div ref={messagesEndRef} />
     </div>
   );
-};
+});
+
+MessageList.displayName = 'MessageList';

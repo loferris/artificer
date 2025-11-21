@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { trpc } from '../lib/trpc/client';
 import Head from 'next/head';
 import { clientLogger } from '../utils/clientLogger';
+import { isClientSideDemo } from '../utils/demo';
 
 interface ProjectCardProps {
   project: {
@@ -131,7 +132,7 @@ const ProjectsPage: React.FC = () => {
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectDescription, setNewProjectDescription] = useState('');
 
-  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+  const isDemo = isClientSideDemo();
 
   const { data: projectsData, isLoading, error, refetch } = trpc.projects.list.useQuery();
   const createProjectMutation = trpc.projects.create.useMutation();
@@ -173,7 +174,7 @@ const ProjectsPage: React.FC = () => {
   };
 
   // Check if we're in demo mode based on API response
-  const isDemoModeActive = projectsData?.demoMode === true || isDemoMode;
+  const isDemoModeActive = projectsData?.demoMode === true || isDemo;
 
   if (isLoading) {
     return (

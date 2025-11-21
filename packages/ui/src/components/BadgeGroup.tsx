@@ -1,6 +1,12 @@
+/**
+ * Artificer UI - Badge Group Component
+ *
+ * Component for displaying a group of badges with optional "show more" functionality
+ */
+
 import React from 'react'
-import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/cn'
+import { Badge } from '../shadcn/badge'
+import { cn } from '../lib/cn'
 
 export interface BadgeItem {
   label: string

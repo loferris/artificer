@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/cn'
-import { createComponentLogger } from '@/lib/componentLogger'
+import { cn } from '@artificer/ui'
+import { createComponentLogger } from '@artificer/ui'
 
 const logger = createComponentLogger('MetadataExplorer')
 
@@ -56,25 +56,31 @@ type TabType = 'characters' | 'cultural' | 'relationships' | 'scene'
  * - Relationship dynamics visualization
  * - Scene context display
  */
-export function MetadataExplorer({
+export const MetadataExplorer = React.memo(function MetadataExplorer({
   metadata,
   defaultTab = 'characters',
   className
 }: MetadataExplorerProps) {
   const [activeTab, setActiveTab] = useState<TabType>(defaultTab)
 
+  const initialPropsRef = useRef({
+    hasCharacters: !!metadata.characterProfiles,
+    hasCulturalTerms: !!metadata.culturalTerms,
+    hasRelationships: !!metadata.relationshipDynamics,
+    defaultTab
+  })
   useEffect(() => {
+    const { hasCharacters, hasCulturalTerms, hasRelationships, defaultTab: initialDefaultTab } = initialPropsRef.current
     logger.lifecycle('MetadataExplorer', 'mount', {
-      hasCharacters: !!metadata.characterProfiles,
-      hasCulturalTerms: !!metadata.culturalTerms,
-      hasRelationships: !!metadata.relationshipDynamics,
-      defaultTab
+      hasCharacters,
+      hasCulturalTerms,
+      hasRelationships,
+      defaultTab: initialDefaultTab
     })
 
     return () => {
       logger.lifecycle('MetadataExplorer', 'unmount')
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Only run on mount/unmount for lifecycle logging
 
   const handleTabChange = (tab: TabType) => {
@@ -294,4 +300,5 @@ export function MetadataExplorer({
       </div>
     </div>
   )
-}
+})
+MetadataExplorer.displayName = 'MetadataExplorer'

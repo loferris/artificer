@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/cn'
-import { formatTimeAgo, formatDuration } from '@/lib/time-utils'
+import { cn } from '@artificer/ui'
+import { formatTimeAgo, formatDuration } from '@artificer/ui'
 import { formatLanguagePair } from '@/lib/language-utils'
 import { formatCost } from '@/lib/cost-utils'
-import { StatusBadge } from '@/components/shared/StatusBadge'
-import { createComponentLogger } from '@/lib/componentLogger'
+import { StatusBadge } from '@artificer/ui'
+import { createComponentLogger } from '@artificer/ui'
 
 const logger = createComponentLogger('TranslationTimeline')
 
@@ -66,26 +66,29 @@ export function TranslationTimeline({
   })
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set())
 
+  // Capture initial values for mount logging
+  const initialPropsRef = useRef({ jobs, showFilters, layout })
+
   useEffect(() => {
+    const { jobs: initialJobs, showFilters: initialShowFilters, layout: initialLayout } = initialPropsRef.current
     logger.lifecycle('TranslationTimeline', 'mount', {
-      jobsCount: jobs.length,
-      showFilters,
-      layout
+      jobsCount: initialJobs.length,
+      showFilters: initialShowFilters,
+      layout: initialLayout
     })
 
     logger.info('Timeline loaded', {
       component: 'TranslationTimeline'
     }, {
-      totalJobs: jobs.length,
-      completedJobs: jobs.filter(j => j.status === 'completed').length,
-      failedJobs: jobs.filter(j => j.status === 'failed').length
+      totalJobs: initialJobs.length,
+      completedJobs: initialJobs.filter(j => j.status === 'completed').length,
+      failedJobs: initialJobs.filter(j => j.status === 'failed').length
     })
 
     return () => {
       logger.lifecycle('TranslationTimeline', 'unmount')
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // Only run on mount/unmount for lifecycle logging
+  }, [])
 
   const handleJobClick = (jobId: string) => {
     logger.interaction({
@@ -281,7 +284,7 @@ export function TranslationTimeline({
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                           <span className="text-xs text-gray-600">
-                            {formatDuration(job.duration)}
+                            {formatDuration(job.duration / 1000)}
                           </span>
                         </div>
                       )}
@@ -336,7 +339,7 @@ export function TranslationTimeline({
                             <div>Started: {new Date(job.createdAt).toLocaleString()}</div>
                             <div>Completed: {new Date(job.completedAt).toLocaleString()}</div>
                             {job.duration && (
-                              <div>Duration: {formatDuration(job.duration)}</div>
+                              <div>Duration: {formatDuration(job.duration / 1000)}</div>
                             )}
                           </div>
                         )}

@@ -70,9 +70,10 @@ describe('cost-utils', () => {
 
   describe('compareCosts', () => {
     it('compares costs with absolute difference', () => {
-      expect(compareCosts(1.5, 1.0, 'absolute')).toBe('+$0.50')
-      expect(compareCosts(1.0, 1.5, 'absolute')).toBe('-$0.50')
+      expect(compareCosts(1.5, 1.0, 'absolute')).toBe('+$0.5000')
+      expect(compareCosts(1.0, 1.5, 'absolute')).toBe('-$0.5000')
       expect(compareCosts(1.0, 1.0, 'absolute')).toBe('+$0.00')
+      expect(compareCosts(2.0, 1.5, 'absolute')).toBe('+$0.5000')
     })
 
     it('compares costs with percentage difference', () => {
@@ -86,7 +87,7 @@ describe('cost-utils', () => {
     })
 
     it('defaults to absolute format', () => {
-      expect(compareCosts(1.5, 1.0)).toBe('+$0.50')
+      expect(compareCosts(2.0, 1.5)).toBe('+$0.5000')
     })
   })
 

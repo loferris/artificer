@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { trpc } from '../../lib/trpc/client';
 import Head from 'next/head';
 import { clientLogger } from '../../utils/clientLogger';
+import { isClientSideDemo } from '../../utils/demo';
 
 interface DocumentCardProps {
   document: {
@@ -97,7 +98,7 @@ const ProjectDetailPage: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const isDemoMode = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+  const isDemoMode = isClientSideDemo();
   const projectId = typeof id === 'string' ? id : '';
 
   const { data: projectData, isLoading: projectLoading, error: projectError } =

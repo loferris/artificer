@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -10,8 +10,8 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/cn'
-import { createComponentLogger } from '@/lib/componentLogger'
+import { cn } from '@artificer/ui'
+import { createComponentLogger } from '@artificer/ui'
 
 const logger = createComponentLogger('ExportDialog')
 
@@ -89,13 +89,14 @@ export function ExportDialog({
     includeOriginal: false
   })
 
+  const initialPropsRef = useRef({ availableFormats })
   useEffect(() => {
     if (open) {
+      const { availableFormats: initialFormats } = initialPropsRef.current
       logger.lifecycle('ExportDialog', 'mount', {
-        availableFormats
+        availableFormats: initialFormats
       })
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]) // Only run when dialog opens for lifecycle logging
 
   const handleFormatSelect = (format: ExportFormat) => {

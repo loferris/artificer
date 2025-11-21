@@ -3,11 +3,6 @@ import { logger } from '../../server/utils/logger';
 
 interface DebugResponse {
   environment: string;
-  vercel?: {
-    url?: string;
-    region?: string;
-    deployment?: string;
-  };
   database: {
     url?: string;
     provider?: string;
@@ -24,11 +19,6 @@ export default async function debug(req: NextApiRequest, res: NextApiResponse<De
   try {
     const response: DebugResponse = {
       environment: process.env.NODE_ENV || 'development',
-      vercel: {
-        url: process.env.VERCEL_URL,
-        region: process.env.VERCEL_REGION,
-        deployment: process.env.VERCEL_GIT_COMMIT_SHA,
-      },
       database: {
         url: process.env.DATABASE_URL ? 'SET' : 'NOT_SET',
         provider: process.env.DATABASE_URL?.includes('postgresql')
@@ -47,12 +37,11 @@ export default async function debug(req: NextApiRequest, res: NextApiResponse<De
       timestamp: new Date().toISOString(),
     };
 
-    // Only show debug info in development or with secret
-    const debugSecret = req.query.secret || req.headers.authorization?.replace('Bearer ', '');
+    // Only show debug info in development or with secret (via Authorization header only for security)
+    const debugSecret = req.headers.authorization?.replace('Bearer ', '');
     if (process.env.NODE_ENV === 'production' && debugSecret !== process.env.DEBUG_SECRET) {
       return res.status(401).json({
         environment: 'production',
-        vercel: {},
         database: { url: 'HIDDEN' },
         demo: {},
         headers: {},
@@ -69,7 +58,6 @@ export default async function debug(req: NextApiRequest, res: NextApiResponse<De
     );
     res.status(500).json({
       environment: 'error',
-      vercel: {},
       database: {},
       demo: {},
       headers: {},

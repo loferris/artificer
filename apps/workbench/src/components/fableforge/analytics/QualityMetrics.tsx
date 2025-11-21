@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import { cn } from '@/lib/cn'
-import { createComponentLogger } from '@/lib/componentLogger'
+import { cn } from '@artificer/ui'
+import { createComponentLogger } from '@artificer/ui'
 
 const logger = createComponentLogger('QualityMetrics')
 
@@ -92,20 +92,23 @@ export function QualityMetrics({
   className,
   layout = 'grid'
 }: QualityMetricsProps) {
+  // Capture initial values for mount logging
+  const initialMetricsRef = useRef(metrics)
+
   useEffect(() => {
+    const initialMetrics = initialMetricsRef.current
     logger.lifecycle('QualityMetrics', 'mount', {
-      availableMetrics: Object.keys(metrics).length
+      availableMetrics: Object.keys(initialMetrics).length
     })
 
     logger.info('Quality metrics', {
       component: 'QualityMetrics'
-    }, metrics as Record<string, unknown>)
+    }, initialMetrics as Record<string, unknown>)
 
     return () => {
       logger.lifecycle('QualityMetrics', 'unmount')
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // Only run on mount/unmount for lifecycle logging
+  }, [])
 
   const availableMetrics = metricConfigs.filter(config => metrics[config.key] !== undefined)
 

@@ -1,7 +1,7 @@
 import { DiffViewer } from '@artificer/ui'
 import { specialistThemes, type SpecialistType } from '@artificer/fableforge'
 import { useComponentLogger } from '@artificer/ui'
-import type { DiffGranularity } from '@/lib/diff-engine'
+import type { DiffGranularity } from '@artificer/ui'
 
 export interface CandidateDiffProps {
   candidateA: {

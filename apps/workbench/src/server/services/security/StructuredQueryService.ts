@@ -422,22 +422,8 @@ export class DatabaseStructuredQueryService implements StructuredQueryService {
       }
     }
 
-    // Fetch project documents if projectId provided
-    if (input.projectId) {
-      try {
-        // In a real implementation, we would fetch project documents here
-        // For now, we'll leave this as a placeholder
-        logger.info('Project documents would be fetched here', { projectId: input.projectId });
-
-        // TODO: Implement project document fetching when ProjectService.getDocuments() is available
-        // This will fetch project-specific documents and add them to the context with source: 'project'
-      } catch (error) {
-        logger.warn('Failed to fetch project documents', {
-          error: error instanceof Error ? error.message : String(error),
-          projectId: input.projectId,
-        });
-      }
-    }
+    // Note: Project document fetching is handled by RAGService which uses DocumentService.findByProject()
+    // and VectorService for semantic search. This service focuses on structured query context.
 
     // Note: Web results would be fetched here in a real implementation
     // This would require integration with a web search API

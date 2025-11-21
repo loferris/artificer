@@ -6,22 +6,21 @@ import { ChainOrchestrator } from '../services/orchestration/ChainOrchestrator';
 import { getModelRegistry } from '../services/orchestration/ModelRegistry';
 import { logger } from '../utils/logger';
 import { buildChainConfig } from '../utils/routerHelpers';
+import { isDemoMode } from '../../utils/demo';
 
 // Helper function to ensure user exists in demo mode
 function ensureDemoUser(ctx: any) {
-  const isDemoMode = process.env.DEMO_MODE === 'true' ||
-                    process.env.NEXT_PUBLIC_DEMO_MODE === 'true' ||
-                    !ctx.db;
+  const isDemo = isDemoMode() || !ctx.db;
 
   let user = ctx.user;
-  if (!user && isDemoMode) {
+  if (!user && isDemo) {
     user = {
       id: 'demo-user',
       sessionId: 'demo-session',
     };
   }
 
-  if (!user && !isDemoMode) {
+  if (!user && !isDemo) {
     throw new TRPCError({
       code: 'UNAUTHORIZED',
       message: 'Session required',
@@ -110,6 +109,21 @@ async function getOrCreateChainOrchestrator(ctx: any): Promise<ChainOrchestrator
 
 // Periodic cleanup
 setInterval(cleanupOrchestratorCache, CACHE_TTL_MS);
+
+// Schema for multi-phase text processing
+const PhaseConfigSchema = z.object({
+  name: z.string().min(1),
+  model: z.string().optional(),
+  systemPrompt: z.string().optional(),
+  temperature: z.number().min(0).max(2).optional(),
+});
+
+const ProcessTextSchema = z.object({
+  text: z.string().min(1).max(100_000),
+  chainConfig: z.object({
+    phases: z.array(PhaseConfigSchema).min(1).max(10),
+  }),
+});
 
 /**
  * The tRPC router for chain orchestration operations.
@@ -251,6 +265,96 @@ export const orchestrationRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: error instanceof Error ? error.message : 'Chain orchestration failed',
+        });
+      }
+    }),
+
+  /**
+   * Process text through multiple phases
+   * Each phase runs the text through a specified model/prompt combination
+   */
+  processText: protectedProcedure
+    .input(ProcessTextSchema)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const user = ensureDemoUser(ctx);
+
+        const { assistant } = createServicesFromContext(ctx);
+        const chainResults: Array<{
+          phase: string;
+          response: string;
+          model: string;
+          metadata?: {
+            cost?: number;
+            processingTime?: number;
+            cacheHit?: boolean;
+          };
+        }> = [];
+
+        // Process through each phase
+        for (const phase of input.chainConfig.phases) {
+          const startTime = Date.now();
+
+          // Build conversation history with system prompt if provided
+          const conversationHistory: Array<{ role: string; content: string }> = [];
+          if (phase.systemPrompt) {
+            conversationHistory.push({
+              role: 'system',
+              content: phase.systemPrompt,
+            });
+          }
+
+          // Call the assistant with the phase configuration
+          const result = await assistant.getResponse(
+            input.text,
+            conversationHistory,
+            {
+              model: phase.model,
+              signal: ctx.signal,
+            }
+          );
+
+          const processingTime = (Date.now() - startTime) / 1000;
+
+          // Handle both string and AssistantResponse
+          const response = typeof result === 'string' ? result : result.response;
+          const model = typeof result === 'string' ? (phase.model || 'unknown') : (result.model || phase.model || 'unknown');
+          const cost = typeof result === 'string' ? 0 : (result.cost || 0);
+
+          chainResults.push({
+            phase: phase.name,
+            response,
+            model,
+            metadata: {
+              cost,
+              processingTime,
+              cacheHit: false,
+            },
+          });
+        }
+
+        // Calculate total metadata
+        const totalCost = chainResults.reduce((sum, r) => sum + (r.metadata?.cost || 0), 0);
+        const totalTime = chainResults.reduce((sum, r) => sum + (r.metadata?.processingTime || 0), 0);
+
+        return {
+          chainResults,
+          metadata: {
+            totalCost,
+            totalTime,
+            phaseCount: chainResults.length,
+          },
+        };
+      } catch (error) {
+        logger.error('[orchestrationRouter] Process text failed', error);
+
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error instanceof Error ? error.message : 'Text processing failed',
         });
       }
     }),

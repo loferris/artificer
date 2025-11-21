@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import type { Message } from '../types';
+import type { Message, Conversation } from '../types';
 
 export type ViewMode = 'chat' | 'terminal';
 
@@ -17,7 +17,7 @@ export interface ChatState {
   currentConversationId: string | null;
   messages: Message[];
   localMessages: Message[];
-  selectableConversations: any[];
+  selectableConversations: Conversation[];
 
   // Loading states
   isLoading: boolean;
@@ -45,7 +45,7 @@ export interface ChatState {
   addMessage: (message: Message) => void;
   setLocalMessages: (messages: Message[]) => void;
   addLocalMessage: (message: Message) => void;
-  setSelectableConversations: (conversations: any[]) => void;
+  setSelectableConversations: (conversations: Conversation[]) => void;
   setLoading: (loading: boolean) => void;
   setCreatingConversation: (creating: boolean) => void;
   setError: (error: string | null) => void;

@@ -1,12 +1,12 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
-import { getSpecialistTheme, type SpecialistType } from '@/lib/specialist-theme'
-import { CopyButton } from '@/components/shared/CopyButton'
-import { BadgeGroup } from '@/components/shared/BadgeGroup'
-import { ExpandableSection } from '@/components/shared/ExpandableSection'
+import { specialistThemes, type SpecialistType, getSpecialistTagline } from '@artificer/fableforge'
+import { CopyButton } from '@artificer/ui'
+import { BadgeGroup } from '@artificer/ui'
+import { ExpandableSection } from '@artificer/ui'
 import { formatCost } from '@/lib/cost-utils'
-import { cn } from '@/lib/cn'
-import { createComponentLogger } from '@/lib/componentLogger'
+import { cn } from '@artificer/ui'
+import { createComponentLogger } from '@artificer/ui'
 
 const logger = createComponentLogger('SpecialistCard')
 
@@ -48,19 +48,25 @@ export function SpecialistCard({
   selected = false,
   className
 }: SpecialistCardProps) {
-  const theme = getSpecialistTheme(specialist)
+  const theme = specialistThemes.get(specialist)!
+  const tagline = getSpecialistTagline(specialist)
 
+  const initialPropsRef = useRef({
+    specialist,
+    hasInsights: insights.length > 0,
+    hasRating: !!rating
+  })
   useEffect(() => {
+    const { specialist: initialSpecialist, hasInsights, hasRating } = initialPropsRef.current
     logger.lifecycle('SpecialistCard', 'mount', {
-      specialist,
-      hasInsights: insights.length > 0,
-      hasRating: !!rating
+      specialist: initialSpecialist,
+      hasInsights,
+      hasRating
     })
 
     return () => {
       logger.lifecycle('SpecialistCard', 'unmount')
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Only run on mount/unmount for lifecycle logging
 
   const handleCardClick = () => {
@@ -98,7 +104,7 @@ export function SpecialistCard({
             <span className="text-2xl flex-shrink-0">{theme.icon}</span>
             <div className="min-w-0">
               <h3 className="font-semibold text-base">{theme.label}</h3>
-              <p className="text-xs text-gray-600 truncate">{theme.tagline}</p>
+              <p className="text-xs text-gray-600 truncate">{tagline}</p>
             </div>
           </div>
           <CopyButton text={translation} showLabel={false} size="icon" />

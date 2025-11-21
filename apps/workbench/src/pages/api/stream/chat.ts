@@ -6,6 +6,7 @@ import { getUserFromRequest } from '../../../server/utils/session';
 import { createRateLimitMiddleware, RATE_LIMITS } from '../../../server/middleware/rateLimiter';
 import { logger } from '../../../server/utils/logger';
 import { prisma } from '../../../server/db/client';
+import { isDemoMode } from '../../../utils/demo';
 
 // Input validation schema
 const streamChatSchema = z.object({
@@ -97,13 +98,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     try {
       // Create mock context for service factory
-      const isDemoMode =
-        process.env.DEMO_MODE === 'true' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+      const isDemo = isDemoMode();
 
       const mockContext = {
         req,
         res,
-        db: isDemoMode ? null : prisma,
+        db: isDemo ? null : prisma,
         user,
         signal: controller.signal,
       };

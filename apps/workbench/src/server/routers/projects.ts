@@ -6,14 +6,7 @@ import { DocumentService } from '../services/project/DocumentService';
 import { DocumentUpdateService } from '../services/document/DocumentUpdateService';
 import { documentUpdateRateLimiter } from '../utils/rateLimit';
 import { ensureDatabase } from '../utils/routerHelpers';
-
-/**
- * Helper to check if demo mode is active
- */
-function isDemoMode() {
-  return process.env.DEMO_MODE === 'true' ||
-         process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
-}
+import { isDemoMode } from '../../utils/demo';
 
 /**
  * Sanitize filename to prevent path traversal attacks

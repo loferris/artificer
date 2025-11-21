@@ -1,5 +1,6 @@
 import { TRPCError } from '@trpc/server';
 import type { PrismaClient } from '@prisma/client';
+import type { DatabaseMessage as Message } from '../../../types';
 import { DEMO_CONFIG } from '../../config/demo';
 import {
   countConversationTokens,
@@ -7,15 +8,7 @@ import {
   calculateContextWindow,
 } from '../../utils/tokenCounter';
 
-export interface Message {
-  id: string;
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  tokens: number | null;
-  createdAt: Date;
-  conversationId: string;
-  parentId: string | null;
-}
+export type { Message };
 
 export interface CreateMessageInput {
   conversationId: string;

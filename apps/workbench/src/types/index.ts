@@ -18,10 +18,11 @@ export interface StreamingMessage extends Message {
 }
 
 // Database-compatible message (matches Prisma schema)
-export interface DatabaseMessage extends Omit<Message, 'timestamp'> {
+export interface DatabaseMessage extends Omit<Message, 'timestamp' | 'tokens'> {
   createdAt: Date;
   conversationId: string;
-  tokens: number;
+  tokens: number | null;
+  parentId: string | null;
 }
 
 // Base conversation interface - canonical definition

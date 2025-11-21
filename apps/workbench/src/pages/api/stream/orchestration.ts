@@ -10,6 +10,7 @@ import { ChainOrchestrator } from '../../../server/services/orchestration/ChainO
 import { ChainConfig } from '../../../server/services/orchestration/types';
 import { getModelRegistry } from '../../../server/services/orchestration/ModelRegistry';
 import { models } from '../../../server/config/models';
+import { isDemoMode } from '../../../utils/demo';
 
 // Input validation schema
 const streamOrchestrationSchema = z.object({
@@ -134,13 +135,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     try {
       // Create mock context for service factory
-      const isDemoMode =
-        process.env.DEMO_MODE === 'true' ||
-        process.env.NEXT_PUBLIC_DEMO_MODE === 'true' ||
-        !prisma;
+      const isDemo = isDemoMode() || !prisma;
 
       const mockCtx = {
-        db: isDemoMode ? null : prisma,
+        db: isDemo ? null : prisma,
         req,
         res,
         user: user || { id: 'demo-user', sessionId: 'demo-session' },

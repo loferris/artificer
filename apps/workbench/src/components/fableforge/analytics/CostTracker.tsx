@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/cn'
+import { cn } from '@artificer/ui'
 import { formatCost, calculateTotal, calculateRemainingBudget } from '@/lib/cost-utils'
-import { createComponentLogger } from '@/lib/componentLogger'
+import { createComponentLogger } from '@artificer/ui'
 
 const logger = createComponentLogger('CostTracker')
 
@@ -98,27 +98,30 @@ export function CostTracker({
   className,
   layout = 'detailed'
 }: CostTrackerProps) {
+  // Capture initial values for mount logging
+  const initialPropsRef = useRef({ breakdown, budget, showProjections, layout })
+
   useEffect(() => {
+    const { breakdown: initialBreakdown, budget: initialBudget, showProjections: initialShowProjections, layout: initialLayout } = initialPropsRef.current
     logger.lifecycle('CostTracker', 'mount', {
-      stagesCount: breakdown.length,
-      hasBudget: !!budget,
-      showProjections,
-      layout
+      stagesCount: initialBreakdown.length,
+      hasBudget: !!initialBudget,
+      showProjections: initialShowProjections,
+      layout: initialLayout
     })
 
     logger.info('Cost tracking', {
       component: 'CostTracker'
     }, {
-      totalCost: breakdown.reduce((sum, b) => sum + b.cost, 0),
-      budgetTotal: budget?.total,
-      budgetRemaining: budget?.remaining
+      totalCost: initialBreakdown.reduce((sum, b) => sum + b.cost, 0),
+      budgetTotal: initialBudget?.total,
+      budgetRemaining: initialBudget?.remaining
     })
 
     return () => {
       logger.lifecycle('CostTracker', 'unmount')
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // Only run on mount/unmount for lifecycle logging
+  }, [])
 
   const totalCost = useMemo(() => breakdown.reduce((sum, b) => sum + b.cost, 0), [breakdown])
 

@@ -1,12 +1,12 @@
 import React from 'react'
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
-import { StatusBadge, type Status } from '@/components/shared/StatusBadge'
-import { BadgeGroup } from '@/components/shared/BadgeGroup'
+import { StatusBadge, type Status } from '@artificer/ui'
+import { BadgeGroup } from '@artificer/ui'
 import { Progress } from '@/components/ui/progress'
 import { formatLanguagePair } from '@/lib/language-utils'
-import { formatTimeAgo, formatTimestamp } from '@/lib/time-utils'
+import { formatTimeAgo, formatTimestamp } from '@artificer/ui'
 import { formatCost } from '@/lib/cost-utils'
-import { cn } from '@/lib/cn'
+import { cn } from '@artificer/ui'
 
 export interface TranslationJob {
   id: string

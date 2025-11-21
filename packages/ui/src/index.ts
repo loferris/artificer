@@ -18,7 +18,11 @@ export {
   ThemedCard,
   CardHeader,
   CardContent,
-  CardFooter
+  CardFooter,
+  StatusBadge,
+  BadgeGroup,
+  ExpandableSection,
+  CopyButton
 } from './components'
 
 export type {
@@ -26,7 +30,11 @@ export type {
   DiffViewerProps,
   ExportDialogProps,
   ThemedBadgeProps,
-  ThemedCardProps
+  ThemedCardProps,
+  StatusBadgeProps,
+  BadgeGroupProps,
+  ExpandableSectionProps,
+  CopyButtonProps
 } from './components'
 
 // ============================================================================
@@ -57,14 +65,19 @@ export {
 export {
   useExpandableCollection,
   useComponentLogger,
-  useRenderPerformance
+  useRenderPerformance,
+  useExpandable,
+  useMultiExpandable,
+  useCopyToClipboard
 } from './hooks'
 
 export type {
   UseExpandableCollectionOptions,
   UseExpandableCollectionReturn,
   UseComponentLoggerOptions,
-  UseComponentLoggerReturn
+  UseComponentLoggerReturn,
+  UseExpandableReturn,
+  UseMultiExpandableReturn
 } from './hooks'
 
 // ============================================================================

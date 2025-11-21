@@ -21,7 +21,7 @@ interface ProjectSidebarProps {
   className?: string;
 }
 
-export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
+export const ProjectSidebar = React.memo<ProjectSidebarProps>(({
   currentProjectId,
   currentConversationId,
   onProjectSelect,
@@ -277,4 +277,5 @@ export const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
       </div>
     </div>
   );
-};
+});
+ProjectSidebar.displayName = 'ProjectSidebar';

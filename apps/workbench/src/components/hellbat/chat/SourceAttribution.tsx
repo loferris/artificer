@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ExpandableSection } from '@/components/shared/ExpandableSection'
-import { CopyButton } from '@/components/shared/CopyButton'
-import { cn } from '@/lib/cn'
-import { createComponentLogger } from '@/lib/componentLogger'
+import { ExpandableSection } from '@artificer/ui'
+import { CopyButton } from '@artificer/ui'
+import { cn } from '@artificer/ui'
+import { createComponentLogger } from '@artificer/ui'
 
 const logger = createComponentLogger('SourceAttribution')
 
@@ -50,16 +50,17 @@ export function SourceAttribution({
   const [expandedSources, setExpandedSources] = useState<Set<string>>(new Set())
   const [showAll, setShowAll] = useState(false)
 
+  const initialPropsRef = useRef({ sourcesLength: sources.length, format })
   useEffect(() => {
+    const { sourcesLength, format: initialFormat } = initialPropsRef.current
     logger.lifecycle('SourceAttribution', 'mount', {
-      sourcesCount: sources.length,
-      format
+      sourcesCount: sourcesLength,
+      format: initialFormat
     })
 
     return () => {
       logger.lifecycle('SourceAttribution', 'unmount')
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Only run on mount/unmount for lifecycle logging
 
   const toggleSource = (sourceId: string) => {

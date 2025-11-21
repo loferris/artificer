@@ -1,6 +1,12 @@
+/**
+ * Artificer UI - Status Badge Component
+ *
+ * Badge component for displaying status with icon
+ */
+
 import React from 'react'
-import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/cn'
+import { Badge } from '../shadcn/badge'
+import { cn } from '../lib/cn'
 
 export type Status = 'pending' | 'running' | 'completed' | 'failed' | 'retry' | 'idle' | 'cancelled'
 

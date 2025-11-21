@@ -49,7 +49,7 @@ interface HealthStatusProps {
     model: string;
     isHealthy: boolean;
     responseTime: number;
-    lastChecked: string;
+    lastChecked: Date | string;
     error?: string;
   }>;
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { useChatStore } from '../../stores/chatStore';
 import { trpc } from '../../lib/trpc/client';
 import { useExportManager } from '../../components/ExportManager';
@@ -43,13 +43,23 @@ export function useChat() {
   const streamingChat = useStreamingChat();
   const orchestrationStreaming = useOrchestrationStreaming();
 
+  // Refs for stable callback references
+  const messagesQueryRef = useRef(messagesQuery);
+  const storeRef = useRef(store);
+  const handleStreamingMessageRef = useRef<((content: string, conversationId: string | null) => Promise<void>) | null>(null);
+
+  // Keep refs updated
+  useEffect(() => {
+    messagesQueryRef.current = messagesQuery;
+    storeRef.current = store;
+  });
+
   // Effects to sync tRPC data with the store
   useEffect(() => {
     if (messagesQuery.data) {
       store.setMessages(messagesQuery.data);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messagesQuery.data]); // store.setMessages is stable, exclude to avoid re-renders
+  }, [messagesQuery.data, store.setMessages]);
 
   const exportManager = useExportManager({
     currentConversationId: store.currentConversationId,
@@ -85,34 +95,35 @@ export function useChat() {
 
   const handleSendMessage = useCallback(
     async (content: string) => {
+      const currentStore = storeRef.current;
       clientLogger.debug(
         'handleSendMessage called',
-        { content, streamingMode: store.streamingMode, conversationId: store.currentConversationId },
+        { content, streamingMode: currentStore.streamingMode, conversationId: currentStore.currentConversationId },
         'useChat'
       );
 
-      if (store.streamingMode) {
-        handleStreamingMessage(content, store.currentConversationId);
+      if (currentStore.streamingMode) {
+        handleStreamingMessageRef.current?.(content, currentStore.currentConversationId);
       } else {
         try {
-          if (!store.currentConversationId) {
+          if (!currentStore.currentConversationId) {
             clientLogger.debug('Creating new conversation', {}, 'useChat');
             const newConversation = await createConversationMutation.mutateAsync({
-              projectId: store.currentProjectId || undefined,
+              projectId: currentStore.currentProjectId || undefined,
             });
             if (newConversation?.id) {
               clientLogger.debug('New conversation created', { conversationId: newConversation.id }, 'useChat');
-              store.setCurrentConversation(newConversation.id);
+              currentStore.setCurrentConversation(newConversation.id);
               await sendMessageMutation.mutateAsync({ content, conversationId: newConversation.id });
-              messagesQuery.refetch();
-              store.setInput('');
+              messagesQueryRef.current.refetch();
+              currentStore.setInput('');
               clientLogger.debug('Message sent to new conversation', {}, 'useChat');
             }
           } else {
-            clientLogger.debug('Sending to existing conversation', { conversationId: store.currentConversationId }, 'useChat');
-            await sendMessageMutation.mutateAsync({ content, conversationId: store.currentConversationId });
-            messagesQuery.refetch();
-            store.setInput('');
+            clientLogger.debug('Sending to existing conversation', { conversationId: currentStore.currentConversationId }, 'useChat');
+            await sendMessageMutation.mutateAsync({ content, conversationId: currentStore.currentConversationId });
+            messagesQueryRef.current.refetch();
+            currentStore.setInput('');
             clientLogger.debug('Message sent to existing conversation', {}, 'useChat');
           }
         } catch (error) {
@@ -120,14 +131,7 @@ export function useChat() {
         }
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      store.streamingMode,
-      store.currentConversationId,
-      createConversationMutation,
-      store.setCurrentConversation,
-      sendMessageMutation,
-    ] // Intentionally excluding messagesQuery, handleStreamingMessage, and store for stability
+    [createConversationMutation, sendMessageMutation]
   );
 
   const handleMessageSubmit = useCallback(
@@ -146,6 +150,7 @@ export function useChat() {
 
   const handleStreamingMessage = useCallback(
     async (content: string, conversationId: string | null): Promise<void> => {
+      const currentStore = storeRef.current;
       // Decide which streaming method to use
       const useOrch = shouldUseOrchestration(content);
 
@@ -158,10 +163,10 @@ export function useChat() {
       if (!conversationId) {
         try {
           const newConversation = await createConversationMutation.mutateAsync({
-            projectId: store.currentProjectId || undefined,
+            projectId: currentStore.currentProjectId || undefined,
           });
           if (newConversation?.id) {
-            store.setCurrentConversation(newConversation.id);
+            currentStore.setCurrentConversation(newConversation.id);
             setTimeout(async () => {
               try {
                 if (useOrch) {
@@ -169,8 +174,8 @@ export function useChat() {
                 } else {
                   await streamingChat.sendMessage(content, newConversation.id);
                 }
-                store.setInput('');
-                store.setStreamingError(null);
+                currentStore.setInput('');
+                currentStore.setStreamingError(null);
               } catch (error) {
                 clientLogger.error(
                   'Failed to stream first message',
@@ -178,7 +183,7 @@ export function useChat() {
                   { content: content.substring(0, 100), conversationId: newConversation.id },
                   'StreamingManager'
                 );
-                store.setStreamingError((error as Error).message);
+                currentStore.setStreamingError((error as Error).message);
               }
             }, 100);
           }
@@ -189,7 +194,7 @@ export function useChat() {
             { content: content.substring(0, 100) },
             'StreamingManager'
           );
-          store.setStreamingError('Failed to create conversation for streaming');
+          currentStore.setStreamingError('Failed to create conversation for streaming');
         }
         return;
       }
@@ -200,8 +205,8 @@ export function useChat() {
         } else {
           await streamingChat.sendMessage(content, conversationId);
         }
-        store.setInput('');
-        store.setStreamingError(null);
+        currentStore.setInput('');
+        currentStore.setStreamingError(null);
       } catch (error) {
         clientLogger.error(
           'Failed to send streaming message',
@@ -209,20 +214,21 @@ export function useChat() {
           { content: content.substring(0, 100), conversationId },
           'StreamingManager'
         );
-        store.setStreamingError((error as Error).message);
+        currentStore.setStreamingError((error as Error).message);
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       createConversationMutation,
       streamingChat,
       orchestrationStreaming,
-      store.setCurrentConversation,
-      store.setInput,
-      store.setStreamingError,
       shouldUseOrchestration,
-    ] // Intentionally excluding store for stability
+    ]
   );
+
+  // Update ref after callback is defined
+  useEffect(() => {
+    handleStreamingMessageRef.current = handleStreamingMessage;
+  }, [handleStreamingMessage]);
 
   const combinedMessages = useCallback((): Message[] => {
     if (!store.streamingMode) {

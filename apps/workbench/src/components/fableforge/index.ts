@@ -40,11 +40,8 @@ export type { TranslationTimelineProps, TimelineJob, TimelineJobStatus } from '.
 export { ExportDialog } from './utilities/ExportDialog'
 export type { ExportDialogProps, ExportFormat, ExportOptions } from './utilities/ExportDialog'
 
-// Re-export shared components for convenience
-export { CopyButton } from '../shared/CopyButton'
-export { StatusBadge } from '../shared/StatusBadge'
-export { BadgeGroup } from '../shared/BadgeGroup'
-export { ExpandableSection } from '../shared/ExpandableSection'
+// Re-export shared components from @artificer/ui
+export { CopyButton, StatusBadge, BadgeGroup, ExpandableSection, type Status } from '@artificer/ui'
 
 // Re-export UI components
 export { Badge } from '../ui/badge'
@@ -54,14 +51,14 @@ export { Progress } from '../ui/progress'
 export { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogBody, DialogFooter } from '../ui/dialog'
 
 // Re-export utilities
-export { getSpecialistTheme, getAllSpecialistTypes, isSpecialistType } from '@/lib/specialist-theme'
-export type { SpecialistType, SpecialistTheme } from '@/lib/specialist-theme'
+export { specialistThemes, getAllSpecialistTypes, isSpecialistType, getSpecialistTagline } from '@artificer/fableforge'
+export type { SpecialistType } from '@artificer/fableforge'
 
 export { formatCost, calculateTotal, compareCosts } from '@/lib/cost-utils'
-export { formatTimeAgo, formatDuration, formatTimestamp } from '@/lib/time-utils'
+export { formatTimeAgo, formatDuration, formatTimestamp } from '@artificer/ui'
 export { formatLanguagePair, getLanguageFlag, getLanguageName } from '@/lib/language-utils'
-export { computeDiff, getSimilarityScore, highlightDifferences } from '@/lib/diff-engine'
+export { computeDiff, getSimilarityScore, highlightDifferences } from '@artificer/ui'
 
 // Re-export hooks
-export { useCopyToClipboard } from '@/hooks/useCopyToClipboard'
-export { useExpandable, useMultiExpandable } from '@/hooks/useExpandable'
+export { useCopyToClipboard } from '@artificer/ui'
+export { useExpandable, useMultiExpandable } from '@artificer/ui'

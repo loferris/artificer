@@ -1,6 +1,8 @@
 // Simple in-memory rate limiter for solo deployment
 // For production with multiple instances, use Redis or database-backed solution
 
+import { TIME, RATE_LIMITS as RATE_LIMIT_CONSTANTS } from '../../constants';
+
 interface RateLimitEntry {
   count: number;
   resetTime: number;
@@ -22,8 +24,8 @@ class InMemoryRateLimiter {
           }
         });
       },
-      5 * 60 * 1000,
-    ); // 5 minutes
+      RATE_LIMIT_CONSTANTS.CLEANUP_INTERVAL_MS,
+    );
   }
 
   check(
@@ -63,32 +65,35 @@ class InMemoryRateLimiter {
 export const rateLimiter = new InMemoryRateLimiter();
 
 // Rate limiting configurations for different endpoints
-export const RATE_LIMITS = {
+export const ENDPOINT_RATE_LIMITS = {
   // Chat messages - most expensive operation
-  CHAT: { maxRequests: 30, windowMs: 60 * 1000 }, // 30 requests per minute
+  CHAT: { maxRequests: RATE_LIMIT_CONSTANTS.CHAT_REQUESTS_PER_MINUTE, windowMs: TIME.MINUTE },
 
   // Orchestration - very expensive (runs analyzer + router + executor + validator)
-  ORCHESTRATION: { maxRequests: 10, windowMs: 60 * 1000 }, // 10 requests per minute
+  ORCHESTRATION: { maxRequests: RATE_LIMIT_CONSTANTS.ORCHESTRATION_REQUESTS_PER_MINUTE, windowMs: TIME.MINUTE },
 
   // General API calls
-  API: { maxRequests: 100, windowMs: 60 * 1000 }, // 100 requests per minute
+  API: { maxRequests: RATE_LIMIT_CONSTANTS.API_REQUESTS_PER_MINUTE, windowMs: TIME.MINUTE },
 
   // Export operations - resource intensive
-  EXPORT: { maxRequests: 5, windowMs: 60 * 1000 }, // 5 exports per minute
+  EXPORT: { maxRequests: RATE_LIMIT_CONSTANTS.EXPORT_REQUESTS_PER_MINUTE, windowMs: TIME.MINUTE },
 } as const;
 
-export function createRateLimitMiddleware(limitType: keyof typeof RATE_LIMITS) {
+// Backwards compatibility alias
+export const RATE_LIMITS = ENDPOINT_RATE_LIMITS;
+
+export function createRateLimitMiddleware(limitType: keyof typeof ENDPOINT_RATE_LIMITS) {
   // Disable rate limiting for tests and development
   if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development') {
     return (identifier: string) => ({
       allowed: true,
       remaining: 999,
-      resetTime: Date.now() + 60000,
+      resetTime: Date.now() + TIME.MINUTE,
     });
   }
 
   return (identifier: string) => {
-    const config = RATE_LIMITS[limitType];
+    const config = ENDPOINT_RATE_LIMITS[limitType];
     return rateLimiter.check(identifier, config.maxRequests, config.windowMs);
   };
 }

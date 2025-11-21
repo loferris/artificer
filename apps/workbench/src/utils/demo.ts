@@ -2,31 +2,16 @@
 export const isDemoMode = (): boolean => {
   return (
     process.env.DEMO_MODE === 'true' ||
-    process.env.NEXT_PUBLIC_DEMO_MODE === 'true' ||
-    process.env.VERCEL_ENV === 'preview' ||
-    (typeof window !== 'undefined' && window.location?.hostname
-      ? (window.location.hostname.includes('vercel.app') ||
-         window.location.hostname.includes('demo'))
-      : false)
+    process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
   );
 };
 
 export const isServerSideDemo = (): boolean => {
-  return (
-    process.env.DEMO_MODE === 'true' ||
-    process.env.VERCEL_ENV === 'preview' ||
-    (typeof window === 'undefined' && process.env.VERCEL_ENV === 'preview')
-  );
+  return process.env.DEMO_MODE === 'true';
 };
 
 export const isClientSideDemo = (): boolean => {
-  return (
-    process.env.NEXT_PUBLIC_DEMO_MODE === 'true' ||
-    (typeof window !== 'undefined' && window.location?.hostname
-      ? (window.location.hostname.includes('vercel.app') ||
-         window.location.hostname.includes('demo'))
-      : false)
-  );
+  return process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 };
 
 export const shouldUseDemoFallback = (error: any): boolean => {
