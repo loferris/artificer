@@ -9,12 +9,51 @@
  */
 
 import { z } from 'zod';
-import { router, publicProcedure } from '../trpc';
+import { router, publicProcedure, protectedProcedure } from '../trpc';
 import { PrefectService, WorkflowInput } from '../services/workflows/PrefectService';
 import { getLangGraphService } from '../services/workflows/LangGraphService';
 
 const prefectService = new PrefectService();
 const langGraphService = getLangGraphService();
+
+/**
+ * Validate webhook URL to prevent SSRF attacks.
+ * Blocks internal/private network addresses.
+ */
+const safeWebhookUrl = z.string().url().refine((url) => {
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.toLowerCase();
+
+    // Block localhost
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
+      return false;
+    }
+
+    // Block private IP ranges
+    const ipMatch = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+    if (ipMatch) {
+      const [, a, b] = ipMatch.map(Number);
+      // 10.0.0.0/8
+      if (a === 10) return false;
+      // 172.16.0.0/12
+      if (a === 172 && b >= 16 && b <= 31) return false;
+      // 192.168.0.0/16
+      if (a === 192 && b === 168) return false;
+      // 169.254.0.0/16 (link-local)
+      if (a === 169 && b === 254) return false;
+    }
+
+    // Block internal hostnames
+    if (hostname.endsWith('.local') || hostname.endsWith('.internal')) {
+      return false;
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}, { message: 'Webhook URL must not point to internal/private networks' });
 
 export const workflowsRouter = router({
   /**
@@ -52,7 +91,7 @@ export const workflowsRouter = router({
   /**
    * Execute a workflow
    */
-  execute: publicProcedure
+  execute: protectedProcedure
     .input(
       z.object({
         workflowId: z.string().describe('Workflow ID to execute'),
@@ -72,7 +111,7 @@ export const workflowsRouter = router({
   /**
    * Execute PDF to HTML pipeline
    */
-  executePdfToHtml: publicProcedure
+  executePdfToHtml: protectedProcedure
     .input(
       z.object({
         pdfData: z.string().describe('Base64 encoded PDF data'),
@@ -91,7 +130,7 @@ export const workflowsRouter = router({
   /**
    * Execute PDF with OCR pipeline
    */
-  executePdfWithOcr: publicProcedure
+  executePdfWithOcr: protectedProcedure
     .input(
       z.object({
         pdfData: z.string().describe('Base64 encoded PDF data'),
@@ -110,7 +149,7 @@ export const workflowsRouter = router({
   /**
    * Execute batch PDF processing
    */
-  executeBatchPdf: publicProcedure
+  executeBatchPdf: protectedProcedure
     .input(
       z.object({
         files: z
@@ -133,7 +172,7 @@ export const workflowsRouter = router({
   /**
    * Execute image OCR pipeline
    */
-  executeImageOcr: publicProcedure
+  executeImageOcr: protectedProcedure
     .input(
       z.object({
         images: z
@@ -161,7 +200,7 @@ export const workflowsRouter = router({
   /**
    * Execute markdown conversion pipeline
    */
-  executeMarkdownConversion: publicProcedure
+  executeMarkdownConversion: protectedProcedure
     .input(
       z.object({
         markdownContent: z.string().min(1).max(1000000),
@@ -176,7 +215,7 @@ export const workflowsRouter = router({
   /**
    * Execute translation pipeline
    */
-  executeTranslation: publicProcedure
+  executeTranslation: protectedProcedure
     .input(
       z.object({
         text: z.string().min(1).max(100000),
@@ -200,7 +239,7 @@ export const workflowsRouter = router({
   /**
    * Execute batch translation
    */
-  executeBatchTranslation: publicProcedure
+  executeBatchTranslation: protectedProcedure
     .input(
       z.object({
         documents: z
@@ -246,7 +285,7 @@ export const workflowsRouter = router({
   /**
    * Register a custom workflow definition
    */
-  registerCustomWorkflow: publicProcedure
+  registerCustomWorkflow: protectedProcedure
     .input(
       z.object({
         workflowId: z.string().describe('Unique workflow ID'),
@@ -329,7 +368,7 @@ export const workflowsRouter = router({
   /**
    * Execute a custom workflow
    */
-  executeCustomWorkflow: publicProcedure
+  executeCustomWorkflow: protectedProcedure
     .input(
       z.object({
         workflowId: z.string().describe('Workflow ID'),
@@ -352,7 +391,7 @@ export const workflowsRouter = router({
   /**
    * Delete a custom workflow
    */
-  deleteCustomWorkflow: publicProcedure
+  deleteCustomWorkflow: protectedProcedure
     .input(
       z.object({
         workflowId: z.string().describe('Workflow ID'),
@@ -463,7 +502,7 @@ export const workflowsRouter = router({
   /**
    * Instantiate a template with parameters
    */
-  instantiateTemplate: publicProcedure
+  instantiateTemplate: protectedProcedure
     .input(
       z.object({
         templateId: z.string().describe('Template ID'),
@@ -511,14 +550,14 @@ export const workflowsRouter = router({
   /**
    * Execute workflow asynchronously (background)
    */
-  executeAsync: publicProcedure
+  executeAsync: protectedProcedure
     .input(
       z.object({
         workflowId: z.string().describe('Workflow ID'),
         inputs: z.record(z.any()).describe('Workflow inputs'),
         webhook: z
           .object({
-            url: z.string().url(),
+            url: safeWebhookUrl,
             method: z.enum(['POST', 'PUT']).optional(),
             headers: z.record(z.string()).optional(),
           })
@@ -543,14 +582,14 @@ export const workflowsRouter = router({
   /**
    * Execute custom workflow asynchronously
    */
-  executeCustomAsync: publicProcedure
+  executeCustomAsync: protectedProcedure
     .input(
       z.object({
         workflowId: z.string().describe('Custom workflow ID'),
         inputs: z.record(z.any()).describe('Workflow inputs'),
         webhook: z
           .object({
-            url: z.string().url(),
+            url: safeWebhookUrl,
             method: z.enum(['POST', 'PUT']).optional(),
             headers: z.record(z.string()).optional(),
           })
@@ -622,7 +661,7 @@ export const workflowsRouter = router({
   /**
    * Cancel job
    */
-  cancelJob: publicProcedure
+  cancelJob: protectedProcedure
     .input(
       z.object({
         jobId: z.string().describe('Job ID'),
@@ -645,7 +684,7 @@ export const workflowsRouter = router({
   /**
    * Delete job
    */
-  deleteJob: publicProcedure
+  deleteJob: protectedProcedure
     .input(
       z.object({
         jobId: z.string().describe('Job ID'),
@@ -711,7 +750,7 @@ export const workflowsRouter = router({
   /**
    * Register a graph
    */
-  registerGraph: publicProcedure
+  registerGraph: protectedProcedure
     .input(
       z.object({
         graphId: z.string(),
@@ -773,7 +812,7 @@ export const workflowsRouter = router({
   /**
    * Delete a graph
    */
-  deleteGraph: publicProcedure
+  deleteGraph: protectedProcedure
     .input(
       z.object({
         graphId: z.string(),
@@ -796,7 +835,7 @@ export const workflowsRouter = router({
   /**
    * Execute a graph
    */
-  executeGraph: publicProcedure
+  executeGraph: protectedProcedure
     .input(
       z.object({
         graphId: z.string(),
@@ -827,7 +866,7 @@ export const workflowsRouter = router({
   /**
    * Resume a graph from checkpoint (e.g., after human input)
    */
-  resumeGraph: publicProcedure
+  resumeGraph: protectedProcedure
     .input(
       z.object({
         graphId: z.string(),

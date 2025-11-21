@@ -53,13 +53,14 @@ class PdfProcessor:
             text_stripped = text.strip()
             has_text_content = len(text_stripped) > 100
 
-            # Extract metadata
+            # Extract metadata and page count before closing
             metadata = self._extract_metadata(doc)
+            page_count = len(page_texts)
 
             doc.close()
 
             logger.info(
-                f"PDF processed: {len(doc)} pages, {len(text_stripped)} chars, {processing_time}ms"
+                f"PDF processed: {page_count} pages, {len(text_stripped)} chars, {processing_time}ms"
             )
 
             return {

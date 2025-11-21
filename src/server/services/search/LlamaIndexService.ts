@@ -65,6 +65,7 @@ export class LlamaIndexService {
   private pythonPath: string;
   private flowsPath: string;
   private available: boolean;
+  private static readonly PROCESS_TIMEOUT = 30000; // 30 seconds
 
   constructor(pythonPath: string = 'python3') {
     this.pythonPath = pythonPath;
@@ -75,7 +76,16 @@ export class LlamaIndexService {
   }
 
   /**
-   * Execute a Python command.
+   * Safely encode data for passing to Python scripts.
+   * Uses base64 encoding to prevent injection attacks.
+   */
+  private safeEncode(data: any): string {
+    const jsonStr = JSON.stringify(data);
+    return Buffer.from(jsonStr).toString('base64');
+  }
+
+  /**
+   * Execute a Python command with timeout.
    */
   private executeCommand(command: string, args: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -88,6 +98,12 @@ export class LlamaIndexService {
       let stdout = '';
       let stderr = '';
 
+      // Set timeout
+      const timeout = setTimeout(() => {
+        proc.kill('SIGKILL');
+        reject(new Error(`Process timed out after ${LlamaIndexService.PROCESS_TIMEOUT}ms`));
+      }, LlamaIndexService.PROCESS_TIMEOUT);
+
       proc.stdout.on('data', (data) => {
         stdout += data.toString();
       });
@@ -97,6 +113,7 @@ export class LlamaIndexService {
       });
 
       proc.on('close', (code) => {
+        clearTimeout(timeout);
         if (code !== 0) {
           reject(new Error(stderr || `Process exited with code ${code}`));
         } else {
@@ -105,6 +122,7 @@ export class LlamaIndexService {
       });
 
       proc.on('error', (error) => {
+        clearTimeout(timeout);
         reject(error);
       });
     });
@@ -142,14 +160,17 @@ export class LlamaIndexService {
     query: string,
     config: RerankerConfig = {}
   ): Promise<SearchResult[]> {
+    const encodedData = this.safeEncode({ searchResults, query, config });
     const pythonScript = `
 import sys
 import json
+import base64
 from llamaindex_retrieval import rerank_search_results
 
-search_results = json.loads('''${JSON.stringify(searchResults)}''')
-query = '''${query}'''
-config = json.loads('''${JSON.stringify(config)}''')
+data = json.loads(base64.b64decode("${encodedData}").decode('utf-8'))
+search_results = data['searchResults']
+query = data['query']
+config = data['config']
 
 try:
     reranked = rerank_search_results(
@@ -176,13 +197,16 @@ except Exception as e:
    * Generate hypothetical document for HyDE.
    */
   async generateHypotheticalDocument(query: string, llmModel: string = 'gpt-4o-mini'): Promise<string> {
+    const encodedData = this.safeEncode({ query, llmModel });
     const pythonScript = `
 import sys
 import json
+import base64
 from llamaindex_retrieval import hyde_generate_hypothetical_document
 
-query = '''${query}'''
-llm_model = '''${llmModel}'''
+data = json.loads(base64.b64decode("${encodedData}").decode('utf-8'))
+query = data['query']
+llm_model = data['llmModel']
 
 try:
     hypothetical = hyde_generate_hypothetical_document(query, llm_model)
@@ -208,14 +232,17 @@ except Exception as e:
     numVariations: number = 3,
     llmModel: string = 'gpt-4o-mini'
   ): Promise<string[]> {
+    const encodedData = this.safeEncode({ query, numVariations, llmModel });
     const pythonScript = `
 import sys
 import json
+import base64
 from llamaindex_retrieval import generate_query_variations
 
-query = '''${query}'''
-num_variations = ${numVariations}
-llm_model = '''${llmModel}'''
+data = json.loads(base64.b64decode("${encodedData}").decode('utf-8'))
+query = data['query']
+num_variations = data['numVariations']
+llm_model = data['llmModel']
 
 try:
     variations = generate_query_variations(query, num_variations, llm_model)
@@ -240,13 +267,16 @@ except Exception as e:
     query: string,
     llmModel: string = 'gpt-4o-mini'
   ): Promise<string[]> {
+    const encodedData = this.safeEncode({ query, llmModel });
     const pythonScript = `
 import sys
 import json
+import base64
 from llamaindex_retrieval import decompose_into_subquestions
 
-query = '''${query}'''
-llm_model = '''${llmModel}'''
+data = json.loads(base64.b64decode("${encodedData}").decode('utf-8'))
+query = data['query']
+llm_model = data['llmModel']
 
 try:
     subquestions = decompose_into_subquestions(query, llm_model)
@@ -272,14 +302,17 @@ except Exception as e:
     response: string,
     contexts: string[]
   ): Promise<RAGEvaluation> {
+    const encodedData = this.safeEncode({ query, response, contexts });
     const pythonScript = `
 import sys
 import json
+import base64
 from llamaindex_retrieval import RAGEvaluator
 
-query = '''${query}'''
-response = '''${response}'''
-contexts = json.loads('''${JSON.stringify(contexts)}''')
+data = json.loads(base64.b64decode("${encodedData}").decode('utf-8'))
+query = data['query']
+response = data['response']
+contexts = data['contexts']
 
 try:
     evaluator = RAGEvaluator()
@@ -302,13 +335,16 @@ except Exception as e:
    * Evaluate retrieval relevancy.
    */
   async evaluateRelevancy(query: string, contexts: string[]): Promise<RAGEvaluation> {
+    const encodedData = this.safeEncode({ query, contexts });
     const pythonScript = `
 import sys
 import json
+import base64
 from llamaindex_retrieval import RAGEvaluator
 
-query = '''${query}'''
-contexts = json.loads('''${JSON.stringify(contexts)}''')
+data = json.loads(base64.b64decode("${encodedData}").decode('utf-8'))
+query = data['query']
+contexts = data['contexts']
 
 try:
     evaluator = RAGEvaluator()
@@ -331,13 +367,16 @@ except Exception as e:
    * Evaluate answer relevancy.
    */
   async evaluateAnswerRelevancy(query: string, response: string): Promise<RAGEvaluation> {
+    const encodedData = this.safeEncode({ query, response });
     const pythonScript = `
 import sys
 import json
+import base64
 from llamaindex_retrieval import RAGEvaluator
 
-query = '''${query}'''
-response = '''${response}'''
+data = json.loads(base64.b64decode("${encodedData}").decode('utf-8'))
+query = data['query']
+response = data['response']
 
 try:
     evaluator = RAGEvaluator()
@@ -364,14 +403,17 @@ except Exception as e:
     response: string,
     contexts: string[]
   ): Promise<FullRAGEvaluation> {
+    const encodedData = this.safeEncode({ query, response, contexts });
     const pythonScript = `
 import sys
 import json
+import base64
 from llamaindex_retrieval import RAGEvaluator
 
-query = '''${query}'''
-response = '''${response}'''
-contexts = json.loads('''${JSON.stringify(contexts)}''')
+data = json.loads(base64.b64decode("${encodedData}").decode('utf-8'))
+query = data['query']
+response = data['response']
+contexts = data['contexts']
 
 try:
     evaluator = RAGEvaluator()
@@ -396,12 +438,15 @@ except Exception as e:
   async batchEvaluateRAG(
     testCases: Array<{ query: string; response: string; contexts: string[] }>
   ): Promise<any> {
+    const encodedData = this.safeEncode({ testCases });
     const pythonScript = `
 import sys
 import json
+import base64
 from llamaindex_retrieval import batch_evaluate_rag
 
-test_cases = json.loads('''${JSON.stringify(testCases)}''')
+data = json.loads(base64.b64decode("${encodedData}").decode('utf-8'))
+test_cases = data['testCases']
 
 try:
     result = batch_evaluate_rag(test_cases)

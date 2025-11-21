@@ -83,6 +83,7 @@ export class LangGraphService {
   private flowsPath: string;
   private graphs: Map<string, GraphDefinition>;
   private available: boolean;
+  private static readonly PROCESS_TIMEOUT = 60000; // 60 seconds for graph execution
 
   constructor(pythonPath: string = 'python3') {
     this.pythonPath = pythonPath;
@@ -91,6 +92,15 @@ export class LangGraphService {
     this.available = false;
 
     this.checkAvailability();
+  }
+
+  /**
+   * Safely encode data for passing to Python scripts.
+   * Uses base64 encoding to prevent injection attacks.
+   */
+  private safeEncode(data: any): string {
+    const jsonStr = JSON.stringify(data);
+    return Buffer.from(jsonStr).toString('base64');
   }
 
   /**
@@ -111,7 +121,7 @@ export class LangGraphService {
   }
 
   /**
-   * Execute a Python command.
+   * Execute a Python command with timeout.
    */
   private executeCommand(command: string, args: string[]): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -124,6 +134,12 @@ export class LangGraphService {
       let stdout = '';
       let stderr = '';
 
+      // Set timeout
+      const timeout = setTimeout(() => {
+        proc.kill('SIGKILL');
+        reject(new Error(`Process timed out after ${LangGraphService.PROCESS_TIMEOUT}ms`));
+      }, LangGraphService.PROCESS_TIMEOUT);
+
       proc.stdout.on('data', (data) => {
         stdout += data.toString();
       });
@@ -133,6 +149,7 @@ export class LangGraphService {
       });
 
       proc.on('close', (code) => {
+        clearTimeout(timeout);
         if (code !== 0) {
           reject(new Error(stderr || `Process exited with code ${code}`));
         } else {
@@ -141,6 +158,7 @@ export class LangGraphService {
       });
 
       proc.on('error', (error) => {
+        clearTimeout(timeout);
         reject(error);
       });
     });
@@ -157,12 +175,15 @@ export class LangGraphService {
    * Validate a graph definition.
    */
   async validateGraph(definition: GraphDefinition): Promise<{ valid: boolean; error?: string }> {
+    const encodedData = this.safeEncode({ definition });
     const pythonScript = `
 import sys
 import json
+import base64
 from langgraph_schema import validate_graph_definition
 
-graph_def = json.loads('''${JSON.stringify(definition)}''')
+data = json.loads(base64.b64decode("${encodedData}").decode('utf-8'))
+graph_def = data['definition']
 is_valid, error = validate_graph_definition(graph_def)
 result = {"valid": is_valid, "error": error}
 print(json.dumps(result))
@@ -231,21 +252,24 @@ print(json.dumps(result))
       throw new Error(`Graph not found: ${graphId}`);
     }
 
+    const encodedData = this.safeEncode({ definition, graphId, inputs, config: config || {} });
     const pythonScript = `
 import sys
 import json
+import base64
 from langgraph_executor import register_graph, execute_graph
 
-# Register graph
-graph_def = json.loads('''${JSON.stringify(definition)}''')
-register_graph("${graphId}", graph_def)
+data = json.loads(base64.b64decode("${encodedData}").decode('utf-8'))
+graph_def = data['definition']
+graph_id = data['graphId']
+inputs = data['inputs']
+config = data['config'] if data['config'] else None
 
-# Execute
-inputs = json.loads('''${JSON.stringify(inputs)}''')
-config = json.loads('''${JSON.stringify(config || {})}''') if '''${JSON.stringify(config || {})}''' else None
+# Register graph
+register_graph(graph_id, graph_def)
 
 try:
-    result = execute_graph("${graphId}", inputs, config)
+    result = execute_graph(graph_id, inputs, config)
     output = {
         "success": True,
         "final_state": result
@@ -289,20 +313,23 @@ print(json.dumps(output))
       throw new Error(`Graph not found: ${graphId}`);
     }
 
+    const encodedData = this.safeEncode({ definition, graphId, inputs, config: config || {} });
     const pythonScript = `
 import sys
 import json
+import base64
 from langgraph_executor import register_graph, execute_graph_streaming
 
+data = json.loads(base64.b64decode("${encodedData}").decode('utf-8'))
+graph_def = data['definition']
+graph_id = data['graphId']
+inputs = data['inputs']
+config = data['config'] if data['config'] else None
+
 # Register graph
-graph_def = json.loads('''${JSON.stringify(definition)}''')
-register_graph("${graphId}", graph_def)
+register_graph(graph_id, graph_def)
 
-# Execute with streaming
-inputs = json.loads('''${JSON.stringify(inputs)}''')
-config = json.loads('''${JSON.stringify(config || {})}''') if '''${JSON.stringify(config || {})}''' else None
-
-for state in execute_graph_streaming("${graphId}", inputs, config):
+for state in execute_graph_streaming(graph_id, inputs, config):
     print(json.dumps(state))
     sys.stdout.flush()
 `;
@@ -359,19 +386,19 @@ for state in execute_graph_streaming("${graphId}", inputs, config):
       throw new Error(`Graph not found: ${graphId}`);
     }
 
+    const encodedData = this.safeEncode({ definition, checkpointId, humanInput });
     const pythonScript = `
 import sys
 import json
-from langgraph_executor import register_graph
-
-# Register graph
-graph_def = json.loads('''${JSON.stringify(definition)}''')
+import base64
 from langgraph_executor import GraphExecutor
-executor = GraphExecutor(graph_def)
 
-# Resume from checkpoint
-checkpoint_id = "${checkpointId}"
-human_input = json.loads('''${JSON.stringify(humanInput)}''')
+data = json.loads(base64.b64decode("${encodedData}").decode('utf-8'))
+graph_def = data['definition']
+checkpoint_id = data['checkpointId']
+human_input = data['humanInput']
+
+executor = GraphExecutor(graph_def)
 
 try:
     result = executor.resume_from_checkpoint(checkpoint_id, human_input)
@@ -428,11 +455,14 @@ print(json.dumps(tools))
       throw new Error(`Graph not found: ${graphId}`);
     }
 
+    const encodedData = this.safeEncode({ definition });
     const pythonScript = `
 import json
+import base64
 from langgraph_schema import format_graph_summary
 
-graph_def = json.loads('''${JSON.stringify(definition)}''')
+data = json.loads(base64.b64decode("${encodedData}").decode('utf-8'))
+graph_def = data['definition']
 summary = format_graph_summary(graph_def)
 print(summary)
 `;
