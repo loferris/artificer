@@ -42,6 +42,9 @@ describe('ModelDiscoveryService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.restoreAllMocks();
+    // Use stubGlobal for proper fetch isolation
+    vi.stubGlobal('fetch', vi.fn());
     process.env.OPENROUTER_API_KEY = 'test-key';
     service = new ModelDiscoveryService({
       apiKey: 'test-key',
@@ -53,6 +56,7 @@ describe('ModelDiscoveryService', () => {
 
   afterEach(() => {
     delete process.env.OPENROUTER_API_KEY;
+    vi.unstubAllGlobals();
   });
 
   describe('getFallbackModels', () => {
