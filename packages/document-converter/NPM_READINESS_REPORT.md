@@ -32,7 +32,7 @@ The package is now **100% ready** for npm publication. All critical requirements
 
 ✅ **LICENSE File Added**
 - MIT License created
-- Copyright: AI Workflow Engine Contributors (2025)
+- Copyright: Artificer Contributors (2025)
 - Matches package.json license field
 
 ✅ **Package Metadata Complete**
@@ -41,7 +41,7 @@ The package is now **100% ready** for npm publication. All critical requirements
   "repository": { "url": "...", "directory": "lib/document-converter" },
   "bugs": { "url": "..." },
   "homepage": "...",
-  "author": "AI Workflow Engine Contributors",
+  "author": "Artificer Contributors",
   "engines": { "node": ">=18.0.0" }
 }
 ```
@@ -188,12 +188,12 @@ See `PUBLISHING.md` for complete step-by-step instructions including:
 ```json
 {
   "repository": {
-    "url": "https://github.com/YOUR-USERNAME/ai-workflow-engine.git"
+    "url": "https://github.com/YOUR-USERNAME/artificer.git"
   },
   "bugs": {
-    "url": "https://github.com/YOUR-USERNAME/ai-workflow-engine/issues"
+    "url": "https://github.com/YOUR-USERNAME/artificer/issues"
   },
-  "homepage": "https://github.com/YOUR-USERNAME/ai-workflow-engine/tree/main/lib/document-converter#readme"
+  "homepage": "https://github.com/YOUR-USERNAME/artificer/tree/main/lib/document-converter#readme"
 }
 ```
 

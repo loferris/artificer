@@ -1,6 +1,10 @@
 # Artificer Python Client
 
-A unified Python SDK for the Artificer API, providing access to all features:
+The official Python client for Artificer, providing access to all API features via HTTP/REST.
+
+> **Note:** For direct gRPC access to Python microservices, see the proto definitions in `proto/artificer/`.
+
+## Features
 
 - **Projects & Documents** - Organize and manage documents with automatic embeddings
 - **Semantic Search** - Vector-powered semantic search across your documents

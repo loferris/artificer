@@ -1,6 +1,6 @@
 # Standalone API Server
 
-The AI Workflow Engine can run as a standalone orchestration server, providing both **tRPC** (for TypeScript clients) and **REST/OpenAPI** endpoints (for any HTTP client, including Python).
+The Artificer can run as a standalone orchestration server, providing both **tRPC** (for TypeScript clients) and **REST/OpenAPI** endpoints (for any HTTP client, including Python).
 
 ## Quick Start
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The ai-workflow-engine batch processing system allows you to process large collections of documents through multi-phase AI pipelines with automatic checkpointing, cost tracking, and progress monitoring.
+The artificer batch processing system allows you to process large collections of documents through multi-phase AI pipelines with automatic checkpointing, cost tracking, and progress monitoring.
 
 **Perfect for:**
 - Processing 100+ research papers through extraction → summarization → categorization
@@ -632,6 +632,6 @@ See `examples/batch-processing/` for complete examples:
 
 ## Support
 
-- GitHub Issues: https://github.com/yourusername/ai-workflow-engine/issues
+- GitHub Issues: https://github.com/yourusername/artificer/issues
 - Documentation: `/docs/BATCH_PROCESSING.md`
 - API Reference: Generated TypeScript types in tRPC client

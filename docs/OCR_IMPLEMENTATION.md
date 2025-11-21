@@ -2,7 +2,7 @@
 
 ## Overview
 
-The AI Workflow Engine supports Optical Character Recognition (OCR) for extracting text from images and PDFs. This enables processing of diagrams, scanned documents, screenshots, and other visual content containing text.
+The Artificer supports Optical Character Recognition (OCR) for extracting text from images and PDFs. This enables processing of diagrams, scanned documents, screenshots, and other visual content containing text.
 
 ## Architecture
 

@@ -2,7 +2,7 @@
 
 ## What Was Built
 
-This session implemented **two major features** for ai-workflow-engine:
+This session implemented **two major features** for artificer:
 
 1. **OCR Support** (Backend Complete)
 2. **Batch Processing System** (Full MVP)

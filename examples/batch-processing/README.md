@@ -1,6 +1,6 @@
 # Batch Processing Examples
 
-This directory contains example scripts demonstrating the batch processing capabilities of ai-workflow-engine.
+This directory contains example scripts demonstrating the batch processing capabilities of artificer.
 
 ## Prerequisites
 

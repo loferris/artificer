@@ -19,9 +19,6 @@ vi.mock('../../services/vector', () => {
       generateEmbedding: mockGenerateEmbedding,
       generateEmbeddings: vi.fn().mockResolvedValue([]),
     })),
-    ChunkingService: vi.fn().mockImplementation(() => ({
-      chunkText: vi.fn().mockReturnValue([]),
-    })),
   };
 });
 

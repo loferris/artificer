@@ -1,4 +1,4 @@
-# Contributing to AI Workflow Engine
+# Contributing to Artificer
 
 Thank you for your interest in contributing! This project is built in public as part of exploring better AI workflows for knowledge work.
 
@@ -16,7 +16,7 @@ Thank you for your interest in contributing! This project is built in public as 
 
    ```bash
    git clone <repo-url>
-   cd ai-workflow-engine
+   cd artificer
    npm install
    ```
 

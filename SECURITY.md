@@ -23,7 +23,7 @@ If you discover a security vulnerability, please report it responsibly:
 
 # Deployment Security Considerations
 
-This section outlines security considerations for different deployment scenarios of the AI Workflow Engine.
+This section outlines security considerations for different deployment scenarios of the Artificer.
 
 ## Demo Deployment (Safe for Public Access)
 

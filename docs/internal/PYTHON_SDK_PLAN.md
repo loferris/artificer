@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-This document outlines the plan to create a Python SDK for the AI Workflow Engine API, enabling Python applications to interact with the platform's conversation management, batch processing, OCR, and orchestration capabilities.
+This document outlines the plan to create a Python SDK for the Artificer API, enabling Python applications to interact with the platform's conversation management, batch processing, OCR, and orchestration capabilities.
 
 ### Key Recommendations
 
@@ -26,7 +26,7 @@ This document outlines the plan to create a Python SDK for the AI Workflow Engin
 
 ### API Architecture
 
-The AI Workflow Engine currently provides:
+The Artificer currently provides:
 
 **1. tRPC Endpoints** (TypeScript-first)
 - URL: `http://localhost:3001/`
@@ -479,7 +479,7 @@ import { generateOpenApiDocument } from 'trpc-openapi';
 import { appRouter } from './root';
 
 const openApiDocument = generateOpenApiDocument(appRouter, {
-  title: 'AI Workflow Engine API',
+  title: 'Artificer API',
   version: '1.0.0',
   baseUrl: 'http://localhost:3001',
 });
@@ -990,7 +990,7 @@ async def test_async_operations(client):
 ```markdown
 # Artificer Python SDK
 
-Official Python SDK for AI Workflow Engine.
+Official Python SDK for Artificer.
 
 ## Installation
 
@@ -1124,7 +1124,7 @@ async def extract(file: UploadFile):
 [project]
 name = "artificer"
 version = "0.1.0"
-description = "Official Python SDK for AI Workflow Engine"
+description = "Official Python SDK for Artificer"
 requires-python = ">=3.9"
 dependencies = [
     "httpx>=0.25.0",
@@ -1399,4 +1399,4 @@ The combination of:
 
 ...makes this a high-value, moderate-effort project with clear ROI.
 
-**Expected Outcome:** A production-ready Python SDK that enables seamless integration with the AI Workflow Engine, positioning the platform for Python-heavy ML/AI use cases and paving the way for Python microservices migration.
+**Expected Outcome:** A production-ready Python SDK that enables seamless integration with the Artificer, positioning the platform for Python-heavy ML/AI use cases and paving the way for Python microservices migration.

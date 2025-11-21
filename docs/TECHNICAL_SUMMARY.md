@@ -1,9 +1,9 @@
 # Technical Summary
 
-## AI Workflow Engine - Current State (November 16, 2025)
+## Artificer - Current State (November 16, 2025)
 
 ### Project Overview
-The AI Workflow Engine is a **production-ready conversation orchestration platform** optimized for research and writing workflows. The system provides project-based conversation organization with transparent RAG (Retrieval-Augmented Generation) for context-aware AI interactions.
+The Artificer is a **production-ready conversation orchestration platform** optimized for research and writing workflows. The system provides project-based conversation organization with transparent RAG (Retrieval-Augmented Generation) for context-aware AI interactions.
 
 ### Technical Status
 - **✅ Production Ready**: 563 tests passing, TypeScript strict mode, ESLint clean
@@ -145,7 +145,7 @@ src/
 │   │   ├── chat/        # ChatService with RAG integration
 │   │   ├── rag/         # RAGService for context retrieval
 │   │   ├── summarization/ # ConversationSummarizationService
-│   │   └── vector/      # VectorService, EmbeddingService, ChunkingService
+│   │   └── vector/      # VectorService, EmbeddingService
 │   └── utils/           # Server utilities (tokenCounter, logger)
 ├── styles/              # CSS and theme files
 ├── types/               # TypeScript type definitions

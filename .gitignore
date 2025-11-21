@@ -70,3 +70,8 @@ exports/
 docs/internal/
 .claude/
 data/
+
+# Export output
+exports/*.md
+exports/*.json
+!exports/README.md

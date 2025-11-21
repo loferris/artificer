@@ -452,7 +452,7 @@ cat > pyproject.toml << 'EOF'
 [project]
 name = "artificer-python"
 version = "0.1.0"
-description = "Python microservices for AI Workflow Engine"
+description = "Python microservices for Artificer"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.104.1",
@@ -658,7 +658,7 @@ from typing import Optional
 from .resources import BatchResource, ImagesResource
 
 class Artificer:
-    """Official Python SDK for AI Workflow Engine"""
+    """Official Python SDK for Artificer"""
 
     def __init__(
         self,

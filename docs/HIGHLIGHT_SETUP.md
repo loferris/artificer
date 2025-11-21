@@ -1,6 +1,6 @@
 # Highlight.io Integration Guide
 
-This guide explains how to use Highlight.io for error tracking and distributed tracing in the AI Workflow Engine.
+This guide explains how to use Highlight.io for error tracking and distributed tracing in the Artificer.
 
 ## Table of Contents
 
@@ -45,7 +45,7 @@ Highlight.io provides:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    AI Workflow Engine                           │
+│                    Artificer                           │
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐  │
 │  │          EnhancedLogger                                  │  │

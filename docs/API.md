@@ -1,6 +1,6 @@
 # API Reference
 
-Complete API documentation for integrating with the AI Workflow Engine.
+Complete API documentation for integrating with the Artificer.
 
 **Last Updated**: November 6, 2025
 **API Status**: Production Ready (469 tests passing, TypeScript strict mode)

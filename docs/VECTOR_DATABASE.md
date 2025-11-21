@@ -16,11 +16,10 @@ User Query → Embedding Generation → Semantic Search ← Chroma Vector DB
 
 ### Components
 
-1. **ChunkingService**: Splits documents into overlapping chunks (1000 chars, 200 char overlap)
-2. **EmbeddingService**: Generates embeddings using OpenAI `text-embedding-3-small`
-3. **VectorService**: Manages Chroma collections and semantic search (uses cosine distance)
-4. **DocumentService**: Automatically generates embeddings on document upload
-5. **RAGService**: Retrieves relevant context for AI conversations (when ENABLE_RAG=true)
+1. **EmbeddingService**: Generates embeddings using OpenAI `text-embedding-3-small`, includes text chunking (1000 chars, 200 char overlap)
+2. **VectorService**: Manages Chroma collections and semantic search (uses cosine distance)
+3. **DocumentService**: Automatically generates embeddings on document upload
+4. **RAGService**: Retrieves relevant context for AI conversations (when ENABLE_RAG=true)
 
 ## Quick Start
 
@@ -274,14 +273,12 @@ Check if vector services are operational.
 
 ### Chunking Parameters
 
-Modify in `ChunkingService.ts`:
+Chunking is configured in `EmbeddingService`:
 
 ```typescript
-const chunkingService = new ChunkingService({
-  chunkSize: 1000,        // Characters per chunk
-  chunkOverlap: 200,      // Overlap between chunks
-  separators: ['\n\n', '\n', '. ', ' '],  // Break points
-});
+// Default chunking configuration
+const chunkSize = 1000;        // Characters per chunk
+const chunkOverlap = 200;      // Overlap between chunks
 ```
 
 **Recommended settings by document type:**

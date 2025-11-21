@@ -1,4 +1,4 @@
-# AI Workflow Engine
+# Artificer
 
 A structured conversation system for AI models that transforms scattered chat sessions into organized, exportable knowledge. Built to solve workflow fragmentation across multiple AI models and interfaces while preserving conversation context and insights.
 
@@ -120,8 +120,8 @@ The service layer is designed for integration with external tools:
 ### Standard Next.js Application
 
 ```bash
-git clone https://github.com/yourusername/ai-workflow-engine.git
-cd ai-workflow-engine
+git clone https://github.com/yourusername/artificer.git
+cd artificer
 npm install
 cp .env.example .env
 # Configure OPENROUTER_API_KEY and DATABASE_URL in .env
@@ -168,7 +168,7 @@ npm run start:standalone
 
 Required environment variables in `.env`:
 ```bash
-DATABASE_URL="postgresql://postgres:password@localhost:5432/ai_workflow_engine"
+DATABASE_URL="postgresql://postgres:password@localhost:5432/artificer"
 OPENROUTER_API_KEY="your_openrouter_api_key"
 
 # Optional: Enable authentication for production

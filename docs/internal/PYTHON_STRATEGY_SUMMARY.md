@@ -6,7 +6,7 @@
 
 ## Overview
 
-This document summarizes the complete Python strategy for the AI Workflow Engine, combining both the extraction of TypeScript components to Python and the development of a Python SDK for API clients.
+This document summarizes the complete Python strategy for the Artificer, combining both the extraction of TypeScript components to Python and the development of a Python SDK for API clients.
 
 ### Related Documents
 
@@ -19,7 +19,7 @@ This document summarizes the complete Python strategy for the AI Workflow Engine
 
 ### The Big Picture
 
-Transform the AI Workflow Engine into a **hybrid TypeScript + Python architecture** that:
+Transform the Artificer into a **hybrid TypeScript + Python architecture** that:
 
 1. **Keeps TypeScript strengths** (type-safe API, Next.js frontend, Prisma ORM)
 2. **Leverages Python strengths** (document processing, ML/AI ecosystem, parallel processing)

@@ -1,6 +1,6 @@
 # Authentication System
 
-Production-ready API key authentication with IP whitelisting for the AI Workflow Engine.
+Production-ready API key authentication with IP whitelisting for the Artificer.
 
 ## Overview
 
