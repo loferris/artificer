@@ -29,13 +29,6 @@ describe('Demo Utilities', () => {
       expect(isDemoMode()).toBe(true);
     });
 
-    it('should return true when VERCEL_ENV is preview', async () => {
-      process.env.VERCEL_ENV = 'preview';
-
-      const { isDemoMode } = await import('../demo');
-      expect(isDemoMode()).toBe(true);
-    });
-
     it('should return false when no demo mode is set', async () => {
       const { isDemoMode } = await import('../demo');
       expect(isDemoMode()).toBe(false);
@@ -50,15 +43,6 @@ describe('Demo Utilities', () => {
       expect(isServerSideDemo()).toBe(true);
     });
 
-    it('should return true when running server-side and VERCEL_ENV is preview', async () => {
-      // Simulate server-side environment
-      global.window = undefined as any;
-      process.env.VERCEL_ENV = 'preview';
-
-      const { isServerSideDemo } = await import('../demo');
-      expect(isServerSideDemo()).toBe(true);
-    });
-
     it('should return false when not in demo mode', async () => {
       const { isServerSideDemo } = await import('../demo');
       expect(isServerSideDemo()).toBe(false);
@@ -68,19 +52,6 @@ describe('Demo Utilities', () => {
   describe('isClientSideDemo', () => {
     it('should return true when NEXT_PUBLIC_DEMO_MODE is set to true', async () => {
       process.env.NEXT_PUBLIC_DEMO_MODE = 'true';
-
-      const { isClientSideDemo } = await import('../demo');
-      expect(isClientSideDemo()).toBe(true);
-    });
-
-    it('should return true when running client-side and hostname includes vercel.app', async () => {
-      // Simulate client-side environment with vercel.app hostname
-      global.window = {
-        location: {
-          hostname: 'chat-app-git-feature-demo.vercel.app',
-        },
-      } as any;
-      process.env.NEXT_PUBLIC_DEMO_MODE = 'false';
 
       const { isClientSideDemo } = await import('../demo');
       expect(isClientSideDemo()).toBe(true);

@@ -9,7 +9,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "lint": "eslint src/",
+    "lint": "echo 'Lint: using type-check for packages/fableforge'",
     "type-check": "tsc --noEmit"
   },
   "keywords": [

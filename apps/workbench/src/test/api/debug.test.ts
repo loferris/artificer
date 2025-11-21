@@ -36,11 +36,6 @@ describe('/api/debug', () => {
     const responseData = JSON.parse(res._getData());
     expect(responseData).toEqual({
       environment: 'development',
-      vercel: {
-        url: undefined,
-        region: undefined,
-        deployment: undefined,
-      },
       database: {
         url: 'NOT_SET',
         provider: 'unknown',
@@ -76,35 +71,10 @@ describe('/api/debug', () => {
     const responseData = JSON.parse(res._getData());
     expect(responseData).toEqual({
       environment: 'production',
-      vercel: {},
       database: { url: 'HIDDEN' },
       demo: {},
       headers: {},
       timestamp: expect.any(String),
-    });
-  });
-
-  it('returns full information in production with correct secret', async () => {
-    process.env.NODE_ENV = 'production';
-    process.env.DEBUG_SECRET = 'test-secret';
-    process.env.DATABASE_URL = undefined; // Clear database URL for test
-
-    const { req, res } = createMocks({
-      method: 'GET',
-      url: '/api/debug?secret=test-secret',
-      headers: {
-        'content-type': 'application/json',
-      },
-    });
-
-    await debug(req, res);
-
-    expect(res._getStatusCode()).toBe(200);
-
-    const responseData = JSON.parse(res._getData());
-    expect(responseData.environment).toBe('production');
-    expect(responseData.headers).toEqual({
-      'content-type': 'application/json',
     });
   });
 

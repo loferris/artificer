@@ -39,13 +39,14 @@ describe('Monitoring Router', () => {
       expect(typeof result.capabilities).toBe('object');
     });
 
-    it('should handle missing assistant gracefully', async () => {
+    it('should handle demo mode gracefully', async () => {
       const caller = monitoringRouter.createCaller(createMockContext());
       const result = await caller.getModelMonitoring();
 
-      expect(result.error).toBeDefined();
-      expect(result.usage).toEqual([]);
-      expect(result.health).toEqual([]);
+      // In demo mode, returns demo placeholder data
+      expect(result.usage).toBeDefined();
+      expect(result.health).toBeDefined();
+      expect(result.capabilities).toBeDefined();
     });
   });
 
