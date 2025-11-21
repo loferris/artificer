@@ -19,8 +19,8 @@ import logging
 import os
 import signal
 import time
-# NOTE: grpc_reflection temporarily disabled due to import issues
-# from grpc_reflection.v1alpha import reflection
+from typing import Optional
+from grpc_reflection.v1alpha import reflection
 
 # Import service handlers
 from services.grpc_handlers.conversion_service import ConversionServiceHandler
@@ -46,17 +46,31 @@ logger = logging.getLogger(__name__)
 class GRPCServer:
     """gRPC server for Artificer services."""
 
-    def __init__(self, port: int = 50051, max_workers: int = 10):
+    def __init__(
+        self,
+        port: int = 50051,
+        max_workers: int = 10,
+        tls_cert_path: Optional[str] = None,
+        tls_key_path: Optional[str] = None,
+        tls_ca_path: Optional[str] = None,
+    ):
         """
         Initialize gRPC server.
 
         Args:
             port: Port to listen on (default: 50051)
             max_workers: Maximum thread pool workers (default: 10)
+            tls_cert_path: Path to TLS certificate file (optional)
+            tls_key_path: Path to TLS private key file (optional)
+            tls_ca_path: Path to CA certificate for client auth (optional)
         """
         self.port = port
         self.max_workers = max_workers
+        self.tls_cert_path = tls_cert_path
+        self.tls_key_path = tls_key_path
+        self.tls_ca_path = tls_ca_path
         self.server = None
+        self.use_tls = bool(tls_cert_path and tls_key_path)
 
     def start(self):
         """Start the gRPC server."""
@@ -80,16 +94,42 @@ class GRPCServer:
             TextServiceHandler(), self.server
         )
 
-        # Enable server reflection for grpcurl/grpc_cli (temporarily disabled)
-        # SERVICE_NAMES = (
-        #     "artificer.ConversionService",
-        #     "artificer.MetricsService",
-        #     reflection.SERVICE_NAME,
-        # )
-        # reflection.enable_server_reflection(SERVICE_NAMES, self.server)
+        # Enable server reflection for grpcurl/grpc_cli
+        SERVICE_NAMES = (
+            "artificer.ConversionService",
+            "artificer.MetricsService",
+            "artificer.PDFService",
+            "artificer.ImageService",
+            "artificer.TextService",
+            reflection.SERVICE_NAME,
+        )
+        reflection.enable_server_reflection(SERVICE_NAMES, self.server)
 
-        # Bind to port and start
-        self.server.add_insecure_port(f"[::]:{self.port}")
+        # Bind to port with optional TLS
+        if self.use_tls:
+            # Load TLS credentials
+            with open(self.tls_key_path, "rb") as f:
+                private_key = f.read()
+            with open(self.tls_cert_path, "rb") as f:
+                certificate_chain = f.read()
+
+            # Optional client CA for mutual TLS
+            root_certificates = None
+            if self.tls_ca_path:
+                with open(self.tls_ca_path, "rb") as f:
+                    root_certificates = f.read()
+
+            credentials = grpc.ssl_server_credentials(
+                [(private_key, certificate_chain)],
+                root_certificates=root_certificates,
+                require_client_auth=bool(root_certificates),
+            )
+            self.server.add_secure_port(f"[::]:{self.port}", credentials)
+            logger.info("TLS enabled with certificate authentication")
+        else:
+            self.server.add_insecure_port(f"[::]:{self.port}")
+            logger.warning("Running in INSECURE mode - use TLS in production!")
+
         self.server.start()
 
         logger.info("=" * 60)
@@ -104,7 +144,7 @@ class GRPCServer:
         logger.info("  - ImageService (2 RPCs)")
         logger.info("  - TextService (6 RPCs)")
         logger.info("Total: 21 RPCs across 5 services")
-        logger.info("Server reflection: Disabled (TODO: fix import issue)")
+        logger.info("Server reflection: Enabled")
         logger.info("=" * 60)
 
     def stop(self, grace: int = 10):
@@ -131,8 +171,19 @@ def serve():
     port = int(os.getenv("GRPC_PORT", "50051"))
     max_workers = int(os.getenv("GRPC_MAX_WORKERS", "10"))
 
+    # TLS configuration (optional)
+    tls_cert_path = os.getenv("GRPC_TLS_CERT")
+    tls_key_path = os.getenv("GRPC_TLS_KEY")
+    tls_ca_path = os.getenv("GRPC_TLS_CA")  # For mutual TLS
+
     # Create and start server
-    grpc_server = GRPCServer(port=port, max_workers=max_workers)
+    grpc_server = GRPCServer(
+        port=port,
+        max_workers=max_workers,
+        tls_cert_path=tls_cert_path,
+        tls_key_path=tls_key_path,
+        tls_ca_path=tls_ca_path,
+    )
     grpc_server.start()
 
     # Handle graceful shutdown
