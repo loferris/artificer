@@ -108,7 +108,7 @@ Successfully migrated **9 major performance-critical operations** from TypeScrip
 - `GET /api/text/calculate-context-window` - Budget calculation
 
 **TypeScript Client**: `/src/server/services/python/PythonTextClient.ts` (450 lines)
-- `chunkDocument()` - 3-5x faster than TypeScript ChunkingService
+- `chunkDocument()` - 3-5x faster than TypeScript EmbeddingService (chunking)
 - `chunkDocumentsBatch()` - Parallel batch processing
 - `countTokens()` - 2-3x faster than tiktoken in TypeScript
 - `countConversationTokens()` - Message overhead analysis
@@ -278,7 +278,7 @@ Pillow-SIMD requires compilation with CPU-specific optimizations. On most modern
 │          TypeScript API Layer (tRPC/Next.js)        │
 │                                                      │
 │  ┌────────────────┐  ┌──────────────────┐          │
-│  │ PdfService     │  │ ChunkingService  │          │
+│  │ PdfService     │  │ EmbeddingService (chunking)  │          │
 │  │ OCRService     │  │ tokenCounter     │          │
 │  └────────┬───────┘  └────────┬─────────┘          │
 │           │                   │                      │

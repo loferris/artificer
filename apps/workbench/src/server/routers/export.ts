@@ -74,7 +74,7 @@ function convertConversationToPortableText(conversation: any): ConvertedDocument
       title: conversation.title || 'Untitled Conversation',
       createdAt: conversation.createdAt?.toISOString() || new Date().toISOString(),
       updatedAt: conversation.updatedAt?.toISOString() || new Date().toISOString(),
-      source: 'ai-workflow-engine',
+      source: 'artificer',
       conversationId: conversation.id,
       totalMessages: conversation.messages.length,
       totalTokens: conversation.metadata?.totalTokens,
@@ -151,7 +151,7 @@ export const exportRouter = router({
             content: combinedMarkdownBlocks,
             metadata: {
               title: 'All Conversations',
-              source: 'ai-workflow-engine',
+              source: 'artificer',
               exportDate: new Date().toISOString(),
               totalConversations: conversationsWithMessages.length,
             },
@@ -192,7 +192,7 @@ export const exportRouter = router({
             content: combinedNotionBlocks,
             metadata: {
               title: 'All Conversations',
-              source: 'ai-workflow-engine',
+              source: 'artificer',
               exportDate: new Date().toISOString(),
               totalConversations: conversationsWithMessages.length,
             },
@@ -230,7 +230,7 @@ export const exportRouter = router({
             content: combinedRoamBlocks,
             metadata: {
               title: 'All Conversations',
-              source: 'ai-workflow-engine',
+              source: 'artificer',
               exportDate: new Date().toISOString(),
               totalConversations: conversationsWithMessages.length,
             },
@@ -278,7 +278,7 @@ export const exportRouter = router({
             content: combinedBlocks,
             metadata: {
               title: 'All Conversations',
-              source: 'ai-workflow-engine',
+              source: 'artificer',
               exportDate: new Date().toISOString(),
               totalConversations: conversationsWithMessages.length,
             },

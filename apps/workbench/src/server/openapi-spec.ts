@@ -13,7 +13,7 @@ export const openApiSpec = {
     description: 'API for conversation and project management with AI orchestration capabilities',
     contact: {
       name: 'API Support',
-      url: 'https://github.com/yourusername/ai-workflow-engine'
+      url: 'https://github.com/yourusername/artificer'
     }
   },
   servers: [

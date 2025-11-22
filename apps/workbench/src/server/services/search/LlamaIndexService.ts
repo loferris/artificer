@@ -11,6 +11,7 @@
 
 import { spawn } from 'child_process';
 import * as path from 'path';
+import { logger } from '../../utils/logger';
 
 export interface RerankerConfig {
   model?: 'ms-marco-mini' | 'ms-marco-base' | 'bge-reranker' | 'cohere-rerank';
@@ -140,7 +141,7 @@ export class LlamaIndexService {
 
       this.available = result.trim() === 'available';
     } catch (error) {
-      console.warn('LlamaIndex not available:', error);
+      logger.warn('LlamaIndex not available', { error });
       this.available = false;
     }
   }
@@ -163,7 +164,7 @@ export class LlamaIndexService {
   ): Promise<SearchResult[]> {
     // Graceful degradation: return original results if unavailable
     if (!this.available) {
-      console.warn('LlamaIndex not available - returning unranked results');
+      logger.warn('LlamaIndex not available - returning unranked results');
       return searchResults;
     }
 
@@ -207,7 +208,7 @@ except Exception as e:
   async generateHypotheticalDocument(query: string, llmModel: string = 'gpt-4o-mini'): Promise<string> {
     // Graceful degradation: return original query if unavailable
     if (!this.available) {
-      console.warn('LlamaIndex not available - HyDE disabled, using original query');
+      logger.warn('LlamaIndex not available - HyDE disabled, using original query');
       return query;
     }
 
@@ -249,7 +250,7 @@ except Exception as e:
   ): Promise<string[]> {
     // Graceful degradation: return original query only if unavailable
     if (!this.available) {
-      console.warn('LlamaIndex not available - returning original query only');
+      logger.warn('LlamaIndex not available - returning original query only');
       return [query];
     }
 
@@ -291,7 +292,7 @@ except Exception as e:
   ): Promise<string[]> {
     // Graceful degradation: return original query only if unavailable
     if (!this.available) {
-      console.warn('LlamaIndex not available - returning original query only');
+      logger.warn('LlamaIndex not available - returning original query only');
       return [query];
     }
 

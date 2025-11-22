@@ -168,7 +168,7 @@ export class ModelRegistry {
     const response = await fetch('https://openrouter.ai/api/v1/models', {
       headers: {
         'Authorization': `Bearer ${apiKey}`,
-        'HTTP-Referer': process.env.OPENROUTER_REFERER || 'https://github.com/ai-workflow-engine',
+        'HTTP-Referer': process.env.OPENROUTER_REFERER || 'https://github.com/artificer',
         'X-Title': 'AI Workflow Engine',
       },
     });

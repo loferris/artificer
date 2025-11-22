@@ -11,7 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from prefect import flow, task, get_run_logger
-from artificer_sdk import ArtificerClient
+from artificer_client import ArtificerClient
 
 
 @task(retries=2, retry_delay_seconds=5)
@@ -107,7 +107,7 @@ This is a **simple workflow** demonstrating:
 ## Code Example
 
 ```python
-from artificer_sdk import ArtificerClient
+from artificer_client import ArtificerClient
 
 with ArtificerClient("localhost:50051") as client:
     result = client.conversion.import_markdown("# Hello!")

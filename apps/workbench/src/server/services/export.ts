@@ -2,7 +2,7 @@
 // Supports: Markdown, Notion, Obsidian, Google Docs, and more
 
 export interface ExportOptions {
-  format: 'markdown' | 'notion' | 'obsidian' | 'google-docs' | 'json' | 'html';
+  format: 'markdown' | 'notion' | 'roam' | 'obsidian' | 'google-docs' | 'json' | 'html';
   includeMetadata?: boolean;
   includeTimestamps?: boolean;
   includeCosts?: boolean;

@@ -108,6 +108,22 @@ export class PythonTextClient {
   }
 
   /**
+   * Get service statistics
+   */
+  getStats() {
+    return {
+      available: this.available,
+      forceDisabled: false,
+      baseUrl: this.baseUrl,
+      circuitBreaker: {
+        state: 'CLOSED' as 'CLOSED' | 'OPEN' | 'HALF_OPEN',
+        failures: 0,
+        successes: 0,
+      },
+    };
+  }
+
+  /**
    * Chunk a document (3-5x faster than TypeScript)
    */
   async chunkDocument(

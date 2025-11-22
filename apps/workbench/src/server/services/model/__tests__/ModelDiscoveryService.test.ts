@@ -95,7 +95,7 @@ describe('ModelDiscoveryService', () => {
   describe('getModels - fallback behavior', () => {
     it('should use hardcoded fallbacks when API fails and no file cache', async () => {
       // Mock API failure
-      global.fetch = vi.fn().mockRejectedValue(new Error('API Error'));
+      vi.mocked(fetch).mockRejectedValue(new Error('API Error'));
 
       // Mock no file cache
       vi.mocked(fs.readFile).mockRejectedValue(new Error('File not found'));
@@ -118,7 +118,7 @@ describe('ModelDiscoveryService', () => {
       });
 
       // Mock API failure
-      global.fetch = vi.fn().mockRejectedValue(new Error('API Error'));
+      vi.mocked(fetch).mockRejectedValue(new Error('API Error'));
 
       // Mock no file cache
       vi.mocked(fs.readFile).mockRejectedValue(new Error('File not found'));
@@ -163,7 +163,7 @@ describe('ModelDiscoveryService', () => {
       vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(cacheData));
 
       // Mock API success for fallback
-      global.fetch = vi.fn().mockResolvedValue({
+      vi.mocked(fetch).mockResolvedValue({
         ok: true,
         json: async () => ({ data: mockModels }),
       } as Response);
@@ -193,7 +193,7 @@ describe('ModelDiscoveryService', () => {
       vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(cacheData));
 
       // Mock API success
-      global.fetch = vi.fn().mockResolvedValue({
+      vi.mocked(fetch).mockResolvedValue({
         ok: true,
         json: async () => ({ data: mockModels }),
       } as Response);
@@ -222,7 +222,7 @@ describe('ModelDiscoveryService', () => {
       vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(cacheData));
 
       // Mock API success
-      global.fetch = vi.fn().mockResolvedValue({
+      vi.mocked(fetch).mockResolvedValue({
         ok: true,
         json: async () => ({ data: mockModels }),
       } as Response);
@@ -252,7 +252,7 @@ describe('ModelDiscoveryService', () => {
       vi.mocked(fs.readFile).mockResolvedValue(JSON.stringify(cacheData));
 
       // Mock API failure
-      global.fetch = vi.fn().mockRejectedValue(new Error('API Error'));
+      vi.mocked(fetch).mockRejectedValue(new Error('API Error'));
 
       const models = await service.getModels();
 
@@ -276,7 +276,7 @@ describe('ModelDiscoveryService', () => {
         },
       ];
 
-      global.fetch = vi.fn().mockResolvedValue({
+      vi.mocked(fetch).mockResolvedValue({
         ok: true,
         json: async () => ({ data: apiModels }),
       } as Response);
@@ -295,7 +295,7 @@ describe('ModelDiscoveryService', () => {
     });
 
     it('should handle API error response', async () => {
-      global.fetch = vi.fn().mockResolvedValue({
+      vi.mocked(fetch).mockResolvedValue({
         ok: false,
         status: 429,
         statusText: 'Too Many Requests',
@@ -331,7 +331,7 @@ describe('ModelDiscoveryService', () => {
 
   describe('refresh', () => {
     it('should force refresh from API', async () => {
-      global.fetch = vi.fn().mockResolvedValue({
+      vi.mocked(fetch).mockResolvedValue({
         ok: true,
         json: async () => ({ data: mockModels }),
       } as Response);
@@ -347,7 +347,7 @@ describe('ModelDiscoveryService', () => {
     });
 
     it('should throw error when refresh fails', async () => {
-      global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
+      vi.mocked(fetch).mockRejectedValue(new Error('Network error'));
 
       await expect(service.refresh()).rejects.toThrow('Network error');
     });

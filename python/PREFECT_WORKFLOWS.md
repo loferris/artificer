@@ -40,7 +40,7 @@ open http://localhost:4200
 ```python
 # python/flows/examples/hello_workflow.py
 from prefect import flow, task
-from artificer_sdk import ArtificerClient
+from artificer_client import ArtificerClient
 
 @task(retries=2)
 def convert_markdown():
@@ -262,7 +262,7 @@ Task features:
 
 ```python
 from prefect import flow, task
-from artificer_sdk import ArtificerClient
+from artificer_client import ArtificerClient
 
 @task(retries=2)
 def my_processing_task(input_data):
@@ -578,7 +578,7 @@ prefect server database reset -y
 ## Resources
 
 - **Prefect Docs**: https://docs.prefect.io/
-- **Artificer SDK**: `python/artificer_sdk/README.md`
+- **Artificer SDK**: `python/artificer_client/README.md`
 - **gRPC Guide**: `python/GRPC_README.md`
 - **Flow Examples**: `python/flows/`
 

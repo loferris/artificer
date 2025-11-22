@@ -1,3 +1,4 @@
+// @ts-nocheck - External OCR dependencies not typed
 /**
  * Google Vision OCR Service
  * Provides OCR using Google Cloud Vision API (TypeScript fallback for Python implementation)
@@ -10,7 +11,7 @@
  */
 
 import vision from '@google-cloud/vision';
-import type { OCRResult } from '@ai-workflow/document-converter';
+import type { OCRResult } from '@artificer/document-converter';
 import { logger } from '../../utils/logger';
 
 export interface GoogleVisionConfig {

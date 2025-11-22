@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import type { Message as BaseMessage } from '@/types'
 import type { Operation, ValidationResult } from '@artificer/worldbuilder'
+import { clientLogger } from '@/utils/clientLogger'
 
 export interface Message extends BaseMessage {
   sources?: Source[]
@@ -151,7 +152,7 @@ export function useConversation(
 
       updateMessage(assistantMessage.id, { streaming: false })
     } catch (error) {
-      console.error('Error sending message:', error)
+      clientLogger.error('Error sending message', error as Error)
     } finally {
       setIsLoading(false)
     }

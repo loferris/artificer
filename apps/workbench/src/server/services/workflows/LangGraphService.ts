@@ -11,6 +11,7 @@
 
 import { spawn } from 'child_process';
 import * as path from 'path';
+import { logger } from '../../utils/logger';
 
 export interface GraphNode {
   id: string;
@@ -115,7 +116,7 @@ export class LangGraphService {
 
       this.available = result.trim() === 'available';
     } catch (error) {
-      console.warn('LangGraph not available:', error);
+      logger.warn('LangGraph not available', { error });
       this.available = false;
     }
   }
@@ -381,7 +382,7 @@ for state in execute_graph_streaming(graph_id, inputs, config):
             const state = JSON.parse(line);
             yield state;
           } catch (e) {
-            console.error('Failed to parse streaming output:', line);
+            logger.error('Failed to parse streaming output', { line, error: e });
           }
         }
       }
@@ -393,7 +394,7 @@ for state in execute_graph_streaming(graph_id, inputs, config):
         const state = JSON.parse(buffer);
         yield state;
       } catch (e) {
-        console.error('Failed to parse final output:', buffer);
+        logger.error('Failed to parse final output', { buffer, error: e });
       }
     }
   }

@@ -95,7 +95,7 @@ export const workflowsRouter = router({
     .input(
       z.object({
         workflowId: z.string().describe('Workflow ID to execute'),
-        inputs: z.record(z.any()).describe('Workflow inputs'),
+        inputs: z.record(z.string(), z.any()).describe('Workflow inputs'),
       })
     )
     .mutation(async ({ input }) => {
@@ -297,12 +297,12 @@ export const workflowsRouter = router({
             z.object({
               id: z.string(),
               type: z.string(),
-              inputs: z.record(z.any()),
+              inputs: z.record(z.string(), z.any()),
               depends_on: z.array(z.string()).optional(),
               outputs: z.array(z.string()).optional(),
             })
           ),
-          output: z.record(z.string()).optional(),
+          output: z.record(z.string(), z.string()).optional(),
           options: z
             .object({
               parallel: z.boolean().optional(),
@@ -312,7 +312,7 @@ export const workflowsRouter = router({
               max_retries: z.number().optional(),
             })
             .optional(),
-          metadata: z.record(z.any()).optional(),
+          metadata: z.record(z.string(), z.any()).optional(),
         }),
       })
     )
@@ -372,7 +372,7 @@ export const workflowsRouter = router({
     .input(
       z.object({
         workflowId: z.string().describe('Workflow ID'),
-        inputs: z.record(z.any()).describe('Workflow inputs'),
+        inputs: z.record(z.string(), z.any()).describe('Workflow inputs'),
       })
     )
     .mutation(async ({ input }) => {
@@ -425,14 +425,14 @@ export const workflowsRouter = router({
             z.object({
               id: z.string(),
               type: z.string(),
-              inputs: z.record(z.any()),
+              inputs: z.record(z.string(), z.any()),
               depends_on: z.array(z.string()).optional(),
               outputs: z.array(z.string()).optional(),
             })
           ),
-          output: z.record(z.string()).optional(),
-          options: z.record(z.any()).optional(),
-          metadata: z.record(z.any()).optional(),
+          output: z.record(z.string(), z.string()).optional(),
+          options: z.record(z.string(), z.any()).optional(),
+          metadata: z.record(z.string(), z.any()).optional(),
         }),
       })
     )
@@ -506,7 +506,7 @@ export const workflowsRouter = router({
     .input(
       z.object({
         templateId: z.string().describe('Template ID'),
-        params: z.record(z.any()).describe('Template parameters'),
+        params: z.record(z.string(), z.any()).describe('Template parameters'),
         autoRegister: z.boolean().optional().describe('Automatically register the workflow'),
         workflowId: z.string().optional().describe('Workflow ID for auto-registration'),
       })
@@ -554,12 +554,12 @@ export const workflowsRouter = router({
     .input(
       z.object({
         workflowId: z.string().describe('Workflow ID'),
-        inputs: z.record(z.any()).describe('Workflow inputs'),
+        inputs: z.record(z.string(), z.any()).describe('Workflow inputs'),
         webhook: z
           .object({
             url: safeWebhookUrl,
             method: z.enum(['POST', 'PUT']).optional(),
-            headers: z.record(z.string()).optional(),
+            headers: z.record(z.string(), z.string()).optional(),
           })
           .optional()
           .describe('Webhook for completion notification'),
@@ -586,12 +586,12 @@ export const workflowsRouter = router({
     .input(
       z.object({
         workflowId: z.string().describe('Custom workflow ID'),
-        inputs: z.record(z.any()).describe('Workflow inputs'),
+        inputs: z.record(z.string(), z.any()).describe('Workflow inputs'),
         webhook: z
           .object({
             url: safeWebhookUrl,
             method: z.enum(['POST', 'PUT']).optional(),
-            headers: z.record(z.string()).optional(),
+            headers: z.record(z.string(), z.string()).optional(),
           })
           .optional(),
         priority: z.enum(['low', 'normal', 'high']).optional(),
@@ -733,13 +733,13 @@ export const workflowsRouter = router({
           description: z.string(),
           version: z.string(),
           state_schema: z.object({
-            fields: z.record(z.any()),
+            fields: z.record(z.string(), z.any()),
           }),
           nodes: z.array(z.any()),
           edges: z.array(z.any()),
           entry_point: z.string(),
           finish_points: z.array(z.string()),
-          options: z.record(z.any()).optional(),
+          options: z.record(z.string(), z.any()).optional(),
         }),
       })
     )
@@ -759,13 +759,13 @@ export const workflowsRouter = router({
           description: z.string(),
           version: z.string(),
           state_schema: z.object({
-            fields: z.record(z.any()),
+            fields: z.record(z.string(), z.any()),
           }),
           nodes: z.array(z.any()),
           edges: z.array(z.any()),
           entry_point: z.string(),
           finish_points: z.array(z.string()),
-          options: z.record(z.any()).optional(),
+          options: z.record(z.string(), z.any()).optional(),
         }),
       })
     )
@@ -839,11 +839,11 @@ export const workflowsRouter = router({
     .input(
       z.object({
         graphId: z.string(),
-        inputs: z.record(z.any()),
+        inputs: z.record(z.string(), z.any()),
         config: z
           .object({
             thread_id: z.string().optional(),
-            human_input: z.record(z.any()).optional(),
+            human_input: z.record(z.string(), z.any()).optional(),
             streaming: z.boolean().optional(),
           })
           .optional(),
@@ -871,7 +871,7 @@ export const workflowsRouter = router({
       z.object({
         graphId: z.string(),
         checkpointId: z.string(),
-        humanInput: z.record(z.any()),
+        humanInput: z.record(z.string(), z.any()),
       })
     )
     .mutation(async ({ input }) => {

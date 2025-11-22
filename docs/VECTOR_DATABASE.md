@@ -342,7 +342,7 @@ const chunkOverlap = 200;      // Overlap between chunks
 docker ps | grep chroma
 
 # View Chroma logs
-docker logs chatapp-chroma
+docker logs artificer-chroma
 
 # Restart Chroma
 docker-compose restart chroma

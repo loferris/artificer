@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { logger } from '../utils/logger';
 import {
   ConversationService,
   DatabaseConversationService,
@@ -33,6 +34,7 @@ export interface ServiceContainer {
 export interface ServiceFactoryOptions {
   db?: PrismaClient | null;
   forceDemo?: boolean;
+  correlationId?: string;
   assistantConfig?: {
     apiKey?: string;
     siteName?: string;
@@ -103,7 +105,7 @@ export class ServiceFactory {
           ragService = new DefaultRAGService(vectorService, embeddingService);
         } catch (error) {
           // Fall back to no-op if RAG setup fails
-          console.warn('Failed to initialize RAG service, using no-op:', error);
+          logger.warn('Failed to initialize RAG service, using no-op', { error });
           ragService = new NoOpRAGService();
         }
       }
@@ -114,7 +116,7 @@ export class ServiceFactory {
         try {
           summarizationService = new ConversationSummarizationService(db!, assistant);
         } catch (error) {
-          console.warn('Failed to initialize summarization service:', error);
+          logger.warn('Failed to initialize summarization service', { error });
         }
       }
 
@@ -189,10 +191,12 @@ export function createChatService(options: ServiceFactoryOptions = {}): ChatServ
 export function createServicesFromContext(ctx: {
   db: PrismaClient | null;
   user?: { sessionId?: string } | null;
+  correlationId?: string;
 }): ServiceContainer {
   const options: ServiceFactoryOptions = {
     db: ctx.db,
     forceDemo: !ctx.db,
+    correlationId: ctx.correlationId,
     assistantConfig: {
       siteName: 'chat-app',
     },

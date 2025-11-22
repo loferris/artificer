@@ -1,4 +1,5 @@
 // Utility functions for consistent error handling
+import { clientLogger } from './clientLogger';
 
 export interface ErrorWithContext {
   error: Error;
@@ -180,13 +181,11 @@ export class ErrorHandler {
     const { error, context, timestamp } = errorWithContext;
 
     if (process.env.NODE_ENV !== 'production') {
-      console.group(`🚨 Error at ${timestamp.toISOString()}`);
-      console.error('Message:', error.message);
-      console.error('Stack:', error.stack);
-      if (context) {
-        console.error('Context:', context);
-      }
-      console.groupEnd();
+      clientLogger.error(`Error at ${timestamp.toISOString()}`, error, {
+        message: error.message,
+        stack: error.stack,
+        ...context,
+      });
     }
   }
 
@@ -194,7 +193,7 @@ export class ErrorHandler {
     // Placeholder for external error reporting service
     // You can integrate with services like Sentry, LogRocket, etc.
     if (process.env.NODE_ENV !== 'production') {
-      console.log('Would send to error reporting service:', errorWithContext);
+      clientLogger.debug('Would send to error reporting service', { errorWithContext });
     }
   }
 
@@ -202,7 +201,7 @@ export class ErrorHandler {
     // Placeholder for user notification system
     // You can integrate with toast notifications, modals, etc.
     if (process.env.NODE_ENV !== 'production') {
-      console.log('Would show user message:', message);
+      clientLogger.debug('Would show user message', { message });
     }
   }
 }

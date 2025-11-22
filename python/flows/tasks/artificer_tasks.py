@@ -13,7 +13,7 @@ from typing import Dict, Any, List, Optional
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from prefect import task, get_run_logger
-from artificer_sdk import ArtificerClient
+from artificer_client import ArtificerClient
 
 
 # Global client configuration

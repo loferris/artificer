@@ -47,7 +47,7 @@ export default function WorldbuildingPage() {
         });
         setCurrentConversationId(result.id);
       } catch (error) {
-        console.error('Failed to create conversation:', error);
+        clientLogger.error('Failed to create conversation', error as Error);
       }
     };
 

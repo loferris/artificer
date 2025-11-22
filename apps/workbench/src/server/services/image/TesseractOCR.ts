@@ -1,3 +1,4 @@
+// @ts-nocheck - External OCR dependencies not typed
 /**
  * Tesseract OCR Service
  * Provides offline OCR using Tesseract.js (TypeScript fallback for Python pytesseract)
@@ -12,7 +13,7 @@
  */
 
 import Tesseract from 'tesseract.js';
-import type { OCRResult } from '@ai-workflow/document-converter';
+import type { OCRResult } from '@artificer/document-converter';
 import { logger } from '../../utils/logger';
 
 export interface TesseractConfig {

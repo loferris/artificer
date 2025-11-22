@@ -8,6 +8,7 @@ import { logger } from './utils/logger';
 import { ApiKeyService } from './services/auth';
 import { initializeServer } from './init';
 import { isDemoMode } from '../utils/demo';
+import { getOrCreateCorrelationId, CORRELATION_ID_HEADER } from './utils/correlationId';
 
 /**
  * Get client IP address from request
@@ -58,6 +59,10 @@ export const createContext = async (opts: CreateNextContextOptions) => {
   try {
     const user = getUserFromRequest(opts.req);
     const clientIp = getClientIp(opts.req);
+    const correlationId = getOrCreateCorrelationId(opts.req.headers as Record<string, string | string[] | undefined>);
+
+    // Set correlation ID in response headers for tracing
+    opts.res.setHeader(CORRELATION_ID_HEADER, correlationId);
 
     // Create AbortController for request cancellation
     const controller = new AbortController();
@@ -114,6 +119,7 @@ export const createContext = async (opts: CreateNextContextOptions) => {
       user,
       authenticatedUser, // API key auth
       clientIp,
+      correlationId,
       signal: controller.signal,
     };
   } catch (error) {
@@ -130,6 +136,7 @@ export const createContext = async (opts: CreateNextContextOptions) => {
       user: null,
       authenticatedUser: null,
       clientIp: getClientIp(opts.req),
+      correlationId: getOrCreateCorrelationId(opts.req.headers as Record<string, string | string[] | undefined>),
       signal: controller.signal,
     };
   }
@@ -141,6 +148,7 @@ export const createInnerTRPCContext = (opts: {
   res?: any;
   db: any;
   user?: any;
+  correlationId?: string;
   signal?: AbortSignal;
 }) => {
   return {
@@ -150,6 +158,7 @@ export const createInnerTRPCContext = (opts: {
     user: opts.user || null,
     authenticatedUser: null,
     clientIp: 'test',
+    correlationId: opts.correlationId || 'test-correlation-id',
     signal: opts.signal || new AbortController().signal,
   };
 };

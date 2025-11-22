@@ -1,8 +1,8 @@
 /**
  * Prefect Workflow Service
  *
- * Manages Prefect workflow execution via Python subprocess.
- * Exposes pre-built workflows through TypeScript API.
+ * Manages Prefect workflow execution via HTTP API (preferred) or Python subprocess (fallback).
+ * HTTP mode is more reliable and production-ready.
  */
 
 import { spawn } from 'child_process';
@@ -14,6 +14,7 @@ import {
   WorkflowJob,
   JobStatus,
 } from './WorkflowJobManager';
+import { PrefectHttpClient } from './PrefectHttpClient';
 
 export interface WorkflowInput {
   [key: string]: any;
@@ -143,6 +144,8 @@ export class PrefectService {
   private customWorkflows: Map<string, CustomWorkflowDefinition>;
   private jobManager: WorkflowJobManager;
   private processingQueue: boolean;
+  private httpClient: PrefectHttpClient;
+  private useHttpMode: boolean;
 
   constructor() {
     // Path to Python flows directory
@@ -152,16 +155,38 @@ export class PrefectService {
     this.jobManager = new WorkflowJobManager(3); // Max 3 concurrent workflows
     this.processingQueue = false;
 
+    // Initialize HTTP client for production mode
+    this.httpClient = new PrefectHttpClient();
+    this.useHttpMode = process.env.WORKFLOW_USE_HTTP !== 'false';
+
     // Listen to queue events
     this.jobManager.on('queue:process', () => {
       this.processExecutionQueue();
     });
+
+    logger.info('PrefectService initialized', {
+      mode: this.useHttpMode ? 'HTTP (production)' : 'subprocess (development)',
+      httpAvailable: this.httpClient.isAvailable(),
+    });
+  }
+
+  /**
+   * Cleanup resources
+   */
+  destroy(): void {
+    this.httpClient.destroy();
   }
 
   /**
    * Check if Prefect is available
    */
   async isAvailable(): Promise<boolean> {
+    // Check HTTP client first (preferred)
+    if (this.useHttpMode && this.httpClient.isAvailable()) {
+      return true;
+    }
+
+    // Fall back to subprocess check
     try {
       const result = await this.executeCommand('python3', ['-c', 'import prefect; print("ok")']);
       return result.trim() === 'ok';
@@ -205,7 +230,8 @@ export class PrefectService {
    */
   async executeWorkflow(
     workflowId: string,
-    inputs: WorkflowInput
+    inputs: WorkflowInput,
+    correlationId?: string
   ): Promise<WorkflowResult> {
     const startTime = Date.now();
 
@@ -217,17 +243,31 @@ export class PrefectService {
     logger.info('Executing Prefect workflow', {
       workflow: workflow.name,
       workflowId,
+      mode: this.useHttpMode && this.httpClient.isAvailable() ? 'HTTP' : 'subprocess',
+      correlationId,
     });
 
     try {
-      // Execute Python workflow
-      const result = await this.executePythonWorkflow(workflow.name, inputs);
+      let result: any;
+
+      // Use HTTP client if available (preferred for production)
+      if (this.useHttpMode && this.httpClient.isAvailable()) {
+        const response = await this.httpClient.executeWorkflow(workflowId, inputs, correlationId);
+        if (!response.success) {
+          throw new Error(response.error || 'Workflow execution failed');
+        }
+        result = response.result;
+      } else {
+        // Fall back to subprocess (development mode)
+        result = await this.executePythonWorkflow(workflow.name, inputs);
+      }
 
       const executionTime = Date.now() - startTime;
 
       logger.info('Workflow completed successfully', {
         workflow: workflow.name,
         executionTime,
+        correlationId,
       });
 
       return {
@@ -246,6 +286,7 @@ export class PrefectService {
         workflow: workflow.name,
         error: error instanceof Error ? error.message : 'Unknown error',
         executionTime,
+        correlationId,
       });
 
       return {
@@ -413,7 +454,8 @@ if __name__ == "__main__":
    */
   async executeCustomWorkflow(
     workflowId: string,
-    inputs: WorkflowInput
+    inputs: WorkflowInput,
+    correlationId?: string
   ): Promise<WorkflowResult> {
     const startTime = Date.now();
 
@@ -425,11 +467,28 @@ if __name__ == "__main__":
     logger.info('Executing custom workflow', {
       workflowId,
       name: definition.name,
+      mode: this.useHttpMode && this.httpClient.isAvailable() ? 'HTTP' : 'subprocess',
+      correlationId,
     });
 
     try {
-      // Execute via workflow generator
-      const result = await this.executePythonCustomWorkflow(definition, inputs);
+      let result: any;
+
+      // Use HTTP client if available (preferred for production)
+      if (this.useHttpMode && this.httpClient.isAvailable()) {
+        const response = await this.httpClient.executeCustomWorkflow(
+          definition,
+          inputs,
+          correlationId
+        );
+        if (!response.success) {
+          throw new Error(response.error || 'Custom workflow execution failed');
+        }
+        result = response.result;
+      } else {
+        // Fall back to subprocess (development mode)
+        result = await this.executePythonCustomWorkflow(definition, inputs);
+      }
 
       const executionTime = Date.now() - startTime;
 
@@ -437,6 +496,7 @@ if __name__ == "__main__":
         workflowId,
         name: definition.name,
         executionTime,
+        correlationId,
       });
 
       return {
@@ -456,6 +516,7 @@ if __name__ == "__main__":
         name: definition.name,
         error: error instanceof Error ? error.message : 'Unknown error',
         executionTime,
+        correlationId,
       });
 
       return {
@@ -575,6 +636,12 @@ print(json.dumps({"valid": is_valid, "error": error}))
     }>
   > {
     try {
+      // Use HTTP client if available (preferred)
+      if (this.useHttpMode && this.httpClient.isAvailable()) {
+        return await this.httpClient.listTemplates(category);
+      }
+
+      // Fall back to subprocess
       const pythonScript = `
 import sys
 import json
@@ -696,6 +763,12 @@ print(json.dumps(categories))
     params: Record<string, any>
   ): Promise<CustomWorkflowDefinition> {
     try {
+      // Use HTTP client if available (preferred)
+      if (this.useHttpMode && this.httpClient.isAvailable()) {
+        return await this.httpClient.instantiateTemplate(templateId, params);
+      }
+
+      // Fall back to subprocess
       const pythonScript = `
 import sys
 import json

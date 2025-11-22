@@ -6,6 +6,7 @@
  */
 
 import { logger } from '../../utils/logger';
+import { GrpcConversionClient, getGrpcConversionClient } from '../grpc';
 
 export interface PythonMarkdownImportResult {
   content: any[]; // Portable Text blocks
@@ -71,6 +72,8 @@ export class PythonConversionClient {
   private baseUrl: string;
   private timeout: number;
   private available: boolean = false;
+  private grpcClient: GrpcConversionClient | null = null;
+  private useGrpc: boolean;
 
   constructor(
     baseUrl: string = process.env.PYTHON_OCR_URL || 'http://localhost:8000',
@@ -78,8 +81,21 @@ export class PythonConversionClient {
   ) {
     this.baseUrl = baseUrl;
     this.timeout = timeout;
+    this.useGrpc = process.env.USE_GRPC_INTERNAL !== 'false';
 
-    // Check availability on startup
+    // Try to initialize gRPC client for internal communication
+    if (this.useGrpc) {
+      try {
+        this.grpcClient = getGrpcConversionClient();
+        logger.info('PythonConversionClient using gRPC for internal communication');
+      } catch (error) {
+        logger.warn('Failed to initialize gRPC client, falling back to HTTP', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    }
+
+    // Check HTTP availability as fallback
     this.checkAvailability();
   }
 
@@ -117,7 +133,35 @@ export class PythonConversionClient {
    * Check if service is available
    */
   isAvailable(): boolean {
+    // Prefer gRPC if connected
+    if (this.grpcClient?.isConnected()) {
+      return true;
+    }
     return this.available;
+  }
+
+  /**
+   * Check if using gRPC
+   */
+  isUsingGrpc(): boolean {
+    return this.grpcClient?.isConnected() ?? false;
+  }
+
+  /**
+   * Get service statistics
+   */
+  getStats() {
+    return {
+      available: this.isAvailable(),
+      usingGrpc: this.isUsingGrpc(),
+      forceDisabled: false,
+      baseUrl: this.baseUrl,
+      circuitBreaker: {
+        state: 'CLOSED' as 'CLOSED' | 'OPEN' | 'HALF_OPEN',
+        failures: 0,
+        successes: 0,
+      },
+    };
   }
 
   /**
@@ -128,8 +172,32 @@ export class PythonConversionClient {
     options: {
       strictMode?: boolean;
       includeMetadata?: boolean;
-    } = {}
+    } = {},
+    correlationId?: string
   ): Promise<PythonMarkdownImportResult> {
+    // Try gRPC first
+    if (this.grpcClient?.isConnected()) {
+      try {
+        const result = await this.grpcClient.importMarkdown(content, options, { correlationId });
+
+        logger.info('Markdown import via gRPC', {
+          blocks: result.document.content.length,
+          processingTime: result.processingTimeMs,
+        });
+
+        return {
+          content: result.document.content,
+          metadata: result.document.metadata as Record<string, any>,
+          processingTime: result.processingTimeMs,
+        };
+      } catch (error) {
+        logger.warn('gRPC import failed, falling back to HTTP', {
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+    }
+
+    // Fall back to HTTP
     if (!this.available) {
       throw new Error('Python conversion service not available');
     }
@@ -139,6 +207,7 @@ export class PythonConversionClient {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(correlationId && { 'X-Correlation-ID': correlationId }),
         },
         body: JSON.stringify({
           content,
@@ -155,7 +224,7 @@ export class PythonConversionClient {
 
       const result = await response.json();
 
-      logger.info('Markdown import by Python service', {
+      logger.info('Markdown import by Python service (HTTP)', {
         blocks: result.content.length,
         processingTime: result.processing_time_ms,
       });
